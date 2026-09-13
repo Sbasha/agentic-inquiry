@@ -1,0 +1,19 @@
+{
+  "name": "agentic-inquiry",
+  "version": "0.1.0",
+  "description": "Local cited evidence, scoped memory and editable knowledge for Codex.",
+  "author": {
+    "name": "Sammy Basha"
+  },
+  "license": "Apache-2.0",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agentic Inquiry",
+    "shortDescription": "Use Agentic Inquiry in Codex.",
+    "longDescription": "Retrieve cited evidence and manage scoped local knowledge through the ai CLI. Lifecycle capture and recall require explicit project enablement.",
+    "developerName": "Sammy Basha",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": "Help me use Agentic Inquiry."
+  }
+}

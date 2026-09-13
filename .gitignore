@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.agentic-inquiry/
+results/
+dist/
+.env
+.env.*
+!.env.example
+.DS_Store
+:memory:.ses

@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "agentic-inquiry"
+version = "0.1.0"
+description = "Local cited evidence, persistent memory and knowledge for documents and code."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{name = "Sammy Basha"}]
+dependencies = [
+    "lancedb>=0.29,<1",
+    "fastembed>=0.7,<1",
+    "filelock>=3,<4",
+    "pdfplumber>=0.11,<1",
+    "python-docx>=1.2,<2",
+    "python-pptx>=1,<2",
+    "openpyxl>=3.1,<4",
+    "defusedxml>=0.7,<1",
+    "tree-sitter-language-pack==0.13.0",
+    "beautifulsoup4>=4.13,<5",
+    "mcp>=1.26,<2",
+    "psutil>=6,<8",
+    "pyyaml>=6,<7",
+    "olefile>=0.47,<1",
+    "tree-sitter>=0.25,<0.26",
+]
+
+[project.scripts]
+ai = "agentic_inquiry.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentic_inquiry"]
+
+[tool.hatch.build.targets.sdist]
+only-include = ["src/agentic_inquiry", "tests", "examples", "README.md", "AGENTS.md", "ARCHITECTURE.md", "CONTRIBUTING.md", "SECURITY.md", "DESIGN.md", "IMPLEMENTATION_PLAN.md", "LICENSE", "pyproject.toml", "uv.lock"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.14"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100

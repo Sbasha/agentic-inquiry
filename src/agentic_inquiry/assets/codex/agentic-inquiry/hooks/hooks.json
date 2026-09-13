@@ -1,0 +1,10 @@
+{
+  "hooks": {
+    "SessionStart": [{"hooks": [{"type": "command", "command": "python3 \"$PLUGIN_ROOT/scripts/codex-hook.py\" --event SessionStart", "timeout": 15}]}],
+    "UserPromptSubmit": [{"hooks": [{"type": "command", "command": "python3 \"$PLUGIN_ROOT/scripts/codex-hook.py\" --event UserPromptSubmit", "timeout": 15}]}],
+    "PostToolUse": [{"matcher": "^(apply_patch|Edit|Write)$", "hooks": [{"type": "command", "command": "python3 \"$PLUGIN_ROOT/scripts/codex-hook.py\" --event PostToolUse", "timeout": 15}]}],
+    "PreCompact": [{"hooks": [{"type": "command", "command": "python3 \"$PLUGIN_ROOT/scripts/codex-hook.py\" --event PreCompact", "timeout": 15}]}],
+    "Stop": [{"hooks": [{"type": "command", "command": "python3 \"$PLUGIN_ROOT/scripts/codex-hook.py\" --event Stop", "timeout": 15}]}],
+    "SessionEnd": [{"hooks": [{"type": "command", "command": "python3 \"$PLUGIN_ROOT/scripts/codex-hook.py\" --event SessionEnd", "timeout": 3}]}]
+  }
+}
