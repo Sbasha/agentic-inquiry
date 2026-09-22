@@ -303,7 +303,7 @@ mcp:
   logging:
     level: "INFO"
     format: "json"
-    log_dir: "${HOME}/.AGV/logs"
+    log_dir: "${HOME}/.agentic-inquiry/logs"
     max_size_mb: 100
     retention_days: 30
 ```

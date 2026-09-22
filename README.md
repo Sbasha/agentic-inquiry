@@ -1,8 +1,8 @@
 # Agentic Inquiry
 
-**Semantic code search and codebase intelligence for Claude Code.**
+**Semantic code search and codebase intelligence for Teams and Agents.**
 
-Agentic Inquiry gives AI coding assistants deep understanding of your codebase. It parses source code and documentation, builds a searchable knowledge graph of entities and relationships, and exposes everything through slash commands in Claude Code. Instead of relying on grep and file reads, your AI assistant can semantically search across hundreds of thousands of code chunks, trace data lineage, assess change impact, and recall project context across sessions.
+Agentic Inquiry gives people and AI coding assistants deep understanding of your codebase. It parses source code and documentation, builds a searchable knowledge graph of entities and relationships, and exposes everything through slash commands in agentic tools. Instead of relying on grep and file reads, your AI assistant can semantically search across hundreds of thousands of code chunks, trace data lineage, assess change impact, and recall project context across sessions.
 
 ```
 /ai:search "how does authentication work"    # Semantic search across code + docs

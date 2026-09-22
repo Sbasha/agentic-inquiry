@@ -1016,7 +1016,7 @@ mcp:
   logging:
     level: "INFO"
     format: "json"
-    log_dir: "${HOME}/.AGV/logs"
+    log_dir: "${HOME}/.agentic-inquiry/logs"
     max_size_mb: 100
     retention_days: 30
 ```
@@ -1025,7 +1025,7 @@ mcp:
 |---------|---------|-------------|
 | `level` | INFO | Log level (DEBUG/INFO/WARNING/ERROR) |
 | `format` | json | Log format (json/text) |
-| `log_dir` | ~/.AGV/logs | Log directory |
+| `log_dir` | ~/.agentic-inquiry/logs | Log directory |
 | `max_size_mb` | 100 | Max log file size |
 | `retention_days` | 30 | Log retention period |
 
@@ -1208,7 +1208,7 @@ INQUIRY_MCP_BEHAVIOR_TRACK_PERFORMANCE=true
 # Logging
 INQUIRY_MCP_LOGGING_LEVEL=INFO
 INQUIRY_MCP_LOGGING_FORMAT=json
-INQUIRY_MCP_LOGGING_LOG_DIR="${HOME}/.AGV/logs"
+INQUIRY_MCP_LOGGING_LOG_DIR="${HOME}/.agentic-inquiry/logs"
 ```
 
 ---
