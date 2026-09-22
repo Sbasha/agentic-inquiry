@@ -362,7 +362,7 @@ at each level. Practical implications:
 | `INQUIRY_EMBEDDINGS_FASTEMBED_PARALLEL` | `embeddings.fastembed.parallel` |
 | `INQUIRY_EMBEDDINGS_CACHE_ENABLED` | `embeddings.cache.enabled` |
 | `INQUIRY_EMBEDDINGS_CACHE_MAX_ENTRIES` | `embeddings.cache.max_entries` |
-| `INQUIRY_EMBEDDING_DEVICE` | sentence-transformer device pin (`cpu`/`cuda`/`mps`) — read directly by `SentenceTransformerEmbedder`, not via the config tree |
+| `INQUIRY_EMBEDDING_DEVICE` | sentence-transformer device pin (`cpu`/`cuda`/`mps`) - read directly by `SentenceTransformerEmbedder`, not via the config tree. Unset: CUDA if available, else CPU; MPS is never autodetected |
 
 Convention: `AI_<SECTION>_<SUBSECTION>_<FIELD>` where each segment
 matches an actual key in the dataclass tree. The provider-name segment

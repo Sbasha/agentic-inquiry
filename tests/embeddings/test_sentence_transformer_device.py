@@ -1,9 +1,8 @@
 """Unit tests for ``SentenceTransformerEmbedder`` device selection.
 
-These tests exercise the device-autodetect + graceful CPU fallback
-behaviour added to support Apple Silicon (MPS) users without making the
-embedder brittle on systems where MPS reports availability but breaks
-during model placement.
+These tests exercise device selection (CUDA autodetect, CPU default,
+MPS only by explicit pin) and the graceful CPU fallback when a pinned
+accelerator fails at model placement.
 
 Pure-unit style — torch and sentence_transformers are mocked via
 ``monkeypatch.setitem(sys.modules, ...)`` so the fakes are torn down
@@ -107,14 +106,26 @@ class TestSelectDevice:
 
         assert _select_device() == "cuda"
 
-    def test_selects_mps_when_apple_silicon(self, monkeypatch):
+    def test_never_autodetects_mps(self, monkeypatch):
+        """Apple Silicon with MPS built and available still gets CPU: the
+        indexer's threaded embedding aborts the process on MPS."""
         _install_fake_torch(
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         _reimport_module(monkeypatch)
         from agentic_inquiry.embeddings.sentence_transformer import _select_device
 
-        assert _select_device() == "mps"
+        assert _select_device() == "cpu"
+
+    def test_preferred_mps_is_honoured(self, monkeypatch):
+        """The pin is the only route to MPS."""
+        _install_fake_torch(
+            monkeypatch, cuda_available=False, mps_built=True, mps_available=True
+        )
+        _reimport_module(monkeypatch)
+        from agentic_inquiry.embeddings.sentence_transformer import _select_device
+
+        assert _select_device(preferred="mps") == "mps"
 
     def test_cpu_fallback_when_mps_built_but_not_available(self, monkeypatch):
         """Non-Apple-Silicon Mac with an MPS-enabled torch wheel: ``is_built``
@@ -178,7 +189,7 @@ class TestSelectDevice:
         with caplog.at_level("WARNING"):
             result = _select_device(preferred="gpu")  # not a torch device name
 
-        assert result == "mps", "Should fall through to autodetect on unknown preferred"
+        assert result == "cpu", "Should fall through to autodetect on unknown preferred"
         assert any(
             "Ignoring unknown preferred device" in r.message for r in caplog.records
         )
@@ -208,6 +219,7 @@ class TestModelLoadFallback:
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=True)
+        monkeypatch.setenv("INQUIRY_EMBEDDING_DEVICE", "mps")
         _reimport_module(monkeypatch)
         from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,
@@ -250,11 +262,12 @@ class TestModelLoadFallback:
             embedder._ensure_model_loaded()
 
     def test_no_fallback_on_successful_mps_load(self, monkeypatch):
-        """Happy path on Apple Silicon — MPS load succeeds, no retry."""
+        """Pinned MPS load succeeds, no retry."""
         _install_fake_torch(
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=False)
+        monkeypatch.setenv("INQUIRY_EMBEDDING_DEVICE", "mps")
         _reimport_module(monkeypatch)
         from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,
@@ -268,15 +281,11 @@ class TestModelLoadFallback:
 
 
 class TestDeviceEnvVar:
-    """``INQUIRY_EMBEDDING_DEVICE`` escape hatch — lets operators pin the
-    device when autodetect picks something that misbehaves (e.g. MPS
-    loads but hangs at inference time)."""
+    """``INQUIRY_EMBEDDING_DEVICE`` pins the device and bypasses autodetect."""
 
-    def test_env_var_pins_cpu_even_when_mps_available(self, monkeypatch):
+    def test_env_var_pins_cpu_even_when_cuda_available(self, monkeypatch):
         """Operator has set the env var; autodetect must be bypassed."""
-        _install_fake_torch(
-            monkeypatch, cuda_available=False, mps_built=True, mps_available=True
-        )
+        _install_fake_torch(monkeypatch, cuda_available=True)
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=False)
         monkeypatch.setenv("INQUIRY_EMBEDDING_DEVICE", "cpu")
         _reimport_module(monkeypatch)
@@ -292,9 +301,7 @@ class TestDeviceEnvVar:
     def test_empty_env_var_falls_through_to_autodetect(self, monkeypatch):
         """Unset or empty env var must not override autodetect — covers
         the ``os.environ.get(...) or None`` coalescing."""
-        _install_fake_torch(
-            monkeypatch, cuda_available=False, mps_built=True, mps_available=True
-        )
+        _install_fake_torch(monkeypatch, cuda_available=True)
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=False)
         monkeypatch.setenv("INQUIRY_EMBEDDING_DEVICE", "")
         _reimport_module(monkeypatch)
@@ -305,16 +312,15 @@ class TestDeviceEnvVar:
         embedder = SentenceTransformerEmbedder()
         embedder._ensure_model_loaded()
 
-        assert mock_st.call_args.kwargs["device"] == "mps"
+        assert mock_st.call_args.kwargs["device"] == "cuda"
 
     def test_invalid_env_var_falls_through_and_loads_on_autodetected_device(
         self, monkeypatch, caplog
     ):
         """End-to-end: env var set to an invalid value → ``_select_device``
-        warns and falls through → autodetect picks MPS → model loads on
-        MPS. Exercises the full env-var → autodetect → load path in one
-        test, covering the case operators most likely hit when they
-        mistype the hatch (``gpu`` is a common wrong guess on Mac).
+        warns and falls through → autodetect picks CPU (MPS is never
+        autodetected) → model loads on CPU. ``gpu`` is the common wrong
+        guess on a Mac.
         """
         _install_fake_torch(
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
@@ -330,11 +336,11 @@ class TestDeviceEnvVar:
         with caplog.at_level("WARNING"):
             embedder._ensure_model_loaded()
 
-        assert mock_st.call_args.kwargs["device"] == "mps", (
+        assert mock_st.call_args.kwargs["device"] == "cpu", (
             "Invalid env var should trigger autodetect, not propagate 'gpu'"
         )
         assert embedder._model is not None
-        assert embedder._model.device == "mps"
+        assert embedder._model.device == "cpu"
         assert any(
             "Ignoring unknown preferred device" in r.message for r in caplog.records
         ), "Expected the fall-through warning from _select_device"

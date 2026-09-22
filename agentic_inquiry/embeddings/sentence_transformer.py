@@ -1,4 +1,4 @@
-"""Sentence-transformer-backed embedder with GPU / MPS autodetection."""
+"""Sentence-transformer-backed embedder with CUDA autodetection and opt-in MPS."""
 from __future__ import annotations
 
 import logging
@@ -13,39 +13,30 @@ from agentic_inquiry.metrics import get_metrics_tracker
 
 logger = logging.getLogger(__name__)
 
-# Operator escape hatch — set to ``cpu`` / ``cuda`` / ``mps`` to pin the
-# device and skip autodetect. Useful when autodetect picks an accelerator
-# that loads the model but then misbehaves at inference time (rare but
-# seen on some torch/macOS combinations).
+# Operator pin: set to ``cpu`` / ``cuda`` / ``mps`` to skip autodetect.
+# ``mps`` is only ever used through this variable; see ``_select_device``.
 _DEVICE_ENV_VAR = "INQUIRY_EMBEDDING_DEVICE"
 
 _KNOWN_DEVICES = frozenset({"cpu", "cuda", "mps"})
 
 
 def _select_device(preferred: Optional[str] = None) -> str:
-    """Pick the best available torch device, preferring accelerators over CPU.
+    """Pick the torch device for the embedding model.
 
     Order: explicit ``preferred`` (if a recognised device string) → CUDA →
-    Apple MPS → CPU.
+    CPU.
 
-    MPS is Apple Silicon's GPU via Metal. On M1/M2/M3/M4 the default
-    sentence-transformer model runs ~4-8x faster on MPS than on CPU, and
-    the system used to fall straight from CUDA-not-available to CPU —
-    unnecessarily slow for a large population of users. We check
-    ``is_built()`` and ``is_available()`` separately so
-    build-without-runtime-availability doesn't mis-route (it can happen
-    on older macOS or non-Apple-Silicon Macs with MPS-enabled torch
-    wheels).
+    Apple MPS is never autodetected. Indexing embeds from a thread pool,
+    and torch's MPS stream aborts the whole process under that load with a
+    Metal command-buffer assertion, which no Python-level fallback can
+    catch. CPU is slower on Apple Silicon but finishes. Operators who want
+    Metal opt in with ``INQUIRY_EMBEDDING_DEVICE=mps``.
 
-    ``preferred`` is the operator escape hatch (``INQUIRY_EMBEDDING_DEVICE``
-    env var). It's normalised to lowercase and rejected with a warning
-    if it isn't a known device — we fall through to autodetect rather
-    than blindly returning a garbage value that would confuse the later
-    ``SentenceTransformer(device=...)`` call with a less-actionable
-    error. Known good values pass through without availability checks so
-    the hatch can force a device even if our detection misreports it;
-    the subsequent model-load fallback catches the "device didn't
-    actually work" case.
+    ``preferred`` is normalised to lowercase and rejected with a warning if
+    it isn't a known device; autodetect then applies. Known values pass
+    through without availability checks so the pin can force a device even
+    if detection misreports it; the model-load fallback in
+    ``_ensure_model_loaded`` catches a device that fails at placement.
     """
     try:
         import torch
@@ -65,14 +56,6 @@ def _select_device(preferred: Optional[str] = None) -> str:
 
     if torch.cuda.is_available():
         return "cuda"
-
-    mps_backend = getattr(torch.backends, "mps", None)
-    if (
-        mps_backend is not None
-        and getattr(mps_backend, "is_built", lambda: False)()
-        and getattr(mps_backend, "is_available", lambda: False)()
-    ):
-        return "mps"
 
     return "cpu"
 

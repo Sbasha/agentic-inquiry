@@ -19,11 +19,7 @@ import tempfile
 from pathlib import Path
 from typing import Any, Mapping, Optional
 
-from agentic_inquiry.cli.env_resolver import (
-    get_env_config_path,
-    load_config_for_environment,
-    warn_embedding_device_hatch,
-)
+from agentic_inquiry.cli.env_resolver import load_config_for_environment
 
 logger = logging.getLogger(__name__)
 
@@ -309,18 +305,7 @@ async def index_command(args: argparse.Namespace) -> int:
             index_path = worktree_path
 
         # Configure embedder based on storage backend capabilities
-        from agentic_inquiry.cli.env_resolver import resolve_environment
         from agentic_inquiry.embeddings.factory import configure_embedder_for_backend
-
-        env = resolve_environment()
-        hatch_dir = (
-            Path(env.config_path).parent
-            if env.config_path is not None
-            else get_env_config_path(env.name).parent
-        )
-        if getattr(args, "config", None) and "/envs/" in str(args.config):
-            hatch_dir = Path(args.config).parent
-        warn_embedding_device_hatch(hatch_dir)
 
         configure_embedder_for_backend(config, quiet=getattr(args, "quiet", False))
 

@@ -173,8 +173,9 @@ Traces to AC 1-17. · contracts: none.
 - Memory store exception, missing table after write, or in-memory
   adapter: exit 1, no success line.
 - Working memory (`importance < 0.7`): exit 1, session-only message.
-- Hatch hint: skip when `INQUIRY_EMBEDDING_DEVICE` is set or platform is
-  not Darwin. Process kill 137/139 remains uncatchable.
+- Embedding device: CPU unless CUDA is available; MPS only when
+  `INQUIRY_EMBEDDING_DEVICE=mps` is set. Process kill 137/139 remains
+  uncatchable, which is why MPS is never autodetected.
 - Cross-process commit conflict (another `ai` process writing the same
   table): still retried five times with backoff, then fails the file.
 - Reader in another process holding a version older than five minutes
@@ -190,8 +191,8 @@ Traces to AC 2, 4, 5, 7, 9, 13, 14, 15.
 
 - Honesty: exit 0 only when the claimed write is readable (index graph
   or memory row).
-- Operability: hatch instruction is visible before a Metal abort can
-  kill the process.
+- Operability: a default install cannot reach the Metal abort; opting
+  into MPS is an explicit env-file edit.
 - No new dependency; retry predicates unchanged from first-run
   reliability.
 
@@ -315,35 +316,28 @@ and retry tests still pass.
 
 **Touches:** agentic_inquiry/cli/env_resolver.py, agentic_inquiry/cli/index.py, agentic_inquiry/cli/memory.py, tests/cli/test_env_resolver.py, README.md
 
-**Mode:** TDD (hint gating) and goal-based (README / commented hatch)
+**Mode:** TDD (device selection) and goal-based (README / commented pin)
 
 **Tests:**
-- With `platform.system` patched to `Darwin` and
-  `INQUIRY_EMBEDDING_DEVICE` unset, the helper writes one stderr line
-  containing `.env` and `INQUIRY_EMBEDDING_DEVICE=cpu` (AC 7).
-  stub: true (`tests/cli/test_env_resolver.py`)
-- With the variable set to `cpu` or `mps`, no line (AC 7).
-  stub: true
-- With platform `Linux`, no line (AC 7).
-  stub: true
-- Goal-based: `LocalSetup` env text still contains
-  `# INQUIRY_EMBEDDING_DEVICE=cpu` (existing
+- With fake torch reporting MPS built and available and no pin,
+  `_select_device` returns `cpu`; with `preferred="mps"` it returns
+  `mps` (`tests/embeddings/test_sentence_transformer_device.py`, AC 7).
+- Goal-based: `LocalSetup` env text contains
+  `# INQUIRY_EMBEDDING_DEVICE=mps` (existing
   `tests/cli/setup/test_local_setup.py`).
   no stub (mode)
 - Goal-based: README contains `uv tool install . --reinstall` and
-  `INQUIRY_EMBEDDING_DEVICE=cpu` (AC 8).
+  `INQUIRY_EMBEDDING_DEVICE=mps` (AC 8).
   no stub (mode)
 
 **Approach:**
-- Add `warn_embedding_device_hatch(env_dir: Path) -> None` on
-  `env_resolver.py`. Call it from `index_command` and `save_command`
-  after `load_config_for_environment` and before embedder / pipeline
-  construction.
+- `_select_device` autodetects CUDA only. MPS is returned solely for an
+  explicit `mps` pin. No Darwin hint is needed because the default path
+  cannot abort.
 - README: after the `uv tool install .` getting-started note, add
   reinstall (`uv tool install . --reinstall`) so a previously
-  installed global `ai` picks up the env-file loader, then uncomment
-  the hatch if Metal/MPS aborts. One sentence that two embedding
-  processes on Metal can abort is enough. Do not default the hatch on.
+  installed global `ai` picks up the env-file loader, and state that
+  Metal is opt-in.
 - Do not edit `CHANGELOG.md`. Living architecture docs may mention the
   hatch in the same PR only if the implementing change touches that
   page; it is not a task requirement.
@@ -568,8 +562,8 @@ on first initialize or save. Operators with a half-written
 
 - Keep-last may drop a real edge if two distinct relationships share
   an 8-hex-char id. Collapse is logged; unique keys are preserved.
-- Darwin hint runs on every Mac index/save until the operator sets
-  `INQUIRY_EMBEDDING_DEVICE`. One line, not a CPU default.
+- Apple Silicon users lose the MPS speedup by default. Opting in is one
+  env-file line; the trade is a slower first index over an aborted one.
 - Memory table rename (CLI hardcoded names vs config names) leaves any
   accidental `memory_episodic` rows unread. The explore report showed
   those tables never grew.

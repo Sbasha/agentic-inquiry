@@ -20,7 +20,7 @@ A user who installs `ai`, runs `/ai:setup` with the local (LanceDB)
 backend, then indexes a project gets a working index without hitting a
 dead-end gate, a silent empty success, a storm of retryable write
 failures, or a missing env file. Optional secrets and operator pins
-(`INQUIRY_EMBEDDING_DEVICE=cpu`) live in `.agentic-inquiry/envs/<name>/.env` and load
+(`INQUIRY_EMBEDDING_DEVICE=mps`) live in `.agentic-inquiry/envs/<name>/.env` and load
 automatically. `ai index` exits 0 only when indexing actually produced
 chunks.
 
@@ -30,6 +30,8 @@ chunks.
 
 - Treat a missing onboard run as a warning, not a block, so first index
   after setup proceeds.
+- Embed on CPU unless CUDA is available. Never autodetect Apple MPS; it
+  is used only when `INQUIRY_EMBEDDING_DEVICE=mps` is set.
 - Exit `ai index` with code 1 unless status is `completed` and
   `chunks_created > 0`.
 - Retry only LanceDB write errors whose message marks them retryable
@@ -42,7 +44,6 @@ chunks.
 ### Ask first
 
 - Re-enable a hard onboard gate that blocks indexing.
-- Default every Mac install to `INQUIRY_EMBEDDING_DEVICE=cpu` (uncommented).
 - Add a cross-process LanceDB lock instead of (or in addition to) retry.
 
 ### Never do
@@ -85,8 +86,8 @@ chunks.
       `commit conflict` or `Retryable`, up to 5 attempts with
       exponential backoff. Schema and permission errors are not retried.
 - [x] `LocalSetup.run` writes `.agentic-inquiry/envs/<name>/.env` containing a
-      commented `INQUIRY_EMBEDDING_DEVICE=cpu` line. Success text tells the
-      operator to uncomment it if Metal/MPS indexing aborts.
+      commented `INQUIRY_EMBEDDING_DEVICE=mps` line for operators who want
+      to opt into Metal.
 - [x] `load_config_for_environment` loads that env file before YAML and
       `AI_*` overlays. Missing file is a no-op. Existing `os.environ`
       keys win. Values are not logged. The resolved `.env` path must

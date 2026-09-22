@@ -57,7 +57,7 @@ class TestLocalSetup:
         env_file = env_dir / ".env"
         assert env_file.exists()
         env_text = env_file.read_text(encoding="utf-8")
-        assert "# INQUIRY_EMBEDDING_DEVICE=cpu" in env_text
+        assert "# INQUIRY_EMBEDDING_DEVICE=mps" in env_text
 
         # Verify config content
         import yaml

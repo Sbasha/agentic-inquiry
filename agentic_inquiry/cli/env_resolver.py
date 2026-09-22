@@ -21,8 +21,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import platform
-import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, MutableMapping, Optional
@@ -359,24 +357,6 @@ def load_environment_dotenv(
         applied += 1
     if applied:
         logger.debug("Loaded %d variable(s) from environment dotenv", applied)
-
-
-def warn_embedding_device_hatch(env_dir: Path) -> None:
-    """Print one Darwin hint when the CPU embedding hatch is unset.
-
-    Must run before the embedder is constructed so the operator sees the
-    hatch path if Metal/MPS aborts the process. No-op on other platforms
-    and when ``INQUIRY_EMBEDDING_DEVICE`` is already set.
-    """
-    if platform.system() != "Darwin":
-        return
-    if os.environ.get("INQUIRY_EMBEDDING_DEVICE"):
-        return
-    env_file = Path(env_dir) / ".env"
-    print(
-        f"If embeddings abort on Metal/MPS, uncomment INQUIRY_EMBEDDING_DEVICE=cpu in {env_file}",
-        file=sys.stderr,
-    )
 
 
 def load_config_for_environment(
@@ -720,7 +700,6 @@ __all__ = [
     "list_environments",
     "load_config_for_environment",
     "load_environment_dotenv",
-    "warn_embedding_device_hatch",
     "parse_dotenv_lines",
     "GLOBAL_DIR_NAME",
     "LOCAL_DIR_NAME",

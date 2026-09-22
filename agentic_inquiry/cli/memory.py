@@ -13,15 +13,9 @@ import asyncio
 import json
 import logging
 import sys
-from pathlib import Path
 from typing import Any, Optional
 
-from agentic_inquiry.cli.env_resolver import (
-    get_env_config_path,
-    load_config_for_environment,
-    resolve_environment,
-    warn_embedding_device_hatch,
-)
+from agentic_inquiry.cli.env_resolver import load_config_for_environment
 
 logger = logging.getLogger(__name__)
 
@@ -69,16 +63,6 @@ def format_memory(memory: dict, index: int) -> str:
         lines.append(f"   Content: {content[:100]}...")
 
     return "\n".join(lines)
-
-
-def _hatch_env_dir(config_path: Optional[str] = None) -> Path:
-    """Directory that holds the environment ``.env`` hatch file."""
-    if config_path and "/envs/" in config_path:
-        return Path(config_path).parent
-    env = resolve_environment()
-    if env.config_path is not None:
-        return Path(env.config_path).parent
-    return get_env_config_path(env.name).parent
 
 
 def _tier_name(item: object) -> str:
@@ -182,7 +166,6 @@ async def save_command(args: argparse.Namespace) -> int:
         Exit code (0 for success)
     """
     config = load_config_for_environment()
-    warn_embedding_device_hatch(_hatch_env_dir())
 
     project_id = args.project or config.storage.default_project_id
     if not project_id:

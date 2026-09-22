@@ -1821,6 +1821,10 @@ class Config:
                     ignored_count += 1
                 continue
 
+            # Read directly by the embedder, not part of the config tree.
+            if env_key == "INQUIRY_EMBEDDING_DEVICE":
+                continue
+
             # Convention-based lookup: INQUIRY_SECTION_SUBSECTION_KEY → ["section", "subsection", "key"]
             # Get the key without prefix and convert to lowercase
             key_without_prefix = env_key[len(env_prefix):].lower()

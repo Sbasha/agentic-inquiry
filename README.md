@@ -60,9 +60,10 @@ loader. If uv reports that its tool directory isn't on your PATH, run
 does **not** turn Agentic Inquiry on anywhere — the `/ai:*` skills and hooks
 only activate in projects where you enable the plugin (next step).
 
-On macOS, two embedding processes using Metal/MPS at once can abort. If
-that happens, uncomment `INQUIRY_EMBEDDING_DEVICE=cpu` in
-`.agentic-inquiry/envs/<name>/.env`.
+Embeddings run on CPU unless CUDA is available. Apple Metal (MPS) is not
+selected automatically: indexing embeds from several threads, and torch's
+MPS backend aborts the whole process under that load. To try Metal anyway,
+uncomment `INQUIRY_EMBEDDING_DEVICE=mps` in `.agentic-inquiry/envs/<name>/.env`.
 
 ### 2. Enable the Plugins
 
