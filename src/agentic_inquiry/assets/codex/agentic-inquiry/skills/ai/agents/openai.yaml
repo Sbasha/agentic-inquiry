@@ -1,4 +1,0 @@
-interface:
-  display_name: "Agentic Inquiry"
-  short_description: "Cited local evidence and scoped durable knowledge"
-  default_prompt: "Use $ai to find and verify evidence in my registered local library."

@@ -1,0 +1,126 @@
+{
+  "version": "1.0",
+  "description": "Golden set queries for search quality regression testing",
+  "queries": [
+    {
+      "id": "search-async-patterns",
+      "query": "async database connection pattern",
+      "description": "Find async database connection implementations",
+      "expected_contains": ["storage", "database", "async"],
+      "min_results": 3,
+      "min_relevance_score": 0.5
+    },
+    {
+      "id": "search-embedding-generation",
+      "query": "generate embeddings for text",
+      "description": "Find embedding generation code",
+      "expected_contains": ["embedding", "vector"],
+      "min_results": 2,
+      "min_relevance_score": 0.5
+    },
+    {
+      "id": "search-config-loading",
+      "query": "load configuration from yaml file",
+      "description": "Find configuration loading code",
+      "expected_contains": ["config", "load"],
+      "min_results": 2,
+      "min_relevance_score": 0.5
+    },
+    {
+      "id": "search-mcp-tools",
+      "query": "MCP tool implementation",
+      "description": "Find MCP tool implementations",
+      "expected_contains": ["tool", "mcp"],
+      "min_results": 1,
+      "min_relevance_score": 0.4
+    },
+    {
+      "id": "search-error-handling",
+      "query": "exception handling and error messages",
+      "description": "Find error handling patterns",
+      "expected_contains": ["error", "exception"],
+      "min_results": 2,
+      "min_relevance_score": 0.4
+    },
+    {
+      "id": "search-tree-sitter-parsing",
+      "query": "tree sitter parse python code AST",
+      "description": "Find tree-sitter parsing implementations",
+      "expected_contains": ["parser", "tree"],
+      "min_results": 2,
+      "min_relevance_score": 0.5
+    },
+    {
+      "id": "search-memory-system",
+      "query": "working memory episodic semantic tier",
+      "description": "Find memory system implementations",
+      "expected_contains": ["memory", "tier"],
+      "min_results": 2,
+      "min_relevance_score": 0.5
+    },
+    {
+      "id": "search-knowledge-graph",
+      "query": "entity relationship graph traversal",
+      "description": "Find knowledge graph implementations",
+      "expected_contains": ["entity", "relationship"],
+      "min_results": 2,
+      "min_relevance_score": 0.5
+    },
+    {
+      "id": "search-hybrid-search",
+      "query": "hybrid search vector FTS reranking",
+      "description": "Find hybrid search implementations",
+      "expected_contains": ["search", "vector"],
+      "min_results": 2,
+      "min_relevance_score": 0.5
+    },
+    {
+      "id": "search-file-watching",
+      "query": "file watcher monitor changes callback",
+      "description": "Find file watching implementations",
+      "expected_contains": ["watch", "file"],
+      "min_results": 2,
+      "min_relevance_score": 0.4
+    },
+    {
+      "id": "search-document-cache",
+      "query": "LRU cache invalidation persistence",
+      "description": "Find caching implementations",
+      "expected_contains": ["cache"],
+      "min_results": 2,
+      "min_relevance_score": 0.4
+    },
+    {
+      "id": "search-event-system",
+      "query": "event emit subscribe publish bus",
+      "description": "Find event system implementations",
+      "expected_contains": ["event"],
+      "min_results": 2,
+      "min_relevance_score": 0.4
+    },
+    {
+      "id": "search-indexing-pipeline",
+      "query": "indexing pipeline chunk document process",
+      "description": "Find indexing pipeline code",
+      "expected_contains": ["index", "pipeline"],
+      "min_results": 2,
+      "min_relevance_score": 0.5
+    },
+    {
+      "id": "search-storage-facade",
+      "query": "storage facade provider backend adapter",
+      "description": "Find storage abstraction code",
+      "expected_contains": ["storage", "provider"],
+      "min_results": 2,
+      "min_relevance_score": 0.5
+    },
+    {
+      "id": "search-metrics-correlation",
+      "query": "metrics latency tracking correlation ID",
+      "description": "Find observability implementations",
+      "expected_contains": ["metric", "latency"],
+      "min_results": 1,
+      "min_relevance_score": 0.4
+    }
+  ]
+}

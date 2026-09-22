@@ -1,0 +1,19 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Memory Backend Configuration",
+    "description": "Configuration schema for in-memory storage backend (for testing)",
+    "type": "object",
+    "properties": {
+        "type": {
+            "const": "memory",
+            "description": "Backend type identifier"
+        },
+        "table_prefix": {
+            "type": "string",
+            "description": "Prefix for table names (useful for multi-tenant deployments)",
+            "pattern": "^[a-zA-Z0-9_]*$"
+        }
+    },
+    "required": ["type"],
+    "additionalProperties": false
+}

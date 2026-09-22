@@ -1,0 +1,57 @@
+description = "Discover and list architectural patterns in the codebase"
+prompt = """
+Discover and list architectural patterns in the codebase
+
+Usage: /ai:patterns [discover|list]
+
+# /ai:patterns
+
+Discover architectural patterns and conventions in your codebase.
+
+## Quick Start
+
+```bash
+/ai:patterns                # List known patterns
+/ai:patterns discover       # Analyze codebase for new patterns
+```
+
+## Pattern Discovery
+
+Analyzes codebase to identify:
+- **Design Patterns**: Singleton, Factory, Observer, etc.
+- **Architectural Patterns**: MVC, Repository, Service Layer
+- **Project Conventions**: Naming, file organization, error handling
+- **Anti-Patterns**: God classes, circular dependencies
+
+## Example Output
+
+```
+Discovered Patterns:
+├── Repository Pattern (storage/providers/)
+│   └── LanceDBManager, SQLiteEventProvider
+├── Factory Pattern (parsers/chain.py)
+│   └── ParserChain.create_for_language()
+├── Service Layer (search/service.py)
+│   └── SearchService orchestrates storage + embedding
+└── Event Bus (events/)
+    └── Publish/subscribe for async operations
+```
+
+## CLI Equivalent
+
+```bash
+uv run --env-file .env ai patterns --project-id myproject
+uv run --env-file .env ai patterns discover --project-id myproject
+```
+
+## Use Cases
+
+1. **Onboarding**: Quickly understand codebase architecture
+2. **Consistency**: Ensure new code follows existing patterns
+3. **Refactoring**: Identify anti-patterns to address
+4. **Documentation**: Auto-generate architecture docs
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `ai` CLI command(s) using the available tools.
+"""

@@ -1,0 +1,14 @@
+{
+  "enabledPlugins": {
+    "ai@agentic-inquiry": true,
+    "ai-dev@agentic-inquiry": true
+  },
+  "extraKnownMarketplaces": {
+    "agentic-inquiry": {
+      "source": {
+        "source": "directory",
+        "path": "./extensions/claude"
+      }
+    }
+  }
+}

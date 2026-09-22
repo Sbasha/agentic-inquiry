@@ -1,0 +1,64 @@
+description = "Detect and visualize service architecture"
+prompt = """
+Detect and visualize service architecture
+
+Usage: /ai:services [detect|show]
+
+# /ai:services
+
+Detect and visualize the service architecture of your codebase.
+
+## Quick Start
+
+```bash
+/ai:services detect    # Analyze codebase for services
+/ai:services show      # Display service map
+```
+
+## Service Detection
+
+Identifies:
+- **API Services**: REST endpoints, GraphQL resolvers
+- **Background Services**: Workers, schedulers, queues
+- **Internal Services**: Business logic services
+- **External Integrations**: Third-party APIs, databases
+
+## Service Map
+
+Visualizes how services connect:
+```
+┌─────────────┐     ┌─────────────┐
+│  API Layer  │────▶│   Search    │
+│  endpoints  │     │   Service   │
+└─────────────┘     └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │   Storage   │
+                    │   Facade    │
+                    └──────┬──────┘
+                           │
+              ┌────────────┼────────────┐
+              ▼            ▼            ▼
+        ┌─────────┐  ┌─────────┐  ┌─────────┐
+        │ LanceDB │  │ SQLite  │  │ Memory  │
+        └─────────┘  └─────────┘  └─────────┘
+```
+
+## CLI Equivalent
+
+```bash
+uv run --env-file .env ai services detect --project-id myproject
+uv run --env-file .env ai services show --project-id myproject
+```
+
+## Use Cases
+
+1. **Architecture documentation**: Auto-generate service diagrams
+2. **Onboarding**: Help new developers understand system structure
+3. **Planning**: Identify service boundaries for new features
+4. **Debugging**: Trace issues across service boundaries
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `ai` CLI command(s) using the available tools.
+"""

@@ -1,0 +1,436 @@
+description = "Intelligently onboard a codebase - parallel index, explore, and validate. Use when setting up ai for a new codebase or helping someone get started."
+prompt = """
+Intelligently onboard a codebase - parallel index, explore, and validate. Use when setting up ai for a new codebase or helping someone get started.
+
+Usage: /ai:onboard [path] [--env local|<env-name>] [--skip-index] [--deep]
+
+# /ai:onboard
+
+Intelligent codebase onboarding. Runs indexing in background while exploring the codebase structure, saving memories, detecting gaps, and validating everything works.
+
+## Overview
+
+```
+┌──────────────────────────────────────────────┐
+│  PHASE 1: Environment Setup                   │
+│  - Check for existing environment             │
+│  - Create local env if needed                 │
+│  - Validate connectivity (must pass)          │
+│  - Create output directory                    │
+├──────────────────────────────────────────────┤
+│  PHASE 2: Parallel Execution                  │
+│                                               │
+│  ┌─────────────┐  ┌───────────────────────┐  │
+│  │  BACKGROUND  │  │  FOREGROUND            │  │
+│  │  Index       │  │  Explore & Learn       │  │
+│  │  ai index . │  │  codebase-explorer     │  │
+│  │  (Task bg)   │  │  agent                 │  │
+│  └─────────────┘  └───────────────────────┘  │
+├──────────────────────────────────────────────┤
+│  PHASE 3: Validate (after index completes)    │
+│  - Search for discovered entities             │
+│  - Check lineage paths                        │
+│  - Verify navigability                        │
+├──────────────────────────────────────────────┤
+│  PHASE 4: Report & Memories                   │
+│  - Save architecture memories                 │
+│  - Save gap memories                          │
+│  - Generate onboarding report                 │
+└──────────────────────────────────────────────┘
+```
+
+## Phase 1: Environment Setup
+
+The onboard command **must ensure a working environment** before proceeding. If no environment exists, walk the user through creating one.
+
+### 1.1 Check for existing environment
+
+Read the environment registry:
+```bash
+cat .agentic-inquiry/env-registry.json 2>/dev/null
+```
+
+Also check if `.env` file exists and has required variables:
+```bash
+cat .env 2>/dev/null | grep -E "^(AI_|OPENAI_)" | sed 's/=.*/=***/'
+```
+
+**Decision tree:**
+
+| Condition | Action |
+|-----------|--------|
+| `--env` flag provided | Use that environment, validate it |
+| Active environment in registry | Show it, ask user to confirm or create new |
+| No registry / no environments | Create the local LanceDB environment |
+
+### 1.2 Create environment if needed
+
+If no usable environment exists, **spawn the env-manager agent** to create one:
+
+```
+Task tool:
+  subagent_type: Bash
+  prompt: |
+    We need to create a ai environment for onboarding.
+    Storage: local LanceDB (the only shipped backend)
+
+    FOR LOCAL:
+    1. Create directory structure:
+       mkdir -p .agentic-inquiry/envs/onboard/lancedb
+    2. Write config:
+       cat > .agentic-inquiry/envs/onboard/config.yaml << EOF
+       project_id: onboard
+       storage:
+         provider: lancedb
+         lancedb:
+           uri: .agentic-inquiry/envs/onboard/lancedb
+       EOF
+    3. Register in env-registry.json
+    4. Verify: ls .agentic-inquiry/envs/onboard/
+```
+
+### 1.3 Validate connectivity
+
+After environment is ready, **confirm it actually works**:
+
+**Local:**
+```bash
+ls -la .agentic-inquiry/envs/{name}/lancedb/
+# Should exist and be writable
+```
+
+If connectivity fails:
+- **Local**: Create the directory (self-healing)
+
+**Do NOT proceed to Phase 2 until connectivity is confirmed.**
+
+### 1.4 Create output directory
+
+```bash
+ONBOARD_ID=$(date +"%Y%m%d_%H%M%S")
+ONBOARD_PATH="test_results/onboard/${ONBOARD_ID}"
+mkdir -p ${ONBOARD_PATH}
+```
+
+### 1.5 Report environment status to user
+
+Before moving on, print:
+```
+Environment: {name} (local)
+Storage: LanceDB at path
+Connectivity: Verified
+Output: {ONBOARD_PATH}
+
+Proceeding to index + explore...
+```
+
+## Phase 2: Parallel Execution
+
+### 2.1 Record onboard run start
+
+Before starting parallel execution, record this onboard run in metadata storage:
+
+```bash
+uv run --env-file .env python -c "
+import asyncio
+from agentic_inquiry.onboard.metadata_service import OnboardMetadataService
+
+async def main():
+    service = await OnboardMetadataService.from_config(None, workspace='${ONBOARD_PATH}')
+    run = await service.create_onboard_run(artifact_path='${ONBOARD_PATH}')
+    print(f'ONBOARD_RUN_ID={run.run_id}')
+    await service.close()
+
+asyncio.run(main())
+"
+```
+
+Capture the `ONBOARD_RUN_ID` for later use.
+
+### 2.2 Start indexing in background
+
+Launch indexing as a **background Task agent**:
+
+```
+Task tool:
+  subagent_type: general-purpose
+  run_in_background: true
+  prompt: |
+    Index the codebase at {path} using the ai CLI.
+
+    Run: uv run --env-file .env ai index {path}
+
+    When complete, verify the index has content:
+    Run: uv run --env-file .env ai index status
+
+    Return the index status output including entity counts.
+```
+
+Save the task_id so we can check on it later.
+
+### 2.2 Explore codebase structure (foreground)
+
+While indexing runs, spawn the **codebase-explorer** agent:
+
+```
+Task tool:
+  subagent_type: codebase-explorer
+  prompt: |
+    Explore and map the codebase at {path}.
+
+    Save your exploration report using the save_onboard_report MCP tool:
+    - project_id: {PROJECT_ID}
+    - run_id: {ONBOARD_RUN_ID}
+    - report_name: "EXPLORATION"
+    - content: (your full exploration report)
+
+    If the MCP tool is not available, fall back to writing directly:
+    Write your exploration report to: {ONBOARD_PATH}/EXPLORATION_REPORT.md
+
+    Focus on:
+    1. Languages, frameworks, tech stack
+    2. Architecture pattern and layers
+    3. Data flow paths (entry points -> APIs -> databases)
+    4. Gaps where ai indexing may fall short
+    5. Key entities to validate after indexing
+
+    **IMPORTANT - Save Memories Throughout Exploration:**
+
+    As you discover significant architectural patterns, design decisions, or
+    important relationships, save them as memories IMMEDIATELY using the ai
+    memory command. Do NOT wait until the end. Save memories as you go:
+
+    ```bash
+    uv run --env-file .env ai memory save "Architecture: {specific finding}"
+    uv run --env-file .env ai memory save "Pattern: {specific pattern discovered}"
+    uv run --env-file .env ai memory save "Key entity: {entity} - {what it does and why it matters}"
+    uv run --env-file .env ai memory save "Data flow: {source} -> {intermediate} -> {destination}"
+    uv run --env-file .env ai memory save "Integration: {external system} via {mechanism}"
+    ```
+
+    Save at least one memory for each of these categories:
+    - Primary tech stack and framework choices
+    - Core architectural pattern (layered, microservices, event-driven, etc.)
+    - Key entry points (APIs, CLI, event handlers)
+    - External integrations and how they're accessed
+    - Data storage and persistence strategy
+    - Any anti-patterns or technical debt observed
+
+    The goal is to build a rich knowledge base DURING exploration, not just
+    produce a report at the end. Each memory saved enriches future sessions.
+
+    Return a JSON summary when done.
+```
+
+### 2.3 Wait for both to complete
+
+1. The explorer finishes first (it's reading files, not indexing)
+2. Check on the indexing background task using TaskOutput
+3. If indexing is still running, continue to report what we know so far
+4. When indexing completes, move to Phase 3
+
+## Phase 3: Post-Index Validation
+
+After indexing completes, validate the index against what the explorer found.
+
+### 3.1 Entity validation
+
+For each key entity the explorer identified:
+```bash
+uv run --env-file .env ai search "{entity_name}"
+```
+
+Check: Does the entity appear in search results?
+
+### 3.2 Lineage validation
+
+For each data flow path the explorer identified:
+```bash
+uv run --env-file .env ai entity {entity_name}
+uv run --env-file .env ai entity deps {entity_name}
+```
+
+Check: Can we trace the path through the index?
+
+### 3.3 Gap verification
+
+For each gap the explorer identified:
+- Check if files in the gap were indexed anyway (as text)
+- Verify the gap is real (some files may have been parsed despite extension concerns)
+
+### 3.4 Record validation results
+
+Save the validation report using the `save_onboard_report` MCP tool:
+- project_id: {PROJECT_ID}
+- run_id: {ONBOARD_RUN_ID}
+- report_name: "VALIDATION"
+- content: (the full validation report below)
+
+If the MCP tool is not available, fall back to writing to `{ONBOARD_PATH}/VALIDATION_REPORT.md`:
+
+```markdown
+# Index Validation Report
+
+## Entity Navigability
+| Entity | Found in Index? | Search Quality | Notes |
+|--------|----------------|---------------|-------|
+| Config | Yes | High | Top result |
+| SearchService | Yes | Medium | 3rd result |
+
+## Lineage Paths
+| Path | Traceable? | Depth | Gaps |
+|------|-----------|-------|------|
+| CLI -> Search -> Storage | Yes | 3 hops | None |
+| Config -> All services | Partial | 2 hops | Missing memory tier |
+
+## Gap Status
+| Gap | Impact | Workaround Available? |
+|-----|--------|----------------------|
+| .proto files | Medium | Indexed as text |
+
+## Overall Score
+- Entities found: X/Y (Z%)
+- Paths traceable: A/B (C%)
+- Gaps with workarounds: D/E
+```
+
+## Phase 4: Report & Memories
+
+### 4.1 Verify and augment architecture memories
+
+The explorer should have saved memories throughout its exploration.
+Review what was saved and add any gaps:
+
+```bash
+# Check what memories were already saved during exploration
+uv run --env-file .env ai memory list --limit 20
+```
+
+For any gaps found during validation (Phase 3), save additional memories:
+```bash
+uv run --env-file .env ai memory save "Gap: {description} - Impact: {impact}, Workaround: {workaround}"
+uv run --env-file .env ai memory save "Validation: {entity} - {search quality assessment}"
+```
+
+### 4.2 Generate onboarding report
+
+Combine exploration + validation and save using the `save_onboard_report` MCP tool:
+- project_id: {PROJECT_ID}
+- run_id: {ONBOARD_RUN_ID}
+- report_name: "ONBOARD"
+- content: (the full onboarding report below)
+
+If the MCP tool is not available, fall back to writing to `{ONBOARD_PATH}/ONBOARD_REPORT.md`:
+
+```markdown
+# Onboarding Report: {project}
+
+## Quick Summary
+| Metric | Value |
+|--------|-------|
+| Languages | Python, YAML |
+| Architecture | Async library |
+| Files indexed | 150 |
+| Entities found | 1,200 |
+| Gaps detected | 3 |
+| Lineage paths | 4/5 traceable |
+
+## Architecture
+{From exploration report}
+
+## What Works Well
+- {Things ai handles perfectly}
+
+## Known Gaps
+- {Things that need workarounds or aren't indexed}
+
+## Saved Memories
+- {List of memories saved during onboarding}
+
+## Recommended Next Steps
+1. {Most impactful thing to do next}
+2. {Second priority}
+3. {Third priority}
+
+## Commands to Try
+| What | Command |
+|------|---------|
+| Search code | `ai:search "{key_feature}"` |
+| Understand entity | `ai:entity {key_entity}` |
+| Check impact | `ai:impact {key_entity}` |
+| Trace data | `ai:lineage {entry_point}` |
+```
+
+### 4.3 Print summary to user
+
+Display the key findings inline so the user doesn't have to read a file.
+
+### 4.4 Record onboard completion
+
+Record the onboard run results:
+
+```bash
+uv run --env-file .env python -c "
+import asyncio
+from agentic_inquiry.onboard.metadata_service import OnboardMetadataService
+
+async def main():
+    service = await OnboardMetadataService.from_config(None, workspace='${ONBOARD_PATH}')
+    await service.complete_onboard_run(
+        '${ONBOARD_RUN_ID}',
+        file_count=${FILE_COUNT:-0},
+        chunk_count=${CHUNK_COUNT:-0},
+        entity_count=${ENTITY_COUNT:-0},
+    )
+    await service.close()
+
+asyncio.run(main())
+"
+```
+
+If any phase failed, record the failure instead:
+```bash
+uv run --env-file .env python -c "
+import asyncio
+from agentic_inquiry.onboard.metadata_service import OnboardMetadataService
+
+async def main():
+    service = await OnboardMetadataService.from_config(None, workspace='${ONBOARD_PATH}')
+    await service.fail_onboard_run('${ONBOARD_RUN_ID}', '${ERROR_MESSAGE}')
+    await service.close()
+
+asyncio.run(main())
+"
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `path` | Directory to onboard (default: `.`) |
+| `--env` | Environment to use (local or an env name) |
+| `--skip-index` | Skip indexing, just explore and validate existing index |
+| `--deep` | Extra exploration depth (trace all lineage paths, not just primary) |
+
+## Examples
+
+```bash
+# Onboard current directory with environment selection
+/ai:onboard
+
+# Onboard specific path on local
+/ai:onboard ./src --env local
+
+# Just explore (already indexed)
+/ai:onboard --skip-index
+
+# Deep exploration with full lineage tracing
+/ai:onboard --deep
+```
+
+**NOTE: Deep (e.g. --deep should be the default for onboarding)**
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `ai` CLI command(s) using the available tools.
+"""

@@ -1,0 +1,407 @@
+# Agentic Inquiry Configuration Example
+# Copy this file to agentic-inquiry.yaml in your project root and customize as needed.
+# The agentic-inquiry.yaml file is gitignored to allow per-developer customization.
+#
+# TIP: `ai setup` generates the same shape as this example and writes it to
+# .agentic-inquiry/envs/<name>/config.yaml. This file is for hand-editing reference.
+
+# Storage configuration
+storage:
+  # Root directory for all persistent data
+  root: "./.agentic-inquiry"
+
+  # Default project identifier for data isolation
+  # Used when no explicit project_id is provided to Config.for_project()
+  # default_project_id: "my-project"
+
+  # Named backend configurations. Each entry is a concrete storage backend
+  # with a type + its type-specific settings. Roles (vector / graph / events
+  # / file_tracker) below pick a name from this dict — that's how one backend
+  # can serve multiple roles, or different backends can serve different roles.
+  backends:
+    default:
+      type: "lancedb"
+      database_path: "./.agentic-inquiry/lancedb"
+    metadata_store:
+      type: "sqlite"
+      database_path: "./.agentic-inquiry/metadata.db"
+
+  # Role → backend-name mapping. Change these to repoint a role at a
+  # different entry in `backends` without touching the backend configs.
+  vector_backend: "default"             # LanceDB handles vector similarity
+  graph_backend: "default"              # Same LanceDB also handles graph
+  events_backend: "metadata_store"      # SQLite audit log
+  file_tracker_backend_v2: "metadata_store"  # SQLite incremental-indexing state
+
+  # Example: Postgres for everything (uncomment + fill `backends` entry)
+  # backends:
+  #   primary:
+  #     type: "postgresql"
+  #     connection_string: "postgresql://user:pass@localhost:5432/ai"
+  #     pool_size: 10
+  #     table_prefix: "ai_"
+  # vector_backend: "primary"
+  # graph_backend: "primary"
+  # events_backend: "primary"
+  # file_tracker_backend_v2: "primary"
+
+  # Example: separate backends per role (LanceDB vectors + Postgres graph).
+  # Requires StorageFacade's registry path — legacy single-`storage.backend`
+  # shape (just `backend: "lancedb"` at this level with no `backends` dict)
+  # is not supported; `from_config` raises ConfigurationError if you try it.
+
+  # Customize table names if needed (optional)
+  # tables:
+  #   document_chunks: "document_chunks"
+  #   graph_entities: "graph_entities"
+  #   graph_relationships: "graph_relationships"
+
+# Cache configuration
+cache:
+  document_cache:
+    # Increase cache size for large projects
+    max_size: 1000
+    
+    # Adjust TTL based on your workflow (0 = no expiration)
+    # ttl_seconds: 3600
+    
+    # eviction_policy: "lru"
+
+# Search configuration
+search:
+  # Adjust default result limits
+  # default_limit: 10
+  # max_limit: 100
+  
+  # Search result deduplication configuration
+  # deduplication:
+  #   enabled: true
+  #   max_results_per_file: 1  # Keep only highest-scoring chunk per file
+  #   min_diversity_ratio: 0.7  # Warn if diversity falls below this threshold
+  
+  # Fine-tune hybrid search weights
+  # hybrid_search:
+  #   vector_weight: 0.7
+  #   fts_weight: 0.3
+  #   rerank_by_graph: true
+  #   reranker_type: "rrf"  # Options: rrf, linear_combination, cross_encoder, colbert
+  #   reranker_params:
+  #     k: 60  # RRF constant
+  #   fallback_to_vector: true
+  #   log_diagnostics: false
+  #   overview_boost_factor: 1.5
+  
+  # Overview/documentation boosting configuration
+  # overview_boost:
+  #   enabled: true
+  #   auto_detect: true  # Auto-detect overview queries (readme, what is, how to, etc.)
+  #   weights:
+  #     readme: 0.35          # README files
+  #     docs_directory: 0.25  # Files in docs/ directories
+  #     markdown: 0.15        # Any .md file
+  #     early_chunk: 0.15     # First 3 chunks in a file
+  #     heading_title: 0.20   # HEADING or TITLE content types
+  #     code_penalty: -0.10   # CODE content type (de-boost)
+  
+  # Entity matching configuration (for find_similar tool)
+  # entity_matching:
+  #   semantic_bridge_enabled: true
+  #   thresholds:
+  #     high: 0.5
+  #     medium: 0.35
+  #     low: 0.2
+  #   weights:
+  #     vector: 0.7
+  #     name: 0.3
+  #     semantic_bridge: 0.7
+  
+  # Customize graph search behavior
+  # graph_search:
+  #   max_depth: 3
+  #   relationship_types:
+  #     - "calls"
+  #     - "imports"
+  #     - "contains"
+  #     - "references"
+  
+  # Query sanitization configuration (prevents FTS syntax errors)
+  # query_sanitization:
+  #   enabled: true
+  #   escape_special_chars: true
+  #   preserve_wildcards: false
+
+# Embedding configuration
+embeddings:
+  # Choose your embedding provider
+  # default_provider: "sentence_transformer"
+  
+  # Default embedding dimensions for all components
+  # Using 384 dimensions provides a good balance of accuracy and performance
+  # default_dimensions: 384
+  
+  # Customize sentence transformer settings
+  # sentence_transformer:
+  #   model_name: "all-MiniLM-L6-v2"
+  #   ndims: 384
+  
+  # Or use hashing for faster, deterministic embeddings
+  # hashing:
+  #   ndims: 128
+  
+  # Or use local models for offline operation (ONNX/safetensors)
+  # local_model:
+  #   model_path: "models/all-MiniLM-L6-v2-onnx"
+  #   normalize: true
+  #   batch_size: 32
+  #   ndims: 384  # Auto-detected if not specified
+
+  # Or use Amazon Bedrock (Titan v2 by default) for client-side cloud
+  # embeddings — pairs with any LOCAL-strategy backend (LanceDB,
+  # plain Postgres, RDS without aws_ml). Requires boto3:
+  #   pip install 'agentic-inquiry[aws]'
+  # AWS credentials use the standard boto3 chain (env vars, profile,
+  # instance role) — set AWS_ACCESS_KEY_ID / AWS_PROFILE outside this
+  # file. The Bedrock *region* must come from agentic-inquiry config
+  # (``embeddings.bedrock.region`` or ``INQUIRY_EMBEDDINGS_BEDROCK_REGION``);
+  # ``AWS_REGION`` does not satisfy the dispatcher requirement and the
+  # embedder will raise ConfigurationError if region is empty.
+  # RFC 0003 documents the full surface.
+  # default_provider: "bedrock"
+  # default_dimensions: 1024
+  # bedrock:
+  #   model_id: "amazon.titan-embed-text-v2:0"
+  #   region: "us-east-1"          # required when provider == bedrock
+  #   output_dim: 1024              # 256 | 512 | 1024 for Titan v2
+  #   normalize: true
+  #   batch_size: 16
+  #   max_retries: 3
+  #   timeout_seconds: 30
+  #   # Default is 1 (serial). Titan v2 takes one input per InvokeModel
+  #   # call, so a 1k-chunk index at 1 RPS means ~17 minutes of pure
+  #   # API wait. Bump this for any non-trivial corpus — bound by your
+  #   # Bedrock RPM quota (Titan v2 default 2000 RPM in us-east-1, so
+  #   # 16-32 is safe for most accounts; check the AWS console first).
+  #   request_concurrency: 1
+
+  # Content-hash LRU cache for local embedders. Skips the model forward
+  # pass on duplicate embedding text (generated files, vendored deps,
+  # near-identical chunks across branches). Hit rate depends entirely
+  # on workload duplication. Disabled automatically for server-side
+  # backends (AlloyDB / RDS) since embeddings run in-database there.
+  # Vectors are stored as numpy float32 internally so ~1.5 KB per 384-dim
+  # entry → ~15 MB at 10k entries. Raise for giant monorepos; lower on
+  # memory-constrained hosts.
+  # cache:
+  #   enabled: true
+  #   max_entries: 10000
+
+# Indexing configuration
+indexing:
+  # Schema mapping configuration
+  # schema_mapping:
+  #   enabled: true
+  #   field_mappings: {}
+  
+  # Schema validation configuration
+  # schema_validation:
+  #   enabled: true
+  #   strict_mode: false
+  #   cache_schemas: true
+  #   cache_ttl_seconds: 300
+  
+  # Impact analysis settings
+  # impact_default_depth: 2
+  # impact_max_depth: 5
+  # impact_include_indirect: true
+  
+  # Concurrency control
+  # Maximum number of concurrent document processing operations
+  # Lower values reduce memory usage, higher values increase throughput
+  # Recommended: 5-10 for development, 10-20 for CI/CD, 20-50 for production
+  # processing_semaphore_limit: 20
+
+# Parser configuration
+parsers:
+  # Enable/disable parsers or adjust priorities
+  # unified_code:
+  #   enabled: true
+  #   priority: 100
+  
+  # document:
+  #   enabled: true
+  #   priority: 50
+  
+  # fallback_text:
+  #   enabled: true
+  #   priority: 0
+
+# Memory system configuration
+memory:
+  # Working memory configuration (in-memory session cache)
+  # working_memory:
+  #   capacity: 20
+  #   eviction_policy: "lru"
+  
+  # Episodic memory configuration (time-series event log)
+  # episodic_memory:
+  #   capacity: 1000
+  #   table_name: "memory_episodic_medium"
+  
+  # Semantic memory configuration (knowledge graph)
+  # semantic_memory:
+  #   capacity: 500
+  #   table_name: "memory_semantic_high"
+  
+  # Consolidation configuration (memory tier promotion)
+  # consolidation:
+  #   enabled: true
+  #   interval_seconds: 300
+  #   episodic_threshold: 0.8
+  #   semantic_threshold: 0.9
+  
+  # Retrieval configuration (unified search)
+  # retrieval:
+  #   default_strategy: "adaptive"
+  #   cache_enabled: true
+  #   cache_ttl_seconds: 300
+  #   cache_size: 1000
+  #   ranking_weights:
+  #     relevance: 0.5
+  #     recency: 0.3
+  #     importance: 0.2
+  
+  # Summary configuration
+  # summary:
+  #   auto_threshold: 150
+
+# Event tracking system configuration
+events:
+  # Enable event tracking system
+  # enabled: true
+  
+  # Maximum number of events to queue in memory before applying backpressure
+  # queue_max_size: 1000
+  
+  # Number of events to batch together for database writes
+  # batch_size: 100
+  
+  # Maximum time (seconds) to wait before flushing a partial batch
+  # flush_interval_seconds: 1.0
+  
+  # Number of days to retain events before cleanup
+  # retention_days: 30
+  
+  # Interval in hours between automatic cleanup operations
+  # cleanup_interval_hours: 24
+  
+  # Enable sampling when queue is full (preserves failed events, samples routine progress)
+  # sampling_enabled: false
+  # sampling_ratio: 10
+  
+  # Retry configuration for failed event writes
+  # retry_max_attempts: 5
+  # retry_base_delay_seconds: 0.1
+  
+  # Alert threshold for dropped events
+  # drop_alert_threshold: 100
+
+# Entity resolution configuration
+entity_resolution:
+  # Enable case-insensitive matching
+  # case_insensitive: true
+  
+  # Enable fuzzy matching with similarity threshold
+  # fuzzy_matching:
+  #   enabled: true
+  #   threshold: 0.8
+  
+  # Cache resolved entities per session
+  # cache_enabled: true
+  # cache_ttl_seconds: 3600
+
+# Progress indicator configuration
+progress:
+  # Enable progress event emission during long-running operations
+  # enabled: true
+  
+  # Emit progress events every N files during indexing
+  # emit_interval: 10
+  
+  # Minimum operation duration (seconds) to emit progress events
+  # min_duration: 5
+
+# Context building configuration
+context:
+  # Token budget management for context building
+  # token_budget:
+  #   default_budget: 50000
+  #   min_budget: 10000
+  #   max_budget: 100000
+  #   focus_allocations:
+  #     code:
+  #       code_weight: 0.7
+  #       docs_weight: 0.3
+  #     docs:
+  #       code_weight: 0.3
+  #       docs_weight: 0.7
+  #     balanced:
+  #       code_weight: 0.5
+  #       docs_weight: 0.5
+
+# Logging configuration
+# logging:
+#   # Directory for log files (workspace-relative or absolute)
+#   directory: "logs"
+#   
+#   # Main log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+#   level: "INFO"
+#   
+#   # Maximum size per log file in bytes (10MB = 10485760)
+#   max_bytes: 10485760
+#   
+#   # Number of backup files to keep during rotation
+#   backup_count: 5
+#   
+#   # Retention period in hours (files older than this are deleted)
+#   retention_hours: 24
+#   
+#   # Per-service log levels (optional, overrides main level)
+#   # Useful for debugging specific components without overwhelming logs
+#   service_levels:
+#     parsers: "DEBUG"      # Enable debug logging for parsers
+#     database: "WARNING"   # Only show warnings/errors for database
+#     search: "INFO"        # Standard logging for search
+#     indexing: "DEBUG"     # Detailed indexing logs
+#     embeddings: "INFO"    # Standard embedding logs
+#     caching: "WARNING"    # Minimal cache logs
+#     memory: "INFO"        # Standard memory system logs
+#     events: "INFO"        # Standard event tracking logs
+#     watching: "INFO"      # Standard file watching logs
+#   
+#   # Log message format (Python logging format string)
+#   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+#   
+#   # Date format for timestamps
+#   date_format: "%Y-%m-%d %H:%M:%S"
+
+# Environment variable overrides:
+# You can also override any setting using environment variables with the AI_ prefix.
+# Examples:
+#   INQUIRY_STORAGE_ROOT=./.agentic-inquiry
+#   INQUIRY_STORAGE_DEFAULT_PROJECT_ID=my_project
+#   INQUIRY_STORAGE_LANCEDB_PATH=lancedb
+#   INQUIRY_CACHE_DOCUMENT_CACHE_MAX_SIZE=2000
+#   INQUIRY_SEARCH_DEFAULT_LIMIT=20
+#   INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER=hashing
+#   INQUIRY_EMBEDDINGS_DEFAULT_DIMENSIONS=384
+#   INQUIRY_INDEXING_PROCESSING_SEMAPHORE_LIMIT=20
+#   INQUIRY_EVENTS_ENABLED=true
+#   INQUIRY_EVENTS_BATCH_SIZE=100
+#   INQUIRY_MEMORY_WORKING_MEMORY_CAPACITY=20
+#   INQUIRY_PROGRESS_ENABLED=true
+#   INQUIRY_CONTEXT_TOKEN_BUDGET_DEFAULT_BUDGET=50000
+#   INQUIRY_LOGGING_DIRECTORY=/var/log/agentic-inquiry
+#   INQUIRY_LOGGING_LEVEL=DEBUG
+#   INQUIRY_LOGGING_MAX_BYTES=20971520
+#   INQUIRY_LOGGING_RETENTION_HOURS=48
+#   INQUIRY_LOGGING_SERVICE_LEVELS_PARSERS=DEBUG

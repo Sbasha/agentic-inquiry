@@ -1,0 +1,96 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "AWS RDS Backend Configuration",
+    "description": "Configuration schema for AWS RDS (PostgreSQL) storage backend",
+    "type": "object",
+    "properties": {
+        "type": {
+            "const": "rds",
+            "description": "Backend type identifier"
+        },
+        "region": {
+            "type": "string",
+            "description": "AWS region where the RDS instance is located (e.g., us-east-1)",
+            "pattern": "^[a-z]{2}-[a-z]+-\\d+$",
+            "minLength": 1
+        },
+        "instance": {
+            "type": "string",
+            "description": "RDS instance identifier",
+            "minLength": 1
+        },
+        "host": {
+            "type": "string",
+            "description": "RDS endpoint hostname (e.g., mydb.xxxxx.us-east-1.rds.amazonaws.com)",
+            "minLength": 1
+        },
+        "port": {
+            "type": "integer",
+            "description": "RDS port number",
+            "minimum": 1,
+            "maximum": 65535,
+            "default": 5432
+        },
+        "database": {
+            "type": "string",
+            "description": "Database name within the RDS instance",
+            "minLength": 1
+        },
+        "user": {
+            "type": "string",
+            "description": "Database username",
+            "minLength": 1
+        },
+        "password": {
+            "type": "string",
+            "description": "Database password (omit when use_iam_auth is true)"
+        },
+        "use_iam_auth": {
+            "type": "boolean",
+            "description": "Use AWS IAM token authentication instead of a static password",
+            "default": false
+        },
+        "pool_size": {
+            "type": "integer",
+            "description": "Base connection pool size",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+        },
+        "max_overflow": {
+            "type": "integer",
+            "description": "Maximum pool overflow connections",
+            "minimum": 0,
+            "maximum": 50,
+            "default": 5
+        },
+        "table_prefix": {
+            "type": "string",
+            "description": "Prefix for table names (useful for multi-tenant deployments)",
+            "pattern": "^[a-zA-Z0-9_]*$"
+        },
+        "index_type": {
+            "type": "string",
+            "description": "Vector index type for similarity search",
+            "enum": ["hnsw", "ivfflat", "none"],
+            "default": "hnsw"
+        },
+        "index_params": {
+            "type": "object",
+            "description": "Index parameters (e.g., {\"m\": 16, \"ef_construction\": 64} for HNSW)",
+            "additionalProperties": true
+        },
+        "expected_rows": {
+            "type": "integer",
+            "description": "Expected row count for IVFFlat lists calculation",
+            "minimum": 1
+        },
+        "fts_language": {
+            "type": "string",
+            "description": "PostgreSQL full-text search language configuration",
+            "default": "english"
+        }
+    },
+    "required": ["type", "region", "instance", "host", "database", "user"],
+    "additionalProperties": false
+}

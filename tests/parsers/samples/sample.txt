@@ -1,0 +1,10 @@
+This is a sample plain text file.
+
+It contains multiple paragraphs of text that will be chunked
+by the fallback text parser.
+
+The parser handles various encodings and provides semantic
+chunking with overlap for better context preservation.
+
+This is useful for files that don't have a specialized parser,
+ensuring that all content can be indexed and searched.

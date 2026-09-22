@@ -1,0 +1,19 @@
+{
+  "name": "agentic-inquiry",
+  "description": "Agentic Inquiry plugins for Claude Code",
+  "owner": {
+    "name": "Sammy Basha"
+  },
+  "plugins": [
+    {
+      "name": "ai",
+      "source": "./ai",
+      "description": "Semantic code search, memory, impact analysis, and AI-powered code understanding"
+    },
+    {
+      "name": "ai-dev",
+      "source": "./ai-dev",
+      "description": "Development tools - coding guidelines, testing, quality, and contributor workflows"
+    }
+  ]
+}

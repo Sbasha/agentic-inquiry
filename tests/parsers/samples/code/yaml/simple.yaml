@@ -1,0 +1,8 @@
+
+workflow:
+  uses: *metrics
+  steps:
+    - name: baseline
+      value: "{{ metrics.distance }}"
+    - name: rms
+      value: "{{ metrics.rms }}"

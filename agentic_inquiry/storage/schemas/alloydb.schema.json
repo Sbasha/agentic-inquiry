@@ -1,0 +1,128 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "AlloyDB Backend Configuration",
+    "description": "Configuration schema for Google AlloyDB storage backend with server-side embeddings",
+    "type": "object",
+    "properties": {
+        "type": {
+            "const": "alloydb",
+            "description": "Backend type identifier"
+        },
+        "project": {
+            "type": "string",
+            "description": "GCP project ID containing the AlloyDB cluster",
+            "minLength": 1
+        },
+        "region": {
+            "type": "string",
+            "description": "GCP region where the cluster is located (e.g., us-central1)",
+            "minLength": 1
+        },
+        "cluster": {
+            "type": "string",
+            "description": "AlloyDB cluster name",
+            "minLength": 1
+        },
+        "instance": {
+            "type": "string",
+            "description": "AlloyDB instance name (e.g., primary)",
+            "minLength": 1
+        },
+        "database": {
+            "type": "string",
+            "description": "Database name within the instance",
+            "minLength": 1
+        },
+        "user": {
+            "type": "string",
+            "description": "Database user for authentication",
+            "minLength": 1
+        },
+        "connection_string": {
+            "type": "string",
+            "description": "Optional direct connection string (e.g., postgresql://user@127.0.0.1:5432/db)"
+        },
+        "password": {
+            "type": "string",
+            "description": "Database password (for proxy connections that require it)"
+        },
+        "port": {
+            "type": "integer",
+            "description": "Local port for AlloyDB Auth Proxy",
+            "minimum": 1024,
+            "maximum": 65535,
+            "default": 5432
+        },
+        "ssl": {
+            "type": "boolean",
+            "description": "Whether to use SSL for proxy connections (typically false when using auth proxy)",
+            "default": true
+        },
+        "pool_size": {
+            "type": "integer",
+            "description": "Base connection pool size",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+        },
+        "min_pool_size": {
+            "type": "integer",
+            "description": "Minimum connections to keep alive",
+            "minimum": 0,
+            "maximum": 100,
+            "default": 2
+        },
+        "max_overflow": {
+            "type": "integer",
+            "description": "Maximum pool overflow connections",
+            "minimum": 0,
+            "maximum": 50,
+            "default": 5
+        },
+        "table_prefix": {
+            "type": "string",
+            "description": "Prefix for table names",
+            "pattern": "^[a-zA-Z0-9_]*$"
+        },
+        "index_type": {
+            "type": "string",
+            "description": "Vector index type for similarity search",
+            "enum": ["hnsw", "ivfflat", "none"],
+            "default": "hnsw"
+        },
+        "index_params": {
+            "type": "object",
+            "description": "Index parameters (e.g., {\"m\": 16, \"ef_construction\": 64} for HNSW)",
+            "additionalProperties": true
+        },
+        "expected_rows": {
+            "type": "integer",
+            "description": "Expected row count for IVFFlat lists calculation",
+            "minimum": 1
+        },
+        "fts_language": {
+            "type": "string",
+            "description": "PostgreSQL full-text search language configuration",
+            "default": "english"
+        },
+        "embedding_strategy": {
+            "type": "string",
+            "description": "Embedding generation strategy. Auto-set to server_side for AlloyDB.",
+            "enum": ["local", "server_side"],
+            "default": "server_side"
+        },
+        "embedding_model": {
+            "type": "string",
+            "description": "Server-side embedding model name (e.g., text-embedding-005)",
+            "default": "text-embedding-005"
+        },
+        "embedding_dim": {
+            "type": "integer",
+            "description": "Embedding vector dimensions",
+            "minimum": 1,
+            "default": 768
+        }
+    },
+    "required": ["type", "project", "region", "cluster", "instance", "database", "user"],
+    "additionalProperties": false
+}

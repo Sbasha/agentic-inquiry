@@ -1,0 +1,142 @@
+{
+  "version": "1.0",
+  "summary": {
+    "recall_at_10": 1.0,
+    "median_latency_ms": 22.82,
+    "p95_latency_ms": 46.23,
+    "query_count": 15
+  },
+  "config": {
+    "backend": "lancedb",
+    "search_limit": 10,
+    "corpus_subdirs": [
+      "search",
+      "storage",
+      "embeddings",
+      "parsers",
+      "indexing",
+      "memory",
+      "mcp",
+      "watching",
+      "cache",
+      "events",
+      "metrics",
+      "connectors",
+      "cli"
+    ]
+  },
+  "corpus": {
+    "files_processed": 349,
+    "files_failed": 5,
+    "chunk_count": null
+  },
+  "git_sha": "bfee1b1b7fdcf24e1eab663ac90c7dbb420164e6",
+  "git_dirty": false,
+  "per_query": [
+    {
+      "id": "search-async-patterns",
+      "query": "async database connection pattern",
+      "recall": 1.0,
+      "latency_ms": 33.36,
+      "result_count": 8
+    },
+    {
+      "id": "search-embedding-generation",
+      "query": "generate embeddings for text",
+      "recall": 1.0,
+      "latency_ms": 41.87,
+      "result_count": 7
+    },
+    {
+      "id": "search-config-loading",
+      "query": "load configuration from yaml file",
+      "recall": 1.0,
+      "latency_ms": 39.9,
+      "result_count": 6
+    },
+    {
+      "id": "search-mcp-tools",
+      "query": "MCP tool implementation",
+      "recall": 1.0,
+      "latency_ms": 18.82,
+      "result_count": 6
+    },
+    {
+      "id": "search-error-handling",
+      "query": "exception handling and error messages",
+      "recall": 1.0,
+      "latency_ms": 34.48,
+      "result_count": 7
+    },
+    {
+      "id": "search-tree-sitter-parsing",
+      "query": "tree sitter parse python code AST",
+      "recall": 1.0,
+      "latency_ms": 56.41,
+      "result_count": 6
+    },
+    {
+      "id": "search-memory-system",
+      "query": "working memory episodic semantic tier",
+      "recall": 1.0,
+      "latency_ms": 21.69,
+      "result_count": 7
+    },
+    {
+      "id": "search-knowledge-graph",
+      "query": "entity relationship graph traversal",
+      "recall": 1.0,
+      "latency_ms": 23.9,
+      "result_count": 7
+    },
+    {
+      "id": "search-hybrid-search",
+      "query": "hybrid search vector FTS reranking",
+      "recall": 1.0,
+      "latency_ms": 22.82,
+      "result_count": 8
+    },
+    {
+      "id": "search-file-watching",
+      "query": "file watcher monitor changes callback",
+      "recall": 1.0,
+      "latency_ms": 20.41,
+      "result_count": 5
+    },
+    {
+      "id": "search-document-cache",
+      "query": "LRU cache invalidation persistence",
+      "recall": 1.0,
+      "latency_ms": 20.48,
+      "result_count": 8
+    },
+    {
+      "id": "search-event-system",
+      "query": "event emit subscribe publish bus",
+      "recall": 1.0,
+      "latency_ms": 19.59,
+      "result_count": 5
+    },
+    {
+      "id": "search-indexing-pipeline",
+      "query": "indexing pipeline chunk document process",
+      "recall": 1.0,
+      "latency_ms": 36.6,
+      "result_count": 5
+    },
+    {
+      "id": "search-storage-facade",
+      "query": "storage facade provider backend adapter",
+      "recall": 1.0,
+      "latency_ms": 19.21,
+      "result_count": 7
+    },
+    {
+      "id": "search-metrics-correlation",
+      "query": "metrics latency tracking correlation ID",
+      "recall": 1.0,
+      "latency_ms": 22.32,
+      "result_count": 6
+    }
+  ]
+}

@@ -1,0 +1,84 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Cloud SQL Backend Configuration",
+    "description": "Configuration schema for Google Cloud SQL storage backend",
+    "type": "object",
+    "properties": {
+        "type": {
+            "const": "cloudsql",
+            "description": "Backend type identifier"
+        },
+        "project": {
+            "type": "string",
+            "description": "GCP project ID containing the Cloud SQL instance",
+            "minLength": 1
+        },
+        "region": {
+            "type": "string",
+            "description": "GCP region where the instance is located (e.g., us-central1)",
+            "minLength": 1
+        },
+        "instance": {
+            "type": "string",
+            "description": "Cloud SQL instance name",
+            "minLength": 1
+        },
+        "database": {
+            "type": "string",
+            "description": "Database name within the instance",
+            "minLength": 1
+        },
+        "user": {
+            "type": "string",
+            "description": "Database user for authentication",
+            "minLength": 1
+        },
+        "pool_size": {
+            "type": "integer",
+            "description": "Base connection pool size",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+        },
+        "max_overflow": {
+            "type": "integer",
+            "description": "Maximum pool overflow connections",
+            "minimum": 0,
+            "maximum": 50,
+            "default": 5
+        },
+        "table_prefix": {
+            "type": "string",
+            "description": "Prefix for table names (useful for multi-tenant deployments)",
+            "pattern": "^[a-zA-Z0-9_]*$"
+        },
+        "index_type": {
+            "type": "string",
+            "description": "Vector index type for similarity search",
+            "enum": ["hnsw", "ivfflat", "none"],
+            "default": "hnsw"
+        },
+        "index_params": {
+            "type": "object",
+            "description": "Index parameters (e.g., {\"m\": 16, \"ef_construction\": 64} for HNSW)",
+            "additionalProperties": true
+        },
+        "expected_rows": {
+            "type": "integer",
+            "description": "Expected row count for IVFFlat lists calculation",
+            "minimum": 1
+        },
+        "fts_language": {
+            "type": "string",
+            "description": "PostgreSQL full-text search language configuration",
+            "default": "english"
+        },
+        "ssl_mode": {
+            "type": "string",
+            "description": "SSL mode for database connections",
+            "enum": ["disable", "allow", "prefer", "require", "verify-ca", "verify-full"]
+        }
+    },
+    "required": ["type", "project", "region", "instance", "database", "user"],
+    "additionalProperties": false
+}

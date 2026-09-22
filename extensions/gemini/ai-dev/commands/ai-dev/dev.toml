@@ -1,0 +1,79 @@
+description = "Toggle development mode - isolates test environment from production data"
+prompt = """
+Toggle development mode - isolates test environment from production data
+
+Usage: /ai-dev:dev [on|off|status]
+
+# /ai:dev
+
+Toggle between development/test environment and normal use.
+
+## Quick Start
+
+```bash
+/ai-dev:dev on       # Enter dev mode (uses test environment)
+/ai-dev:dev off      # Exit dev mode (uses normal environment)
+/ai-dev:dev status   # Check current mode
+```
+
+## What Dev Mode Does
+
+When **ON**:
+- All ai operations use `.agentic-inquiry/dev/` environment
+- Memories, index, and knowledge are isolated from production
+- Banner displays each turn: `[ai DEV MODE]`
+- Safe to experiment without polluting real data
+
+When **OFF**:
+- Normal ai operations use default environment
+- No banner displayed
+- Production data is used
+
+## Use Cases
+
+**Testing ai changes:**
+```bash
+/ai-dev:dev on
+# /ai:dev
+# /ai:dev
+/ai-dev:dev off
+```
+
+**Experimenting with new features:**
+```bash
+/ai-dev:dev on
+# /ai:dev
+# /ai:dev
+/ai-dev:dev off
+```
+
+## Implementation
+
+Dev mode is tracked via `.agentic-inquiry/.dev-mode` file:
+- File exists = dev mode ON
+- File absent = dev mode OFF
+
+Environment switching:
+```bash
+# Dev mode ON
+export INQUIRY_CONFIG=.agentic-inquiry/dev/config.yaml
+export INQUIRY_PROJECT_ID=ai-dev
+
+# Dev mode OFF
+unset INQUIRY_CONFIG  # uses default
+export INQUIRY_PROJECT_ID=default
+```
+
+## Banner
+
+When dev mode is active, a UserPromptSubmit hook displays:
+```
+[ai DEV MODE] Using test environment. `/ai-dev:dev off` to exit.
+```
+
+This ensures you always know when you're in dev mode.
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `ai` CLI command(s) using the available tools.
+"""

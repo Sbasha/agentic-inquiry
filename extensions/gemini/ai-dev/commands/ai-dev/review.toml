@@ -1,0 +1,84 @@
+description = "Run comprehensive multi-phase code review"
+prompt = """
+Run comprehensive multi-phase code review
+
+Usage: /ai-dev:review [files|commit|branch]
+
+# /ai-dev:review
+
+Comprehensive, multi-phase code review.
+
+## Quick Start
+
+```bash
+/ai-dev:review                     # Review uncommitted changes
+/ai-dev:review HEAD~1              # Review last commit
+/ai-dev:review src/search/*.py     # Review specific files
+/ai-dev:review feature-branch      # Review branch changes
+```
+
+## Review Protocol
+
+Follows `.prompts/comprehensive_review.md`:
+
+### Phase 1: Foundational Validity (Gate)
+- Root cause verification for bug fixes
+- Was the right problem solved?
+- **Blocks if**: No root cause analysis for bugs
+
+### Phase 2: Core Reliability (Critical)
+- Code logic & safety
+- Async correctness
+- Architecture compliance
+- Security vulnerabilities
+- Test coverage
+- **Blocks if**: Safety or architecture violations
+
+### Phase 3: Project Health (Polish)
+- Documentation accuracy
+- Repository hygiene
+- Config documentation
+
+## Review Checklist
+
+**Architecture Compliance:**
+- [ ] Async-only enforcement
+- [ ] Concrete types (not protocols)
+- [ ] Project isolation via project_id
+- [ ] Uses existing components
+
+**Security:**
+- [ ] Path traversal prevention
+- [ ] Query sanitization
+- [ ] No pickle on untrusted data
+
+## Output Format
+
+```markdown
+# /ai:review
+
+**Status:** PASS | NEEDS_WORK | BLOCKED
+
+## Executive Summary
+[Assessment]
+
+## Findings
+### Critical (Blockers)
+### Warnings
+### Suggestions
+
+## Action Items
+1. [Required before merge]
+```
+
+## Spawns Agent
+
+Uses `code-reviewer` agent for analysis. The agent:
+- Reads all changed files
+- Applies checklist
+- Generates structured report
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `ai` CLI command(s) using the available tools.
+"""
