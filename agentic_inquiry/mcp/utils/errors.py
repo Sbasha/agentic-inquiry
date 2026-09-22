@@ -168,7 +168,7 @@ class MCPErrorHandler:
                 "next_steps": [
                     "Validate YAML syntax using a YAML validator",
                     "Compare your config with config/default.yaml",
-                    "Check environment variables with 'env | grep AGV'",
+                    "Check environment variables with 'env | grep INQUIRY_'",
                     "Review config/config.schema.json for required fields",
                     "Try running with default configuration to isolate the issue"
                 ]

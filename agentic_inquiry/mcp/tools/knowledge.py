@@ -539,10 +539,10 @@ async def add_knowledge(
         content_type = validate_content_type(content_type)
     except Exception as e:
         # Import ValidationError to check exception type
-        from agentic_inquiry.exceptions import ValidationError as AGVValidationError
+        from agentic_inquiry.exceptions import ValidationError as InquiryValidationError
         
         # If it's our ValidationError, return detailed response
-        if isinstance(e, AGVValidationError):
+        if isinstance(e, InquiryValidationError):
             return {
                 "status": "failed",
                 "error": str(e),

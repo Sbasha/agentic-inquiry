@@ -24,7 +24,7 @@ ALTER TABLE {table_prefix}chunks DROP COLUMN IF EXISTS branch;
 """
 
 
-async def upgrade(connection, table_prefix: str = "agv_") -> None:
+async def upgrade(connection, table_prefix: str = "ai_") -> None:
     sql = UPGRADE_SQL.format(table_prefix=table_prefix)
     for statement in sql.strip().split(";"):
         statement = statement.strip()
@@ -32,7 +32,7 @@ async def upgrade(connection, table_prefix: str = "agv_") -> None:
             await connection.execute(statement)
 
 
-async def downgrade(connection, table_prefix: str = "agv_") -> None:
+async def downgrade(connection, table_prefix: str = "ai_") -> None:
     sql = DOWNGRADE_SQL.format(table_prefix=table_prefix)
     for statement in sql.strip().split(";"):
         statement = statement.strip()

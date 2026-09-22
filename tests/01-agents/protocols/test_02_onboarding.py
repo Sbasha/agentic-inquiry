@@ -26,7 +26,7 @@ SLUG = "onboarding"
 
 # Target codebase for cold-start onboarding
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-PROJECTS_DIR = PROJECT_ROOT.parent  # /Users/michael.parcewski/Projects/
+PROJECTS_DIR = PROJECT_ROOT.parent  # parent directory that holds sibling projects
 TARGET_CODEBASE = str(PROJECTS_DIR / "command_iq")
 
 

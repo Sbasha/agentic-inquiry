@@ -160,7 +160,7 @@ Canonical fields (based on `agentic_inquiry/memory/layers/semantic.py`):
 
 Physical table names vary by backend:
 - **LanceDB:** Uses logical names directly (`document_chunks`, `graph_entities`, `graph_relationships`)
-- **PostgreSQL/CloudSQL/AlloyDB:** Uses `agv_` prefix (`ai_v_chunks`, `ai_g_entities`, `ai_g_relationships`)
+- **PostgreSQL/CloudSQL/AlloyDB:** Uses `ai_` prefix (`ai_v_chunks`, `ai_g_entities`, `ai_g_relationships`)
 
 Adapters handle the mapping between logical and physical names transparently.
 

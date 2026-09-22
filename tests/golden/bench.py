@@ -115,7 +115,7 @@ def _setup_env(temp_root: Path) -> dict[str, str | None]:
 
     Returns the previous values of every key it sets so the caller can
     restore them. Matters in the pytest path: the bench process otherwise
-    leaves ``AI_*`` and ``agv_*`` set for the rest of the session, which
+    leaves ``AI_*`` and ``ai_*`` set for the rest of the session, which
     would leak into co-running tests if anyone drops the ``slow`` marker.
     """
     prev: dict[str, str | None] = {k: os.environ.get(k) for k in _ENV_KEYS}

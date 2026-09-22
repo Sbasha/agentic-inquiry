@@ -82,7 +82,7 @@ outlier. Median + p95 across queries.
 
 ### Storage backend
 
-LanceDB only. Postgres / AlloyDB / CloudSQL all use the same
+LanceDB only. Any future external provider would use the same
 `HybridSearchService`; the safety net for cluster work is at the
 search-pipeline layer, not the storage layer. Cross-backend
 parity is out of scope here and worth its own RFC.
@@ -129,7 +129,7 @@ path matches the gitignore rule and gets silently excluded.
 - **Use the CLI (`ai search ...`) and parse stdout.** Rejected: harder
   to extract numbers reliably, slower (process-spawn per query),
   couples the bench to CLI output formatting.
-- **Run on every backend (LanceDB + Postgres + AlloyDB).** Rejected for
+- **Run on every backend.** Rejected for
   scope. Cluster 0 is half a day; multi-backend bench is its own
   cluster. Filed as follow-up if the search pipeline starts diverging
   per backend.

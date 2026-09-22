@@ -102,7 +102,7 @@ class TestValidBearer:
         )
         assert resp.status_code == 200
 
-    def test_valid_key_with_x_agv_user_header(self):
+    def test_valid_key_with_x_ai_user_header(self):
         """X-ai-User header must not break auth flow."""
         client = TestClient(_build_app(_AUTH_CONFIG_ENABLED))
         resp = client.get(

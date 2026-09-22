@@ -33,8 +33,8 @@ When asked about available ai commands:
 Run the discovery utility:
 ```bash
 uv run --env-file .env python -c "
-from agentic_inquiry.cli.discover import discover_agv_commands, format_commands_table
-print(format_commands_table(discover_agv_commands()))
+from agentic_inquiry.cli.discover import discover_commands, format_commands_table
+print(format_commands_table(discover_commands()))
 "
 ```
 

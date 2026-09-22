@@ -74,8 +74,8 @@ ai:entity MyClass --json
 
 Commands are discovered dynamically from the plugin cache. List all available:
 ```python
-from agentic_inquiry.cli.discover import discover_agv_commands
-for cmd in discover_agv_commands():
+from agentic_inquiry.cli.discover import discover_commands
+for cmd in discover_commands():
     print(f"{cmd.full_name}: {cmd.description}")
 ```
 

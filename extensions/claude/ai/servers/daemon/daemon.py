@@ -18,7 +18,7 @@ from aiohttp import web
 logger = logging.getLogger("ai.daemon")
 
 
-class agvDaemon:
+class InquiryDaemon:
     """Persistent daemon for ai hook support.
 
     Manages warm state (DB connections, embedder, caches) and serves
@@ -81,7 +81,7 @@ class agvDaemon:
                 and isinstance(base[key], dict)
                 and isinstance(value, dict)
             ):
-                agvDaemon._deep_merge(base[key], value)
+                InquiryDaemon._deep_merge(base[key], value)
             else:
                 base[key] = value
         return base

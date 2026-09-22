@@ -274,7 +274,7 @@ SELECT
     n_live_tup,
     ROUND(100.0 * n_dead_tup / NULLIF(n_live_tup, 0), 2) AS dead_pct
 FROM pg_stat_user_tables
-WHERE relname LIKE 'agv_%'
+WHERE relname LIKE 'ai_%'
 ORDER BY dead_pct DESC;
 ```
 
@@ -288,7 +288,7 @@ SELECT
     pg_size_pretty(pg_relation_size(indexrelid)) AS index_size
 FROM pg_stat_user_indexes
 WHERE schemaname = 'public'
-    AND tablename LIKE 'agv_%'
+    AND tablename LIKE 'ai_%'
 ORDER BY pg_relation_size(indexrelid) DESC;
 ```
 
@@ -302,7 +302,7 @@ SELECT
     last_analyze,
     last_autoanalyze
 FROM pg_stat_user_tables
-WHERE relname LIKE 'agv_%';
+WHERE relname LIKE 'ai_%';
 ```
 
 ### Alerting Thresholds

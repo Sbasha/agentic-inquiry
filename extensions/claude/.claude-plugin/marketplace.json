@@ -2,7 +2,7 @@
   "name": "agentic-inquiry",
   "description": "Agentic Inquiry plugins for Claude Code",
   "owner": {
-    "name": "Agentic Inquiry Team"
+    "name": "Sammy Basha"
   },
   "plugins": [
     {

@@ -91,8 +91,8 @@ class ContextManager:
 
         # State
         self._last_keywords: set[str] = set()
-        self._agv_search = None
-        self._agv_context = None
+        self._ai_search = None
+        self._ai_context = None
         self._initialized = False
         self._current_turn = 0
 
@@ -106,7 +106,7 @@ class ContextManager:
             from agentic_inquiry.search.service import SearchService
 
             config = Config.load()
-            self._agv_search = await SearchService.from_config(
+            self._ai_search = await SearchService.from_config(
                 config=config, project_id=self.project_id
             )
             self._initialized = True
@@ -317,7 +317,7 @@ class ContextManager:
         self, prompt: str, signals: dict
     ) -> list[dict]:
         """Gather code/docs search results."""
-        if not self._agv_search:
+        if not self._ai_search:
             return []
 
         try:
@@ -331,7 +331,7 @@ class ContextManager:
             elif signals["intent"] in ("ARCHITECTURAL", "GENERAL"):
                 preference = None  # Both
 
-            results = await self._agv_search.hybrid_search(
+            results = await self._ai_search.hybrid_search(
                 query_vector=query,  # Will auto-embed or use server-side
                 query_fts=query,
                 limit=5,
@@ -372,11 +372,11 @@ class ContextManager:
         self, prompt: str, signals: dict
     ) -> list[dict]:
         """Gather search result links (no full content)."""
-        if not self._agv_search:
+        if not self._ai_search:
             return []
 
         try:
-            results = await self._agv_search.hybrid_search(
+            results = await self._ai_search.hybrid_search(
                 query_vector=prompt[:200],
                 query_fts=prompt[:200],
                 limit=8,

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from agentic_inquiry.cli.discover import (
     CommandInfo,
-    discover_agv_commands,
+    discover_commands,
     format_commands_table,
     format_commands_list,
     get_command_info,
@@ -91,8 +91,8 @@ class TestFindCommandsDirectory:
             discover.LOCAL_EXTENSION_PATHS = original_paths
 
 
-class TestDiscoveragvCommands:
-    """Tests for discover_agv_commands function."""
+class TestDiscoverInquiryCommands:
+    """Tests for discover_commands function."""
 
     def test_discovers_commands(self, tmp_path, monkeypatch):
         """Discovers commands from directory."""
@@ -122,7 +122,7 @@ argument-hint: "[path]"
         discover.LOCAL_EXTENSION_PATHS = [Path("extensions/claude/ai")]
 
         try:
-            commands = discover_agv_commands()
+            commands = discover_commands()
 
             # Should find 2 commands (not _private)
             assert len(commands) == 2

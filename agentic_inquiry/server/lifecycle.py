@@ -39,7 +39,7 @@ def _default_port_for_env(env: str) -> int:
     return DEFAULT_PORT
 
 
-def get_agv_home() -> str:
+def get_ai_home() -> str:
     """Get the ai home directory."""
     return os.environ.get("INQUIRY_HOME", os.path.expanduser("~/.agentic-inquiry"))
 
@@ -47,15 +47,15 @@ def get_agv_home() -> str:
 def get_pid_path(env: str = ENV_DEFAULT) -> str:
     """Get the server PID file path for an environment."""
     if env == ENV_DEFAULT:
-        return os.path.join(get_agv_home(), "server.pid")
-    return os.path.join(get_agv_home(), f"server-{env}.pid")
+        return os.path.join(get_ai_home(), "server.pid")
+    return os.path.join(get_ai_home(), f"server-{env}.pid")
 
 
 def get_lock_path(env: str = ENV_DEFAULT) -> str:
     """Get the server lock file path for an environment."""
     if env == ENV_DEFAULT:
-        return os.path.join(get_agv_home(), "server.lock")
-    return os.path.join(get_agv_home(), f"server-{env}.lock")
+        return os.path.join(get_ai_home(), "server.lock")
+    return os.path.join(get_ai_home(), f"server-{env}.lock")
 
 
 def read_pid_file(env: str = ENV_DEFAULT) -> dict | None:
@@ -378,7 +378,7 @@ def all_servers_status() -> list[dict]:
 
     Scans for PID files matching server*.pid pattern.
     """
-    ai_home = get_agv_home()
+    ai_home = get_ai_home()
     results = []
     if not os.path.isdir(ai_home):
         return results

@@ -13,7 +13,7 @@ from agentic_inquiry.cli.env_resolver import load_config_for_environment
 
 logger = logging.getLogger(__name__)
 
-class agvClient:
+class InquiryClient:
     """Client for interacting with a running ai MCP server."""
 
     def __init__(self, host: str = "127.0.0.1", port: int = 8000):
@@ -55,7 +55,7 @@ class agvClient:
 
 def run_shell(host: str, port: int):
     """Run an interactive shell."""
-    client = agvClient(host, port)
+    client = InquiryClient(host, port)
     
     if not client.is_server_running():
         print(f"❌ No server detected at http://{host}:{port}")
@@ -108,7 +108,7 @@ def connect_or_setup():
         host = "127.0.0.1"
         port = 8000
 
-    client = agvClient(host, port)
+    client = InquiryClient(host, port)
     
     if client.is_server_running():
         run_shell(host, port)

@@ -1,7 +1,7 @@
 """ai Daemon Service entry point.
 
 Usage:
-    python -m extensions.gemini.agentic-inquiry.servers.daemon --workspace /path/to/project
+    python -m extensions.gemini.ai.servers.daemon --workspace /path/to/project
 """
 
 import argparse
@@ -34,9 +34,9 @@ def main() -> None:
         ],
     )
 
-    from .daemon import agvDaemon
+    from .daemon import InquiryDaemon
 
-    daemon = agvDaemon(workspace=args.workspace)
+    daemon = InquiryDaemon(workspace=args.workspace)
 
     async def run() -> None:
         await daemon.start()

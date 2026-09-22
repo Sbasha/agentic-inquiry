@@ -100,7 +100,7 @@ chunks.
 - Technical: `create_onboard_run` / `complete_onboard_run` exist on
   `OnboardMetadataService` and have no production Claude caller
   (source: `agentic_inquiry/onboard/metadata_service.py`; Gemini
-  `extensions/gemini/ai/commands/ciq/onboard.toml` is the only
+  `extensions/gemini/ai/commands/ai/onboard.toml` is the only
   production closer; `get_latest_run` requires `is_latest` and
   `status = 'completed'`).
 - Technical: `ai index` always `return 0` after printing results

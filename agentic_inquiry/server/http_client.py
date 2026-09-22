@@ -4,8 +4,8 @@ Used by CLI commands and hook scripts to communicate with the server.
 Handles server discovery, auto-start, and request/response serialization.
 
 Supports environment-aware routing:
-  - agvClient(env="default") → production server (port 8765)
-  - agvClient(env="test")    → test server (port 8766)
+  - InquiryClient(env="default") → production server (port 8765)
+  - InquiryClient(env="test")    → test server (port 8766)
 """
 
 import json
@@ -18,7 +18,7 @@ from agentic_inquiry.server.lifecycle import ENV_DEFAULT, ensure_server, get_ser
 logger = logging.getLogger("ai.server.client")
 
 
-class agvClient:
+class InquiryClient:
     """HTTP client for the ai REST API.
 
     Discovers the running server from PID file, auto-starts if needed.
@@ -136,7 +136,7 @@ class HookClient:
     """
 
     def __init__(self, timeout: float = 2.0, env: str = ENV_DEFAULT):
-        self._client = agvClient(auto_start=False, timeout=timeout, env=env)
+        self._client = InquiryClient(auto_start=False, timeout=timeout, env=env)
 
     @property
     def available(self) -> bool:

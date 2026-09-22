@@ -39,7 +39,7 @@ storage:
   #     type: "postgresql"
   #     connection_string: "postgresql://user:pass@localhost:5432/ai"
   #     pool_size: 10
-  #     table_prefix: "agv_"
+  #     table_prefix: "ai_"
   # vector_backend: "primary"
   # graph_backend: "primary"
   # events_backend: "primary"

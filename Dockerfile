@@ -2,7 +2,7 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# Install system dependencies for tree-sitter and postgres
+# Install system dependencies for tree-sitter
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     git \
@@ -17,7 +17,7 @@ COPY pyproject.toml uv.lock README.md ./
 COPY agentic_inquiry/ agentic_inquiry/
 COPY config/ config/
 COPY extensions/ extensions/
-COPY scripts/deploy/entrypoint.py entrypoint.py
+COPY scripts/entrypoint.py entrypoint.py
 
 # Install dependencies
 RUN uv sync --frozen --no-dev

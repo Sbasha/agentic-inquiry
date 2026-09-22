@@ -23,7 +23,7 @@ sys.path.insert(
     ),
 )
 
-from extensions.claude.agentic-inquiry.servers.daemon.orchestrator import ServiceOrchestrator
+from extensions.claude.ai.servers.daemon.orchestrator import ServiceOrchestrator
 
 
 @pytest.fixture

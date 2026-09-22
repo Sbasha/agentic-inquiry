@@ -81,7 +81,7 @@ Source Configuration:
   Configured dimension: 1536
 
 Migration Steps:
-  1. Create backup: _agv_migration_backup_chunks_20260113_143022
+  1. Create backup: _ai_migration_backup_chunks_20260113_143022
   2. Verify backup row count matches source
   3. Drop embedding column and index
   4. Add new embedding column (1536 dimensions)
@@ -95,7 +95,7 @@ Impact:
   - Estimated time: ~30 seconds for schema changes + re-indexing time
 
 Backup:
-  - Table: _agv_migration_backup_chunks_20260113_143022
+  - Table: _ai_migration_backup_chunks_20260113_143022
   - Retention: 7 days (configurable)
   - Location: Same database
 ```
@@ -115,7 +115,7 @@ Schema Migration
 ================
 
 [1/7] Creating backup table...
-  ✓ Backup created: _agv_migration_backup_chunks_20260113_143022
+  ✓ Backup created: _ai_migration_backup_chunks_20260113_143022
 
 [2/7] Verifying backup...
   ✓ Source rows: 125,430
@@ -147,7 +147,7 @@ Next Steps:
      ai get-project-info --project my-project
 
 Backup Information:
-  Table: _agv_migration_backup_chunks_20260113_143022
+  Table: _ai_migration_backup_chunks_20260113_143022
   Retention: 7 days (auto-cleanup on 2026-01-20)
   To restore: ai schema restore --project my-project --backup 20260113_143022
 ```
@@ -184,7 +184,7 @@ Agentic Inquiry verifies backup integrity before proceeding:
 ```sql
 -- Counts must match exactly
 SELECT COUNT(*) FROM ai_v_chunks;        -- Source
-SELECT COUNT(*) FROM _agv_migration_backup_...;   -- Backup
+SELECT COUNT(*) FROM _ai_migration_backup_...;   -- Backup
 ```
 
 **If counts don't match:**
@@ -195,7 +195,7 @@ MigrationError: Backup verification failed
   Missing: 2 rows
 
 Migration aborted. No changes made to source table.
-Backup table dropped: _agv_migration_backup_chunks_20260113_143022
+Backup table dropped: _ai_migration_backup_chunks_20260113_143022
 ```
 
 ### Backup Retention
@@ -214,10 +214,10 @@ ai schema migrate --project my-project \
 ```sql
 -- List backup tables
 SELECT tablename FROM pg_tables
-WHERE tablename LIKE '_agv_migration_backup_%';
+WHERE tablename LIKE '_ai_migration_backup_%';
 
 -- Drop specific backup
-DROP TABLE _agv_migration_backup_chunks_20260113_143022;
+DROP TABLE _ai_migration_backup_chunks_20260113_143022;
 ```
 
 **Automatic Cleanup:**
@@ -465,7 +465,7 @@ storage = create_storage_facade(config)  # Works fine, column auto-added
 Agentic Inquiry tracks schema versions in a metadata table:
 
 ```sql
-CREATE TABLE IF NOT EXISTS _agv_schema_meta (
+CREATE TABLE IF NOT EXISTS _ai_schema_meta (
     table_name TEXT PRIMARY KEY,
     schema_version INTEGER NOT NULL,
     embedding_dimension INTEGER NOT NULL,
@@ -525,7 +525,7 @@ logger = logging.getLogger("agentic_inquiry.storage.audit")
 | Event | Level | Example |
 |-------|-------|---------|
 | Migration start | INFO | `Migration started: dimension 768→1536, user=service-account@...` |
-| Backup created | INFO | `Backup created: _agv_migration_backup_chunks_20260113_143022, rows=125430` |
+| Backup created | INFO | `Backup created: _ai_migration_backup_chunks_20260113_143022, rows=125430` |
 | Migration success | INFO | `Migration completed: duration=28.3s, rows=125430` |
 | Migration failure | ERROR | `Migration failed: backup verification mismatch, source=125430, backup=125428` |
 | Restore start | INFO | `Restore started: backup=20260113_143022, user=admin@...` |
@@ -580,7 +580,7 @@ ai schema migrate --project my-project --new-dimension 1536 --confirm-data-loss
 
 # Or manually verify and force
 psql -c "SELECT COUNT(*) FROM ai_v_chunks;"
-psql -c "SELECT COUNT(*) FROM _agv_migration_backup_chunks_..."
+psql -c "SELECT COUNT(*) FROM _ai_migration_backup_chunks_..."
 ```
 
 ### SSL Connection Fails

@@ -17,7 +17,7 @@ from agentic_inquiry.cli.env_resolver import (
 
 from agentic_inquiry.cli.discover import (
     CommandInfo,
-    discover_agv_commands,
+    discover_commands,
     get_command_info,
 )
 
@@ -28,6 +28,6 @@ __all__ = [
     "is_test_environment",
     # Command discovery
     "CommandInfo",
-    "discover_agv_commands",
+    "discover_commands",
     "get_command_info",
 ]

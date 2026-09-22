@@ -180,7 +180,7 @@ class StorageConfig:
     file_tracker_backend_v2: str = "sqlite"  # _v2 to avoid conflict with existing field
 
     # Schema isolation prefix
-    table_prefix: str = "agv_"
+    table_prefix: str = "ai_"
 
     # Backend operation timeouts
     backend_timeouts: BackendTimeoutsConfig = field(default_factory=BackendTimeoutsConfig)

@@ -25,7 +25,7 @@ from agentic_inquiry.cli.env_resolver import (
 class TestIsTestEnvironment:
     """Tests for is_test_environment function."""
 
-    def test_agv_test_prefix(self):
+    def test_ai_test_prefix(self):
         """Test environments with ai-test prefix are detected as test."""
         assert is_test_environment("ai-test") is True
         assert is_test_environment("ai-test-postgres") is True
@@ -71,7 +71,7 @@ class TestGetDataDir:
         """get_global_dir returns ~/.agentic-inquiry/."""
         assert get_global_dir() == Path.home() / GLOBAL_DIR_NAME
 
-    def test_global_dir_agv_home_override(self, tmp_path):
+    def test_global_dir_ai_home_override(self, tmp_path):
         """INQUIRY_HOME env var overrides global dir."""
         custom = tmp_path / "custom-ai"
         with patch.dict(os.environ, {"INQUIRY_HOME": str(custom)}):
@@ -130,7 +130,7 @@ class TestLoadEnvRegistry:
 class TestResolveEnvironment:
     """Tests for resolve_environment function."""
 
-    def test_agv_config_env_var(self, tmp_path):
+    def test_ai_config_env_var(self, tmp_path):
         """INQUIRY_CONFIG env var takes priority."""
         config_file = tmp_path / "custom.yaml"
         config_file.write_text("storage:\n  root: test")
@@ -140,7 +140,7 @@ class TestResolveEnvironment:
             assert env.source == "env_var"
             assert env.config_path == config_file
 
-    def test_agv_env_env_var(self, tmp_path):
+    def test_ai_env_env_var(self, tmp_path):
         """INQUIRY_ENV env var selects named environment."""
         # Create env config
         data_dir = tmp_path / DATA_DIR_NAME

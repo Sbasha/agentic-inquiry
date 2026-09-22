@@ -139,7 +139,7 @@ def find_commands_directory() -> Optional[Path]:
     return None
 
 
-def discover_agv_commands() -> list[CommandInfo]:
+def discover_commands() -> list[CommandInfo]:
     """Discover available ai commands from plugin cache or local extensions.
 
     Returns:
@@ -242,7 +242,7 @@ def get_command_info(command_name: str) -> Optional[CommandInfo]:
             name = name[len(prefix):]
             break
 
-    commands = discover_agv_commands()
+    commands = discover_commands()
     for cmd in commands:
         if cmd.name == name:
             return cmd
@@ -272,7 +272,7 @@ def main() -> int:
 
     args = parser.parse_args()
 
-    commands = discover_agv_commands()
+    commands = discover_commands()
 
     if args.format == "table":
         print(format_commands_table(commands))
@@ -297,7 +297,7 @@ def main() -> int:
 
 __all__ = [
     "CommandInfo",
-    "discover_agv_commands",
+    "discover_commands",
     "format_commands_table",
     "format_commands_list",
     "get_command_info",

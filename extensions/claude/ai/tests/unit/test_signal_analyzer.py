@@ -19,8 +19,8 @@ sys.path.insert(
     ),
 )
 
-from extensions.claude.agentic-inquiry.servers.daemon.managers.context import ContextManager
-from extensions.claude.agentic-inquiry.servers.daemon.orchestrator import ServiceOrchestrator
+from extensions.claude.ai.servers.daemon.managers.context import ContextManager
+from extensions.claude.ai.servers.daemon.orchestrator import ServiceOrchestrator
 
 
 class FakeMemoryManager:

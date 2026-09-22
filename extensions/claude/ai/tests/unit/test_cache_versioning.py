@@ -20,11 +20,11 @@ sys.path.insert(
     ),
 )
 
-from extensions.claude.agentic-inquiry.servers.daemon.managers.cache import (
+from extensions.claude.ai.servers.daemon.managers.cache import (
     CacheManager,
     LRUTTLCache,
 )
-from extensions.claude.agentic-inquiry.servers.daemon.managers.version import VersionManager
+from extensions.claude.ai.servers.daemon.managers.version import VersionManager
 
 
 # --- TS-2.2: Cache / Deduplication ---

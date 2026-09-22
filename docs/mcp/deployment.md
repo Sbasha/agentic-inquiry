@@ -332,7 +332,7 @@ export INQUIRY_MCP_BEHAVIOR_CACHE_TTL_SECONDS=600
 
 # Logging
 export INQUIRY_MCP_LOGGING_LEVEL=DEBUG
-export INQUIRY_MCP_LOGGING_LOG_DIR=/var/log/AGV
+export INQUIRY_MCP_LOGGING_LOG_DIR=/var/log/agentic-inquiry
 ```
 
 ### Storage Configuration
@@ -757,8 +757,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=AGV
-Group=AGV
+User=agentic-inquiry
+Group=agentic-inquiry
 WorkingDirectory=/opt/agentic-inquiry
 Environment="PATH=/opt/agentic-inquiry/.venv/bin:/usr/local/bin:/usr/bin"
 ExecStart=/usr/local/bin/uv run python -m agentic_inquiry.mcp.cli
@@ -790,7 +790,7 @@ sudo journalctl -u agentic-inquiry-mcp -f
 [program:agentic-inquiry-mcp]
 command=/usr/local/bin/uv run python -m agentic_inquiry.mcp.cli
 directory=/opt/agentic-inquiry
-user=AGV
+user=agentic-inquiry
 autostart=true
 autorestart=true
 redirect_stderr=true

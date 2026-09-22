@@ -55,7 +55,7 @@ Agentic Inquiry is an async-first Python library for semantic code search and co
 - **Plugin System**: Claude Code plugins (ai, ai-dev) as primary interface — 14 user commands, 15 developer skills
 - **Async-First**: 5-10x faster indexing through true concurrent execution
 - **Multi-Format Support**: Code (Python, JS, TS, Java, etc.) and documents (MD, PDF, DOCX, DOC, etc.)
-- **Pluggable Storage**: LanceDB (dev), PostgreSQL (self-hosted), CloudSQL (GCP managed), AlloyDB (GCP production)
+- **Local Storage**: LanceDB for vectors and graph, SQLite for events and file tracking, behind one provider contract
 - **Hybrid Search**: Vector + FTS with score-aware RRF, IDF-weighted content boost, proportional normalization
 - **Knowledge Graph**: Tracks relationships between code symbols and document entities
 - **Event Tracking**: Simple, low-overhead operation tracking with EventStore
@@ -1168,7 +1168,7 @@ Operation → EventStore.record_event() → SQLite (async)
 
 ### Storage Layer
 
-Agentic Inquiry uses a **Pluggable Storage Architecture** managed by the `StorageFacade`. This allows seamless switching between backends like LanceDB (embedded), PostgreSQL (production), and SQLite (local metadata), all accessed through a unified **fully async interface**.
+Agentic Inquiry uses a **Pluggable Storage Architecture** managed by the `StorageFacade`. LanceDB (vectors and graph), SQLite (events, file tracking, onboarding metadata) and the in-memory provider are accessed through one unified **fully async interface**, and a future external provider plugs into the same contract.
 
 #### Storage Layer Structure
 
@@ -1184,7 +1184,6 @@ graph TB
 
     subgraph "Storage Providers"
         LanceDB[LanceDB Provider]
-        PostgreSQL[PostgreSQL Provider]
         SQLite[SQLite Provider]
     end
 
@@ -1228,19 +1227,14 @@ graph TB
     
     subgraph "Remote Storage Support"
         Local[Local Filesystem]
-        S3[AWS S3]
-        GCS[Google Cloud Storage]
-        Azure[Azure Blob Storage]
     end
     
     SF --> ProvMgr
     SF --> AsyncWrapper
     ProvMgr --> LanceDB
-    ProvMgr --> PostgreSQL
     ProvMgr --> SQLite
 
     LanceDB --> QBL
-    PostgreSQL --> QBL
 
     QBL --> VectorQ
     QBL --> FTSQ
@@ -1273,9 +1267,6 @@ graph TB
     LANCE --> INDICES
     
     LANCE -.->|storage backend| Local
-    LANCE -.->|storage backend| S3
-    LANCE -.->|storage backend| GCS
-    LANCE -.->|storage backend| Azure
     
     TableCreator --> CHUNKS
     TableCreator --> ENTITIES
@@ -1300,20 +1291,12 @@ graph TB
 | Backend | Type | Embedding Strategy | Use Case |
 |---------|------|-------------------|----------|
 | **LanceDB** | `lancedb` | Local (SentenceTransformer) | Default for development |
-| **PostgreSQL** | `postgresql` | Local (SentenceTransformer) | Self-hosted production |
-| **CloudSQL** | `cloudsql` | Local (SentenceTransformer) | GCP managed (max_connections=25) |
-| **AlloyDB** | `alloydb` | Server-side (`text-embedding-005`) | GCP production, fastest |
 
 **Embedding Strategies:**
 - **Local (`"local"`)**: Client-side embedding using SentenceTransformer models (default)
-- **Server-Side (`"server_side"`)**: AlloyDB native embedding with Vertex AI models (~400 chunks/sec)
 
-**Unified PostgreSQL Provider:**
-A single provider handles PostgreSQL, CloudSQL, and AlloyDB with config-driven capabilities:
 - Auto-detects backend type from config
 - Switches embedding strategy based on `embedding_strategy` setting
-- AlloyDB: Uses `ai.initialize_embeddings()` for batch embedding generation
-- PostgreSQL/CloudSQL: Uses local SentenceTransformer models
 
 **Component Responsibilities:**
 
@@ -1325,7 +1308,6 @@ A single provider handles PostgreSQL, CloudSQL, and AlloyDB with config-driven c
 
 **Storage Providers:**
 - **LanceDB Provider**: Local vector database with Arrow format
-- **PostgreSQL Provider**: Handles PostgreSQL/CloudSQL/AlloyDB with pgvector extension
 - **SQLite Provider**: Event store and file tracking
 
 **QueryBuilder (Query Construction):**
@@ -1350,7 +1332,7 @@ A single provider handles PostgreSQL, CloudSQL, and AlloyDB with config-driven c
 
 ```
 StorageFacade (unified interface)
-├── Provider Registry (LanceDB, PostgreSQL, SQLite)
+├── Provider Registry (LanceDB, SQLite, memory)
 ├── QueryBuilder (query construction)
 ├── SchemaManager (schema operations)
 └── FilterBuilder (safe filter construction)
@@ -1383,25 +1365,13 @@ results = await storage.vector_search(query_vector=embedding, limit=10)
 
 Backend-specific implementations:
 - **LanceDB Provider**: Local vector storage with Arrow format
-- **PostgreSQL Provider**: Production database with pgvector extension
 - **SQLite Provider**: Event tracking and file metadata
 
-**Unified PostgreSQL Provider:**
-The PostgreSQL provider handles AlloyDB, CloudSQL, and standard PostgreSQL with configuration-based capabilities:
 - `embedding_strategy: "local"` - Client-side embedding with SentenceTransformer
-- `embedding_strategy: "server_side"` - AlloyDB native embedding with `text-embedding-005`
 
 **Example:**
 ```python
-# AlloyDB with server-side embedding
-config.storage.backend = "alloydb"
-config.storage.backends.alloydb.embedding_strategy = "server_side"
-config.storage.backends.alloydb.embedding_model = "text-embedding-005"
-config.storage.backends.alloydb.embedding_dim = 768
-
-# PostgreSQL with local embedding
-config.storage.backend = "postgresql"
-config.storage.backends.postgresql.embedding_strategy = "local"
+config.storage.backend = "lancedb"
 ```
 
 #### QueryBuilder
@@ -1442,12 +1412,11 @@ filter_expr = builder.build()
 ```
 
 **Key Features:**
-- **Pluggable backends**: LanceDB, PostgreSQL (AlloyDB/CloudSQL), SQLite
+- **Local backends**: LanceDB, SQLite, memory
 - **Unified interface**: Same code works across all backends
 - Vector similarity search with IVF-PQ indexing
-- Full-text search with inverted index (GIN for PostgreSQL)
+- Full-text search with a native inverted index
 - Hybrid search with IDF-weighted content boost and score-aware RRF (k=30)
-- Server-side embedding support for AlloyDB
 - SQL-like filtering with injection prevention
 - **All operations fully async**
 
@@ -1457,13 +1426,11 @@ filter_expr = builder.build()
 - `graph_relationships`: Entity relationships
 
 **Backend Support:**
-- **LanceDB**: Local/S3/GCS/Azure paths
-- **PostgreSQL**: Self-hosted, CloudSQL, AlloyDB
+- **LanceDB**: local paths
 - **SQLite**: Local metadata and events
 
 **Learn More:**
 - [Storage Backends](../backends/overview.md) - Backend comparison and configuration
-- [PostgreSQL Backend](../backends/postgresql.md) - PostgreSQL/AlloyDB setup
 - [Security Best Practices](../development/security.md) - Database security guidelines
 
 **Related Sections:**

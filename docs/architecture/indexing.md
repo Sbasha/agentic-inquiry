@@ -628,7 +628,7 @@ When `embedding_strategy == "server_side"`:
 4. **String queries**: Search accepts raw query text; provider calls server-side `embedding()` function
 
 **Table Schema:**
-All storage backends use the `agv_*` table prefix:
+All storage backends use the `ai_*` table prefix:
 - `ai_v_chunks`: Vector chunks with content and embeddings
 - `ai_v_chunks_fts`: Full-text search index (PostgreSQL/CloudSQL/AlloyDB only)
 - `ai_g_entities`: Graph entities

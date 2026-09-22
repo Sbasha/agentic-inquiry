@@ -143,7 +143,7 @@ Control log level and output:
 uv run ai --log-level DEBUG
 
 # Log to file
-uv run ai --log-file /var/log/AGV-mcp.log
+uv run ai --log-file /var/log/agentic-inquiry-mcp.log
 
 # With specific project
 uv run ai my_project --log-level DEBUG --log-file debug.log
