@@ -138,7 +138,7 @@ class TestInjectionTierScoring:
         context_manager._last_keywords = {"database", "config", "setup"}
         # Multiple entities + architectural intent + file path + topic pivot → high score
         signals = context_manager.analyze_signals(
-            "URGENT: How does the SearchService pipeline design work in storage/vector.py with PostgresVectorProvider?"
+            "URGENT: How does the SearchService pipeline design work in storage/vector.py with LanceDBProvider?"
         )
         assert signals["tier"] == "FULL_PACKET"
         assert signals["score"] >= 70
@@ -185,11 +185,11 @@ class TestTopicPivot:
     def test_detects_continuation(self, context_manager):
         # First prompt
         context_manager.analyze_signals(
-            "How does AlloyDB embedding work?"
+            "How does LanceDB embedding work?"
         )
         # Second prompt is related
         signals = context_manager.analyze_signals(
-            "Show me the AlloyDB embedding configuration code"
+            "Show me the LanceDB embedding configuration code"
         )
         assert signals["topic_pivot"] is False
 

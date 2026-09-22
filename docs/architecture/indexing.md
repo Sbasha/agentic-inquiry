@@ -9,6 +9,8 @@ last_updated: 2025-10-28
 
 # Indexing Pipeline Architecture
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 The indexing pipeline transforms parsed documents into searchable database records. This document explains how the pipeline works, its components, and how data flows through the system.
 
 ## Overview

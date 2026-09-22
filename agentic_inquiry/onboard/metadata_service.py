@@ -45,7 +45,7 @@ class OnboardMetadataService:
     ) -> "OnboardMetadataService":
         """Create service from configuration.
 
-        Auto-selects PostgreSQL provider when backend is postgresql/cloudsql/alloydb,
+        Uses the SQLite provider for every local backend,
         falls back to SQLite for local/LanceDB backends or when config is None.
 
         Args:
@@ -67,47 +67,9 @@ class OnboardMetadataService:
         if config is not None:
             backend_type = getattr(config.storage, "backend", None)
 
-        pg_backends = {"postgresql", "cloudsql", "alloydb"}
-        if backend_type in pg_backends:
-            provider = await cls._create_pg_provider(config, pid)
-        else:
-            provider = await cls._create_sqlite_provider(config, workspace, pid)
+        provider = await cls._create_sqlite_provider(config, workspace, pid)
 
         return cls(provider=provider, project_id=pid)
-
-    @staticmethod
-    async def _create_pg_provider(
-        config: "Config", project_id: str
-    ) -> Any:
-        """Create PostgreSQL onboard metadata provider from config."""
-        logger.info("Creating PG provider for project: %s", project_id)
-        from agentic_inquiry.onboard.providers.postgresql import (
-            PostgresOnboardMetadataProvider,
-        )
-        from agentic_inquiry.storage.registry import resolve_backend
-
-        try:
-            _name, backend_config = resolve_backend(
-                config.storage, "onboard_metadata"
-            )
-            provider = PostgresOnboardMetadataProvider.from_config(
-                backend_config, project_id
-            )
-        except Exception as e:
-            # If onboard_metadata role isn't configured for PG, build from
-            # the primary backend config (vector backend shares the same DB)
-            logger.debug("onboard_metadata role not found, falling back to vector backend: %s", e)
-            _name, backend_config = resolve_backend(config.storage, "vector")
-            provider = PostgresOnboardMetadataProvider.from_config(
-                backend_config, project_id
-            )
-
-        await provider.initialize()
-        logger.info(
-            "Onboard metadata service initialized (PostgreSQL): project=%s",
-            project_id,
-        )
-        return provider
 
     @staticmethod
     async def _create_sqlite_provider(

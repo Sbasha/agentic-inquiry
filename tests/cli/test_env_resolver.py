@@ -11,7 +11,6 @@ from unittest.mock import patch
 from agentic_inquiry.cli.env_resolver import (
     resolve_environment,
     is_test_environment,
-    should_auto_start_proxy,
     get_data_dir,
     get_global_dir,
     get_local_dir,
@@ -54,33 +53,6 @@ class TestIsTestEnvironment:
         assert is_test_environment("prod-test") is False
 
 
-class TestShouldAutoStartProxy:
-    """Tests for should_auto_start_proxy function."""
-
-    def test_test_environment_never_starts(self):
-        """Test environments should never auto-start."""
-        assert should_auto_start_proxy("ai-test", has_cloudsql_config=True) is False
-        assert should_auto_start_proxy("test", has_cloudsql_config=True) is False
-
-    def test_production_with_cloudsql(self):
-        """Production with CloudSQL should auto-start."""
-        assert should_auto_start_proxy("ai", has_cloudsql_config=True) is True
-        assert should_auto_start_proxy("gcp-prod", has_cloudsql_config=True) is True
-
-    def test_no_cloudsql(self):
-        """Without CloudSQL, should not auto-start."""
-        assert should_auto_start_proxy("ai", has_cloudsql_config=False) is False
-
-    def test_no_auto_start_env_var(self):
-        """AI_NO_AUTO_START env var should disable."""
-        with patch.dict(os.environ, {"AI_NO_AUTO_START": "1"}):
-            assert should_auto_start_proxy("ai", has_cloudsql_config=True) is False
-
-    def test_test_mode_env_var(self):
-        """AI_TEST_MODE env var should disable."""
-        with patch.dict(os.environ, {"AI_TEST_MODE": "true"}):
-            assert should_auto_start_proxy("ai", has_cloudsql_config=True) is False
-
 
 class TestGetDataDir:
     """Tests for get_data_dir and get_global_dir functions."""
@@ -100,9 +72,9 @@ class TestGetDataDir:
         assert get_global_dir() == Path.home() / GLOBAL_DIR_NAME
 
     def test_global_dir_agv_home_override(self, tmp_path):
-        """AI_HOME env var overrides global dir."""
+        """INQUIRY_HOME env var overrides global dir."""
         custom = tmp_path / "custom-ai"
-        with patch.dict(os.environ, {"AI_HOME": str(custom)}):
+        with patch.dict(os.environ, {"INQUIRY_HOME": str(custom)}):
             assert get_global_dir() == custom
 
     def test_local_dir(self, tmp_path):
@@ -159,26 +131,26 @@ class TestResolveEnvironment:
     """Tests for resolve_environment function."""
 
     def test_agv_config_env_var(self, tmp_path):
-        """AI_CONFIG env var takes priority."""
+        """INQUIRY_CONFIG env var takes priority."""
         config_file = tmp_path / "custom.yaml"
         config_file.write_text("storage:\n  root: test")
 
-        with patch.dict(os.environ, {"AI_CONFIG": str(config_file)}):
+        with patch.dict(os.environ, {"INQUIRY_CONFIG": str(config_file)}):
             env = resolve_environment(tmp_path)
             assert env.source == "env_var"
             assert env.config_path == config_file
 
     def test_agv_env_env_var(self, tmp_path):
-        """AI_ENV env var selects named environment."""
+        """INQUIRY_ENV env var selects named environment."""
         # Create env config
         data_dir = tmp_path / DATA_DIR_NAME
         env_config = data_dir / "envs" / "my-env" / "config.yaml"
         env_config.parent.mkdir(parents=True)
         env_config.write_text("storage:\n  root: test")
 
-        with patch.dict(os.environ, {"AI_ENV": "my-env"}, clear=False):
-            # Clear AI_CONFIG if set
-            os.environ.pop("AI_CONFIG", None)
+        with patch.dict(os.environ, {"INQUIRY_ENV": "my-env"}, clear=False):
+            # Clear INQUIRY_CONFIG if set
+            os.environ.pop("INQUIRY_CONFIG", None)
             env = resolve_environment(tmp_path)
             assert env.name == "my-env"
             assert env.source == "env_var"
@@ -208,7 +180,7 @@ class TestResolveEnvironment:
 
     def test_default_fallback(self, tmp_path):
         """Falls back to default when nothing configured."""
-        with patch.dict(os.environ, {"AI_HOME": str(tmp_path)}, clear=True):
+        with patch.dict(os.environ, {"INQUIRY_HOME": str(tmp_path)}, clear=True):
             env = resolve_environment(tmp_path)
             assert env.name == "default"
             assert env.source == "default"
@@ -257,7 +229,7 @@ class TestEnvironmentDotenv:
         from agentic_inquiry.cli.env_resolver import parse_dotenv_lines
 
         parsed = parse_dotenv_lines(
-            "# comment\n\nFOO=bar\n# AI_EMBEDDING_DEVICE=cpu\nBAZ='quoted'\n"
+            "# comment\n\nFOO=bar\n# INQUIRY_EMBEDDING_DEVICE=cpu\nBAZ='quoted'\n"
         )
         assert parsed == {"FOO": "bar", "BAZ": "quoted"}
 
@@ -315,14 +287,14 @@ class TestEmbeddingDeviceHatchHint:
         monkeypatch.setattr(
             "agentic_inquiry.cli.env_resolver.platform.system", lambda: "Darwin"
         )
-        monkeypatch.delenv("AI_EMBEDDING_DEVICE", raising=False)
+        monkeypatch.delenv("INQUIRY_EMBEDDING_DEVICE", raising=False)
         env_dir = tmp_path / ".agentic-inquiry" / "envs" / "ai"
         env_dir.mkdir(parents=True)
         warn_embedding_device_hatch(env_dir)
         err = capsys.readouterr().err
         assert err.count("\n") == 1 or err.endswith("\n")
         assert ".env" in err
-        assert "AI_EMBEDDING_DEVICE=cpu" in err
+        assert "INQUIRY_EMBEDDING_DEVICE=cpu" in err
         assert str(env_dir / ".env") in err or ".agentic-inquiry/envs/" in err
 
     def test_device_set_prints_nothing(
@@ -339,7 +311,7 @@ class TestEmbeddingDeviceHatchHint:
         env_dir = tmp_path / ".agentic-inquiry" / "envs" / "ai"
         env_dir.mkdir(parents=True)
         for value in ("cpu", "mps"):
-            monkeypatch.setenv("AI_EMBEDDING_DEVICE", value)
+            monkeypatch.setenv("INQUIRY_EMBEDDING_DEVICE", value)
             warn_embedding_device_hatch(env_dir)
             assert capsys.readouterr().err == ""
 
@@ -354,6 +326,6 @@ class TestEmbeddingDeviceHatchHint:
         monkeypatch.setattr(
             "agentic_inquiry.cli.env_resolver.platform.system", lambda: "Linux"
         )
-        monkeypatch.delenv("AI_EMBEDDING_DEVICE", raising=False)
+        monkeypatch.delenv("INQUIRY_EMBEDDING_DEVICE", raising=False)
         warn_embedding_device_hatch(tmp_path)
         assert capsys.readouterr().err == ""

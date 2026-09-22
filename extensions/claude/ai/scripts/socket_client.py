@@ -18,7 +18,7 @@ def get_socket_path(workspace: str | None = None) -> str:
 
     Uses workspace-hashed path for project isolation.
     """
-    socket_dir = os.environ.get("AI_HOME", os.path.expanduser("~/.agentic-inquiry"))
+    socket_dir = os.environ.get("INQUIRY_HOME", os.path.expanduser("~/.agentic-inquiry"))
     if workspace:
         project_hash = hashlib.sha256(
             os.path.abspath(workspace).encode()

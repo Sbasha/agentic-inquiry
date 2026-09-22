@@ -1,5 +1,7 @@
 # Hybrid Embedding Strategy
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 **Status:** Implemented
 **Created:** 2026-01-08
 **Updated:** 2026-01-08

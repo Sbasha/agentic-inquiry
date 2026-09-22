@@ -2,7 +2,7 @@ description = "Intelligently onboard a codebase - parallel index, explore, and v
 prompt = """
 Intelligently onboard a codebase - parallel index, explore, and validate. Use when setting up ai for a new codebase or helping someone get started.
 
-Usage: /ai:onboard [path] [--env local|postgres|gcp|aws|azure] [--skip-index] [--deep]
+Usage: /ai:onboard [path] [--env local|<env-name>] [--skip-index] [--deep]
 
 # /ai:onboard
 
@@ -14,7 +14,7 @@ Intelligent codebase onboarding. Runs indexing in background while exploring the
 ┌──────────────────────────────────────────────┐
 │  PHASE 1: Environment Setup                   │
 │  - Check for existing environment             │
-│  - Create env if needed (local, GCP, AWS, etc)│
+│  - Create local env if needed                 │
 │  - Validate connectivity (must pass)          │
 │  - Create output directory                    │
 ├──────────────────────────────────────────────┤
@@ -52,7 +52,7 @@ cat .agentic-inquiry/env-registry.json 2>/dev/null
 
 Also check if `.env` file exists and has required variables:
 ```bash
-cat .env 2>/dev/null | grep -E "^(POSTGRES_|agv_|OPENAI_)" | sed 's/=.*/=***/'
+cat .env 2>/dev/null | grep -E "^(AI_|OPENAI_)" | sed 's/=.*/=***/'
 ```
 
 **Decision tree:**
@@ -61,7 +61,7 @@ cat .env 2>/dev/null | grep -E "^(POSTGRES_|agv_|OPENAI_)" | sed 's/=.*/=***/'
 |-----------|--------|
 | `--env` flag provided | Use that environment, validate it |
 | Active environment in registry | Show it, ask user to confirm or create new |
-| No registry / no environments | Ask user: Which storage backend (local, postgres, gcp, aws, azure)? |
+| No registry / no environments | Create the local LanceDB environment |
 
 ### 1.2 Create environment if needed
 
@@ -72,7 +72,7 @@ Task tool:
   subagent_type: Bash
   prompt: |
     We need to create a ai environment for onboarding.
-    User selected: {local|postgres|gcp|aws|azure}
+    Storage: local LanceDB (the only shipped backend)
 
     FOR LOCAL:
     1. Create directory structure:
@@ -87,12 +87,6 @@ Task tool:
        EOF
     3. Register in env-registry.json
     4. Verify: ls .agentic-inquiry/envs/onboard/
-
-    FOR CLOUD (GCP, AWS, Azure):
-    1. Check cloud authentication and credentials
-    2. Configure database connection
-    3. Test database connectivity
-    4. Register in env-registry.json
 ```
 
 ### 1.3 Validate connectivity
@@ -105,20 +99,8 @@ ls -la .agentic-inquiry/envs/{name}/lancedb/
 # Should exist and be writable
 ```
 
-**GCP/PostgreSQL:**
-```bash
-# Check proxy is alive
-lsof -i :5433 2>/dev/null | head -3
-
-# Test actual connection
-PGPASSWORD=$POSTGRES_PASSWORD psql -h localhost -p ${POSTGRES_PORT:-5433} -U $POSTGRES_USER -d $POSTGRES_DB -c "SELECT 1" 2>&1
-```
-
 If connectivity fails:
 - **Local**: Create the directory (self-healing)
-- **GCP proxy down**: Ask user to restart or offer to start it
-- **GCP auth expired**: Tell user to run `gcloud auth login`
-- **Database unreachable**: Show connection details and ask user to verify
 
 **Do NOT proceed to Phase 2 until connectivity is confirmed.**
 
@@ -134,8 +116,8 @@ mkdir -p ${ONBOARD_PATH}
 
 Before moving on, print:
 ```
-Environment: {name} ({local|gcp})
-Storage: {LanceDB at path | PostgreSQL at host:port/db}
+Environment: {name} (local)
+Storage: LanceDB at path
 Connectivity: Verified
 Output: {ONBOARD_PATH}
 
@@ -426,7 +408,7 @@ asyncio.run(main())
 | Option | Description |
 |--------|-------------|
 | `path` | Directory to onboard (default: `.`) |
-| `--env` | Environment to use (local, gcp, or env name) |
+| `--env` | Environment to use (local or an env name) |
 | `--skip-index` | Skip indexing, just explore and validate existing index |
 | `--deep` | Extra exploration depth (trace all lineage paths, not just primary) |
 

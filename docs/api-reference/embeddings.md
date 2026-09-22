@@ -9,6 +9,8 @@ last_updated: 2025-10-29
 
 # Embeddings API Reference
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 This document provides detailed API documentation for Agentic Inquiry's embedding system, including the LocalModelEmbedder, ModelLoader, and ModelMetadata classes.
 
 ## Overview
@@ -76,14 +78,14 @@ Per the `AI_<SECTION>_<SUBSECTION>_<FIELD>` convention:
 
 | Variable | Maps to |
 |---|---|
-| `AI_EMBEDDINGS_BEDROCK_MODEL_ID` | `embeddings.bedrock.model_id` |
-| `AI_EMBEDDINGS_BEDROCK_REGION` | `embeddings.bedrock.region` |
-| `AI_EMBEDDINGS_BEDROCK_OUTPUT_DIM` | `embeddings.bedrock.output_dim` |
-| `AI_EMBEDDINGS_BEDROCK_NORMALIZE` | `embeddings.bedrock.normalize` |
-| `AI_EMBEDDINGS_BEDROCK_BATCH_SIZE` | `embeddings.bedrock.batch_size` |
-| `AI_EMBEDDINGS_BEDROCK_MAX_RETRIES` | `embeddings.bedrock.max_retries` |
-| `AI_EMBEDDINGS_BEDROCK_TIMEOUT_SECONDS` | `embeddings.bedrock.timeout_seconds` |
-| `AI_EMBEDDINGS_BEDROCK_REQUEST_CONCURRENCY` | `embeddings.bedrock.request_concurrency` |
+| `INQUIRY_EMBEDDINGS_BEDROCK_MODEL_ID` | `embeddings.bedrock.model_id` |
+| `INQUIRY_EMBEDDINGS_BEDROCK_REGION` | `embeddings.bedrock.region` |
+| `INQUIRY_EMBEDDINGS_BEDROCK_OUTPUT_DIM` | `embeddings.bedrock.output_dim` |
+| `INQUIRY_EMBEDDINGS_BEDROCK_NORMALIZE` | `embeddings.bedrock.normalize` |
+| `INQUIRY_EMBEDDINGS_BEDROCK_BATCH_SIZE` | `embeddings.bedrock.batch_size` |
+| `INQUIRY_EMBEDDINGS_BEDROCK_MAX_RETRIES` | `embeddings.bedrock.max_retries` |
+| `INQUIRY_EMBEDDINGS_BEDROCK_TIMEOUT_SECONDS` | `embeddings.bedrock.timeout_seconds` |
+| `INQUIRY_EMBEDDINGS_BEDROCK_REQUEST_CONCURRENCY` | `embeddings.bedrock.request_concurrency` |
 
 ### Adding the next remote embedder
 
@@ -592,17 +594,17 @@ Override configuration with environment variables:
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `AI_EMBEDDINGS_PROVIDER` | string | Embedding provider type |
-| `AI_EMBEDDINGS_LOCAL_MODEL_PATH` | string | Path to model directory |
-| `AI_EMBEDDINGS_LOCAL_NORMALIZE` | boolean | Enable normalization |
-| `AI_EMBEDDINGS_LOCAL_BATCH_SIZE` | integer | Batch size for inference |
+| `INQUIRY_EMBEDDINGS_PROVIDER` | string | Embedding provider type |
+| `INQUIRY_EMBEDDINGS_LOCAL_MODEL_PATH` | string | Path to model directory |
+| `INQUIRY_EMBEDDINGS_LOCAL_NORMALIZE` | boolean | Enable normalization |
+| `INQUIRY_EMBEDDINGS_LOCAL_BATCH_SIZE` | integer | Batch size for inference |
 
 **Example:**
 ```bash
-export AI_EMBEDDINGS_PROVIDER=local
-export AI_EMBEDDINGS_LOCAL_MODEL_PATH=models/all-MiniLM-L6-v2
-export AI_EMBEDDINGS_LOCAL_NORMALIZE=true
-export AI_EMBEDDINGS_LOCAL_BATCH_SIZE=64
+export INQUIRY_EMBEDDINGS_PROVIDER=local
+export INQUIRY_EMBEDDINGS_LOCAL_MODEL_PATH=models/all-MiniLM-L6-v2
+export INQUIRY_EMBEDDINGS_LOCAL_NORMALIZE=true
+export INQUIRY_EMBEDDINGS_LOCAL_BATCH_SIZE=64
 ```
 
 ## Exceptions
@@ -894,25 +896,25 @@ Override configuration with environment variables:
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `AI_EMBEDDINGS_PROVIDER` | string | Embedding provider type |
-| `AI_EMBEDDINGS_LOCAL_MODEL_PATH` | string | Path to model directory |
-| `AI_EMBEDDINGS_LOCAL_NORMALIZE` | boolean | Enable normalization |
-| `AI_EMBEDDINGS_LOCAL_BATCH_SIZE` | integer | Batch size for inference |
-| `AI_STORAGE_EMBEDDING_STRATEGY` | string | "local" or "server_side" |
-| `AI_STORAGE_EMBEDDING_MODEL` | string | Model name for server-side |
-| `AI_STORAGE_EMBEDDING_DIM` | integer | Embedding dimensions |
+| `INQUIRY_EMBEDDINGS_PROVIDER` | string | Embedding provider type |
+| `INQUIRY_EMBEDDINGS_LOCAL_MODEL_PATH` | string | Path to model directory |
+| `INQUIRY_EMBEDDINGS_LOCAL_NORMALIZE` | boolean | Enable normalization |
+| `INQUIRY_EMBEDDINGS_LOCAL_BATCH_SIZE` | integer | Batch size for inference |
+| `INQUIRY_STORAGE_EMBEDDING_STRATEGY` | string | "local" or "server_side" |
+| `INQUIRY_STORAGE_EMBEDDING_MODEL` | string | Model name for server-side |
+| `INQUIRY_STORAGE_EMBEDDING_DIM` | integer | Embedding dimensions |
 
 **Example:**
 ```bash
 # Local embedding
-export AI_EMBEDDINGS_PROVIDER=local
-export AI_EMBEDDINGS_LOCAL_MODEL_PATH=models/all-MiniLM-L6-v2
+export INQUIRY_EMBEDDINGS_PROVIDER=local
+export INQUIRY_EMBEDDINGS_LOCAL_MODEL_PATH=models/all-MiniLM-L6-v2
 
 # Server-side embedding (AlloyDB)
-export AI_STORAGE_BACKEND=alloydb
-export AI_STORAGE_EMBEDDING_STRATEGY=server_side
-export AI_STORAGE_EMBEDDING_MODEL=text-embedding-005
-export AI_STORAGE_EMBEDDING_DIM=768
+export INQUIRY_STORAGE_BACKEND=alloydb
+export INQUIRY_STORAGE_EMBEDDING_STRATEGY=server_side
+export INQUIRY_STORAGE_EMBEDDING_MODEL=text-embedding-005
+export INQUIRY_STORAGE_EMBEDDING_DIM=768
 ```
 
 ## See Also

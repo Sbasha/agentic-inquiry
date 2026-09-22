@@ -33,7 +33,7 @@ class agvDaemon:
 
         # Paths
         self.ai_home = os.environ.get(
-            "AI_HOME", os.path.expanduser("~/.agentic-inquiry")
+            "INQUIRY_HOME", os.path.expanduser("~/.agentic-inquiry")
         )
         self.socket_path = os.path.join(
             self.ai_home, f"daemon-{self.project_id}.sock"

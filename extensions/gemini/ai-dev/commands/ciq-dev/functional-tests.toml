@@ -2,7 +2,7 @@ description = "Run full UAT functional test suite - environment setup, indexing,
 prompt = """
 Run full UAT functional test suite - environment setup, indexing, and test execution
 
-Usage: /ai-dev:functional-tests [all|TEST_XX] [--env local|gcp-prod|<name>] [--skip-index] [--batch N]
+Usage: /ai-dev:functional-tests [all|TEST_XX] [--env local|<name>] [--skip-index] [--batch N]
 
 # /ai-dev:functional-tests
 
@@ -34,7 +34,6 @@ If `--env` was not specified, show available environments and ask:
 |--------|-------------|
 | **Existing env** | Use an already-configured environment from the registry |
 | **Create local** | New LanceDB environment (instant, free) |
-| **Create GCP** | New Cloud SQL environment (5-10 min, ~$0.50/hr) |
 
 Use `AskUserQuestion` to let the user choose.
 
@@ -45,8 +44,7 @@ For the chosen environment:
 1. **Read its config**: `cat .agentic-inquiry/envs/<name>/config.yaml`
 2. **Test connectivity**:
    - Local/LanceDB: Check directory exists
-   - PostgreSQL: `uv run --env-file .env python -c "from agentic_inquiry.config import Config; ..."`
-3. **If creating new**: Follow `/ai:setup` workflow (local or gcp)
+3. **If creating new**: Follow `/ai:setup` workflow (local)
 
 ### 1.4 Set active environment
 
@@ -205,8 +203,8 @@ test_results/ai/{TEST_ID}/
 # Run everything with environment selection
 /ai-dev:functional-tests
 
-# Run all tests using existing gcp-prod environment
-/ai-dev:functional-tests all --env gcp-prod
+# Run all tests using an existing named environment
+/ai-dev:functional-tests all --env ai-test
 
 # Run just the smoke test on local
 /ai-dev:functional-tests TEST_01 --env local

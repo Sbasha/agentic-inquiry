@@ -1,5 +1,7 @@
 # Spec: Rename the importable package `agentic-inquiry` → `agentic_inquiry`
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../../storage-backends.md).
+
 Mode: full (changes the public import path and the package source
 directory; touches packaging metadata and ~600 Python files). The risk is
 mechanical breadth, not design: a single token rename that must be applied

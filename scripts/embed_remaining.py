@@ -11,11 +11,11 @@ import sys
 
 MODEL = "text-embedding-005"
 DB_CONFIG = {
-    "host": os.environ.get("AI_DB_HOST", "127.0.0.1"),
-    "port": int(os.environ.get("AI_DB_PORT", "5434")),
-    "user": os.environ.get("AI_DB_USER", "postgres"),
-    "password": os.environ["AI_DB_PASSWORD"],  # Required - no default
-    "database": os.environ.get("AI_DB_NAME", "agentic-inquiry"),
+    "host": os.environ.get("INQUIRY_DB_HOST", "127.0.0.1"),
+    "port": int(os.environ.get("INQUIRY_DB_PORT", "5434")),
+    "user": os.environ.get("INQUIRY_DB_USER", "postgres"),
+    "password": os.environ["INQUIRY_DB_PASSWORD"],  # Required - no default
+    "database": os.environ.get("INQUIRY_DB_NAME", "agentic-inquiry"),
 }
 WORKERS = 5
 BATCH_SIZE = 25  # Smaller batches = more parallelism

@@ -9,6 +9,8 @@ last_updated: 2025-10-31
 
 # Event System Architecture
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 This document provides a detailed architectural overview of the Event Tracking System in Agentic Inquiry, explaining design decisions, implementation patterns, and integration points.
 
 ## System Components
@@ -811,11 +813,11 @@ class Config:
 ### Environment Variables
 
 ```bash
-export AI_EVENTS_ENABLED=true
-export AI_EVENTS_QUEUE_MAX_SIZE=2000
-export AI_EVENTS_BATCH_SIZE=200
-export AI_EVENTS_FLUSH_INTERVAL_SECONDS=0.5
-export AI_EVENTS_RETENTION_DAYS=60
+export INQUIRY_EVENTS_ENABLED=true
+export INQUIRY_EVENTS_QUEUE_MAX_SIZE=2000
+export INQUIRY_EVENTS_BATCH_SIZE=200
+export INQUIRY_EVENTS_FLUSH_INTERVAL_SECONDS=0.5
+export INQUIRY_EVENTS_RETENTION_DAYS=60
 ```
 
 ## Testing Strategy

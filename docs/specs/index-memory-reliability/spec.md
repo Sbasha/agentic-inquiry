@@ -20,7 +20,7 @@ outcomes from `ai index`: the graph-relationship write finishes, or the
 command exits 1 with a message that names the graph write failure (even
 when document chunks already exist). `ai memory save` exits 0 only when
 that memory can be listed or recalled for the same project afterward.
-On Darwin, when `AI_EMBEDDING_DEVICE` is unset, `ai index` and
+On Darwin, when `INQUIRY_EMBEDDING_DEVICE` is unset, `ai index` and
 `ai memory save` print one stderr line pointing at the CPU hatch in
 `.agentic-inquiry/envs/<name>/.env` before the embedding model loads.
 
@@ -62,7 +62,7 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
 - Exit `ai memory save` with code 1, and do not print `Memory saved:`,
   when importance is below 0.7 (working memory only) or when the row
   cannot be read back.
-- On Darwin, if `AI_EMBEDDING_DEVICE` is unset, print one stderr line
+- On Darwin, if `INQUIRY_EMBEDDING_DEVICE` is unset, print one stderr line
   naming the hatch file (`.agentic-inquiry/envs/<name>/.env`) before constructing
   the embedder. Leave the hatch line commented in new env files.
 - Serialize writes, index creation, compaction, and version cleanup per
@@ -88,7 +88,7 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
 
 ### Ask first
 
-- Uncomment `AI_EMBEDDING_DEVICE=cpu` by default on Mac.
+- Uncomment `INQUIRY_EMBEDDING_DEVICE=cpu` by default on Mac.
 - Add a cross-process LanceDB lock (file lock, lock manager package).
 - Change `maintenance_interval_files` or the 5-minute version-cleanup
   window.
@@ -164,15 +164,15 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
 - [x] `ai memory save --project <id>` stores that project id on the
       row. `ai memory list --project <id>` and `ai memory recall
       --project <id>` filter to that project.
-- [x] On Darwin with `AI_EMBEDDING_DEVICE` unset, `ai index` and
+- [x] On Darwin with `INQUIRY_EMBEDDING_DEVICE` unset, `ai index` and
       `ai memory save` print one stderr line pointing at
-      `.agentic-inquiry/envs/<name>/.env` and `AI_EMBEDDING_DEVICE=cpu` before
+      `.agentic-inquiry/envs/<name>/.env` and `INQUIRY_EMBEDDING_DEVICE=cpu` before
       embedder construction. With the variable set, they do not print
       that line. New env files still contain a commented
-      `AI_EMBEDDING_DEVICE=cpu` line.
+      `INQUIRY_EMBEDDING_DEVICE=cpu` line.
 - [x] README documents reinstalling the global `ai` with
       `uv tool install . --reinstall` so the env-file loader is on
-      PATH, then uncommenting `AI_EMBEDDING_DEVICE=cpu` in
+      PATH, then uncommenting `INQUIRY_EMBEDDING_DEVICE=cpu` in
       `.agentic-inquiry/envs/<name>/.env` if Metal/MPS aborts.
 - [x] Given 16 concurrent `add_graph_relationships` calls on one on-disk
       table, eight of which carry the same 300 new keys, every call

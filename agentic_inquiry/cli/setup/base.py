@@ -78,7 +78,7 @@ class BaseSetup(ABC):
         env_name: Name of the environment being created
         is_dev: Whether this is a development/test environment
         workspace: Root workspace path (defaults to cwd)
-        backend_type: Type of backend ("lancedb", "postgresql", "cloudsql")
+        backend_type: Type of backend ("lancedb")
 
     Example:
         >>> class MySetup(BaseSetup):

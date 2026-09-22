@@ -113,8 +113,8 @@ make bench-clean   # rm -rf $TMPDIR/ai-golden-bench
 
 ### Isolation
 
-Bench overrides `AI_STORAGE_ROOT`, `AI_STORAGE_DEFAULT_PROJECT_ID`,
-`AI_STORAGE_BACKEND` via env vars so the run can't read or write the
+Bench overrides `INQUIRY_STORAGE_ROOT`, `INQUIRY_STORAGE_DEFAULT_PROJECT_ID`,
+`INQUIRY_STORAGE_BACKEND` via env vars so the run can't read or write the
 user's `.agentic-inquiry/` or any project-root `agentic-inquiry.yaml`. All bench
 artifacts (staged corpus, LanceDB index, last results) live under
 `$TMPDIR/ai-golden-bench/` — outside the repo because the indexer

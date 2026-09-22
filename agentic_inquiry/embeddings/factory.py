@@ -33,7 +33,7 @@ def resolve_backend_type(config: "Config") -> str:
         config: Application configuration
 
     Returns:
-        Backend type string (e.g. "alloydb", "postgresql", "lancedb")
+        Backend type string (e.g. "lancedb")
     """
     backend_type = getattr(config.storage, "backend", "lancedb")
     if hasattr(config.storage, "backends") and config.storage.backends:
@@ -238,34 +238,6 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
                 config=config
             )
             model_display_name = lm_config.model_path
-        elif provider == "bedrock":
-            from agentic_inquiry.embeddings.bedrock import BedrockEmbedder
-            from agentic_inquiry.exceptions import ConfigurationError
-
-            bd_config = config.embeddings.bedrock
-            if not bd_config.region:
-                raise ConfigurationError(
-                    "embeddings.bedrock.region is required when "
-                    "default_provider == 'bedrock'. Set it in YAML or "
-                    "via AI_EMBEDDINGS_BEDROCK_REGION."
-                )
-            # ``ndims`` for the registry comes from the provider's
-            # output_dim — Bedrock-specific dim trumps the global
-            # default_dimensions, since silently truncating a 1024-dim
-            # Titan vector down to 384 (the default) would be the kind
-            # of bug that's only obvious after the corpus is wrong.
-            ndims = bd_config.output_dim
-            embedder = BedrockEmbedder(
-                region=bd_config.region,
-                model_id=bd_config.model_id,
-                ndims=ndims,
-                normalize=bd_config.normalize,
-                batch_size=bd_config.batch_size,
-                max_retries=bd_config.max_retries,
-                timeout_seconds=bd_config.timeout_seconds,
-                request_concurrency=bd_config.request_concurrency,
-            )
-            model_display_name = bd_config.model_id
         else:
             # Default to sentence_transformer
             from agentic_inquiry.embeddings.sentence_transformer import (

@@ -12,8 +12,8 @@ Show the current state of your ai environment.
 
 - Working directory: !`pwd`
 - Dev mode: !`test -f .agentic-inquiry/.dev-mode && echo "DEV MODE ACTIVE" || echo "normal"`
-- Config file: !`echo ${AI_CONFIG:-"(default)"}`
-- Project ID: !`echo ${AI_PROJECT_ID:-"(not set)"}`
+- Config file: !`echo ${INQUIRY_CONFIG:-"(default)"}`
+- Project ID: !`echo ${INQUIRY_PROJECT_ID:-"(not set)"}`
 - Index status: !`ai index status 2>/dev/null || echo "No index found"`
 - Data directory: !`du -sh .agentic-inquiry/ 2>/dev/null || echo "No .agentic-inquiry/ directory"`
 - Environment registry: !`cat .agentic-inquiry/env-registry.json 2>/dev/null || echo "No environments configured"`
@@ -28,7 +28,7 @@ ai Status
 Mode:        {normal | DEV MODE}
 Project:     {project_id}
 Config:      {config path}
-Storage:     {lancedb | postgresql}
+Storage:     lancedb
 
 Index:
   Entities:  {count}

@@ -22,7 +22,7 @@ ai Status
 Mode:        normal | DEV MODE
 Project:     myproject
 Config:      config/local.yaml
-Storage:     lancedb | postgresql
+Storage:     lancedb
 
 Index:
   Entities:  1,247
@@ -43,7 +43,7 @@ Memories:    23 saved
 - **DEV MODE**: Using isolated test environment (`.agentic-inquiry/dev/`)
 
 ### Project
-- Current `AI_PROJECT_ID` or "default"
+- Current `INQUIRY_PROJECT_ID` or "default"
 - Shows which config file is active
 
 ### Index Health
@@ -53,7 +53,7 @@ Memories:    23 saved
 - Stale file warnings
 
 ### Environment
-- Storage backend (LanceDB/PostgreSQL)
+- Storage backend (LanceDB)
 - Data directory location
 - Disk usage
 
@@ -61,7 +61,7 @@ Memories:    23 saved
 
 ```bash
 # /ai:status
-uv run --env-file .env ai index status --project-id ${AI_PROJECT_ID:-default}
+uv run --env-file .env ai index status --project-id ${INQUIRY_PROJECT_ID:-default}
 
 # /ai:status
 test -f .agentic-inquiry/.dev-mode && echo "DEV MODE" || echo "normal"

@@ -491,76 +491,6 @@ class FastEmbedConfig:
 
 
 @dataclass
-class BedrockConfig:
-    """Amazon Bedrock embedder configuration (Titan v2 by default).
-
-    Selected when ``embeddings.default_provider`` is set to ``bedrock``.
-    Read by both dispatchers — ``embeddings.factory.configure_embedder_for_backend``
-    (used by indexing/search/MCP/CLI) and
-    ``embeddings.service.EmbeddingService._create_embedder`` (used by
-    memory, graph search, MCP suggestion gathering, CLI memory). Other
-    code paths construct it for free via ``field(default_factory)`` even
-    when unused, which is why ``region`` is ``Optional[str] = None``
-    rather than the empty string — keeps "unconfigured" distinguishable
-    from "intentionally empty" and lets the dispatcher raise an
-    actionable ``ConfigurationError`` only when bedrock is actually
-    selected.
-
-    See RFC 0003 § Configuration conventions for the full rationale.
-    """
-
-    # Bedrock model id. Titan v2 is the only model this dataclass is
-    # validated against; other Titan models (v1, multimodal) work with
-    # the same shape but you take responsibility for the dim/output
-    # contract.
-    model_id: str = "amazon.titan-embed-text-v2:0"
-
-    # AWS region. Required at runtime — Titan v2 isn't available in
-    # every Bedrock region, and there is no sensible default. The
-    # factory enforces non-empty when bedrock is the selected provider.
-    region: Optional[str] = None
-
-    # Output dimension. Titan v2 supports {256, 512, 1024}. 1024 maxes
-    # recall; 256 / 512 trade recall for storage and faster pgvector
-    # index builds.
-    #
-    # Titan-specific. The JSON schema (config.schema.json) currently
-    # validates this against the {256, 512, 1024} enum. If a future
-    # change adds non-Titan Bedrock embedding models (e.g. Cohere
-    # Embed-v3 via Bedrock, which is 1024-dim only), the schema enum
-    # will need broadening or per-model validation; until then,
-    # operators using a non-Titan ``model_id`` get a config-validation
-    # error if they pick a dim outside the enum, even though the model
-    # may legitimately support it.
-    output_dim: int = 1024
-
-    # Whether to request L2-normalized vectors. Default True matches
-    # what pgvector cosine distance and our hybrid-search pipeline
-    # assume downstream.
-    normalize: bool = True
-
-    # User-facing chunk size the base loop targets. Effective per-call
-    # batch is ``min(batch_size, BedrockEmbedder._max_inputs_per_request)``;
-    # for Titan that's always 1, so this knob shapes fan-out granularity
-    # rather than per-request size.
-    batch_size: int = 16
-
-    # Retries on Bedrock ``ThrottlingException`` /
-    # ``ServiceQuotaExceededException``. Auth and validation failures
-    # don't retry — they need operator attention.
-    max_retries: int = 3
-
-    # boto3 read/connect timeout per InvokeModel call.
-    timeout_seconds: float = 30.0
-
-    # Parallel ``InvokeModel`` calls when len(texts) > 1. Bound by
-    # Bedrock RPM quota (Titan v2 default 2000 RPM in ``us-east-1``).
-    # This is the single biggest throughput knob for Bedrock indexing
-    # given Titan's one-input-per-call constraint.
-    request_concurrency: int = 1
-
-
-@dataclass
 class EmbeddingsCacheConfig:
     """Content-hash LRU cache for local embedders.
 
@@ -620,7 +550,6 @@ class EmbeddingsConfig:
     hashing: HashingConfig = field(default_factory=HashingConfig)
     local_model: LocalModelConfig = field(default_factory=LocalModelConfig)
     fastembed: FastEmbedConfig = field(default_factory=FastEmbedConfig)
-    bedrock: BedrockConfig = field(default_factory=BedrockConfig)
     cache: EmbeddingsCacheConfig = field(default_factory=EmbeddingsCacheConfig)
 
 
@@ -1490,8 +1419,8 @@ class Config:
 
         Checks that:
         1. The *active* provider's declared dimension matches
-           ``default_dimensions``. Provider-specific so that adding
-           bedrock at 1024 dim doesn't force users to also bump
+           ``default_dimensions``. Provider-specific so that one provider's
+           dimension does not force users to also bump
            ``sentence_transformer.ndims`` to silence a check that
            doesn't apply to their deployment.
         2. Database dimensions match configuration (if database exists)
@@ -1532,10 +1461,6 @@ class Config:
             "local_model": (
                 self.embeddings.local_model.ndims,
                 "local_model.ndims",
-            ),
-            "bedrock": (
-                self.embeddings.bedrock.output_dim,
-                "bedrock.output_dim",
             ),
             "fastembed": (None, "default_provider"),
         }
@@ -1696,7 +1621,7 @@ class Config:
 
         Priority:
         1. Specified config_path
-        2. AI_CONFIG environment variable
+        2. INQUIRY_CONFIG environment variable
         3. agentic-inquiry.yaml in project root
         4. config/default.yaml (package default)
         """
@@ -1706,14 +1631,14 @@ class Config:
                 raise ConfigurationError(f"Configuration file not found: {config_path}")
             return path
 
-        # Check AI_CONFIG environment variable
-        if ai_config := os.environ.get("AI_CONFIG"):
+        # Check INQUIRY_CONFIG environment variable
+        if ai_config := os.environ.get("INQUIRY_CONFIG"):
             path = Path(ai_config)
             if path.exists():
-                logger.debug("Using configuration from AI_CONFIG: %s", path)
+                logger.debug("Using configuration from INQUIRY_CONFIG: %s", path)
                 return path
             else:
-                logger.warning("AI_CONFIG points to non-existent file: %s", ai_config)
+                logger.warning("INQUIRY_CONFIG points to non-existent file: %s", ai_config)
 
         # Try project root agentic-inquiry.yaml
         project_config = Path.cwd() / "agentic-inquiry.yaml"
@@ -1858,27 +1783,27 @@ class Config:
     def _apply_env_overrides(cls, config_data: Dict[str, Any]) -> Dict[str, Any]:
         """Apply environment variable overrides to configuration using convention-based lookup.
 
-        Environment variables use the format: AI_SECTION_SUBSECTION_KEY
+        Environment variables use the format: INQUIRY_SECTION_SUBSECTION_KEY
         The convention automatically maps AI_* variables to configuration paths:
-        - AI_STORAGE_ROOT → config_data['storage']['root']
-        - AI_CACHE_DOCUMENT_CACHE_MAX_SIZE → config_data['cache']['document_cache']['max_size']
-        - AI_SEARCH_DEFAULT_LIMIT → config_data['search']['default_limit']
-        - AI_STORAGE_DEFAULT_PROJECT_ID → config_data['storage']['default_project_id']
-        - AI_STORAGE_FILE_TRACKER_PATH → config_data['storage']['file_tracker']['path']
+        - INQUIRY_STORAGE_ROOT → config_data['storage']['root']
+        - INQUIRY_CACHE_DOCUMENT_CACHE_MAX_SIZE → config_data['cache']['document_cache']['max_size']
+        - INQUIRY_SEARCH_DEFAULT_LIMIT → config_data['search']['default_limit']
+        - INQUIRY_STORAGE_DEFAULT_PROJECT_ID → config_data['storage']['default_project_id']
+        - INQUIRY_STORAGE_FILE_TRACKER_PATH → config_data['storage']['file_tracker']['path']
 
         Examples:
-            AI_STORAGE_ROOT=./.agentic-inquiry
-            AI_STORAGE_DEFAULT_PROJECT_ID=my_project
-            AI_STORAGE_LANCEDB_PATH=lancedb
-            AI_CACHE_DOCUMENT_CACHE_MAX_SIZE=2000
-            AI_SEARCH_DEFAULT_LIMIT=20
-            AI_EMBEDDINGS_DEFAULT_DIMENSIONS=384
+            INQUIRY_STORAGE_ROOT=./.agentic-inquiry
+            INQUIRY_STORAGE_DEFAULT_PROJECT_ID=my_project
+            INQUIRY_STORAGE_LANCEDB_PATH=lancedb
+            INQUIRY_CACHE_DOCUMENT_CACHE_MAX_SIZE=2000
+            INQUIRY_SEARCH_DEFAULT_LIMIT=20
+            INQUIRY_EMBEDDINGS_DEFAULT_DIMENSIONS=384
 
         Special cases:
-            - AI_LOGGING_SERVICE_LEVELS_<SERVICE>=<LEVEL> for per-service log levels
-            - AI_MAINTENANCE_RETENTION_MINUTES → maintenance.cleanup_retention_minutes
-            - AI_TRAVERSAL_LIMIT → mcp.query.traversal_limit
-            - AI_BATCH_SIZE → mcp.query.batch_size
+            - INQUIRY_LOGGING_SERVICE_LEVELS_<SERVICE>=<LEVEL> for per-service log levels
+            - INQUIRY_MAINTENANCE_RETENTION_MINUTES → maintenance.cleanup_retention_minutes
+            - INQUIRY_TRAVERSAL_LIMIT → mcp.query.traversal_limit
+            - INQUIRY_BATCH_SIZE → mcp.query.batch_size
 
         Note: For multi-project workflows, pass project_id explicitly to component
         constructors rather than using default_project_id in configuration.
@@ -1887,9 +1812,9 @@ class Config:
 
         # Special mappings for env vars that don't follow the standard convention
         special_mappings = {
-            'AI_MAINTENANCE_RETENTION_MINUTES': ['maintenance', 'cleanup_retention_minutes'],
-            'AI_TRAVERSAL_LIMIT': ['mcp', 'query', 'traversal_limit'],
-            'AI_BATCH_SIZE': ['mcp', 'query', 'batch_size'],
+            'INQUIRY_MAINTENANCE_RETENTION_MINUTES': ['maintenance', 'cleanup_retention_minutes'],
+            'INQUIRY_TRAVERSAL_LIMIT': ['mcp', 'query', 'traversal_limit'],
+            'INQUIRY_BATCH_SIZE': ['mcp', 'query', 'batch_size'],
         }
 
         applied_count = 0
@@ -1902,8 +1827,8 @@ class Config:
             'progress', 'connectors', 'maintenance', 'onboard', 'services'
         }
         
-        # Handle service_levels separately (AI_LOGGING_SERVICE_LEVELS_<SERVICE>=<LEVEL>)
-        service_levels_prefix = "AI_LOGGING_SERVICE_LEVELS_"
+        # Handle service_levels separately (INQUIRY_LOGGING_SERVICE_LEVELS_<SERVICE>=<LEVEL>)
+        service_levels_prefix = "INQUIRY_LOGGING_SERVICE_LEVELS_"
         
         for env_key, env_value in os.environ.items():
             if not env_key.startswith(env_prefix):
@@ -1937,7 +1862,7 @@ class Config:
                     ignored_count += 1
                 continue
 
-            # Convention-based lookup: AI_SECTION_SUBSECTION_KEY → ["section", "subsection", "key"]
+            # Convention-based lookup: INQUIRY_SECTION_SUBSECTION_KEY → ["section", "subsection", "key"]
             # Get the key without prefix and convert to lowercase
             key_without_prefix = env_key[len(env_prefix):].lower()
             
@@ -1948,7 +1873,7 @@ class Config:
             if len(key_parts) < 2:
                 logger.warning(
                     "Ignoring invalid environment variable %s: "
-                    "must have at least section and key (e.g., AI_STORAGE_ROOT)",
+                    "must have at least section and key (e.g., INQUIRY_STORAGE_ROOT)",
                     env_key
                 )
                 ignored_count += 1
@@ -2479,7 +2404,6 @@ __all__ = [
     "SentenceTransformerConfig",
     "HashingConfig",
     "LocalModelConfig",
-    "BedrockConfig",
     "ParsersConfig",
     "MCPConfig",
     "MCPServerConfig",

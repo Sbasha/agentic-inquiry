@@ -1,5 +1,7 @@
 # Embeddings architecture
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 How Agentic Inquiry generates and uses vector embeddings during ingestion and
 retrieval. Read this before changing the embedding layer or adding a new
 embedding model.
@@ -347,20 +349,20 @@ at each level. Practical implications:
 
 | Variable | Effect |
 |---|---|
-| `AI_EMBEDDINGS_DEFAULT_PROVIDER` | `embeddings.default_provider` |
-| `AI_EMBEDDINGS_DEFAULT_DIMENSIONS` | `embeddings.default_dimensions` |
-| `AI_EMBEDDINGS_LOCAL_MODEL_MODEL_PATH` | `embeddings.local_model.model_path` |
-| `AI_EMBEDDINGS_LOCAL_MODEL_NORMALIZE` | `embeddings.local_model.normalize` |
-| `AI_EMBEDDINGS_LOCAL_MODEL_BATCH_SIZE` | `embeddings.local_model.batch_size` |
-| `AI_EMBEDDINGS_SENTENCE_TRANSFORMER_MODEL_NAME` | `embeddings.sentence_transformer.model_name` |
-| `AI_EMBEDDINGS_FASTEMBED_MODEL_NAME` | `embeddings.fastembed.model_name` |
-| `AI_EMBEDDINGS_FASTEMBED_CACHE_DIR` | `embeddings.fastembed.cache_dir` |
-| `AI_EMBEDDINGS_FASTEMBED_THREADS` | `embeddings.fastembed.threads` |
-| `AI_EMBEDDINGS_FASTEMBED_BATCH_SIZE` | `embeddings.fastembed.batch_size` |
-| `AI_EMBEDDINGS_FASTEMBED_PARALLEL` | `embeddings.fastembed.parallel` |
-| `AI_EMBEDDINGS_CACHE_ENABLED` | `embeddings.cache.enabled` |
-| `AI_EMBEDDINGS_CACHE_MAX_ENTRIES` | `embeddings.cache.max_entries` |
-| `AI_EMBEDDING_DEVICE` | sentence-transformer device pin (`cpu`/`cuda`/`mps`) — read directly by `SentenceTransformerEmbedder`, not via the config tree |
+| `INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER` | `embeddings.default_provider` |
+| `INQUIRY_EMBEDDINGS_DEFAULT_DIMENSIONS` | `embeddings.default_dimensions` |
+| `INQUIRY_EMBEDDINGS_LOCAL_MODEL_MODEL_PATH` | `embeddings.local_model.model_path` |
+| `INQUIRY_EMBEDDINGS_LOCAL_MODEL_NORMALIZE` | `embeddings.local_model.normalize` |
+| `INQUIRY_EMBEDDINGS_LOCAL_MODEL_BATCH_SIZE` | `embeddings.local_model.batch_size` |
+| `INQUIRY_EMBEDDINGS_SENTENCE_TRANSFORMER_MODEL_NAME` | `embeddings.sentence_transformer.model_name` |
+| `INQUIRY_EMBEDDINGS_FASTEMBED_MODEL_NAME` | `embeddings.fastembed.model_name` |
+| `INQUIRY_EMBEDDINGS_FASTEMBED_CACHE_DIR` | `embeddings.fastembed.cache_dir` |
+| `INQUIRY_EMBEDDINGS_FASTEMBED_THREADS` | `embeddings.fastembed.threads` |
+| `INQUIRY_EMBEDDINGS_FASTEMBED_BATCH_SIZE` | `embeddings.fastembed.batch_size` |
+| `INQUIRY_EMBEDDINGS_FASTEMBED_PARALLEL` | `embeddings.fastembed.parallel` |
+| `INQUIRY_EMBEDDINGS_CACHE_ENABLED` | `embeddings.cache.enabled` |
+| `INQUIRY_EMBEDDINGS_CACHE_MAX_ENTRIES` | `embeddings.cache.max_entries` |
+| `INQUIRY_EMBEDDING_DEVICE` | sentence-transformer device pin (`cpu`/`cuda`/`mps`) — read directly by `SentenceTransformerEmbedder`, not via the config tree |
 
 Convention: `AI_<SECTION>_<SUBSECTION>_<FIELD>` where each segment
 matches an actual key in the dataclass tree. The provider-name segment
@@ -375,8 +377,8 @@ reach because `<name>` is dynamic. These currently have no env-var
 override; set them in YAML or via a wrapper config layer.
 
 Older docs (e.g. `docs/api-reference/embeddings.md`) list
-`AI_EMBEDDINGS_PROVIDER`, `AI_EMBEDDINGS_LOCAL_*`, and
-`AI_STORAGE_EMBEDDING_*` — those names predate the `_set_nested`
+`INQUIRY_EMBEDDINGS_PROVIDER`, `INQUIRY_EMBEDDINGS_LOCAL_*`, and
+`INQUIRY_STORAGE_EMBEDDING_*` — those names predate the `_set_nested`
 convention and don't reach the documented fields. Use the names in the
 table above.
 
@@ -535,7 +537,7 @@ The convention RFC 0003 establishes:
    `embeddings/factory.py::configure_embedder_for_backend` and
    `embeddings/service.py::EmbeddingService._create_embedder` (see
    "Two `EmbeddingService`s" above for why both).
-5. Document the `AI_EMBEDDINGS_<PROVIDER>_*` env vars and add a
+5. Document the `INQUIRY_EMBEDDINGS_<PROVIDER>_*` env vars and add a
    commented block to `agentic-inquiry.yaml.example`.
 6. Add a row to the golden bench (`tests/golden/baseline.json`) — a
    different embedding model = a different recall@10 baseline.

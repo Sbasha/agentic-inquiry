@@ -13,7 +13,6 @@ from agentic_inquiry.cli.env_resolver import (
     ResolvedEnvironment,
     resolve_environment,
     is_test_environment,
-    should_auto_start_proxy,
 )
 
 from agentic_inquiry.cli.discover import (
@@ -27,7 +26,6 @@ __all__ = [
     "ResolvedEnvironment",
     "resolve_environment",
     "is_test_environment",
-    "should_auto_start_proxy",
     # Command discovery
     "CommandInfo",
     "discover_agv_commands",

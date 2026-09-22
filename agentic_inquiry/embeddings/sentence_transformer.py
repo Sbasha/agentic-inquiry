@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 # device and skip autodetect. Useful when autodetect picks an accelerator
 # that loads the model but then misbehaves at inference time (rare but
 # seen on some torch/macOS combinations).
-_DEVICE_ENV_VAR = "AI_EMBEDDING_DEVICE"
+_DEVICE_ENV_VAR = "INQUIRY_EMBEDDING_DEVICE"
 
 _KNOWN_DEVICES = frozenset({"cpu", "cuda", "mps"})
 
@@ -37,7 +37,7 @@ def _select_device(preferred: Optional[str] = None) -> str:
     on older macOS or non-Apple-Silicon Macs with MPS-enabled torch
     wheels).
 
-    ``preferred`` is the operator escape hatch (``AI_EMBEDDING_DEVICE``
+    ``preferred`` is the operator escape hatch (``INQUIRY_EMBEDDING_DEVICE``
     env var). It's normalised to lowercase and rejected with a warning
     if it isn't a known device — we fall through to autodetect rather
     than blindly returning a garbage value that would confuse the later

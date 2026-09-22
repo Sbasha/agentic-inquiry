@@ -1,5 +1,7 @@
 # Maintenance Operations Guide
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 **Version:** 1.0
 **Status:** Current
 **Last Updated:** 2026-01-13

@@ -64,7 +64,7 @@ Agentic Inquiry provides semantic understanding of codebases through:
 |---------|-------------|
 | `/ai:help` | List all commands and quick reference |
 | `/ai:status` | Show current project, index, and mode |
-| `/ai:setup` | Configure storage backend (LanceDB, PostgreSQL, AlloyDB) |
+| `/ai:setup` | Configure local storage (LanceDB) |
 
 ### Search & Discovery
 
@@ -112,9 +112,7 @@ The plugin includes lifecycle hooks that run as Python scripts:
 
 | Backend | Best For | Embedding |
 |---------|----------|-----------|
-| **LanceDB** | Local development | Local (SentenceTransformer, 384d) |
-| **PostgreSQL** | Self-hosted production | Local (SentenceTransformer, 384d) |
-| **AlloyDB** | GCP production | Server-side (`text-embedding-005`, 768d) |
+| **LanceDB** | Local, the only shipped backend | Local (SentenceTransformer, 384d) |
 
 ## Example Workflows
 

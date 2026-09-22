@@ -1,7 +1,7 @@
 ---
 name: onboard
 description: Intelligently onboard a codebase - parallel index, explore, and validate. Use when setting up ai for a new codebase or helping someone get started.
-argument-hint: "[path] [--env local|postgres|gcp|aws|azure] [--skip-index] [--deep]"
+argument-hint: "[path] [--env local|<env-name>] [--skip-index] [--deep]"
 context: fork
 agent: general-purpose
 allowed-tools: Bash, Read, Write, Glob, Grep, Agent, AskUserQuestion
@@ -97,6 +97,6 @@ Generate comprehensive onboarding report with:
 | Option | Description |
 |--------|-------------|
 | `path` | Directory to onboard (default: `.`) |
-| `--env` | Environment to use (local, gcp, or env name) |
+| `--env` | Environment to use (local or an env name) |
 | `--skip-index` | Skip indexing, just explore and validate |
 | `--deep` | Extra exploration depth (default for onboarding) |

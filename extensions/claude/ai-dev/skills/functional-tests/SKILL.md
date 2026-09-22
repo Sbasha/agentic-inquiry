@@ -1,7 +1,7 @@
 ---
 name: functional-tests
 description: Run full UAT functional test suite - environment setup, indexing, and test execution. Use when running end-to-end ai validation.
-argument-hint: "[all|TEST_XX] [--env local|gcp-prod|<name>] [--skip-index] [--batch N]"
+argument-hint: "[all|TEST_XX] [--env local|<name>] [--skip-index] [--batch N]"
 context: fork
 agent: general-purpose
 disable-model-invocation: true
@@ -73,7 +73,7 @@ Generate `SUMMARY.md` and spawn `test-reviewer` agent for executive summary.
 
 ```bash
 /ai-dev:functional-tests                          # Run everything
-/ai-dev:functional-tests all --env gcp-prod       # Use specific env
+/ai-dev:functional-tests all --env ai-test        # Use specific env
 /ai-dev:functional-tests TEST_01 --env local      # Just smoke test
 /ai-dev:functional-tests --batch 2 --skip-index   # Batch 2 only
 ```

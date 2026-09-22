@@ -623,7 +623,7 @@ No cloud accounts, no infrastructure, no IT involvement needed.
 
 **Offline Capability: 100% Validated**
 
-Set `AI_OFFLINE=1` environment variable:
+Set `INQUIRY_OFFLINE=1` environment variable:
 - ✅ No network calls (verified by network monitoring)
 - ✅ All models cached locally
 - ✅ Works in air-gapped environments
@@ -1686,14 +1686,14 @@ chown $USER workspace/
 
 **3. Offline Mode** (Regulated Environments)
 ```bash
-export AI_OFFLINE=1  # No model downloads
+export INQUIRY_OFFLINE=1  # No model downloads
 # Pre-download models before air-gapping
 ```
 
 **4. Audit Logging** (Enterprise)
 ```bash
 # Enable event logging
-export AI_LOG_LEVEL=INFO
+export INQUIRY_LOG_LEVEL=INFO
 
 # Events logged to workspace/logs/events.db
 # - Indexing operations

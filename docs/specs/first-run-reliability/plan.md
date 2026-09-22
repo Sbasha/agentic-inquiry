@@ -155,7 +155,7 @@ start --help` exits 0.
 - Comments and blank lines ignored; values never appear in log messages.
 - Path outside env dir (symlink escape) is not loaded.
 - `LocalSetup.run` creates `.env` containing commented
-  `AI_EMBEDDING_DEVICE=cpu`.
+  `INQUIRY_EMBEDDING_DEVICE=cpu`.
 
 **Approach:**
 - `load_environment_dotenv(env_dir)` parses KEY=VALUE, called from

@@ -15,19 +15,8 @@ Commands:
     ai services            Detect service architecture
     ai validate            Validate index accuracy
     ai agent-test          Execute agent test scenarios
-
-Auto-Start Behavior:
-    When a valid PostgreSQL/CloudSQL configuration is detected and the
-    environment supports auto-start (not a test environment), the CLI
-    will automatically start the Cloud SQL Proxy if needed.
-
-    Environment variables to control auto-start:
-    - AI_NO_AUTO_START=1  : Disable auto-start
-    - AI_TEST_MODE=1      : Disable auto-start (test isolation)
-    - --no-auto-start      : CLI flag to disable auto-start
 """
 
-import asyncio
 import os
 import sys
 import logging
@@ -51,110 +40,18 @@ def _should_skip_auto_start() -> bool:
         return True
 
     # Check env vars
-    if os.environ.get("AI_NO_AUTO_START", "").lower() in ("1", "true", "yes"):
+    if os.environ.get("INQUIRY_NO_AUTO_START", "").lower() in ("1", "true", "yes"):
         return True
 
-    if os.environ.get("AI_TEST_MODE", "").lower() in ("1", "true", "yes"):
+    if os.environ.get("INQUIRY_TEST_MODE", "").lower() in ("1", "true", "yes"):
         return True
 
     return False
 
 
 def _ensure_services_running() -> None:
-    """Ensure required services are running before command execution.
-
-    This function:
-    1. Resolves the current environment
-    2. Loads configuration
-    3. Starts Cloud SQL Proxy if needed (non-test environments with CloudSQL)
-
-    Failures are logged but don't block execution - the command may fail
-    later with a more specific error if the database is unreachable.
-    """
-    if _should_skip_auto_start():
-        logger.debug("Auto-start disabled, skipping service initialization")
-        return
-
-    try:
-        from agentic_inquiry.cli.env_resolver import resolve_environment
-        from agentic_inquiry.cli.proxy_manager import (
-            ensure_cloud_sql_proxy,
-            find_cloudsql_backend,
-            register_cleanup_handler,
-        )
-        from agentic_inquiry.config import Config
-
-        # Resolve current environment
-        env = resolve_environment()
-        logger.debug("Resolved environment: %s (source: %s)", env.name, env.source)
-
-        # Skip auto-start for test environments
-        if env.is_test:
-            logger.debug("Test environment detected, skipping auto-start")
-            return
-
-        # Load configuration
-        # Environment overlay configs (in envs/ directory) should be merged with defaults
-        config_path = str(env.config_path) if env.config_path else None
-        is_overlay_config = (
-            env.source in ("registry", "env_var")
-            and config_path
-            and "/envs/" in config_path
-        )
-        try:
-            if is_overlay_config and config_path:
-                # Use overlay merging for environment configs
-                config = Config.load_with_overlay(config_path)
-            else:
-                config = Config.load(config_path)
-        except Exception as e:
-            logger.debug("Could not load config for auto-start: %s", e)
-            return
-
-        # Check if CloudSQL backend is configured
-        if not find_cloudsql_backend(config):
-            logger.debug("No CloudSQL backend configured")
-            return
-
-        # Check if auto-start is enabled
-        if not env.auto_start_proxy and not config.services.auto_start_proxy:
-            logger.debug("Auto-start proxy disabled for this environment")
-            return
-
-        # Register cleanup handler for graceful shutdown
-        register_cleanup_handler()
-
-        # Ensure proxy is running (async but we need to wait)
-        try:
-            try:
-                loop = asyncio.get_running_loop()
-                # If we're in an async context, we can't use run_until_complete
-                # We should have awaited this earlier, but as a fallback for sync-called CLI:
-                logger.debug(
-                    "Already in a running event loop, skipping auto-start to avoid blocking"
-                )
-                return
-            except RuntimeError:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-
-            success = loop.run_until_complete(
-                ensure_cloud_sql_proxy(config, env_name=env.name)
-            )
-            if not success:
-                logger.warning(
-                    "Failed to start database proxy. Commands requiring database "
-                    "access may fail. Start proxy manually or use --no-auto-start."
-                )
-            else:
-                logger.debug("Database proxy initialized successfully")
-        except Exception as e:
-            logger.warning("Failed to initialize database proxy: %s", e)
-
-    except ImportError as e:
-        logger.debug("Auto-start dependencies not available: %s", e)
-    except Exception as e:
-        logger.warning("Error during service initialization: %s", e)
+    """Local providers need no service startup; kept for the command entry sequence."""
+    return None
 
 
 def print_help() -> None:
@@ -166,7 +63,7 @@ Usage: ai <command> [options]
 
 Commands:
   Setup & Server:
-    setup               Run setup wizard (supports AlloyDB, CloudSQL, LanceDB, etc.)
+    setup               Run setup wizard (local LanceDB environment)
     serve               Start MCP server
     server start        Start ai REST+MCP server
     server stop         Stop running server
@@ -219,8 +116,8 @@ Examples:
   ai memory save "Auth uses JWT"      # Save insight
 
 Environment:
-  AI_PROJECT_ID      Default project ID
-  AI_CONFIG          Path to config file
+  INQUIRY_PROJECT_ID      Default project ID
+  INQUIRY_CONFIG          Path to config file
   OPENAI_API_KEY      Required ONLY for OpenAI-based embeddings
 """)
 
@@ -229,8 +126,8 @@ def _parse_server_flags(args: list[str]) -> dict:
     """Parse --port, --project-id, --env flags from server command args."""
     result = {
         "port": None,
-        "project_id": os.environ.get("AI_PROJECT_ID", "default"),
-        "env": os.environ.get("AI_SERVER_ENV", "default"),
+        "project_id": os.environ.get("INQUIRY_PROJECT_ID", "default"),
+        "env": os.environ.get("INQUIRY_SERVER_ENV", "default"),
     }
     i = 0
     while i < len(args):

@@ -13,7 +13,7 @@ async def main() -> None:
     from agentic_inquiry.server.app import create_app
 
     app = await create_app(
-        project_id=os.environ.get("AI_PROJECT_ID", "default"),
+        project_id=os.environ.get("INQUIRY_PROJECT_ID", "default"),
     )
     config = uvicorn.Config(
         app,

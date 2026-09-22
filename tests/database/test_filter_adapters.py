@@ -1,7 +1,7 @@
 """Unit tests for backend-agnostic filter translator adapters.
 
 Covers the contract in :mod:`agentic_inquiry.database.filters.protocol` and
-the three concrete adapters. The parametrized-SQL output for the Postgres
+the concrete adapters. The parametrized-SQL output for the Postgres
 adapter is the main new surface — these tests pin the shape (fragment,
 params, next_index) and guarantee injection-safe field handling.
 """
@@ -15,8 +15,6 @@ pytestmark = pytest.mark.unit
 from agentic_inquiry.database.filters import (
     LanceDBFilterAdapter,
     MemoryFilterAdapter,
-    PostgresFilter,
-    PostgresFilterAdapter,
     and_,
     eq,
     gt,
@@ -131,99 +129,6 @@ class TestLanceDBFilterAdapter:
                 {"status": ("= 1) OR TRUE --", "active")}
             )
 
-
-# ---------------------------------------------------------------------------
-# PostgresFilterAdapter
-# ---------------------------------------------------------------------------
-
-
-class TestPostgresFilterAdapter:
-    def test_none_returns_none(self):
-        assert PostgresFilterAdapter().translate(None) is None
-
-    def test_empty_returns_none(self):
-        assert PostgresFilterAdapter().translate({}) is None
-
-    def test_simple_equality(self):
-        result = PostgresFilterAdapter().translate({"status": "active"})
-        assert isinstance(result, PostgresFilter)
-        assert result.where_sql == "AND status = $1"
-        assert result.params == ["active"]
-        assert result.next_index == 2
-
-    def test_start_index_offsets_placeholders(self):
-        result = PostgresFilterAdapter().bind({"status": "active"}, start_index=5)
-        assert result is not None
-        assert result.where_sql == "AND status = $5"
-        assert result.params == ["active"]
-        assert result.next_index == 6
-
-    def test_table_alias_prefixes_columns(self):
-        adapter = PostgresFilterAdapter(table_alias="c")
-        result = adapter.bind({"status": "active"}, start_index=2)
-        assert result is not None
-        assert result.where_sql == "AND c.status = $2"
-
-    def test_multi_field_anded(self):
-        result = PostgresFilterAdapter().translate(
-            {"status": "active", "type": "code"}
-        )
-        assert result is not None
-        assert result.where_sql == "AND (status = $1 AND type = $2)"
-        assert result.params == ["active", "code"]
-        assert result.next_index == 3
-
-    def test_in_operator(self):
-        result = PostgresFilterAdapter().translate({"type": ("IN", ["a", "b"])})
-        assert result is not None
-        assert result.where_sql == "AND type IN ($1, $2)"
-        assert result.params == ["a", "b"]
-
-    def test_in_empty_list_is_false(self):
-        result = PostgresFilterAdapter().translate({"type": ("IN", [])})
-        assert result is not None
-        assert result.where_sql == "AND FALSE"
-        assert result.params == []
-
-    def test_not_in_empty_list_is_true(self):
-        result = PostgresFilterAdapter().translate({"type": ("NOT IN", [])})
-        assert result is not None
-        assert result.where_sql == "AND TRUE"
-
-    def test_comparison_operators(self):
-        result = PostgresFilterAdapter().translate({"score": (">", 0.5)})
-        assert result is not None
-        assert result.where_sql == "AND score > $1"
-        assert result.params == [0.5]
-
-    def test_null_checks(self):
-        a = PostgresFilterAdapter().translate({"deleted_at": None})
-        b = PostgresFilterAdapter().translate(is_not_null("deleted_at"))
-        assert a is not None and b is not None
-        assert a.where_sql == "AND deleted_at IS NULL"
-        assert a.params == []
-        assert b.where_sql == "AND deleted_at IS NOT NULL"
-        assert b.params == []
-
-    def test_or_branch(self):
-        ast = or_(eq("status", "active"), eq("status", "pending"))
-        result = PostgresFilterAdapter().translate(ast)
-        assert result is not None
-        assert result.where_sql == "AND (status = $1 OR status = $2)"
-        assert result.params == ["active", "pending"]
-
-    def test_nested_compound(self):
-        ast = and_(eq("a", 1), or_(eq("b", 2), eq("c", 3)))
-        result = PostgresFilterAdapter().translate(ast)
-        assert result is not None
-        assert result.where_sql == (
-            "AND (a = $1 AND (b = $2 OR c = $3))"
-        )
-        assert result.params == [1, 2, 3]
-
-    def test_rejects_injection_attempt_in_field(self):
-        with pytest.raises(ValueError):
-            PostgresFilterAdapter().translate({"1=1; DROP TABLE chunks--": "x"})
 
 
 # ---------------------------------------------------------------------------

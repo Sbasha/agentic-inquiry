@@ -42,16 +42,6 @@ from agentic_inquiry.connectors.lru_cache import (
     LRUCache,
 )
 
-# S3 connector is optional (requires s3fs)
-try:
-    from agentic_inquiry.connectors.s3 import S3Connector
-except ImportError:
-    S3Connector = None  # type: ignore[misc, assignment]
-# GCS connector is optional (requires gcsfs)
-try:
-    from agentic_inquiry.connectors.gcs import GCSConnector
-except ImportError:
-    GCSConnector = None  # type: ignore[misc, assignment]
 from agentic_inquiry.connectors.protocols import (
     AuthCapability,
     ChangeDetectionCapability,
@@ -103,9 +93,7 @@ __all__ = [
     # Filesystem connector
     "FileSystemConnector",
     # S3 connector (optional)
-    "S3Connector",
     # GCS connector (optional)
-    "GCSConnector",
     # Cache materialization
     "ContentMaterializer",
     # LRU Cache (S5-005)

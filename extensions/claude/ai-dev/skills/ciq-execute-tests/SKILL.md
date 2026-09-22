@@ -63,19 +63,7 @@ This returns all registered environments with `name`, `backend_type`, `config_pa
 ls config/test-*.yaml 2>/dev/null
 ```
 
-Maps to available test config profiles (e.g., `test-lancedb.yaml`, `test-postgresql.yaml`).
-
-#### 1c. Check proxy / connectivity for remote backends
-
-For each registered environment with a remote backend (postgresql, cloudsql, alloydb):
-
-```bash
-# Check if AlloyDB/CloudSQL Auth Proxy is running
-pgrep -f "alloydb-auth-proxy|cloud-sql-proxy" 2>/dev/null
-
-# Check if the configured port is listening
-nc -z 127.0.0.1 <port> 2>/dev/null && echo "REACHABLE" || echo "UNREACHABLE"
-```
+Maps to available test config profiles (e.g., `test-lancedb.yaml`).
 
 #### 1d. Build environment status table
 
@@ -83,14 +71,12 @@ Combine findings into a status table:
 
 | Environment | Backend | Status | Config |
 |-------------|---------|--------|--------|
-| ai-prod | alloydb | ACTIVE (proxy running, port reachable) | .agentic-inquiry/envs/ai-prod/config.yaml |
+| ai | lancedb | ACTIVE | .agentic-inquiry/envs/ai/config.yaml |
 | test-lancedb | lancedb | Available (no setup needed) | config/test-lancedb.yaml |
-| test-postgresql | postgresql | Available (needs proxy) | config/test-postgresql.yaml |
 
 Status values:
-- **ACTIVE** — registered as active, proxy running, port reachable
-- **Available** — config exists, may need proxy start
-- **Unreachable** — config exists but proxy not running or port not open
+- **ACTIVE** — registered as active and its directory exists
+- **Available** — config exists
 - **Not configured** — no config file found
 
 ### Step 2: Ask User (Environment + Test Selection)
@@ -100,16 +86,6 @@ Present the detected environments using `AskUserQuestion` with **two questions i
 1. **Environment** — Show only environments that were detected, with status. Pre-select the active one as "(Recommended)". If only one environment exists, skip this question.
 2. **Test scope** — Which tests to run (All, Smoke, Simple, Core subset, or specific IDs).
 
-If the selected environment has status "Unreachable", attempt to start the proxy:
-```bash
-# For AlloyDB
-alloydb-auth-proxy <connection_name> --port <port> &
-
-# For CloudSQL
-cloud-sql-proxy --port <port> <connection_name> &
-```
-
-Wait up to 15 seconds for the port to become reachable. If it fails, inform the user and offer to fall back to LanceDB.
 
 ### Step 3: Load Use Cases
 
@@ -187,9 +163,8 @@ If `.agentic-inquiry/` exceeds 5GB, run maintenance first.
    - Backend: {env_backend_type}
 
    Environment notes:
-   - Use AI_CONFIG={env_config_path} when starting the MCP server
-   - For AlloyDB/CloudSQL: proxy must be running on the configured port
-   - For LanceDB: no external dependencies needed
+   - Use INQUIRY_CONFIG={env_config_path} when starting the MCP server
+   - LanceDB needs no external dependencies
 
    Write full results to:
    - {output_path}/TEST_LOG.md

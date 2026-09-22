@@ -13,13 +13,13 @@ search layer exposed through Claude Code plugin skills.
 - **Hybrid semantic search.** Vector + FTS retrieval with RRF reranking,
   IDF-weighted boosting, and proportional normalization across the whole
   corpus (code chunks, DOCX, PDF, DOC).
-- **Multi-cloud, multi-backend storage.** LanceDB (local), PostgreSQL
-  (self-hosted), Google Cloud SQL, Google AlloyDB, AWS RDS / Aurora, and
-  Azure Database for PostgreSQL with the `azure_ai` extension — all
-  behind the same `StorageFacade`. Pluggable server-side embedders for
-  AWS Bedrock (Titan v2) and other providers are scoped in
-  [`docs/rfc/`](rfc/); the in-scope set above tracks what is shipped
-  in the codebase today.
+- **Local storage behind one contract.** LanceDB for vectors and graph,
+  SQLite for events, file tracking and onboarding metadata, all behind
+  the same `StorageFacade`. Every provider implements the protocols in
+  `storage/protocols/`; that contract is the seam for a future external
+  database provider for governed projects, documented in
+  [`storage-backends.md`](storage-backends.md). No cloud database,
+  managed service or remote embedder is in scope.
 - **Code intelligence primitives.** Entity extraction, impact analysis,
   data lineage tracing, and onboarding reports — surfaced as `/ai:*`
   slash commands.
@@ -33,8 +33,12 @@ search layer exposed through Claude Code plugin skills.
 
 - **A general-purpose ML or LLM training platform.** Agentic Inquiry
   consumes embeddings and chat models; it does not train them.
-- **A general-purpose vector database.** We layer on top of pgvector,
-  LanceDB, and managed cloud equivalents — we do not build a new one.
+- **A general-purpose vector database.** We layer on top of LanceDB —
+  we do not build a new one.
+- **Cloud deployment.** No provisioning, proxies, managed databases or
+  hosted embedding services. An external database for governed projects
+  is future design work behind the provider contract, not a deployment
+  target of this codebase.
 - **A code-modification agent.** Agentic Inquiry surfaces understanding;
   edits are performed by Claude Code (or whoever invokes the plugin).
 - **Bespoke per-customer forks.** Customer-specific behaviour belongs in
@@ -45,11 +49,11 @@ search layer exposed through Claude Code plugin skills.
 
 ## Principles
 
-1. **Multi-cloud is a hard product constraint.** Every storage backend,
-   embedder, and connector exists because a real deployment depends on
-   it. *Example:* an unused-looking AlloyDB setup path is still load-bearing
-   for GCP customers and is not safe to delete on a "no tests + no docs"
-   heuristic.
+1. **Local only, by design.** Everything runs on the user's machine:
+   indexing, embeddings, storage and the MCP server. *Example:* a feature
+   that needs a hosted service to work is out of scope until the external
+   provider contract exists and is implemented; it is not added as an
+   optional cloud path.
 
 2. **The plugins are the primary interface; the library is the
    contract.** Slash commands in `extensions/claude/ai/` are how users
@@ -58,11 +62,10 @@ search layer exposed through Claude Code plugin skills.
    capability lands as a Python API change *and* a plugin command in
    the same PR, not one without the other.
 
-3. **Storage abstractions stay backend-agnostic.** The `StorageFacade`
-   never leaks provider-specific concepts to callers. *Example:*
-   server-side embedding via `ai.initialize_embeddings()` is hidden
-   behind `embedding_strategy: server_side`; callers never know it's
-   AlloyDB-only.
+3. **Storage abstractions stay provider-agnostic.** The `StorageFacade`
+   never leaks provider-specific concepts to callers. *Example:* where
+   embeddings are produced is declared through `ProviderCapabilities`;
+   callers query capabilities and never test a backend type string.
 
 4. **Async-only at the I/O boundary.** Every database, network, and
    subprocess call is `async def` / `await`. *Example:* a sync helper

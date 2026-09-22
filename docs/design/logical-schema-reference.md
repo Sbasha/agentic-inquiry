@@ -1,5 +1,7 @@
 # Logical Schema Reference (Canonical Field Names)
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 This document defines the canonical logical schemas used by Agentic Inquiry. Adapters may store data differently (physical schema), but must map to these logical field names at the boundary.
 
 ## Goals

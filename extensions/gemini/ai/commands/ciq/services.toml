@@ -40,7 +40,7 @@ Visualizes how services connect:
               ┌────────────┼────────────┐
               ▼            ▼            ▼
         ┌─────────┐  ┌─────────┐  ┌─────────┐
-        │ LanceDB │  │ Postgres│  │ Memory  │
+        │ LanceDB │  │ SQLite  │  │ Memory  │
         └─────────┘  └─────────┘  └─────────┘
 ```
 

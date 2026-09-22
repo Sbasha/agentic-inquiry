@@ -110,7 +110,7 @@ class LocalSetup(BaseSetup):
             env_file.write_text(
                 "# Agentic Inquiry environment overrides for this backend.\n"
                 "# Uncomment the next line if indexing aborts on Apple Metal/MPS:\n"
-                "# AI_EMBEDDING_DEVICE=cpu\n",
+                "# INQUIRY_EMBEDDING_DEVICE=cpu\n",
                 encoding="utf-8",
             )
             print_info(f"Wrote environment file: {env_file}")
@@ -135,7 +135,7 @@ class LocalSetup(BaseSetup):
             print("  3. Search: ai search 'your query'")
             print(f"\nConfiguration: {self.config_path}")
             print(
-                "If indexing dies on Metal/MPS, uncomment AI_EMBEDDING_DEVICE=cpu "
+                "If indexing dies on Metal/MPS, uncomment INQUIRY_EMBEDDING_DEVICE=cpu "
                 f"in {self.env_dir / '.env'}"
             )
 

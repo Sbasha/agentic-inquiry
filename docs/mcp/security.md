@@ -1,5 +1,7 @@
 # MCP Server Security Guide
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 ## Overview
 
 The Agentic Inquiry MCP Server implements multiple security layers to protect against common vulnerabilities and ensure safe operation in production environments. This guide documents security features, best practices, and configuration options.
@@ -80,8 +82,8 @@ mcp:
 ```
 
 **Environment Variables:**
-- `AI_MCP_SECURITY_PATH_VALIDATION_ENFORCE` - Always true
-- `AI_MCP_SECURITY_PATH_VALIDATION_FOLLOW_SYMLINKS` - Default: true
+- `INQUIRY_MCP_SECURITY_PATH_VALIDATION_ENFORCE` - Always true
+- `INQUIRY_MCP_SECURITY_PATH_VALIDATION_FOLLOW_SYMLINKS` - Default: true
 
 ---
 
@@ -104,8 +106,8 @@ mcp:
 **Environment Variables:**
 
 ```bash
-export AI_MCP_API_AUTH_ENABLED=true
-export AI_MCP_API_AUTH_API_KEY="your-secure-api-key"
+export INQUIRY_MCP_API_AUTH_ENABLED=true
+export INQUIRY_MCP_API_AUTH_API_KEY="your-secure-api-key"
 ```
 
 #### Generating API Keys
@@ -338,9 +340,9 @@ mcp:
 ```
 
 **Environment Variables:**
-- `AI_MCP_API_RATE_LIMITING_ENABLED` - Enable rate limiting
-- `AI_MCP_API_RATE_LIMITING_REQUESTS_PER_MINUTE` - Rate limit
-- `AI_MCP_API_RATE_LIMITING_BURST_SIZE` - Burst allowance
+- `INQUIRY_MCP_API_RATE_LIMITING_ENABLED` - Enable rate limiting
+- `INQUIRY_MCP_API_RATE_LIMITING_REQUESTS_PER_MINUTE` - Rate limit
+- `INQUIRY_MCP_API_RATE_LIMITING_BURST_SIZE` - Burst allowance
 
 #### Rate Limit Headers
 
@@ -396,10 +398,10 @@ mcp:
 ```
 
 **Environment Variables:**
-- `AI_MCP_API_CORS_ENABLED` - Enable CORS
-- `AI_MCP_API_CORS_ORIGINS` - Comma-separated allowed origins
-- `AI_MCP_API_CORS_ALLOW_CREDENTIALS` - Allow credentials
-- `AI_MCP_API_CORS_MAX_AGE` - Preflight cache duration
+- `INQUIRY_MCP_API_CORS_ENABLED` - Enable CORS
+- `INQUIRY_MCP_API_CORS_ORIGINS` - Comma-separated allowed origins
+- `INQUIRY_MCP_API_CORS_ALLOW_CREDENTIALS` - Allow credentials
+- `INQUIRY_MCP_API_CORS_MAX_AGE` - Preflight cache duration
 
 #### CORS Headers
 
@@ -576,7 +578,7 @@ chown mcp-user:mcp-group config/mcp.yaml
 ```bash
 # Use environment variables for secrets
 export MCP_API_KEY="$(cat /secure/path/api-key)"
-export AI_STORAGE_URI="$(cat /secure/path/db-uri)"
+export INQUIRY_STORAGE_URI="$(cat /secure/path/db-uri)"
 ```
 
 **Secrets Management:**

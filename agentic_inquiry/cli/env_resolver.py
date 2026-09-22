@@ -1,8 +1,8 @@
 """Environment resolution for Agentic Inquiry.
 
 This module provides environment detection following a clear discovery order:
-1. AI_CONFIG env var (explicit override)
-2. AI_ENV env var (named environment like 'ai', 'ai-test', 'ai-prod')
+1. INQUIRY_CONFIG env var (explicit override)
+2. INQUIRY_ENV env var (named environment like 'ai', 'ai-test', 'ai-prod')
 3. Active environment from global registry (~/.agentic-inquiry/)
 4. Default fallback
 
@@ -11,7 +11,7 @@ Directory Convention:
 - .agentic-inquiry/ (project-local): Testing - test data, local overrides
 
 Naming Convention:
-- 'ai' : Default production environment (auto-start proxy if CloudSQL configured)
+- 'ai' : Default environment
 - 'ai-test' : Test environment (never auto-start)
 - 'ai-<custom>' : Custom named environments (auto-start based on config)
 """
@@ -65,12 +65,12 @@ def get_global_dir() -> Path:
     """Get the global ai data directory (~/.agentic-inquiry/).
 
     This directory stores environments, registry, events, and logs.
-    Can be overridden with AI_HOME env var.
+    Can be overridden with INQUIRY_HOME env var.
 
     Returns:
         Path to ~/.agentic-inquiry/ directory
     """
-    if ai_home := os.environ.get("AI_HOME"):
+    if ai_home := os.environ.get("INQUIRY_HOME"):
         return Path(ai_home)
     return Path.home() / GLOBAL_DIR_NAME
 
@@ -144,30 +144,6 @@ def is_test_environment(env_name: str) -> bool:
     return False
 
 
-def should_auto_start_proxy(env_name: str, has_cloudsql_config: bool = False) -> bool:
-    """Determine if proxy should be auto-started for this environment.
-
-    Args:
-        env_name: Environment name
-        has_cloudsql_config: Whether CloudSQL is configured
-
-    Returns:
-        True if proxy should be auto-started
-    """
-    # Never auto-start for test environments
-    if is_test_environment(env_name):
-        return False
-
-    # Check if explicitly disabled via env var
-    if os.environ.get("AI_NO_AUTO_START", "").lower() in ("1", "true", "yes"):
-        return False
-
-    # Check test mode env var
-    if os.environ.get("AI_TEST_MODE", "").lower() in ("1", "true", "yes"):
-        return False
-
-    # Only auto-start if CloudSQL is configured
-    return has_cloudsql_config
 
 
 def load_env_registry(workspace: Optional[Path] = None) -> dict:
@@ -210,8 +186,8 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
     """Resolve active ai environment by discovery order.
 
     Discovery order:
-    1. AI_CONFIG env var (explicit config path override)
-    2. AI_ENV env var (named environment)
+    1. INQUIRY_CONFIG env var (explicit config path override)
+    2. INQUIRY_ENV env var (named environment)
     3. Active environment from registry (if workspace is onboarded)
     4. Default 'ai' environment (if onboarded and ai config exists)
     5. Default fallback (package defaults)
@@ -225,8 +201,8 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
     if workspace is None:
         workspace = Path.cwd()
 
-    # 1. Explicit override via AI_CONFIG env var
-    if config_path_str := os.environ.get("AI_CONFIG"):
+    # 1. Explicit override via INQUIRY_CONFIG env var
+    if config_path_str := os.environ.get("INQUIRY_CONFIG"):
         config_path = Path(config_path_str)
         # Extract env name from path if possible
         env_name = "custom"
@@ -238,13 +214,11 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
             config_path=config_path if config_path.exists() else None,
             source="env_var",
             is_test=is_test_environment(env_name),
-            auto_start_proxy=should_auto_start_proxy(
-                env_name, has_cloudsql_config=True
-            ),
+            auto_start_proxy=False,
         )
 
-    # 2. Named environment via AI_ENV env var
-    if env_name := os.environ.get("AI_ENV"):
+    # 2. Named environment via INQUIRY_ENV env var
+    if env_name := os.environ.get("INQUIRY_ENV"):
         # Check workspace-local first, then global ~/.agentic-inquiry/
         config_path = get_env_config_path(env_name, workspace)
         if not config_path.exists():
@@ -254,9 +228,7 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
             config_path=config_path if config_path.exists() else None,
             source="env_var",
             is_test=is_test_environment(env_name),
-            auto_start_proxy=should_auto_start_proxy(
-                env_name, has_cloudsql_config=True
-            ),
+            auto_start_proxy=False,
         )
 
     # 3. Check registry (workspace-local .agentic-inquiry/ first, then global ~/.agentic-inquiry/)
@@ -277,9 +249,7 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
                     config_path=config_path,
                     source="registry",
                     is_test=is_test_environment(active_env),
-                    auto_start_proxy=should_auto_start_proxy(
-                        active_env, has_cloudsql_config=True
-                    ),
+                    auto_start_proxy=False,
                 )
 
         # 3b. Default to 'ai' environment if onboarded
@@ -292,31 +262,8 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
                 config_path=ai_config,
                 source="onboarded",
                 is_test=False,
-                auto_start_proxy=should_auto_start_proxy(
-                    "ai", has_cloudsql_config=True
-                ),
-            )
-
-    # 3.5. Cloud context auto-detection (before default fallback)
-    try:
-        from agentic_inquiry.cli.cloud_detect import detect_cloud_context
-
-        cloud_ctx = detect_cloud_context()
-        if cloud_ctx is not None:
-            logger.info(
-                "Cloud context detected: provider=%s, project=%s",
-                cloud_ctx.provider,
-                cloud_ctx.project_id,
-            )
-            return ResolvedEnvironment(
-                name=f"cloud-{cloud_ctx.provider}",
-                config_path=None,
-                source="cloud_detected",
-                is_test=False,
                 auto_start_proxy=False,
             )
-    except Exception:
-        logger.debug("Cloud detection probe failed, falling through to default")
 
     # 4. Fall back to default (no specific config)
     return ResolvedEnvironment(
@@ -426,15 +373,15 @@ def warn_embedding_device_hatch(env_dir: Path) -> None:
 
     Must run before the embedder is constructed so the operator sees the
     hatch path if Metal/MPS aborts the process. No-op on other platforms
-    and when ``AI_EMBEDDING_DEVICE`` is already set.
+    and when ``INQUIRY_EMBEDDING_DEVICE`` is already set.
     """
     if platform.system() != "Darwin":
         return
-    if os.environ.get("AI_EMBEDDING_DEVICE"):
+    if os.environ.get("INQUIRY_EMBEDDING_DEVICE"):
         return
     env_file = Path(env_dir) / ".env"
     print(
-        f"If embeddings abort on Metal/MPS, uncomment AI_EMBEDDING_DEVICE=cpu in {env_file}",
+        f"If embeddings abort on Metal/MPS, uncomment INQUIRY_EMBEDDING_DEVICE=cpu in {env_file}",
         file=sys.stderr,
     )
 
@@ -524,7 +471,7 @@ def add_environment_to_registry(
 
     Args:
         name: Environment name (e.g., 'ai', 'ai-test')
-        backend_type: Backend type ('lancedb', 'postgresql', 'cloudsql')
+        backend_type: Backend type ('lancedb')
         config_path: Path to the environment's config.yaml
         workspace: Workspace root path
         metadata: Optional additional metadata
@@ -533,7 +480,7 @@ def add_environment_to_registry(
     Example:
         >>> add_environment_to_registry(
         ...     name="gcp-prod",
-        ...     backend_type="cloudsql",
+        ...     backend_type="lancedb",
         ...     config_path="~/.agentic-inquiry/envs/gcp-prod/config.yaml",
         ...     metadata={"project": "my-project"},
         ...     set_active=True,
@@ -679,10 +626,6 @@ def get_backend_type_for_environment(
 
         # Old format: profile field -> infer backend type
         profile = env.get("profile", "")
-        if profile == "gcp":
-            return "cloudsql"
-        if profile == "alloydb":
-            return "alloydb"
         if profile == "local":
             return "lancedb"
 
@@ -725,13 +668,7 @@ def normalize_registry(workspace: Optional[Path] = None) -> int:
         # Upgrade old "profile" format to "backend_type"
         if "backend_type" not in env:
             profile = env.get("profile", "")
-            if profile == "gcp":
-                env["backend_type"] = "cloudsql"
-                changed = True
-            elif profile == "alloydb":
-                env["backend_type"] = "alloydb"
-                changed = True
-            elif profile == "local":
+            if profile == "local":
                 env["backend_type"] = "lancedb"
                 changed = True
             elif profile:
@@ -775,7 +712,6 @@ __all__ = [
     "ResolvedEnvironment",
     "resolve_environment",
     "is_test_environment",
-    "should_auto_start_proxy",
     "get_global_dir",
     "get_local_dir",
     "get_data_dir",

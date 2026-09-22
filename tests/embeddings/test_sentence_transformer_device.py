@@ -268,7 +268,7 @@ class TestModelLoadFallback:
 
 
 class TestDeviceEnvVar:
-    """``AI_EMBEDDING_DEVICE`` escape hatch — lets operators pin the
+    """``INQUIRY_EMBEDDING_DEVICE`` escape hatch — lets operators pin the
     device when autodetect picks something that misbehaves (e.g. MPS
     loads but hangs at inference time)."""
 
@@ -278,7 +278,7 @@ class TestDeviceEnvVar:
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=False)
-        monkeypatch.setenv("AI_EMBEDDING_DEVICE", "cpu")
+        monkeypatch.setenv("INQUIRY_EMBEDDING_DEVICE", "cpu")
         _reimport_module(monkeypatch)
         from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,
@@ -296,7 +296,7 @@ class TestDeviceEnvVar:
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=False)
-        monkeypatch.setenv("AI_EMBEDDING_DEVICE", "")
+        monkeypatch.setenv("INQUIRY_EMBEDDING_DEVICE", "")
         _reimport_module(monkeypatch)
         from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,
@@ -320,7 +320,7 @@ class TestDeviceEnvVar:
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=False)
-        monkeypatch.setenv("AI_EMBEDDING_DEVICE", "gpu")  # not a torch name
+        monkeypatch.setenv("INQUIRY_EMBEDDING_DEVICE", "gpu")  # not a torch name
         _reimport_module(monkeypatch)
         from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,

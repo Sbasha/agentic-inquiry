@@ -76,7 +76,6 @@ from .translator import (
 # Re-export backend-agnostic translator protocol + adapters
 from .lancedb_adapter import LanceDBFilterAdapter
 from .memory_adapter import MemoryFilterAdapter, Predicate
-from .postgres_adapter import PostgresFilter, PostgresFilterAdapter
 from .protocol import FilterInput, FilterTranslator, normalize_to_ast
 
 __all__ = [
@@ -118,6 +117,4 @@ __all__ = [
     "LanceDBFilterAdapter",
     "MemoryFilterAdapter",
     "Predicate",
-    "PostgresFilter",
-    "PostgresFilterAdapter",
 ]

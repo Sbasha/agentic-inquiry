@@ -91,20 +91,20 @@ def _run_git(args: list[str]) -> str:
 
 
 _ENV_KEYS = (
-    "AI_CONFIG",
-    "AI_STORAGE_ROOT",
-    "AI_STORAGE_DEFAULT_PROJECT_ID",
-    "AI_STORAGE_BACKEND",
-    "AI_LOGGING_LEVEL",
+    "INQUIRY_CONFIG",
+    "INQUIRY_STORAGE_ROOT",
+    "INQUIRY_STORAGE_DEFAULT_PROJECT_ID",
+    "INQUIRY_STORAGE_BACKEND",
+    "INQUIRY_LOGGING_LEVEL",
 )
 
-# Pin the config source. Without this, Config.load() walks cwd → AI_CONFIG →
+# Pin the config source. Without this, Config.load() walks cwd → INQUIRY_CONFIG →
 # agentic-inquiry.yaml → config/default.yaml — meaning a developer or CI host
 # with ~/.agentic-inquiry/config.yaml or a project-root agentic-inquiry.yaml that defines
 # `storage.backends:` would silently override our LanceDB choice. Worse,
 # StorageFacade.from_config() ignores the legacy `storage.backend` field
-# (which our AI_STORAGE_BACKEND env override populates) when multi-backend
-# `storage.backends` is present. Forcing AI_CONFIG at the repo's known-good
+# (which our INQUIRY_STORAGE_BACKEND env override populates) when multi-backend
+# `storage.backends` is present. Forcing INQUIRY_CONFIG at the repo's known-good
 # default is the only way to guarantee the bench runs against the same
 # config every time.
 _BENCH_CONFIG_PATH = REPO_ROOT / "config" / "default.yaml"
@@ -119,13 +119,13 @@ def _setup_env(temp_root: Path) -> dict[str, str | None]:
     would leak into co-running tests if anyone drops the ``slow`` marker.
     """
     prev: dict[str, str | None] = {k: os.environ.get(k) for k in _ENV_KEYS}
-    os.environ["AI_CONFIG"] = str(_BENCH_CONFIG_PATH)
-    os.environ["AI_STORAGE_ROOT"] = str(temp_root)
-    os.environ["AI_STORAGE_DEFAULT_PROJECT_ID"] = PROJECT_ID
+    os.environ["INQUIRY_CONFIG"] = str(_BENCH_CONFIG_PATH)
+    os.environ["INQUIRY_STORAGE_ROOT"] = str(temp_root)
+    os.environ["INQUIRY_STORAGE_DEFAULT_PROJECT_ID"] = PROJECT_ID
     # Force LanceDB regardless of any user overlay
-    os.environ["AI_STORAGE_BACKEND"] = "lancedb"
+    os.environ["INQUIRY_STORAGE_BACKEND"] = "lancedb"
     # Quiet the CLI banners
-    os.environ.setdefault("AI_LOGGING_LEVEL", "WARNING")
+    os.environ.setdefault("INQUIRY_LOGGING_LEVEL", "WARNING")
     return prev
 
 

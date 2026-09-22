@@ -109,7 +109,6 @@ async def _create_memory_system(config, project_id: str):
     from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
     from agentic_inquiry.embeddings.service import EmbeddingService
     from agentic_inquiry.memory.system import MemorySystem
-    from agentic_inquiry.memory.adapters.postgresql_adapter import PostgresMemoryAdapter
     from agentic_inquiry.storage.facade import StorageFacade
 
     # Configure embedder if not already configured
@@ -130,26 +129,11 @@ async def _create_memory_system(config, project_id: str):
 
     # Create storage and detect backend type for adapter selection
     storage = await StorageFacade.from_config(config, project_id)
-    conn_manager = storage.get_connection_manager()
     backend_type = (
         storage.get_backend_type() if hasattr(storage, "get_backend_type") else None
     )
 
-    if conn_manager is not None:
-        # PostgreSQL backend - use PostgresMemoryAdapter
-        episodic_storage = PostgresMemoryAdapter(
-            connection_manager=conn_manager,
-            table_name=episodic_table,
-            embedding_dims=embedding_dims,
-        )
-        semantic_storage = PostgresMemoryAdapter(
-            connection_manager=conn_manager,
-            table_name=semantic_table,
-            embedding_dims=embedding_dims,
-        )
-        await episodic_storage.initialize()
-        await semantic_storage.initialize()
-    elif backend_type == "lancedb":
+    if backend_type == "lancedb":
         # LanceDB backend - use LanceDBMemoryAdapter for persistence across invocations
         from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 

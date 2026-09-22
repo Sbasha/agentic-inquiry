@@ -15,7 +15,7 @@ Quick reference for all Agentic Inquiry skills.
 | Skill | Description |
 |-------|-------------|
 | `/ai:onboard` | Intelligent onboarding - parallel index, explore, validate |
-| `/ai:setup` | Configure storage backend (local/gcp/alloydb) |
+| `/ai:setup` | Configure local storage (LanceDB) |
 | `/ai:status` | Show current project, index, and mode status |
 | `/ai:env` | Manage isolated environments |
 

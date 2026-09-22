@@ -295,7 +295,7 @@ class StorageFacade:
         # Allocation is kept so that follow-up can hook in without changing
         # this surface.
         # Tracked: https://github.com/sbasha/agentic_inquiry/issues/131
-        pooled_backend_types = ("postgresql", "cloudsql", "alloydb", "spanner", "rds")
+        pooled_backend_types: tuple[str, ...] = ()
         needs_pool = False
         for role_str in ["vector", "graph", "events", "file_tracker"]:
             try:
@@ -519,72 +519,16 @@ class StorageFacade:
             ... except ValueError:
             ...     pass  # Transaction rolled back automatically
         """
-        from contextlib import asynccontextmanager
-        from typing import AsyncIterator
-
         # Resolve timeout from config if not provided
         if timeout is None:
             timeout = self._config.storage.backend_timeouts.transaction_timeout
 
-        # Check if providers are PostgreSQL-based (support transactions)
-        from agentic_inquiry.storage.providers.postgresql.vector import (
-            PostgresVectorProvider,
+        raise TransactionError(
+            f"Vector provider {type(self._vector_provider).__name__} does not support "
+            "transactions. The local LanceDB, SQLite and in-memory providers "
+            "commit per operation; a transactional external provider must implement "
+            "the TransactionalProvider protocol."
         )
-        from agentic_inquiry.storage.providers.postgresql.graph import (
-            PostgresGraphProvider,
-        )
-
-        if not isinstance(self._vector_provider, PostgresVectorProvider):
-            raise TransactionError(
-                f"Vector provider {type(self._vector_provider).__name__} "
-                "does not support transactions. Only PostgreSQL providers support "
-                "coordinated transactions."
-            )
-
-        if not isinstance(self._graph_provider, PostgresGraphProvider):
-            raise TransactionError(
-                f"Graph provider {type(self._graph_provider).__name__} "
-                "does not support transactions. Only PostgreSQL providers support "
-                "coordinated transactions."
-            )
-
-        # Import here to avoid circular dependency
-        from agentic_inquiry.storage.providers.postgresql.transaction import (
-            TransactionCoordinator,
-            transaction_scope,
-        )
-        from agentic_inquiry.storage.providers.postgresql.vector import PostgresVectorProvider
-        from agentic_inquiry.storage.providers.postgresql.graph import PostgresGraphProvider
-
-        @asynccontextmanager
-        async def _transaction_context() -> AsyncIterator[TransactionCoordinator]:
-            """Internal context manager that creates and manages coordinator."""
-            # Cast providers to PostgreSQL specific types
-            # Safe because we checked backend_type == "postgresql"
-            vector_provider = cast(PostgresVectorProvider, self._vector_provider)
-            graph_provider = cast(PostgresGraphProvider, self._graph_provider)
-            
-            # Get connection manager from vector provider
-            # Accessing internal _conn is safe here as we know it's PostgresVectorProvider
-            connection_manager = vector_provider._conn
-
-            # Create coordinator
-            coordinator = TransactionCoordinator(
-                connection_manager=connection_manager,
-                vector_provider=vector_provider,
-                graph_provider=graph_provider,
-                timeout=timeout,
-            )
-
-            # Use transaction_scope to manage lifecycle
-            async with transaction_scope(coordinator) as txn:
-                yield txn
-
-        return _transaction_context()
-
-    # =========================================================================
-    # Vector Operations (delegated to vector_provider)
-    # =========================================================================
 
     async def vector_search(
         self,

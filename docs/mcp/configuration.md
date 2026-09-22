@@ -307,9 +307,9 @@ mcp:
 ```
 
 **Environment Variables:**
-- `AI_MCP_SERVER_NAME` - Server name
-- `AI_MCP_SERVER_VERSION` - Server version
-- `AI_MCP_SERVER_DESCRIPTION` - Server description
+- `INQUIRY_MCP_SERVER_NAME` - Server name
+- `INQUIRY_MCP_SERVER_VERSION` - Server version
+- `INQUIRY_MCP_SERVER_DESCRIPTION` - Server description
 
 ---
 
@@ -333,7 +333,7 @@ When using the MCP server, cognitive tools provide:
 - Knowledge management (add_knowledge, get_events)
 
 **Environment Variables:**
-- `AI_MCP_TOOLS_COGNITIVE_ENABLED` - Enable/disable cognitive tools
+- `INQUIRY_MCP_TOOLS_COGNITIVE_ENABLED` - Enable/disable cognitive tools
 
 ### Direct Access Tools
 
@@ -352,7 +352,7 @@ Direct access tools include:
 - get_by_id - Bulk entity retrieval
 
 **Environment Variables:**
-- `AI_MCP_TOOLS_DIRECT_ACCESS_ENABLED` - Enable/disable direct access tools
+- `INQUIRY_MCP_TOOLS_DIRECT_ACCESS_ENABLED` - Enable/disable direct access tools
 
 **CLI Override:**
 ```bash
@@ -386,9 +386,9 @@ mcp:
 | `port` | 8765 | Port number |
 
 **Environment Variables:**
-- `AI_MCP_API_ENABLED` - Enable/disable API
-- `AI_MCP_API_HOST` - Bind address
-- `AI_MCP_API_PORT` - Port number
+- `INQUIRY_MCP_API_ENABLED` - Enable/disable API
+- `INQUIRY_MCP_API_HOST` - Bind address
+- `INQUIRY_MCP_API_PORT` - Port number
 
 ### CORS Configuration
 
@@ -398,8 +398,8 @@ mcp:
 | `origins` | ["*"] | Allowed origins |
 
 **Environment Variables:**
-- `AI_MCP_API_CORS_ENABLED` - Enable/disable CORS
-- `AI_MCP_API_CORS_ORIGINS` - Comma-separated origins
+- `INQUIRY_MCP_API_CORS_ENABLED` - Enable/disable CORS
+- `INQUIRY_MCP_API_CORS_ORIGINS` - Comma-separated origins
 
 **Production Example:**
 ```yaml
@@ -420,8 +420,8 @@ mcp:
 | `api_key` | null | API key |
 
 **Environment Variables:**
-- `AI_MCP_API_AUTH_ENABLED` - Enable/disable auth
-- `AI_MCP_API_AUTH_API_KEY` - API key
+- `INQUIRY_MCP_API_AUTH_ENABLED` - Enable/disable auth
+- `INQUIRY_MCP_API_AUTH_API_KEY` - API key
 
 **Generate API Key:**
 ```bash
@@ -463,9 +463,9 @@ mcp:
 | `min_relevance` | 0.3 | Minimum relevance score |
 
 **Environment Variables:**
-- `AI_MCP_DEFAULTS_SEARCH_LIMIT`
-- `AI_MCP_DEFAULTS_SEARCH_HYBRID_WEIGHT`
-- `AI_MCP_DEFAULTS_SEARCH_MIN_RELEVANCE`
+- `INQUIRY_MCP_DEFAULTS_SEARCH_LIMIT`
+- `INQUIRY_MCP_DEFAULTS_SEARCH_HYBRID_WEIGHT`
+- `INQUIRY_MCP_DEFAULTS_SEARCH_MIN_RELEVANCE`
 
 ### Context Defaults
 
@@ -485,9 +485,9 @@ mcp:
 | `include_relationships` | true | Include entity relationships |
 
 **Environment Variables:**
-- `AI_MCP_DEFAULTS_CONTEXT_MAX_TOKENS`
-- `AI_MCP_DEFAULTS_CONTEXT_DEPTH`
-- `AI_MCP_DEFAULTS_CONTEXT_INCLUDE_RELATIONSHIPS`
+- `INQUIRY_MCP_DEFAULTS_CONTEXT_MAX_TOKENS`
+- `INQUIRY_MCP_DEFAULTS_CONTEXT_DEPTH`
+- `INQUIRY_MCP_DEFAULTS_CONTEXT_INCLUDE_RELATIONSHIPS`
 
 ### Impact Analysis Defaults
 
@@ -585,7 +585,7 @@ Schema mapping automatically transforms ParserChunk fields to match database sch
 | `field_mappings` | {...} | Field name mappings (ParserChunk → database) |
 
 **Environment Variables:**
-- `AI_INDEXING_SCHEMA_MAPPING_ENABLED` - Enable/disable schema mapping
+- `INQUIRY_INDEXING_SCHEMA_MAPPING_ENABLED` - Enable/disable schema mapping
 
 **Field Mappings:**
 
@@ -630,9 +630,9 @@ Schema validation performs pre-flight checks before database writes, catching er
 | `cache_ttl_seconds` | 300 | Schema cache TTL |
 
 **Environment Variables:**
-- `AI_INDEXING_SCHEMA_VALIDATION_ENABLED` - Enable/disable validation
-- `AI_INDEXING_SCHEMA_VALIDATION_STRICT_MODE` - Enable strict mode
-- `AI_INDEXING_SCHEMA_VALIDATION_CACHE_SCHEMAS` - Enable schema caching
+- `INQUIRY_INDEXING_SCHEMA_VALIDATION_ENABLED` - Enable/disable validation
+- `INQUIRY_INDEXING_SCHEMA_VALIDATION_STRICT_MODE` - Enable strict mode
+- `INQUIRY_INDEXING_SCHEMA_VALIDATION_CACHE_SCHEMAS` - Enable schema caching
 
 **Validation Modes:**
 
@@ -673,8 +673,8 @@ The context builder assembles intelligent context from code, documentation, and 
 | `fallback_to_search` | true | Fall back to search if builder fails |
 
 **Environment Variables:**
-- `AI_CONTEXT_BUILDER_ENABLED` - Enable/disable context builder
-- `AI_CONTEXT_BUILDER_FALLBACK_TO_SEARCH` - Enable fallback
+- `INQUIRY_CONTEXT_BUILDER_ENABLED` - Enable/disable context builder
+- `INQUIRY_CONTEXT_BUILDER_FALLBACK_TO_SEARCH` - Enable fallback
 
 **Fallback Strategy:**
 
@@ -722,9 +722,9 @@ Token budget management ensures context fits within LLM context windows.
 | `focus_allocations` | {...} | Budget allocation by focus type |
 
 **Environment Variables:**
-- `AI_CONTEXT_TOKEN_BUDGET_DEFAULT_BUDGET` - Default budget
-- `AI_CONTEXT_TOKEN_BUDGET_MIN_BUDGET` - Minimum budget
-- `AI_CONTEXT_TOKEN_BUDGET_MAX_BUDGET` - Maximum budget
+- `INQUIRY_CONTEXT_TOKEN_BUDGET_DEFAULT_BUDGET` - Default budget
+- `INQUIRY_CONTEXT_TOKEN_BUDGET_MIN_BUDGET` - Minimum budget
+- `INQUIRY_CONTEXT_TOKEN_BUDGET_MAX_BUDGET` - Maximum budget
 
 **Focus Allocations:**
 
@@ -780,9 +780,9 @@ Depth limits control the number of items returned at each depth level.
 | `comprehensive` | 30 | Items for comprehensive depth |
 
 **Environment Variables:**
-- `AI_CONTEXT_DEPTH_LIMITS_MINIMAL` - Minimal depth limit
-- `AI_CONTEXT_DEPTH_LIMITS_FOCUSED` - Focused depth limit
-- `AI_CONTEXT_DEPTH_LIMITS_COMPREHENSIVE` - Comprehensive depth limit
+- `INQUIRY_CONTEXT_DEPTH_LIMITS_MINIMAL` - Minimal depth limit
+- `INQUIRY_CONTEXT_DEPTH_LIMITS_FOCUSED` - Focused depth limit
+- `INQUIRY_CONTEXT_DEPTH_LIMITS_COMPREHENSIVE` - Comprehensive depth limit
 
 **Depth Levels:**
 
@@ -831,9 +831,9 @@ Query sanitization escapes special characters to prevent syntax errors in full-t
 | `preserve_wildcards` | false | Preserve * and ? as wildcards |
 
 **Environment Variables:**
-- `AI_SEARCH_QUERY_SANITIZATION_ENABLED` - Enable/disable sanitization
-- `AI_SEARCH_QUERY_SANITIZATION_ESCAPE_SPECIAL_CHARS` - Escape special chars
-- `AI_SEARCH_QUERY_SANITIZATION_PRESERVE_WILDCARDS` - Preserve wildcards
+- `INQUIRY_SEARCH_QUERY_SANITIZATION_ENABLED` - Enable/disable sanitization
+- `INQUIRY_SEARCH_QUERY_SANITIZATION_ESCAPE_SPECIAL_CHARS` - Escape special chars
+- `INQUIRY_SEARCH_QUERY_SANITIZATION_PRESERVE_WILDCARDS` - Preserve wildcards
 
 **Special Characters Handled:**
 
@@ -917,9 +917,9 @@ Search deduplication ensures diverse results across files.
 | `min_diversity_ratio` | 0.7 | Target diversity ratio (unique files / total results) |
 
 **Environment Variables:**
-- `AI_SEARCH_DEDUPLICATION_ENABLED` - Enable/disable deduplication
-- `AI_SEARCH_DEDUPLICATION_MAX_RESULTS_PER_FILE` - Max per file
-- `AI_SEARCH_DEDUPLICATION_MIN_DIVERSITY_RATIO` - Target diversity
+- `INQUIRY_SEARCH_DEDUPLICATION_ENABLED` - Enable/disable deduplication
+- `INQUIRY_SEARCH_DEDUPLICATION_MAX_RESULTS_PER_FILE` - Max per file
+- `INQUIRY_SEARCH_DEDUPLICATION_MIN_DIVERSITY_RATIO` - Target diversity
 
 **Quality Metrics:**
 
@@ -964,8 +964,8 @@ Path validation is always enabled to prevent directory traversal attacks. All fi
 | `follow_symlinks` | true | Resolve symlinks during validation |
 
 **Environment Variables:**
-- `AI_MCP_SECURITY_PATH_VALIDATION_ENFORCE` - Always true
-- `AI_MCP_SECURITY_PATH_VALIDATION_FOLLOW_SYMLINKS` - Default: true
+- `INQUIRY_MCP_SECURITY_PATH_VALIDATION_ENFORCE` - Always true
+- `INQUIRY_MCP_SECURITY_PATH_VALIDATION_FOLLOW_SYMLINKS` - Default: true
 
 **How it works:**
 - All file paths are resolved to absolute paths
@@ -1000,12 +1000,12 @@ mcp:
 | `cache_ttl_seconds` | 300 | Cache TTL in seconds |
 
 **Environment Variables:**
-- `AI_MCP_BEHAVIOR_SUGGEST_ON_EMPTY`
-- `AI_MCP_BEHAVIOR_INCLUDE_ALTERNATIVES`
-- `AI_MCP_BEHAVIOR_LOG_ALL_REQUESTS`
-- `AI_MCP_BEHAVIOR_TRACK_PERFORMANCE`
-- `AI_MCP_BEHAVIOR_CACHE_RESPONSES`
-- `AI_MCP_BEHAVIOR_CACHE_TTL_SECONDS`
+- `INQUIRY_MCP_BEHAVIOR_SUGGEST_ON_EMPTY`
+- `INQUIRY_MCP_BEHAVIOR_INCLUDE_ALTERNATIVES`
+- `INQUIRY_MCP_BEHAVIOR_LOG_ALL_REQUESTS`
+- `INQUIRY_MCP_BEHAVIOR_TRACK_PERFORMANCE`
+- `INQUIRY_MCP_BEHAVIOR_CACHE_RESPONSES`
+- `INQUIRY_MCP_BEHAVIOR_CACHE_TTL_SECONDS`
 
 ---
 
@@ -1030,11 +1030,11 @@ mcp:
 | `retention_days` | 30 | Log retention period |
 
 **Environment Variables:**
-- `AI_MCP_LOGGING_LEVEL`
-- `AI_MCP_LOGGING_FORMAT`
-- `AI_MCP_LOGGING_LOG_DIR`
-- `AI_MCP_LOGGING_MAX_SIZE_MB`
-- `AI_MCP_LOGGING_RETENTION_DAYS`
+- `INQUIRY_MCP_LOGGING_LEVEL`
+- `INQUIRY_MCP_LOGGING_FORMAT`
+- `INQUIRY_MCP_LOGGING_LOG_DIR`
+- `INQUIRY_MCP_LOGGING_MAX_SIZE_MB`
+- `INQUIRY_MCP_LOGGING_RETENTION_DAYS`
 
 ---
 
@@ -1175,40 +1175,40 @@ Complete list of environment variables:
 
 ```bash
 # Server
-AI_MCP_ENABLED=true
-AI_MCP_SERVER_NAME="Agentic Inquiry"
-AI_MCP_SERVER_VERSION="1.0.0"
+INQUIRY_MCP_ENABLED=true
+INQUIRY_MCP_SERVER_NAME="Agentic Inquiry"
+INQUIRY_MCP_SERVER_VERSION="1.0.0"
 
 # API
-AI_MCP_API_ENABLED=true
-AI_MCP_API_HOST=localhost
-AI_MCP_API_PORT=8765
-AI_MCP_API_CORS_ENABLED=true
-AI_MCP_API_CORS_ORIGINS="*"
-AI_MCP_API_AUTH_ENABLED=false
-AI_MCP_API_AUTH_API_KEY=""
+INQUIRY_MCP_API_ENABLED=true
+INQUIRY_MCP_API_HOST=localhost
+INQUIRY_MCP_API_PORT=8765
+INQUIRY_MCP_API_CORS_ENABLED=true
+INQUIRY_MCP_API_CORS_ORIGINS="*"
+INQUIRY_MCP_API_AUTH_ENABLED=false
+INQUIRY_MCP_API_AUTH_API_KEY=""
 
 # Tools
-AI_MCP_TOOLS_COGNITIVE_ENABLED=true
-AI_MCP_TOOLS_DIRECT_ACCESS_ENABLED=false
+INQUIRY_MCP_TOOLS_COGNITIVE_ENABLED=true
+INQUIRY_MCP_TOOLS_DIRECT_ACCESS_ENABLED=false
 
 # Defaults
-AI_MCP_DEFAULTS_SEARCH_LIMIT=20
-AI_MCP_DEFAULTS_SEARCH_HYBRID_WEIGHT=0.7
-AI_MCP_DEFAULTS_CONTEXT_MAX_TOKENS=4000
-AI_MCP_DEFAULTS_CONTEXT_DEPTH=broad
-AI_MCP_DEFAULTS_IMPACT_MAX_DEPTH=2
+INQUIRY_MCP_DEFAULTS_SEARCH_LIMIT=20
+INQUIRY_MCP_DEFAULTS_SEARCH_HYBRID_WEIGHT=0.7
+INQUIRY_MCP_DEFAULTS_CONTEXT_MAX_TOKENS=4000
+INQUIRY_MCP_DEFAULTS_CONTEXT_DEPTH=broad
+INQUIRY_MCP_DEFAULTS_IMPACT_MAX_DEPTH=2
 
 # Behavior
-AI_MCP_BEHAVIOR_SUGGEST_ON_EMPTY=true
-AI_MCP_BEHAVIOR_CACHE_RESPONSES=true
-AI_MCP_BEHAVIOR_CACHE_TTL_SECONDS=300
-AI_MCP_BEHAVIOR_TRACK_PERFORMANCE=true
+INQUIRY_MCP_BEHAVIOR_SUGGEST_ON_EMPTY=true
+INQUIRY_MCP_BEHAVIOR_CACHE_RESPONSES=true
+INQUIRY_MCP_BEHAVIOR_CACHE_TTL_SECONDS=300
+INQUIRY_MCP_BEHAVIOR_TRACK_PERFORMANCE=true
 
 # Logging
-AI_MCP_LOGGING_LEVEL=INFO
-AI_MCP_LOGGING_FORMAT=json
-AI_MCP_LOGGING_LOG_DIR="${HOME}/.AGV/logs"
+INQUIRY_MCP_LOGGING_LEVEL=INFO
+INQUIRY_MCP_LOGGING_FORMAT=json
+INQUIRY_MCP_LOGGING_LOG_DIR="${HOME}/.AGV/logs"
 ```
 
 ---

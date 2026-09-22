@@ -122,9 +122,9 @@ class TestEnvironmentVariableOverrides:
     """Test environment variable overrides for storage options."""
     
     def test_storage_root_override(self, tmp_path, monkeypatch):
-        """Test AI_STORAGE_ROOT environment variable override."""
+        """Test INQUIRY_STORAGE_ROOT environment variable override."""
         override_path = tmp_path / "env_storage"
-        monkeypatch.setenv("AI_STORAGE_ROOT", str(override_path))
+        monkeypatch.setenv("INQUIRY_STORAGE_ROOT", str(override_path))
         
         config_data = {'storage': {'root': './default_storage'}}
         config_data = Config._apply_env_overrides(config_data)
@@ -134,11 +134,11 @@ class TestEnvironmentVariableOverrides:
     @pytest.mark.parametrize(
         ("env_var", "env_value", "config_data", "path", "expected"),
         [
-            ("AI_STORAGE_DEFAULT_PROJECT_ID", "env_project", {'storage': {'default_project_id': None}}, ("storage", "default_project_id"), "env_project"),
-            ("AI_STORAGE_LANCEDB_PATH", "custom_lancedb", {'storage': {'lancedb': {'path': 'lancedb'}}}, ("storage", "lancedb", "path"), "custom_lancedb"),
-            ("AI_STORAGE_FILE_TRACKER_PATH", "custom_tracker.db", {'storage': {'file_tracker': {'path': 'file_tracker.db'}}}, ("storage", "file_tracker", "path"), "custom_tracker.db"),
-            ("AI_STORAGE_DOCUMENT_CACHE_ENABLED", "true", {'storage': {'document_cache': {'enabled': False}}}, ("storage", "document_cache", "enabled"), True),
-            ("AI_STORAGE_DOCUMENT_CACHE_PATH", "custom_cache", {'storage': {'document_cache': {'path': 'document_cache'}}}, ("storage", "document_cache", "path"), "custom_cache"),
+            ("INQUIRY_STORAGE_DEFAULT_PROJECT_ID", "env_project", {'storage': {'default_project_id': None}}, ("storage", "default_project_id"), "env_project"),
+            ("INQUIRY_STORAGE_LANCEDB_PATH", "custom_lancedb", {'storage': {'lancedb': {'path': 'lancedb'}}}, ("storage", "lancedb", "path"), "custom_lancedb"),
+            ("INQUIRY_STORAGE_FILE_TRACKER_PATH", "custom_tracker.db", {'storage': {'file_tracker': {'path': 'file_tracker.db'}}}, ("storage", "file_tracker", "path"), "custom_tracker.db"),
+            ("INQUIRY_STORAGE_DOCUMENT_CACHE_ENABLED", "true", {'storage': {'document_cache': {'enabled': False}}}, ("storage", "document_cache", "enabled"), True),
+            ("INQUIRY_STORAGE_DOCUMENT_CACHE_PATH", "custom_cache", {'storage': {'document_cache': {'path': 'document_cache'}}}, ("storage", "document_cache", "path"), "custom_cache"),
         ],
     )
     def test_storage_env_overrides(self, monkeypatch, env_var, env_value, config_data, path, expected):
@@ -155,10 +155,10 @@ class TestEnvironmentVariableOverrides:
     
     def test_multiple_overrides(self, tmp_path, monkeypatch):
         """Test multiple environment variable overrides simultaneously."""
-        monkeypatch.setenv("AI_STORAGE_ROOT", str(tmp_path / "env_root"))
-        monkeypatch.setenv("AI_STORAGE_DEFAULT_PROJECT_ID", "env_proj")
-        monkeypatch.setenv("AI_STORAGE_LANCEDB_PATH", "env_lancedb")
-        monkeypatch.setenv("AI_STORAGE_DOCUMENT_CACHE_ENABLED", "true")
+        monkeypatch.setenv("INQUIRY_STORAGE_ROOT", str(tmp_path / "env_root"))
+        monkeypatch.setenv("INQUIRY_STORAGE_DEFAULT_PROJECT_ID", "env_proj")
+        monkeypatch.setenv("INQUIRY_STORAGE_LANCEDB_PATH", "env_lancedb")
+        monkeypatch.setenv("INQUIRY_STORAGE_DOCUMENT_CACHE_ENABLED", "true")
         
         config_data = {
             'storage': {
@@ -192,7 +192,7 @@ class TestEnvironmentVariableOverrides:
     )
     def test_boolean_conversion(self, monkeypatch, env_value, expected):
         """Test that boolean environment variables are converted correctly."""
-        monkeypatch.setenv("AI_STORAGE_DOCUMENT_CACHE_ENABLED", env_value)
+        monkeypatch.setenv("INQUIRY_STORAGE_DOCUMENT_CACHE_ENABLED", env_value)
         config_data = {'storage': {'document_cache': {'enabled': False}}}
         config_data = Config._apply_env_overrides(config_data)
         assert config_data['storage']['document_cache']['enabled'] == expected
@@ -202,7 +202,7 @@ class TestEnvironmentVariableOverrides:
         import logging
         
         # Set up a typo in the section name (SERACH instead of SEARCH)
-        monkeypatch.setenv("AI_SERACH_DEFAULT_LIMIT", "50")
+        monkeypatch.setenv("INQUIRY_SERACH_DEFAULT_LIMIT", "50")
         
         with caplog.at_level(logging.WARNING):
             config = Config.load()
@@ -210,9 +210,9 @@ class TestEnvironmentVariableOverrides:
         # Verify the warning was logged (either old format or new format with suggestion)
         assert any(
             "Ignoring" in record.message
-            and "AI_SERACH_DEFAULT_LIMIT" in record.message
+            and "INQUIRY_SERACH_DEFAULT_LIMIT" in record.message
             and ("'serach' is not a valid config section" in record.message
-                 or "Did you mean AI_SEARCH_DEFAULT_LIMIT?" in record.message)
+                 or "Did you mean INQUIRY_SEARCH_DEFAULT_LIMIT?" in record.message)
             for record in caplog.records
         ), "Expected warning about invalid section or typo suggestion not found in logs"
         
@@ -223,7 +223,7 @@ class TestEnvironmentVariableOverrides:
         """Test that valid environment variables are applied correctly."""
         import logging
         
-        monkeypatch.setenv("AI_SEARCH_DEFAULT_LIMIT", "75")
+        monkeypatch.setenv("INQUIRY_SEARCH_DEFAULT_LIMIT", "75")
         
         with caplog.at_level(logging.INFO):
             config = Config.load()
@@ -261,19 +261,19 @@ class TestEnvironmentVariableOverrides:
         }
 
         # Test default_project_id (compound field)
-        monkeypatch.setenv("AI_STORAGE_DEFAULT_PROJECT_ID", "test_project")
+        monkeypatch.setenv("INQUIRY_STORAGE_DEFAULT_PROJECT_ID", "test_project")
         config_data = Config._apply_env_overrides(base_config)
         config = Config._from_dict(config_data)
         assert config.storage.default_project_id == "test_project"
 
         # Test file_tracker path (nested compound field)
-        monkeypatch.setenv("AI_STORAGE_FILE_TRACKER_PATH", "custom_tracker.db")
+        monkeypatch.setenv("INQUIRY_STORAGE_FILE_TRACKER_PATH", "custom_tracker.db")
         config_data = Config._apply_env_overrides(base_config)
         config = Config._from_dict(config_data)
         assert config.storage.file_tracker.path == "custom_tracker.db"
 
         # Test document_cache settings (nested compound fields)
-        monkeypatch.setenv("AI_CACHE_DOCUMENT_CACHE_MAX_SIZE", "5000")
+        monkeypatch.setenv("INQUIRY_CACHE_DOCUMENT_CACHE_MAX_SIZE", "5000")
         config_data = Config._apply_env_overrides(base_config)
         config = Config._from_dict(config_data)
         assert config.cache.document_cache.max_size == 5000
@@ -283,9 +283,9 @@ class TestEnvironmentVariableOverrides:
         import logging
         
         # Set multiple invalid variables
-        monkeypatch.setenv("AI_SERACH_DEFAULT_LIMIT", "50")  # typo in section
-        monkeypatch.setenv("AI_STORAG_ROOT", "/tmp/test")     # typo in section
-        monkeypatch.setenv("AI_INVALID_SECTION_KEY", "value") # completely invalid
+        monkeypatch.setenv("INQUIRY_SERACH_DEFAULT_LIMIT", "50")  # typo in section
+        monkeypatch.setenv("INQUIRY_STORAG_ROOT", "/tmp/test")     # typo in section
+        monkeypatch.setenv("INQUIRY_INVALID_SECTION_KEY", "value") # completely invalid
         
         with caplog.at_level(logging.WARNING):
             Config.load()
@@ -293,9 +293,9 @@ class TestEnvironmentVariableOverrides:
         # Verify all three warnings were logged
         warning_messages = [record.message for record in caplog.records if record.levelname == "WARNING"]
         
-        assert any("AI_SERACH_DEFAULT_LIMIT" in msg for msg in warning_messages)
-        assert any("AI_STORAG_ROOT" in msg for msg in warning_messages)
-        assert any("AI_INVALID_SECTION_KEY" in msg for msg in warning_messages)
+        assert any("INQUIRY_SERACH_DEFAULT_LIMIT" in msg for msg in warning_messages)
+        assert any("INQUIRY_STORAG_ROOT" in msg for msg in warning_messages)
+        assert any("INQUIRY_INVALID_SECTION_KEY" in msg for msg in warning_messages)
         
         # Verify the count of ignored variables
         assert any(
@@ -308,9 +308,9 @@ class TestEnvironmentVariableOverrides:
         import logging
         
         # Mix valid and invalid variables
-        monkeypatch.setenv("AI_SEARCH_DEFAULT_LIMIT", "100")  # valid
-        monkeypatch.setenv("AI_SERACH_DEFAULT_LIMIT", "50")   # invalid (typo)
-        monkeypatch.setenv("AI_CACHE_DOCUMENT_CACHE_MAX_SIZE", "3000")  # valid
+        monkeypatch.setenv("INQUIRY_SEARCH_DEFAULT_LIMIT", "100")  # valid
+        monkeypatch.setenv("INQUIRY_SERACH_DEFAULT_LIMIT", "50")   # invalid (typo)
+        monkeypatch.setenv("INQUIRY_CACHE_DOCUMENT_CACHE_MAX_SIZE", "3000")  # valid
         
         with caplog.at_level(logging.INFO):
             config = Config.load()
@@ -1178,7 +1178,7 @@ parsers: {}
         from concurrent.futures import ThreadPoolExecutor
         
         # Set environment variable
-        monkeypatch.setenv("AI_STORAGE_ROOT", str(tmp_path / "env_storage"))
+        monkeypatch.setenv("INQUIRY_STORAGE_ROOT", str(tmp_path / "env_storage"))
         
         # Create a test config file
         config_file = tmp_path / "mock_config.yaml"

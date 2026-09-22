@@ -1,5 +1,7 @@
 # Spec: First-run reliability
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../../storage-backends.md).
+
 - **Status:** Implementing
 - **Owner:** sbasha
 - **Plan:** [`plan.md`](plan.md)
@@ -18,7 +20,7 @@ A user who installs `ai`, runs `/ai:setup` with the local (LanceDB)
 backend, then indexes a project gets a working index without hitting a
 dead-end gate, a silent empty success, a storm of retryable write
 failures, or a missing env file. Optional secrets and operator pins
-(`AI_EMBEDDING_DEVICE=cpu`) live in `.agentic-inquiry/envs/<name>/.env` and load
+(`INQUIRY_EMBEDDING_DEVICE=cpu`) live in `.agentic-inquiry/envs/<name>/.env` and load
 automatically. `ai index` exits 0 only when indexing actually produced
 chunks.
 
@@ -40,7 +42,7 @@ chunks.
 ### Ask first
 
 - Re-enable a hard onboard gate that blocks indexing.
-- Default every Mac install to `AI_EMBEDDING_DEVICE=cpu` (uncommented).
+- Default every Mac install to `INQUIRY_EMBEDDING_DEVICE=cpu` (uncommented).
 - Add a cross-process LanceDB lock instead of (or in addition to) retry.
 
 ### Never do
@@ -83,7 +85,7 @@ chunks.
       `commit conflict` or `Retryable`, up to 5 attempts with
       exponential backoff. Schema and permission errors are not retried.
 - [x] `LocalSetup.run` writes `.agentic-inquiry/envs/<name>/.env` containing a
-      commented `AI_EMBEDDING_DEVICE=cpu` line. Success text tells the
+      commented `INQUIRY_EMBEDDING_DEVICE=cpu` line. Success text tells the
       operator to uncomment it if Metal/MPS indexing aborts.
 - [x] `load_config_for_environment` loads that env file before YAML and
       `AI_*` overlays. Missing file is a no-op. Existing `os.environ`

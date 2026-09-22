@@ -61,7 +61,7 @@ does **not** turn Agentic Inquiry on anywhere — the `/ai:*` skills and hooks
 only activate in projects where you enable the plugin (next step).
 
 On macOS, two embedding processes using Metal/MPS at once can abort. If
-that happens, uncomment `AI_EMBEDDING_DEVICE=cpu` in
+that happens, uncomment `INQUIRY_EMBEDDING_DEVICE=cpu` in
 `.agentic-inquiry/envs/<name>/.env`.
 
 ### 2. Enable the Plugins
@@ -97,14 +97,7 @@ Start Claude Code in your target project and run:
 /ai:setup
 ```
 
-This walks you through choosing a storage backend. For most users, **LanceDB** (the default) works out of the box with zero configuration. For teams or large codebases, PostgreSQL or AlloyDB provide better scalability.
-
-| Backend | Best For | Setup |
-|---------|----------|-------|
-| **LanceDB** | Local development, solo use | Zero config — files stored in `.agentic-inquiry/` |
-| **PostgreSQL** | Self-hosted or GCP production | Any PostgreSQL-compatible database with pgvector. AlloyDB adds server-side embedding at ~400/sec |
-
-See [Storage Backends](#storage-backends) below for full details on all four backends.
+This creates a local LanceDB environment; it works out of the box with zero configuration and stores everything under `.agentic-inquiry/`. Agentic Inquiry is local only. The storage layer is defined by a provider contract so that an external database for governed projects can be added later; see [Storage Backends](#storage-backends).
 
 ### 4. Index Your Codebase
 
@@ -206,15 +199,14 @@ This runs indexing, exploration, and validation in parallel, producing reports o
 Isolate different projects or backends with named environments:
 
 ```
-/ai:env create production --profile gcp
 /ai:env create local-test --profile local
 /ai:env list
 ```
 
-Switch between environments with `AI_ENV`:
+Switch between environments with `INQUIRY_ENV`:
 
 ```bash
-AI_ENV=production ai search "query"
+INQUIRY_ENV=production ai search "query"
 ```
 
 ### ai Server
@@ -292,50 +284,24 @@ For per-environment config (e.g., different backends for dev vs production), use
 ```bash
 # Create overlay at ~/.agentic-inquiry/envs/production/config.yaml
 # Activate with:
-export AI_ENV=production
+export INQUIRY_ENV=production
 ```
 
 ### Storage Backends
 
 | Backend | Config Type | Embedding Strategy | Notes |
 |---------|-------------|-------------------|-------|
-| **LanceDB** | `lancedb` | Local (SentenceTransformer, 384d) | Zero setup, file-based |
-| **PostgreSQL** | `postgresql` | Local (SentenceTransformer, 384d) | Self-hosted, requires [pgvector](https://github.com/pgvector/pgvector) |
-| **CloudSQL** | `cloudsql` | Local (SentenceTransformer, 384d) | GCP managed, max_connections=25 — see [docs/backends/cloudsql.md](docs/backends/cloudsql.md) |
-| **AlloyDB** | `alloydb` | Server-side (`text-embedding-005`, 768d) | GCP managed, fastest — ~400 embeddings/sec |
-| **AWS RDS / Aurora** | `rds` | Local (SentenceTransformer or Bedrock Titan v2 client-side, see [RFC 0003](docs/rfc/0003-pluggable-embedding-providers.md)) — server-side Bedrock optional, Aurora-only | AWS managed PostgreSQL. The `aws_ml` extension is requested only when `embedding_strategy: server_side` is set, so plain RDS for PostgreSQL with the LOCAL default works out of the box; the server-side path is Aurora-only ([RFC 0002](docs/rfc/0002-aws-support.md) tracks the planned `rds` / `aurora` split). Setup: [docs/backends/rds.md](docs/backends/rds.md) |
-| **Azure Postgres** | `azure` | Server-side (`azure_ai.generate_embeddings`, configurable model) | Azure Database for PostgreSQL Flexible Server with the `azure_ai` extension. Setup: [docs/backends/azure.md](docs/backends/azure.md) |
+| **LanceDB** | `lancedb` | Local (SentenceTransformer, 384d) | Zero setup, file-based; vectors and graph |
+| **SQLite** | `sqlite` | n/a | Events, file tracking and onboarding metadata |
+| **In-memory** | `memory` | Local | Tests and throwaway sessions |
 
-PostgreSQL, AlloyDB, CloudSQL, RDS, and Azure all use the **unified PostgreSQL provider** (`storage/providers/postgresql/`). The `embedding_strategy` config (`"local"` or `"server_side"`) controls where embeddings are generated; AlloyDB and Azure auto-configure to server-side, plain PostgreSQL / CloudSQL / RDS default to local.
-
-AlloyDB example overlay (`~/.agentic-inquiry/envs/alloydb/config.yaml`):
-
-```yaml
-storage:
-  backend: alloydb
-  postgresql:
-    embedding_strategy: server_side
-    embedding_model: "text-embedding-005"
-    embedding_dim: 768
-    pool_size: 5
-    max_overflow: 2
-```
+Every provider implements the protocols in `agentic_inquiry/storage/protocols/`. That contract, and what an external database provider for governed projects must satisfy, is documented in [docs/storage-backends.md](docs/storage-backends.md). No such provider ships in this distribution.
 
 ### Content Sources
 
-Storage backends are *where the index lives*; **content sources** are *where
-the code and docs being indexed are read from*. Local filesystem is built in;
-S3 and GCS are first-class remote sources via [fsspec](https://filesystem-spec.readthedocs.io/),
-installed as optional extras:
-
-| Source | Install | URI scheme | Notes |
-|--------|---------|------------|-------|
-| **Filesystem** | built in | absolute local path | Default; used when no connector is configured |
-| **Amazon S3** | `pip install agentic-inquiry[s3]` | `s3://bucket/key` | Via `s3fs`; AWS env / IAM / `~/.aws` credentials, or explicit `storage_options`. S3-compatible endpoints (MinIO, LocalStack) supported via `endpoint_url` |
-| **Google Cloud Storage** | `pip install agentic-inquiry[gcs]` | `gcs://bucket/object` | Via `gcsfs`; `GOOGLE_APPLICATION_CREDENTIALS`, service account, or ambient GCP credentials |
-
-See [docs/development/connector-guide.md](docs/development/connector-guide.md)
-for the connector protocol and how to add a new source.
+Content is read from the local filesystem. The connector protocol in
+[docs/development/connector-guide.md](docs/development/connector-guide.md)
+describes how a new source is added.
 
 ### Data Directories
 
@@ -343,7 +309,7 @@ for the connector protocol and how to add a new source.
 |------|---------|
 | `~/.agentic-inquiry/` | Global data (environments, registry, events, logs) |
 | `.agentic-inquiry/` | Project-local data (index, cache — gitignored) |
-| `AI_HOME` env var | Override global data path |
+| `INQUIRY_HOME` env var | Override global data path |
 
 ---
 
@@ -380,7 +346,8 @@ agentic_inquiry/
 ├── server/        # REST + MCP server (FastAPI, dual-surface)
 ├── storage/       # Unified storage abstraction
 │   ├── facade.py  #   StorageFacade: vector + graph + events + file tracking
-│   └── providers/ #   LanceDB, PostgreSQL (unified for AlloyDB/CloudSQL), SQLite
+│   ├── protocols/ #   Provider contract (vector, graph, events, file tracker, lifecycle)
+│   └── providers/ #   LanceDB, SQLite, in-memory
 ├── search/        # Search engine
 │   ├── service.py       # SearchService entry point
 │   ├── hybrid_search.py # Vector + FTS with IDF-weighted reranking
@@ -465,13 +432,11 @@ Key innovations:
 
 ## Performance
 
-Benchmarked on a Java EE monolith (16,706 source files + 98 documents):
+Benchmarked on a Java EE monolith (16,706 source files + 98 documents) against a managed PostgreSQL backend that this distribution no longer ships; local LanceDB figures are not yet measured:
 
 | Metric | Result |
 |--------|--------|
-| **Indexing speed** | 16.6 files/sec avg, 19.7 peak (AlloyDB) |
 | **Total indexed** | 572,457 chunks, 296,880 entities, 70,259 relationships |
-| **Indexing time** | 17 minutes (AlloyDB, server-side embedding) |
 | **Search relevance** | 10.0/10 across keyword, conceptual, structural queries |
 | **Vector search latency** | <100ms (HNSW index, 140K+ chunks) |
 | **FTS latency** | <50ms (GIN index) |
@@ -542,7 +507,7 @@ Governance and process documents:
 | [docs/adr/](docs/adr/) | Architecture Decision Records — see CONVENTIONS § ADR |
 | [docs/rfc/](docs/rfc/) | RFCs — cross-cutting proposals (governance) |
 | [docs/specs/](docs/specs/) | Feature specs and plans (per-feature; see README for layout) |
-| [docs/backends/](docs/backends/) | Storage backend setup (LanceDB, PostgreSQL, CloudSQL, AlloyDB, AWS RDS / Aurora, Azure Database for PostgreSQL) |
+| [docs/backends/](docs/backends/) | Storage backend setup (LanceDB) |
 | [docs/design/](docs/design/) | Normative specs (filter AST, query semantics, schema, embedding strategy) |
 | [docs/development/](docs/development/) | Async best practices, parser guidelines, security, adapters |
 | [docs/storage/](docs/storage/) | Index configuration, maintenance, schema migration |

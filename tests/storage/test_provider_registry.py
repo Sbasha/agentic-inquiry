@@ -34,8 +34,9 @@ class TestRegistryBasics:
         """Test get_supported_backends returns registered backend types."""
         backends = get_supported_backends()
         assert "lancedb" in backends
-        assert "postgresql" in backends
+        assert "sqlite" in backends
         assert "memory" in backends
+        assert "postgresql" not in backends
 
     def test_get_supported_roles_lancedb(self) -> None:
         """Test LanceDB supports vector and graph roles."""
@@ -46,13 +47,13 @@ class TestRegistryBasics:
         assert "events" not in roles
         assert "file_tracker" not in roles
 
-    def test_get_supported_roles_postgresql(self) -> None:
-        """Test PostgreSQL supports all roles."""
-        roles = get_supported_roles("postgresql")
-        assert "vector" in roles
-        assert "graph" in roles
+    def test_get_supported_roles_sqlite(self) -> None:
+        """Test SQLite supports the record roles and no vector role."""
+        roles = get_supported_roles("sqlite")
         assert "events" in roles
         assert "file_tracker" in roles
+        assert "onboard_metadata" in roles
+        assert "vector" not in roles
 
     def test_get_supported_roles_memory(self) -> None:
         """Test memory backend supports vector and graph only."""
@@ -69,7 +70,7 @@ class TestRegistryBasics:
 
     def test_is_role_supported_true(self) -> None:
         """Test is_role_supported returns True for valid combination."""
-        assert is_role_supported("postgresql", "events") is True
+        assert is_role_supported("sqlite", "events") is True
         assert is_role_supported("lancedb", "vector") is True
 
     def test_is_role_supported_false(self) -> None:
@@ -190,7 +191,7 @@ class TestRegistryInfo:
         info = get_registry_info()
 
         assert "lancedb" in info
-        assert "postgresql" in info
+        assert "sqlite" in info
         assert "vector" in info["lancedb"]
         assert "graph" in info["lancedb"]
 

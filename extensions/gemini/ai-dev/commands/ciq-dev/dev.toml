@@ -56,12 +56,12 @@ Dev mode is tracked via `.agentic-inquiry/.dev-mode` file:
 Environment switching:
 ```bash
 # Dev mode ON
-export AI_CONFIG=.agentic-inquiry/dev/config.yaml
-export AI_PROJECT_ID=ai-dev
+export INQUIRY_CONFIG=.agentic-inquiry/dev/config.yaml
+export INQUIRY_PROJECT_ID=ai-dev
 
 # Dev mode OFF
-unset AI_CONFIG  # uses default
-export AI_PROJECT_ID=default
+unset INQUIRY_CONFIG  # uses default
+export INQUIRY_PROJECT_ID=default
 ```
 
 ## Banner

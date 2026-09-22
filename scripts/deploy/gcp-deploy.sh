@@ -6,15 +6,15 @@
 #   ./gcp-deploy.sh
 #
 # Required environment variables:
-#   AI_GCP_PROJECT        GCP project ID
-#   AI_GCP_REGION         GCP region (default: us-central1)
-#   AI_ALLOYDB_CLUSTER    AlloyDB cluster ID (default: ai-cluster)
-#   AI_ALLOYDB_INSTANCE   AlloyDB instance ID (default: ai-primary)
-#   AI_ALLOYDB_PASSWORD   AlloyDB postgres user password
-#   AI_API_KEY            Agentic Inquiry API key (pre-generated)
-#   AI_IMAGE_TAG          Container image tag (default: latest)
-#   AI_SERVICE_NAME       Cloud Run service name (default: agentic-inquiry)
-#   AI_DEPLOY_STATE_DIR   Dir to write step completion markers (default: .agentic-inquiry/deploy)
+#   INQUIRY_GCP_PROJECT        GCP project ID
+#   INQUIRY_GCP_REGION         GCP region (default: us-central1)
+#   INQUIRY_ALLOYDB_CLUSTER    AlloyDB cluster ID (default: ai-cluster)
+#   INQUIRY_ALLOYDB_INSTANCE   AlloyDB instance ID (default: ai-primary)
+#   INQUIRY_ALLOYDB_PASSWORD   AlloyDB postgres user password
+#   INQUIRY_API_KEY            Agentic Inquiry API key (pre-generated)
+#   INQUIRY_IMAGE_TAG          Container image tag (default: latest)
+#   INQUIRY_SERVICE_NAME       Cloud Run service name (default: agentic-inquiry)
+#   INQUIRY_DEPLOY_STATE_DIR   Dir to write step completion markers (default: .agentic-inquiry/deploy)
 #
 # The script is idempotent: completed steps are skipped via marker files.
 # Exit non-zero on any failure with a clear error message.
@@ -36,32 +36,32 @@ log_error() { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 die()       { log_error "$*"; exit 1; }
 
 # ─── Defaults ──────────────────────────────────────────────────────────────────
-AI_GCP_REGION="${AI_GCP_REGION:-us-central1}"
-AI_ALLOYDB_CLUSTER="${AI_ALLOYDB_CLUSTER:-ai-cluster}"
-AI_ALLOYDB_INSTANCE="${AI_ALLOYDB_INSTANCE:-ai-primary}"
-AI_IMAGE_TAG="${AI_IMAGE_TAG:-latest}"
-AI_SERVICE_NAME="${AI_SERVICE_NAME:-agentic-inquiry}"
-AI_DEPLOY_STATE_DIR="${AI_DEPLOY_STATE_DIR:-.agentic-inquiry/deploy}"
-AI_DB_USER="${AI_DB_USER:-postgres}"
-AI_DB_NAME="${AI_DB_NAME:-agentic-inquiry}"
-AI_SA_NAME="${AI_SA_NAME:-ai-run}"
+INQUIRY_GCP_REGION="${INQUIRY_GCP_REGION:-us-central1}"
+INQUIRY_ALLOYDB_CLUSTER="${INQUIRY_ALLOYDB_CLUSTER:-ai-cluster}"
+INQUIRY_ALLOYDB_INSTANCE="${INQUIRY_ALLOYDB_INSTANCE:-ai-primary}"
+INQUIRY_IMAGE_TAG="${INQUIRY_IMAGE_TAG:-latest}"
+INQUIRY_SERVICE_NAME="${INQUIRY_SERVICE_NAME:-agentic-inquiry}"
+INQUIRY_DEPLOY_STATE_DIR="${INQUIRY_DEPLOY_STATE_DIR:-.agentic-inquiry/deploy}"
+INQUIRY_DB_USER="${INQUIRY_DB_USER:-postgres}"
+INQUIRY_DB_NAME="${INQUIRY_DB_NAME:-agentic-inquiry}"
+INQUIRY_SA_NAME="${INQUIRY_SA_NAME:-ai-run}"
 
 # ─── Validate required vars ────────────────────────────────────────────────────
-[[ -n "${AI_GCP_PROJECT:-}" ]]    || die "AI_GCP_PROJECT is required"
-[[ -n "${AI_ALLOYDB_PASSWORD:-}" ]] || die "AI_ALLOYDB_PASSWORD is required"
-[[ -n "${AI_API_KEY:-}" ]]        || die "AI_API_KEY is required"
+[[ -n "${INQUIRY_GCP_PROJECT:-}" ]]    || die "INQUIRY_GCP_PROJECT is required"
+[[ -n "${INQUIRY_ALLOYDB_PASSWORD:-}" ]] || die "INQUIRY_ALLOYDB_PASSWORD is required"
+[[ -n "${INQUIRY_API_KEY:-}" ]]        || die "INQUIRY_API_KEY is required"
 
 # ─── Step marker helpers ────────────────────────────────────────────────────────
-mkdir -p "${AI_DEPLOY_STATE_DIR}"
+mkdir -p "${INQUIRY_DEPLOY_STATE_DIR}"
 
 step_done() {
     local step="$1"
-    [[ -f "${AI_DEPLOY_STATE_DIR}/step-${step}.done" ]]
+    [[ -f "${INQUIRY_DEPLOY_STATE_DIR}/step-${step}.done" ]]
 }
 
 mark_done() {
     local step="$1"
-    touch "${AI_DEPLOY_STATE_DIR}/step-${step}.done"
+    touch "${INQUIRY_DEPLOY_STATE_DIR}/step-${step}.done"
     log_ok "Step ${step} complete"
 }
 
@@ -80,8 +80,8 @@ else
     fi
 
     # Verify project access
-    gcloud projects describe "${AI_GCP_PROJECT}" --quiet >/dev/null 2>&1 \
-        || die "Cannot access project '${AI_GCP_PROJECT}' — check permissions"
+    gcloud projects describe "${INQUIRY_GCP_PROJECT}" --quiet >/dev/null 2>&1 \
+        || die "Cannot access project '${INQUIRY_GCP_PROJECT}' — check permissions"
 
     mark_done "01-prereqs"
 fi
@@ -103,7 +103,7 @@ else
 
     for api in "${APIS[@]}"; do
         log_info "  Enabling ${api}..."
-        gcloud services enable "${api}" --project="${AI_GCP_PROJECT}" --quiet
+        gcloud services enable "${api}" --project="${INQUIRY_GCP_PROJECT}" --quiet
     done
 
     mark_done "02-apis"
@@ -113,14 +113,14 @@ fi
 if step_done "03-alloydb-cluster"; then
     log_info "Step 03-alloydb-cluster: already done, skipping"
 else
-    log_info "Step 03: Creating AlloyDB cluster '${AI_ALLOYDB_CLUSTER}'..."
+    log_info "Step 03: Creating AlloyDB cluster '${INQUIRY_ALLOYDB_CLUSTER}'..."
 
     # Check if cluster already exists (idempotent)
-    if gcloud alloydb clusters describe "${AI_ALLOYDB_CLUSTER}" \
-        --region="${AI_GCP_REGION}" \
-        --project="${AI_GCP_PROJECT}" \
+    if gcloud alloydb clusters describe "${INQUIRY_ALLOYDB_CLUSTER}" \
+        --region="${INQUIRY_GCP_REGION}" \
+        --project="${INQUIRY_GCP_PROJECT}" \
         --quiet >/dev/null 2>&1; then
-        log_warn "AlloyDB cluster '${AI_ALLOYDB_CLUSTER}' already exists, skipping creation"
+        log_warn "AlloyDB cluster '${INQUIRY_ALLOYDB_CLUSTER}' already exists, skipping creation"
     else
         # Create private services access if not already present
         gcloud compute addresses create google-managed-services-default \
@@ -128,38 +128,38 @@ else
             --purpose=VPC_PEERING \
             --prefix-length=16 \
             --network=default \
-            --project="${AI_GCP_PROJECT}" \
+            --project="${INQUIRY_GCP_PROJECT}" \
             --quiet 2>/dev/null || true
 
         gcloud services vpc-peerings connect \
             --service=servicenetworking.googleapis.com \
             --ranges=google-managed-services-default \
             --network=default \
-            --project="${AI_GCP_PROJECT}" \
+            --project="${INQUIRY_GCP_PROJECT}" \
             --quiet 2>/dev/null || true
 
-        gcloud alloydb clusters create "${AI_ALLOYDB_CLUSTER}" \
-            --region="${AI_GCP_REGION}" \
-            --password="${AI_ALLOYDB_PASSWORD}" \
-            --project="${AI_GCP_PROJECT}" \
+        gcloud alloydb clusters create "${INQUIRY_ALLOYDB_CLUSTER}" \
+            --region="${INQUIRY_GCP_REGION}" \
+            --password="${INQUIRY_ALLOYDB_PASSWORD}" \
+            --project="${INQUIRY_GCP_PROJECT}" \
             --quiet
     fi
 
     # Check if primary instance already exists
-    if gcloud alloydb instances describe "${AI_ALLOYDB_INSTANCE}" \
-        --cluster="${AI_ALLOYDB_CLUSTER}" \
-        --region="${AI_GCP_REGION}" \
-        --project="${AI_GCP_PROJECT}" \
+    if gcloud alloydb instances describe "${INQUIRY_ALLOYDB_INSTANCE}" \
+        --cluster="${INQUIRY_ALLOYDB_CLUSTER}" \
+        --region="${INQUIRY_GCP_REGION}" \
+        --project="${INQUIRY_GCP_PROJECT}" \
         --quiet >/dev/null 2>&1; then
-        log_warn "AlloyDB instance '${AI_ALLOYDB_INSTANCE}' already exists, skipping creation"
+        log_warn "AlloyDB instance '${INQUIRY_ALLOYDB_INSTANCE}' already exists, skipping creation"
     else
-        log_info "  Creating AlloyDB primary instance '${AI_ALLOYDB_INSTANCE}'..."
-        gcloud alloydb instances create "${AI_ALLOYDB_INSTANCE}" \
+        log_info "  Creating AlloyDB primary instance '${INQUIRY_ALLOYDB_INSTANCE}'..."
+        gcloud alloydb instances create "${INQUIRY_ALLOYDB_INSTANCE}" \
             --instance-type=PRIMARY \
-            --cluster="${AI_ALLOYDB_CLUSTER}" \
-            --region="${AI_GCP_REGION}" \
+            --cluster="${INQUIRY_ALLOYDB_CLUSTER}" \
+            --region="${INQUIRY_GCP_REGION}" \
             --cpu-count=2 \
-            --project="${AI_GCP_PROJECT}" \
+            --project="${INQUIRY_GCP_PROJECT}" \
             --quiet
     fi
 
@@ -172,17 +172,17 @@ if step_done "04-iam"; then
 else
     log_info "Step 04: Configuring IAM and service account..."
 
-    SA_EMAIL="${AI_SA_NAME}@${AI_GCP_PROJECT}.iam.gserviceaccount.com"
+    SA_EMAIL="${INQUIRY_SA_NAME}@${INQUIRY_GCP_PROJECT}.iam.gserviceaccount.com"
 
     # Create service account (idempotent)
     if gcloud iam service-accounts describe "${SA_EMAIL}" \
-        --project="${AI_GCP_PROJECT}" \
+        --project="${INQUIRY_GCP_PROJECT}" \
         --quiet >/dev/null 2>&1; then
         log_warn "Service account '${SA_EMAIL}' already exists, skipping"
     else
-        gcloud iam service-accounts create "${AI_SA_NAME}" \
+        gcloud iam service-accounts create "${INQUIRY_SA_NAME}" \
             --display-name="Agentic Inquiry Cloud Run SA" \
-            --project="${AI_GCP_PROJECT}" \
+            --project="${INQUIRY_GCP_PROJECT}" \
             --quiet
     fi
 
@@ -196,7 +196,7 @@ else
     )
 
     for role in "${ROLES[@]}"; do
-        gcloud projects add-iam-policy-binding "${AI_GCP_PROJECT}" \
+        gcloud projects add-iam-policy-binding "${INQUIRY_GCP_PROJECT}" \
             --member="serviceAccount:${SA_EMAIL}" \
             --role="${role}" \
             --condition=None \
@@ -205,18 +205,18 @@ else
 
     # Store API key in Secret Manager
     if gcloud secrets describe ai-api-key \
-        --project="${AI_GCP_PROJECT}" \
+        --project="${INQUIRY_GCP_PROJECT}" \
         --quiet >/dev/null 2>&1; then
         log_warn "Secret 'ai-api-key' already exists, updating value..."
-        printf '%s' "${AI_API_KEY}" | gcloud secrets versions add ai-api-key \
+        printf '%s' "${INQUIRY_API_KEY}" | gcloud secrets versions add ai-api-key \
             --data-file=- \
-            --project="${AI_GCP_PROJECT}" \
+            --project="${INQUIRY_GCP_PROJECT}" \
             --quiet
     else
-        printf '%s' "${AI_API_KEY}" | gcloud secrets create ai-api-key \
+        printf '%s' "${INQUIRY_API_KEY}" | gcloud secrets create ai-api-key \
             --data-file=- \
             --replication-policy=automatic \
-            --project="${AI_GCP_PROJECT}" \
+            --project="${INQUIRY_GCP_PROJECT}" \
             --quiet
     fi
 
@@ -224,7 +224,7 @@ else
     gcloud secrets add-iam-policy-binding ai-api-key \
         --member="serviceAccount:${SA_EMAIL}" \
         --role="roles/secretmanager.secretAccessor" \
-        --project="${AI_GCP_PROJECT}" \
+        --project="${INQUIRY_GCP_PROJECT}" \
         --quiet >/dev/null 2>&1 || true
 
     mark_done "04-iam"
@@ -237,10 +237,10 @@ else
     log_info "Step 05: Initializing AlloyDB AI embedding extension..."
 
     # Get instance IP
-    ALLOYDB_IP=$(gcloud alloydb instances describe "${AI_ALLOYDB_INSTANCE}" \
-        --cluster="${AI_ALLOYDB_CLUSTER}" \
-        --region="${AI_GCP_REGION}" \
-        --project="${AI_GCP_PROJECT}" \
+    ALLOYDB_IP=$(gcloud alloydb instances describe "${INQUIRY_ALLOYDB_INSTANCE}" \
+        --cluster="${INQUIRY_ALLOYDB_CLUSTER}" \
+        --region="${INQUIRY_GCP_REGION}" \
+        --project="${INQUIRY_GCP_PROJECT}" \
         --format="value(ipAddress)" \
         --quiet 2>/dev/null || echo "")
 
@@ -263,23 +263,23 @@ else
     # Create Artifact Registry repo if needed
     AR_REPO="ai-images"
     if gcloud artifacts repositories describe "${AR_REPO}" \
-        --location="${AI_GCP_REGION}" \
-        --project="${AI_GCP_PROJECT}" \
+        --location="${INQUIRY_GCP_REGION}" \
+        --project="${INQUIRY_GCP_PROJECT}" \
         --quiet >/dev/null 2>&1; then
         log_warn "Artifact Registry repo '${AR_REPO}' already exists"
     else
         gcloud artifacts repositories create "${AR_REPO}" \
             --repository-format=docker \
-            --location="${AI_GCP_REGION}" \
+            --location="${INQUIRY_GCP_REGION}" \
             --description="Agentic Inquiry container images" \
-            --project="${AI_GCP_PROJECT}" \
+            --project="${INQUIRY_GCP_PROJECT}" \
             --quiet
     fi
 
-    IMAGE_PATH="${AI_GCP_REGION}-docker.pkg.dev/${AI_GCP_PROJECT}/${AR_REPO}/agentic-inquiry:${AI_IMAGE_TAG}"
+    IMAGE_PATH="${INQUIRY_GCP_REGION}-docker.pkg.dev/${INQUIRY_GCP_PROJECT}/${AR_REPO}/agentic-inquiry:${INQUIRY_IMAGE_TAG}"
 
     # Configure Docker auth
-    gcloud auth configure-docker "${AI_GCP_REGION}-docker.pkg.dev" --quiet
+    gcloud auth configure-docker "${INQUIRY_GCP_REGION}-docker.pkg.dev" --quiet
 
     # Build image (assumes Dockerfile at repo root)
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -287,14 +287,14 @@ else
 
     docker build \
         --tag "${IMAGE_PATH}" \
-        --label "ai.deploy.project=${AI_GCP_PROJECT}" \
+        --label "ai.deploy.project=${INQUIRY_GCP_PROJECT}" \
         --label "ai.deploy.timestamp=$(date -u +%Y%m%dT%H%M%SZ)" \
         "${REPO_ROOT}"
 
     docker push "${IMAGE_PATH}"
 
     # Write image path for next steps
-    echo "${IMAGE_PATH}" > "${AI_DEPLOY_STATE_DIR}/image-path.txt"
+    echo "${IMAGE_PATH}" > "${INQUIRY_DEPLOY_STATE_DIR}/image-path.txt"
 
     mark_done "06-container"
 fi
@@ -305,18 +305,18 @@ if step_done "07-cloud-run"; then
 else
     log_info "Step 07: Deploying to Cloud Run..."
 
-    IMAGE_PATH=$(cat "${AI_DEPLOY_STATE_DIR}/image-path.txt" 2>/dev/null \
-        || echo "${AI_GCP_REGION}-docker.pkg.dev/${AI_GCP_PROJECT}/ai-images/agentic-inquiry:${AI_IMAGE_TAG}")
+    IMAGE_PATH=$(cat "${INQUIRY_DEPLOY_STATE_DIR}/image-path.txt" 2>/dev/null \
+        || echo "${INQUIRY_GCP_REGION}-docker.pkg.dev/${INQUIRY_GCP_PROJECT}/ai-images/agentic-inquiry:${INQUIRY_IMAGE_TAG}")
 
-    SA_EMAIL="${AI_SA_NAME}@${AI_GCP_PROJECT}.iam.gserviceaccount.com"
+    SA_EMAIL="${INQUIRY_SA_NAME}@${INQUIRY_GCP_PROJECT}.iam.gserviceaccount.com"
 
-    gcloud run deploy "${AI_SERVICE_NAME}" \
+    gcloud run deploy "${INQUIRY_SERVICE_NAME}" \
         --image="${IMAGE_PATH}" \
-        --region="${AI_GCP_REGION}" \
-        --project="${AI_GCP_PROJECT}" \
+        --region="${INQUIRY_GCP_REGION}" \
+        --project="${INQUIRY_GCP_PROJECT}" \
         --service-account="${SA_EMAIL}" \
-        --set-secrets="AI_API_KEY=ai-api-key:latest" \
-        --set-env-vars="AI_ENV=${AI_SERVICE_NAME},AI_STORAGE_BACKEND=alloydb" \
+        --set-secrets="INQUIRY_API_KEY=ai-api-key:latest" \
+        --set-env-vars="INQUIRY_ENV=${INQUIRY_SERVICE_NAME},INQUIRY_STORAGE_BACKEND=alloydb" \
         --allow-unauthenticated \
         --min-instances=1 \
         --max-instances=10 \
@@ -326,13 +326,13 @@ else
         --quiet
 
     # Retrieve the service URL
-    SERVICE_URL=$(gcloud run services describe "${AI_SERVICE_NAME}" \
-        --region="${AI_GCP_REGION}" \
-        --project="${AI_GCP_PROJECT}" \
+    SERVICE_URL=$(gcloud run services describe "${INQUIRY_SERVICE_NAME}" \
+        --region="${INQUIRY_GCP_REGION}" \
+        --project="${INQUIRY_GCP_PROJECT}" \
         --format="value(status.url)" \
         --quiet)
 
-    echo "${SERVICE_URL}" > "${AI_DEPLOY_STATE_DIR}/service-url.txt"
+    echo "${SERVICE_URL}" > "${INQUIRY_DEPLOY_STATE_DIR}/service-url.txt"
     log_ok "Cloud Run service URL: ${SERVICE_URL}"
 
     mark_done "07-cloud-run"
@@ -344,7 +344,7 @@ if step_done "08-smoke-test"; then
 else
     log_info "Step 08: Running smoke test..."
 
-    SERVICE_URL=$(cat "${AI_DEPLOY_STATE_DIR}/service-url.txt" 2>/dev/null || "")
+    SERVICE_URL=$(cat "${INQUIRY_DEPLOY_STATE_DIR}/service-url.txt" 2>/dev/null || "")
     if [[ -z "${SERVICE_URL}" ]]; then
         die "Cannot find service URL — did step 07 complete successfully?"
     fi
@@ -375,12 +375,12 @@ else
 fi
 
 # ─── Summary ───────────────────────────────────────────────────────────────────
-SERVICE_URL=$(cat "${AI_DEPLOY_STATE_DIR}/service-url.txt" 2>/dev/null || "unknown")
+SERVICE_URL=$(cat "${INQUIRY_DEPLOY_STATE_DIR}/service-url.txt" 2>/dev/null || "unknown")
 echo ""
 log_ok "======================================================"
 log_ok "Agentic Inquiry deployed successfully!"
-log_ok "  Project:     ${AI_GCP_PROJECT}"
-log_ok "  Region:      ${AI_GCP_REGION}"
-log_ok "  Service:     ${AI_SERVICE_NAME}"
+log_ok "  Project:     ${INQUIRY_GCP_PROJECT}"
+log_ok "  Region:      ${INQUIRY_GCP_REGION}"
+log_ok "  Service:     ${INQUIRY_SERVICE_NAME}"
 log_ok "  URL:         ${SERVICE_URL}"
 log_ok "======================================================"

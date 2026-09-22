@@ -315,39 +315,39 @@ class TestEnvironmentVariableOverrides:
     """Tests for environment variable overrides of maintenance config."""
 
     def test_env_override_retention_minutes(self, temp_config_file, sample_config_data):
-        """Test AI_MAINTENANCE_RETENTION_MINUTES environment variable."""
+        """Test INQUIRY_MAINTENANCE_RETENTION_MINUTES environment variable."""
         # Write base config
         with open(temp_config_file, 'w') as f:
             yaml.dump(sample_config_data, f)
 
         # Set environment variable
-        with patch.dict(os.environ, {"AI_MAINTENANCE_RETENTION_MINUTES": "300"}):
+        with patch.dict(os.environ, {"INQUIRY_MAINTENANCE_RETENTION_MINUTES": "300"}):
             config = Config.load(str(temp_config_file))
 
             # Should use env var value
             assert config.maintenance.cleanup_retention_minutes == 300
 
     def test_env_override_trigger(self, temp_config_file, sample_config_data):
-        """Test AI_MAINTENANCE_TRIGGER environment variable."""
+        """Test INQUIRY_MAINTENANCE_TRIGGER environment variable."""
         # Write base config
         with open(temp_config_file, 'w') as f:
             yaml.dump(sample_config_data, f)
 
         # Set environment variable
-        with patch.dict(os.environ, {"AI_MAINTENANCE_TRIGGER": "indexing.completed"}):
+        with patch.dict(os.environ, {"INQUIRY_MAINTENANCE_TRIGGER": "indexing.completed"}):
             config = Config.load(str(temp_config_file))
 
             # Should use env var value
             assert config.maintenance.trigger == "indexing.completed"
 
     def test_env_override_enabled(self, temp_config_file, sample_config_data):
-        """Test AI_MAINTENANCE_ENABLED environment variable."""
+        """Test INQUIRY_MAINTENANCE_ENABLED environment variable."""
         # Write base config
         with open(temp_config_file, 'w') as f:
             yaml.dump(sample_config_data, f)
 
         # Set environment variable
-        with patch.dict(os.environ, {"AI_MAINTENANCE_ENABLED": "false"}):
+        with patch.dict(os.environ, {"INQUIRY_MAINTENANCE_ENABLED": "false"}):
             config = Config.load(str(temp_config_file))
 
             # Should use env var value

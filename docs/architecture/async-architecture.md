@@ -253,7 +253,7 @@ parsers:
 
 **Environment variable:**
 ```bash
-export AI_PARSERS_MAX_CONCURRENT=20
+export INQUIRY_PARSERS_MAX_CONCURRENT=20
 ```
 
 ## Component-by-Component Breakdown

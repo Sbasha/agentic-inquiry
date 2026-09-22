@@ -112,9 +112,9 @@ class TestEnvironmentVariableOverrides:
     def test_memory_capacity_override(self, monkeypatch):
         """Test overriding memory capacity via environment variables."""
         # Set environment variables
-        monkeypatch.setenv("AI_MEMORY_WORKING_MEMORY_CAPACITY", "100")
-        monkeypatch.setenv("AI_MEMORY_EPISODIC_MEMORY_CAPACITY", "5000")
-        monkeypatch.setenv("AI_MEMORY_SEMANTIC_MEMORY_CAPACITY", "2500")
+        monkeypatch.setenv("INQUIRY_MEMORY_WORKING_MEMORY_CAPACITY", "100")
+        monkeypatch.setenv("INQUIRY_MEMORY_EPISODIC_MEMORY_CAPACITY", "5000")
+        monkeypatch.setenv("INQUIRY_MEMORY_SEMANTIC_MEMORY_CAPACITY", "2500")
 
         config = Config.load()
 
@@ -125,10 +125,10 @@ class TestEnvironmentVariableOverrides:
 
     def test_consolidation_override(self, monkeypatch):
         """Test overriding consolidation settings via environment variables."""
-        monkeypatch.setenv("AI_MEMORY_CONSOLIDATION_ENABLED", "false")
-        monkeypatch.setenv("AI_MEMORY_CONSOLIDATION_INTERVAL_SECONDS", "600")
+        monkeypatch.setenv("INQUIRY_MEMORY_CONSOLIDATION_ENABLED", "false")
+        monkeypatch.setenv("INQUIRY_MEMORY_CONSOLIDATION_INTERVAL_SECONDS", "600")
         monkeypatch.setenv(
-            "AI_MEMORY_CONSOLIDATION_EPISODIC_THRESHOLD", "0.75"
+            "INQUIRY_MEMORY_CONSOLIDATION_EPISODIC_THRESHOLD", "0.75"
         )
 
         config = Config.load()
@@ -141,10 +141,10 @@ class TestEnvironmentVariableOverrides:
     def test_retrieval_override(self, monkeypatch):
         """Test overriding retrieval settings via environment variables."""
         monkeypatch.setenv(
-            "AI_MEMORY_RETRIEVAL_DEFAULT_STRATEGY", "importance"
+            "INQUIRY_MEMORY_RETRIEVAL_DEFAULT_STRATEGY", "importance"
         )
-        monkeypatch.setenv("AI_MEMORY_RETRIEVAL_CACHE_ENABLED", "false")
-        monkeypatch.setenv("AI_MEMORY_RETRIEVAL_CACHE_TTL_SECONDS", "600")
+        monkeypatch.setenv("INQUIRY_MEMORY_RETRIEVAL_CACHE_ENABLED", "false")
+        monkeypatch.setenv("INQUIRY_MEMORY_RETRIEVAL_CACHE_TTL_SECONDS", "600")
 
         config = Config.load()
 

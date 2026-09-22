@@ -1,5 +1,7 @@
 # Ownership & Extension Points
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 This document is a guardrail for the database abstraction + connector architecture work. It answers:
 - who owns query building and query semantics
 - where reranking lives (and how to swap it)

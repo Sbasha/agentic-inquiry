@@ -137,7 +137,7 @@ uv run python -m agentic_inquiry.mcp.cli --enable-direct-tools
 uv run python -m agentic_inquiry.mcp.cli --project-id my_project
 
 # Or via environment variable
-export AI_DEFAULT_PROJECT=my_project
+export INQUIRY_DEFAULT_PROJECT=my_project
 uv run python -m agentic_inquiry.mcp.cli
 ```
 
@@ -188,7 +188,7 @@ docker run -d \
   -p 8765:8765 \
   -v $(pwd)/vector_db:/data/vector_db \
   -v $(pwd)/config:/app/config \
-  -e AI_DEFAULT_PROJECT=my_project \
+  -e INQUIRY_DEFAULT_PROJECT=my_project \
   agentic-inquiry-mcp:latest
 
 # Check logs
@@ -216,10 +216,10 @@ services:
       - ./config:/app/config
       - ./logs:/app/logs
     environment:
-      - AI_DEFAULT_PROJECT=my_project
-      - AI_MCP_ENABLED=true
-      - AI_MCP_API_HOST=0.0.0.0
-      - AI_MCP_API_PORT=8765
+      - INQUIRY_DEFAULT_PROJECT=my_project
+      - INQUIRY_MCP_ENABLED=true
+      - INQUIRY_MCP_API_HOST=0.0.0.0
+      - INQUIRY_MCP_API_PORT=8765
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8765/health')"]
@@ -314,25 +314,25 @@ Override configuration with environment variables:
 
 ```bash
 # Server settings
-export AI_MCP_ENABLED=true
-export AI_MCP_SERVER_NAME="My MCP Server"
+export INQUIRY_MCP_ENABLED=true
+export INQUIRY_MCP_SERVER_NAME="My MCP Server"
 
 # API settings
-export AI_MCP_API_HOST=0.0.0.0
-export AI_MCP_API_PORT=8765
-export AI_MCP_API_AUTH_ENABLED=true
-export AI_MCP_API_AUTH_API_KEY=your-secret-key
+export INQUIRY_MCP_API_HOST=0.0.0.0
+export INQUIRY_MCP_API_PORT=8765
+export INQUIRY_MCP_API_AUTH_ENABLED=true
+export INQUIRY_MCP_API_AUTH_API_KEY=your-secret-key
 
 # Tool settings
-export AI_MCP_TOOLS_DIRECT_ACCESS_ENABLED=true
+export INQUIRY_MCP_TOOLS_DIRECT_ACCESS_ENABLED=true
 
 # Behavior settings
-export AI_MCP_BEHAVIOR_CACHE_RESPONSES=true
-export AI_MCP_BEHAVIOR_CACHE_TTL_SECONDS=600
+export INQUIRY_MCP_BEHAVIOR_CACHE_RESPONSES=true
+export INQUIRY_MCP_BEHAVIOR_CACHE_TTL_SECONDS=600
 
 # Logging
-export AI_MCP_LOGGING_LEVEL=DEBUG
-export AI_MCP_LOGGING_LOG_DIR=/var/log/AGV
+export INQUIRY_MCP_LOGGING_LEVEL=DEBUG
+export INQUIRY_MCP_LOGGING_LOG_DIR=/var/log/AGV
 ```
 
 ### Storage Configuration
@@ -458,7 +458,7 @@ lsof -i :8765  # On macOS/Linux
 netstat -ano | findstr :8765  # On Windows
 
 # Start with debug logging
-export AI_MCP_LOGGING_LEVEL=DEBUG
+export INQUIRY_MCP_LOGGING_LEVEL=DEBUG
 uv run python -m agentic_inquiry.mcp.cli
 ```
 
@@ -588,7 +588,7 @@ Enable debug mode for detailed logging:
 
 ```bash
 # Via environment variable
-export AI_MCP_LOGGING_LEVEL=DEBUG
+export INQUIRY_MCP_LOGGING_LEVEL=DEBUG
 uv run python -m agentic_inquiry.mcp.cli
 
 # Via configuration
@@ -717,10 +717,10 @@ All inputs are validated via Pydantic models:
 
 ```bash
 # Bind to localhost only (development)
-export AI_MCP_API_HOST=127.0.0.1
+export INQUIRY_MCP_API_HOST=127.0.0.1
 
 # Bind to all interfaces (production with firewall)
-export AI_MCP_API_HOST=0.0.0.0
+export INQUIRY_MCP_API_HOST=0.0.0.0
 
 # Use reverse proxy (recommended)
 # nginx configuration:
@@ -796,7 +796,7 @@ autorestart=true
 redirect_stderr=true
 stdout_logfile=/var/log/agentic-inquiry-mcp/stdout.log
 stderr_logfile=/var/log/agentic-inquiry-mcp/stderr.log
-environment=AI_MCP_API_HOST="0.0.0.0",AI_MCP_API_PORT="8765"
+environment=INQUIRY_MCP_API_HOST="0.0.0.0",INQUIRY_MCP_API_PORT="8765"
 ```
 
 ```bash
@@ -835,9 +835,9 @@ spec:
         ports:
         - containerPort: 8765
         env:
-        - name: AI_MCP_API_HOST
+        - name: INQUIRY_MCP_API_HOST
           value: "0.0.0.0"
-        - name: AI_MCP_API_PORT
+        - name: INQUIRY_MCP_API_PORT
           value: "8765"
         volumeMounts:
         - name: vector-db

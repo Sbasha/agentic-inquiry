@@ -292,21 +292,6 @@ def _register_builtin_connectors() -> None:
     registry.register("filesystem", FileSystemConnector)
     registry.register("file", FileSystemConnector)  # Alias
 
-    # S3 connector is registered via decorator in s3.py
-    # Import here to trigger registration (optional - only if s3fs available)
-    try:
-        from agentic_inquiry.connectors.s3 import S3Connector  # noqa: F401
-    except ImportError:
-        logger.debug("S3 connector not available (s3fs not installed)")
-
-    # GCS connector is registered via decorator in gcs.py. Importing the module
-    # fires the decorator; the gcsfs dependency is only checked at construction
-    # time, so this registers "gcs" even when gcsfs is not installed.
-    try:
-        from agentic_inquiry.connectors.gcs import GCSConnector  # noqa: F401
-    except ImportError:
-        logger.debug("GCS connector not available (gcsfs not installed)")
-
 
 # Auto-register when module is imported
 _register_builtin_connectors()

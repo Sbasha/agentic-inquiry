@@ -50,16 +50,6 @@ async def expire_stale_branches(
     now = datetime.now(timezone.utc)
     vp = storage._vector_provider
 
-    # ---- PostgreSQL/AlloyDB path ----
-    if hasattr(vp, "_execute") and hasattr(vp, "_fetch") and hasattr(vp, "_chunks_table"):
-        return await _expire_postgresql(
-            vp=vp,
-            project_id=project_id,
-            active_branches=active_branches,
-            default_branch=default_branch,
-            now=now,
-        )
-
     # ---- LanceDB path ----
     if hasattr(vp, "_db_manager") and vp._db_manager is not None:
         return await _expire_lancedb(
@@ -76,65 +66,6 @@ async def expire_stale_branches(
     )
     return []
 
-
-async def _expire_postgresql(
-    vp: Any,
-    project_id: str,
-    active_branches: set[str],
-    default_branch: str,
-    now: datetime,
-) -> list[str]:
-    """Expire stale branches on a PostgreSQL/AlloyDB vector provider."""
-    try:
-        # Find all branches that have active chunks for this project
-        rows = await vp._fetch(
-            f"SELECT DISTINCT branch FROM {vp._chunks_table} "
-            "WHERE project_id = $1 AND is_active = true",
-            project_id,
-        )
-    except Exception as exc:
-        logger.warning(
-            "expire_stale_branches: failed to list branches (schema may be pre-migration): %s",
-            exc,
-        )
-        return []
-
-    expired: list[str] = []
-    for row in rows:
-        branch = row.get("branch") or ""
-        if not branch:
-            continue
-        # Never expire the default branch
-        if branch == default_branch:
-            continue
-        # Skip branches that are still active
-        if branch in active_branches:
-            continue
-
-        try:
-            await vp._execute(
-                f"UPDATE {vp._chunks_table} "
-                "SET is_active = false, expired_at = $1 "
-                "WHERE project_id = $2 AND branch = $3 AND is_active = true",
-                now,
-                project_id,
-                branch,
-            )
-            logger.info(
-                "expire_stale_branches: expired branch %r for project %r at %s",
-                branch,
-                project_id,
-                now.isoformat(),
-            )
-            expired.append(branch)
-        except Exception as exc:
-            logger.warning(
-                "expire_stale_branches: failed to expire branch %r: %s",
-                branch,
-                exc,
-            )
-
-    return expired
 
 
 async def _expire_lancedb(
@@ -221,10 +152,6 @@ async def prune_expired_branches(
     cutoff = datetime.now(timezone.utc) - timedelta(days=retention_days)
     vp = storage._vector_provider
 
-    # ---- PostgreSQL/AlloyDB path ----
-    if hasattr(vp, "_execute") and hasattr(vp, "_chunks_table"):
-        return await _prune_postgresql(vp=vp, project_id=project_id, cutoff=cutoff)
-
     # ---- LanceDB path ----
     if hasattr(vp, "_db_manager") and vp._db_manager is not None:
         return await _prune_lancedb(vp=vp, project_id=project_id, cutoff=cutoff)
@@ -235,38 +162,6 @@ async def prune_expired_branches(
     )
     return 0
 
-
-async def _prune_postgresql(
-    vp: Any,
-    project_id: str,
-    cutoff: datetime,
-) -> int:
-    """Hard-delete prunable chunks on PostgreSQL/AlloyDB."""
-    try:
-        # Use a CTE to count and delete atomically
-        sql = (
-            f"WITH deleted AS ("
-            f"  DELETE FROM {vp._chunks_table} "
-            f"  WHERE project_id = $1 "
-            f"    AND is_active = false "
-            f"    AND expired_at IS NOT NULL "
-            f"    AND expired_at < $2 "
-            f"  RETURNING id"
-            f") SELECT COUNT(*) AS deleted_count FROM deleted"
-        )
-        rows = await vp._fetch(sql, project_id, cutoff)
-        count = int((rows[0].get("deleted_count") or 0) if rows else 0)
-        if count:
-            logger.info(
-                "prune_expired_branches: hard-deleted %d chunks for project %r (cutoff %s)",
-                count,
-                project_id,
-                cutoff.isoformat(),
-            )
-        return count
-    except Exception as exc:
-        logger.warning("prune_expired_branches: PostgreSQL delete failed: %s", exc)
-        return 0
 
 
 async def _prune_lancedb(

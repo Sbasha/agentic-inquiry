@@ -22,9 +22,9 @@ class TestMaintenanceConfigEnvOverrides:
     @pytest.mark.parametrize(
         ("env_var", "env_value", "config_data", "path", "expected"),
         [
-            ("AI_MAINTENANCE_TRIGGER", "indexing.completed", {'maintenance': {'trigger': 'project.closed'}}, ("maintenance", "trigger"), "indexing.completed"),
-            ("AI_MAINTENANCE_RETENTION_MINUTES", "120", {'maintenance': {'cleanup_retention_minutes': 60}}, ("maintenance", "cleanup_retention_minutes"), 120),
-            ("AI_MAINTENANCE_ENABLED", "false", {'maintenance': {'enabled': True}}, ("maintenance", "enabled"), False),
+            ("INQUIRY_MAINTENANCE_TRIGGER", "indexing.completed", {'maintenance': {'trigger': 'project.closed'}}, ("maintenance", "trigger"), "indexing.completed"),
+            ("INQUIRY_MAINTENANCE_RETENTION_MINUTES", "120", {'maintenance': {'cleanup_retention_minutes': 60}}, ("maintenance", "cleanup_retention_minutes"), 120),
+            ("INQUIRY_MAINTENANCE_ENABLED", "false", {'maintenance': {'enabled': True}}, ("maintenance", "enabled"), False),
         ],
     )
     def test_maintenance_env_overrides(self, monkeypatch, env_var, env_value, config_data, path, expected):
@@ -40,9 +40,9 @@ class TestMaintenanceConfigEnvOverrides:
 
     def test_multiple_maintenance_overrides(self, monkeypatch):
         """Test multiple maintenance environment variable overrides simultaneously."""
-        monkeypatch.setenv("AI_MAINTENANCE_TRIGGER", "disabled")
-        monkeypatch.setenv("AI_MAINTENANCE_RETENTION_MINUTES", "30")
-        monkeypatch.setenv("AI_MAINTENANCE_ENABLED", "false")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_TRIGGER", "disabled")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", "30")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_ENABLED", "false")
 
         config_data = {
             'maintenance': {
@@ -59,7 +59,7 @@ class TestMaintenanceConfigEnvOverrides:
 
     def test_invalid_maintenance_trigger_raises_error(self, monkeypatch):
         """Test that invalid maintenance trigger value raises ConfigurationError."""
-        monkeypatch.setenv("AI_MAINTENANCE_TRIGGER", "invalid_trigger")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_TRIGGER", "invalid_trigger")
 
         with pytest.raises(ConfigurationError) as exc_info:
             Config.load()
@@ -76,7 +76,7 @@ class TestMaintenanceConfigEnvOverrides:
     )
     def test_invalid_retention_minutes(self, monkeypatch, env_value, expected_substrings):
         """Test invalid cleanup_retention_minutes values."""
-        monkeypatch.setenv("AI_MAINTENANCE_RETENTION_MINUTES", env_value)
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", env_value)
 
         with pytest.raises(ConfigurationError) as exc_info:
             Config.load()
@@ -94,7 +94,7 @@ class TestMaintenanceConfigEnvOverrides:
     )
     def test_valid_retention_minutes_boundary_values(self, monkeypatch, env_value, expected):
         """Test that boundary values for cleanup_retention_minutes are accepted."""
-        monkeypatch.setenv("AI_MAINTENANCE_RETENTION_MINUTES", env_value)
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", env_value)
         config = Config.load()
         assert config.maintenance.cleanup_retention_minutes == expected
 
@@ -105,8 +105,8 @@ class TestMCPQueryConfigEnvOverrides:
     @pytest.mark.parametrize(
         ("env_var", "env_value", "config_data", "path", "expected"),
         [
-            ("AI_TRAVERSAL_LIMIT", "1000", {'mcp': {'query': {'traversal_limit': 500}}}, ("mcp", "query", "traversal_limit"), 1000),
-            ("AI_BATCH_SIZE", "250", {'mcp': {'query': {'batch_size': 100}}}, ("mcp", "query", "batch_size"), 250),
+            ("INQUIRY_TRAVERSAL_LIMIT", "1000", {'mcp': {'query': {'traversal_limit': 500}}}, ("mcp", "query", "traversal_limit"), 1000),
+            ("INQUIRY_BATCH_SIZE", "250", {'mcp': {'query': {'batch_size': 100}}}, ("mcp", "query", "batch_size"), 250),
         ],
     )
     def test_query_env_overrides(self, monkeypatch, env_var, env_value, config_data, path, expected):
@@ -122,8 +122,8 @@ class TestMCPQueryConfigEnvOverrides:
 
     def test_multiple_query_overrides(self, monkeypatch):
         """Test multiple MCP query environment variable overrides simultaneously."""
-        monkeypatch.setenv("AI_TRAVERSAL_LIMIT", "1500")
-        monkeypatch.setenv("AI_BATCH_SIZE", "200")
+        monkeypatch.setenv("INQUIRY_TRAVERSAL_LIMIT", "1500")
+        monkeypatch.setenv("INQUIRY_BATCH_SIZE", "200")
 
         config_data = {
             'mcp': {
@@ -141,10 +141,10 @@ class TestMCPQueryConfigEnvOverrides:
     @pytest.mark.parametrize(
         ("env_var", "env_value", "expected_substrings"),
         [
-            ("AI_TRAVERSAL_LIMIT", "99", ["traversal_limit must be between 100 and 2000", "got 99"]),
-            ("AI_TRAVERSAL_LIMIT", "2001", ["traversal_limit must be between 100 and 2000", "got 2001"]),
-            ("AI_BATCH_SIZE", "9", ["batch_size must be between 10 and 500", "got 9"]),
-            ("AI_BATCH_SIZE", "501", ["batch_size must be between 10 and 500", "got 501"]),
+            ("INQUIRY_TRAVERSAL_LIMIT", "99", ["traversal_limit must be between 100 and 2000", "got 99"]),
+            ("INQUIRY_TRAVERSAL_LIMIT", "2001", ["traversal_limit must be between 100 and 2000", "got 2001"]),
+            ("INQUIRY_BATCH_SIZE", "9", ["batch_size must be between 10 and 500", "got 9"]),
+            ("INQUIRY_BATCH_SIZE", "501", ["batch_size must be between 10 and 500", "got 501"]),
         ],
     )
     def test_invalid_query_limits(self, monkeypatch, env_var, env_value, expected_substrings):
@@ -161,10 +161,10 @@ class TestMCPQueryConfigEnvOverrides:
     @pytest.mark.parametrize(
         ("env_var", "env_value", "attr_path", "expected"),
         [
-            ("AI_TRAVERSAL_LIMIT", "100", ("mcp", "query", "traversal_limit"), 100),
-            ("AI_TRAVERSAL_LIMIT", "2000", ("mcp", "query", "traversal_limit"), 2000),
-            ("AI_BATCH_SIZE", "10", ("mcp", "query", "batch_size"), 10),
-            ("AI_BATCH_SIZE", "500", ("mcp", "query", "batch_size"), 500),
+            ("INQUIRY_TRAVERSAL_LIMIT", "100", ("mcp", "query", "traversal_limit"), 100),
+            ("INQUIRY_TRAVERSAL_LIMIT", "2000", ("mcp", "query", "traversal_limit"), 2000),
+            ("INQUIRY_BATCH_SIZE", "10", ("mcp", "query", "batch_size"), 10),
+            ("INQUIRY_BATCH_SIZE", "500", ("mcp", "query", "batch_size"), 500),
         ],
     )
     def test_valid_query_limit_boundaries(self, monkeypatch, env_var, env_value, attr_path, expected):
@@ -182,11 +182,11 @@ class TestConfigIntegration:
 
     def test_all_new_env_vars_together(self, monkeypatch):
         """Test that all new environment variables can be set together."""
-        monkeypatch.setenv("AI_MAINTENANCE_TRIGGER", "indexing.completed")
-        monkeypatch.setenv("AI_MAINTENANCE_RETENTION_MINUTES", "180")
-        monkeypatch.setenv("AI_MAINTENANCE_ENABLED", "false")
-        monkeypatch.setenv("AI_TRAVERSAL_LIMIT", "1200")
-        monkeypatch.setenv("AI_BATCH_SIZE", "300")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_TRIGGER", "indexing.completed")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", "180")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_ENABLED", "false")
+        monkeypatch.setenv("INQUIRY_TRAVERSAL_LIMIT", "1200")
+        monkeypatch.setenv("INQUIRY_BATCH_SIZE", "300")
 
         config = Config.load()
 
@@ -240,10 +240,10 @@ mcp:
         config_file.write_text(config_content)
 
         # Set environment variables to override
-        monkeypatch.setenv("AI_MAINTENANCE_TRIGGER", "disabled")
-        monkeypatch.setenv("AI_MAINTENANCE_RETENTION_MINUTES", "720")
-        monkeypatch.setenv("AI_TRAVERSAL_LIMIT", "1800")
-        monkeypatch.setenv("AI_BATCH_SIZE", "400")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_TRIGGER", "disabled")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", "720")
+        monkeypatch.setenv("INQUIRY_TRAVERSAL_LIMIT", "1800")
+        monkeypatch.setenv("INQUIRY_BATCH_SIZE", "400")
 
         config = Config.load(str(config_file))
 
@@ -256,8 +256,8 @@ mcp:
     def test_partial_env_override(self, monkeypatch):
         """Test that partial environment variable overrides work correctly."""
         # Only override some values, not all
-        monkeypatch.setenv("AI_MAINTENANCE_RETENTION_MINUTES", "90")
-        monkeypatch.setenv("AI_BATCH_SIZE", "150")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", "90")
+        monkeypatch.setenv("INQUIRY_BATCH_SIZE", "150")
 
         config = Config.load()
 
@@ -273,9 +273,9 @@ mcp:
     def test_type_conversion_for_env_vars(self, monkeypatch):
         """Test that environment variable values are converted to correct types."""
         # String to int conversion
-        monkeypatch.setenv("AI_MAINTENANCE_RETENTION_MINUTES", "240")
-        monkeypatch.setenv("AI_TRAVERSAL_LIMIT", "1500")
-        monkeypatch.setenv("AI_BATCH_SIZE", "250")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", "240")
+        monkeypatch.setenv("INQUIRY_TRAVERSAL_LIMIT", "1500")
+        monkeypatch.setenv("INQUIRY_BATCH_SIZE", "250")
 
         config = Config.load()
 
@@ -284,7 +284,7 @@ mcp:
         assert isinstance(config.mcp.query.batch_size, int)
 
         # String to bool conversion
-        monkeypatch.setenv("AI_MAINTENANCE_ENABLED", "false")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_ENABLED", "false")
         config = Config.load()
         assert isinstance(config.maintenance.enabled, bool)
         assert config.maintenance.enabled is False
@@ -293,8 +293,8 @@ mcp:
         """Test that applied environment variable overrides are logged."""
         import logging
 
-        monkeypatch.setenv("AI_MAINTENANCE_RETENTION_MINUTES", "120")
-        monkeypatch.setenv("AI_TRAVERSAL_LIMIT", "1000")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", "120")
+        monkeypatch.setenv("INQUIRY_TRAVERSAL_LIMIT", "1000")
 
         with caplog.at_level(logging.DEBUG):
             Config.load()
@@ -302,8 +302,8 @@ mcp:
         # Verify debug messages were logged
         debug_messages = [record.message for record in caplog.records if record.levelname == "DEBUG"]
 
-        assert any("AI_MAINTENANCE_RETENTION_MINUTES" in msg for msg in debug_messages)
-        assert any("AI_TRAVERSAL_LIMIT" in msg for msg in debug_messages)
+        assert any("INQUIRY_MAINTENANCE_RETENTION_MINUTES" in msg for msg in debug_messages)
+        assert any("INQUIRY_TRAVERSAL_LIMIT" in msg for msg in debug_messages)
 
 
 class TestAcceptanceCriteria:
@@ -316,7 +316,7 @@ class TestAcceptanceCriteria:
         is correctly set and can be accessed by components that use it.
         """
         # Set a custom traversal limit
-        monkeypatch.setenv("AI_TRAVERSAL_LIMIT", "1500")
+        monkeypatch.setenv("INQUIRY_TRAVERSAL_LIMIT", "1500")
 
         config = Config.load()
 
@@ -333,7 +333,7 @@ class TestAcceptanceCriteria:
         value is correctly set and can be accessed by maintenance components.
         """
         # Set a custom retention period
-        monkeypatch.setenv("AI_MAINTENANCE_RETENTION_MINUTES", "360")
+        monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", "360")
 
         config = Config.load()
 
@@ -390,7 +390,7 @@ class TestPackagedConfigResolver:
         self, tmp_path, monkeypatch
     ) -> None:
         """No env override and no cwd yaml: use the package default."""
-        monkeypatch.delenv("AI_CONFIG", raising=False)
+        monkeypatch.delenv("INQUIRY_CONFIG", raising=False)
         monkeypatch.chdir(tmp_path)
         # Isolate from a leftover ~/.agentic-inquiry/config.yaml on the developer machine.
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "home")

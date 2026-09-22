@@ -8,7 +8,7 @@ the indexes, and the logs stay there too. This page carries only counts
 and hashes.
 
 Setup: branch code installed into an isolated venv with lancedb 0.38.0
-(the version `uv tool install .` resolves), `AI_EMBEDDING_DEVICE=cpu`,
+(the version `uv tool install .` resolves), `INQUIRY_EMBEDDING_DEVICE=cpu`,
 `--skip-onboard-check`, one 1,443-file repository as corpus (1,437 files
 indexable), project id fixed across runs.
 

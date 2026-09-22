@@ -9,6 +9,8 @@ last_updated: 2025-10-28
 
 # API Reference
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 This document provides comprehensive API documentation for all major components in Agentic Inquiry.
 
 ## Recommended Patterns

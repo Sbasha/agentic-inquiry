@@ -1,5 +1,7 @@
 # Plan: Index and memory write honesty
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../../storage-backends.md).
+
 - **Spec:** [`spec.md`](spec.md)
 - **Status:** Approved
 
@@ -171,7 +173,7 @@ Traces to AC 1-17. · contracts: none.
 - Memory store exception, missing table after write, or in-memory
   adapter: exit 1, no success line.
 - Working memory (`importance < 0.7`): exit 1, session-only message.
-- Hatch hint: skip when `AI_EMBEDDING_DEVICE` is set or platform is
+- Hatch hint: skip when `INQUIRY_EMBEDDING_DEVICE` is set or platform is
   not Darwin. Process kill 137/139 remains uncatchable.
 - Cross-process commit conflict (another `ai` process writing the same
   table): still retried five times with backoff, then fails the file.
@@ -317,19 +319,19 @@ and retry tests still pass.
 
 **Tests:**
 - With `platform.system` patched to `Darwin` and
-  `AI_EMBEDDING_DEVICE` unset, the helper writes one stderr line
-  containing `.env` and `AI_EMBEDDING_DEVICE=cpu` (AC 7).
+  `INQUIRY_EMBEDDING_DEVICE` unset, the helper writes one stderr line
+  containing `.env` and `INQUIRY_EMBEDDING_DEVICE=cpu` (AC 7).
   stub: true (`tests/cli/test_env_resolver.py`)
 - With the variable set to `cpu` or `mps`, no line (AC 7).
   stub: true
 - With platform `Linux`, no line (AC 7).
   stub: true
 - Goal-based: `LocalSetup` env text still contains
-  `# AI_EMBEDDING_DEVICE=cpu` (existing
+  `# INQUIRY_EMBEDDING_DEVICE=cpu` (existing
   `tests/cli/setup/test_local_setup.py`).
   no stub (mode)
 - Goal-based: README contains `uv tool install . --reinstall` and
-  `AI_EMBEDDING_DEVICE=cpu` (AC 8).
+  `INQUIRY_EMBEDDING_DEVICE=cpu` (AC 8).
   no stub (mode)
 
 **Approach:**
@@ -543,7 +545,7 @@ schema-manager tests green.
 
 **Approach:**
 - All runs use the isolated venv with lancedb 0.38.0 and the branch
-  checkout installed, `AI_EMBEDDING_DEVICE=cpu`, the comparator env
+  checkout installed, `INQUIRY_EMBEDDING_DEVICE=cpu`, the comparator env
   config, and `--skip-onboard-check`.
 - The inspector reads tables with `lancedb` directly and prints only
   counts, versions, index names, and duplicate-key tallies.
@@ -567,7 +569,7 @@ on first initialize or save. Operators with a half-written
 - Keep-last may drop a real edge if two distinct relationships share
   an 8-hex-char id. Collapse is logged; unique keys are preserved.
 - Darwin hint runs on every Mac index/save until the operator sets
-  `AI_EMBEDDING_DEVICE`. One line, not a CPU default.
+  `INQUIRY_EMBEDDING_DEVICE`. One line, not a CPU default.
 - Memory table rename (CLI hardcoded names vs config names) leaves any
   accidental `memory_episodic` rows unread. The explore report showed
   those tables never grew.

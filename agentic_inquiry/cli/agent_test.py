@@ -452,13 +452,13 @@ async def _run_smoke_test(storage, config, project_id: str, output_dir: Path, re
     # Test 5: Memory (if available)
     try:
         from agentic_inquiry.memory.system import MemorySystem
-        from agentic_inquiry.memory.adapters.postgresql_adapter import PostgresMemoryAdapter
+        from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 
-        conn_manager = storage.get_connection_manager()
-        if conn_manager:
+        db_manager = storage.get_db_manager() if hasattr(storage, "get_db_manager") else None
+        if db_manager:
             embedding_dims = getattr(config.embeddings, 'default_dimensions', 384)
-            episodic = PostgresMemoryAdapter(
-                connection_manager=conn_manager,
+            episodic = LanceDBMemoryAdapter(
+                manager=db_manager,
                 table_name="memory_episodic",
                 embedding_dims=embedding_dims,
             )

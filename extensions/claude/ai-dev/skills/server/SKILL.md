@@ -42,5 +42,5 @@ pgrep -f "ai serve" && echo "Running" || echo "Stopped"
 
 Requires:
 - `OPENAI_API_KEY` for embeddings
-- `AI_CONFIG` or default config at `config/default.yaml`
-- `AI_PROJECT_ID` for project isolation
+- `INQUIRY_CONFIG` or default config at `config/default.yaml`
+- `INQUIRY_PROJECT_ID` for project isolation

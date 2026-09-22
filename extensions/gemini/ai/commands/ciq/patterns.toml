@@ -28,7 +28,7 @@ Analyzes codebase to identify:
 ```
 Discovered Patterns:
 ├── Repository Pattern (storage/providers/)
-│   └── LanceDBManager, PostgreSQLManager
+│   └── LanceDBManager, SQLiteEventProvider
 ├── Factory Pattern (parsers/chain.py)
 │   └── ParserChain.create_for_language()
 ├── Service Layer (search/service.py)

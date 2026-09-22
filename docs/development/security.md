@@ -326,13 +326,13 @@ Use environment variables instead:
 
 ```bash
 # ✅ GOOD: Environment variables
-export AI_EMBEDDINGS_API_KEY="sk-1234567890abcdef"
+export INQUIRY_EMBEDDINGS_API_KEY="sk-1234567890abcdef"
 ```
 
 ```yaml
 # Config references environment variable
 embeddings:
-  api_key: ${AI_EMBEDDINGS_API_KEY}
+  api_key: ${INQUIRY_EMBEDDINGS_API_KEY}
 ```
 
 ### .gitignore Configuration

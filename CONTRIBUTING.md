@@ -107,15 +107,15 @@ Cross-tool integration is the highest-yield investment: most bugs we have shippe
 
 ## Storage Backends
 
-Agentic Inquiry supports multiple storage backends. When developing:
+Agentic Inquiry is local only. When developing:
 
 | Backend | Config `type` | Embedding | Use Case |
 |---------|--------------|-----------|----------|
-| LanceDB | `lancedb` | Local (SentenceTransformer) | Default for development |
-| PostgreSQL | `postgresql` | Local (SentenceTransformer) | Self-hosted production |
-| AlloyDB | `alloydb` | Server-side (`text-embedding-005`) | GCP production |
+| LanceDB | `lancedb` | Local (SentenceTransformer) | Vectors and graph |
+| SQLite | `sqlite` | n/a | Events, file tracking, onboarding metadata |
+| In-memory | `memory` | Local | Tests |
 
-AlloyDB and CloudSQL use the **unified PostgreSQL provider** at `storage/providers/postgresql/`. The `embedding_strategy` config field controls local vs server-side embedding.
+Every provider implements the protocols in `storage/protocols/`; the contract an external database provider must satisfy is in [docs/storage-backends.md](docs/storage-backends.md).
 
 ## Plugin System
 
@@ -156,7 +156,7 @@ Agentic Inquiry uses an environment system for isolating configurations:
 
 - Global storage: `~/.agentic-inquiry/` (environments, registry, events, logs)
 - Project-local: `.agentic-inquiry/` (test/dev data, gitignored)
-- `AI_HOME` env var overrides `~/.agentic-inquiry/`
+- `INQUIRY_HOME` env var overrides `~/.agentic-inquiry/`
 - Environment configs: `~/.agentic-inquiry/envs/<name>/config.yaml`
 - Active environment tracked in `~/.agentic-inquiry/env-registry.json`
 

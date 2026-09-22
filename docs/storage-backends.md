@@ -1,58 +1,37 @@
-# Pluggable Storage Backends
+# Storage providers and the external provider contract
 
-This document describes how to configure and use pluggable storage backends in Agentic Inquiry.
+Agentic Inquiry stores everything locally. This page states which providers ship, how storage roles are assigned to them, and the contract an external database provider for governed projects must satisfy. No external provider ships in this distribution; the contract is documented so that design work can start from the real interface rather than from a description of it.
 
-## Overview
+## Shipped providers
 
-Agentic Inquiry supports multiple storage backends for different storage roles:
+| Role | Provider | Type | Notes |
+|------|----------|------|-------|
+| `vector` | LanceDB | `lancedb` | Chunks, embeddings, full-text search |
+| `graph` | LanceDB | `lancedb` | Entities and relationships |
+| `events` | SQLite | `sqlite` | Operation and audit events |
+| `file_tracker` | SQLite | `sqlite` | File hashes for change detection |
+| `onboard_metadata` | SQLite | `sqlite` | Onboarding run records |
+| any | In-memory | `memory` | Tests and throwaway sessions; nothing persists |
 
-| Role | Description | Supported Backends |
-|------|-------------|-------------------|
-| `vector` | Vector embeddings and search | LanceDB, PostgreSQL, AlloyDB |
-| `graph` | Entity and relationship graphs | LanceDB, PostgreSQL, AlloyDB |
-| `events` | Event/audit logging | SQLite, PostgreSQL |
-| `file_tracker` | File change tracking | SQLite, PostgreSQL |
-
-**Note:** PostgreSQL, AlloyDB, and CloudSQL all use the **unified PostgreSQL provider** with different configuration options.
-
-## Configuration
-
-### New-Style Configuration (Recommended)
-
-Use named backends with explicit role assignments:
+Roles are assigned in `storage` configuration. Named backends with explicit role assignments:
 
 ```yaml
 storage:
   root: "/data/agentic-inquiry"
-
-  # Define named backends
   backends:
     default:
       type: lancedb
       uri: "${storage.root}/lancedb"
-
-    primary_db:
-      type: postgresql
-      host: localhost
-      port: 5432
-      database: agentic-inquiry
-      user: ${POSTGRES_USER}
-      password: ${POSTGRES_PASSWORD}
-
     local_sqlite:
       type: sqlite
       path: "${storage.root}/local.db"
-
-  # Assign backends to roles
   vector_backend: default
   graph_backend: default
   events_backend: local_sqlite
   file_tracker_backend_v2: local_sqlite
 ```
 
-### Legacy Configuration (Backward Compatible)
-
-For simple deployments, the legacy single-provider mode still works:
+The single-provider form remains supported:
 
 ```yaml
 storage:
@@ -61,210 +40,37 @@ storage:
     uri: "${storage.root}/lancedb"
 ```
 
-## Backend Types
+The registry in `agentic_inquiry/storage/registry.py` maps `(backend type, role)` to a provider class. `StorageFacade` (`agentic_inquiry/storage/facade.py`) resolves each role once, owns provider lifecycle and exposes one API to indexing, search, memory and the MCP server. Consumers query `ProviderCapabilities` (`agentic_inquiry/storage/capabilities.py`) instead of testing backend type strings.
 
-### LanceDB (Default)
+## The provider contract
 
-Embedded vector database with zero-configuration setup.
+A provider is a class that implements one or more of the protocols in `agentic_inquiry/storage/protocols/`. The protocols are `typing.Protocol` classes; a provider satisfies them structurally and does not need to inherit from anything, although `agentic_inquiry/storage/providers/base.py` offers `BaseProvider` with lifecycle guards and `MaintenanceMixin` with default maintenance operations.
 
-```yaml
-backends:
-  lancedb_local:
-    type: lancedb
-    uri: /path/to/lancedb
-```
+| Protocol | File | Responsibility | Required operations |
+|----------|------|----------------|---------------------|
+| `BackendLifecycle` | `lifecycle.py` | Construction and lifetime | `from_config(config, project_id)`, `initialize()`, `close()`, `health_check()`, `is_initialized` |
+| `VectorStorageProtocol` | `vector.py` | Chunk storage and retrieval | `upsert_chunks`, `delete_chunks_by_file`, `delete_chunks_by_ids`, `get_chunks_by_file`, `vector_search`, `fts_search`, `hybrid_search`, `query`, `count`, `entity_vector_search`, `query_across_projects`, `list_tables`, `table_exists` |
+| `GraphStorageProtocol` | `graph.py` | Entities and relationships | `upsert_entities`, `get_entity`, `get_entities_by_file`, `get_entities_by_type`, `delete_entities_by_file`, `delete_entities_by_ids`, `query_entities`, `count_entities`, `upsert_relationships`, `get_relationships_by_entity`, `delete_relationships_by_file`, `delete_relationships_by_entity`, `delete_relationships_by_ids`, `query_relationships`, `count_relationships_by_type`, `get_neighbors`, `traverse` |
+| `EventStorageProtocol` | `events.py` | Operation events | `write_events`, `query_events`, `get_operation_events`, `get_operation_status`, `count_events`, `delete_before`, `run_maintenance` |
+| `FileTrackerProtocol` | `file_tracker.py` | Change detection | `get_hash`, `update_hash`, `has_changed`, `remove_file`, `list_tracked_files`, `clear`, plus the synchronous variants |
+| `IndexingStorageProtocol` | `indexing.py` | Bulk writes during indexing | `add_document_chunks`, `delete_document_chunks`, `add_graph_entities`, `delete_graph_entities`, `add_graph_relationships`, `delete_graph_relationships`, `advanced_filter`, `query_entities`, `run_maintenance` |
+| `MaintenanceProtocol` | `vector.py` | Health and repair | `health_check`, `run_maintenance`, `compact`, `validate_integrity`, `cleanup_orphaned_data` |
+| `TransactionProtocol`, `TransactionContext` | `vector.py` | Coordinated multi-table writes | `begin_transaction`, `commit`, `rollback`; the context batches operations and `flush`es them |
+| `TransactionAwareProvider` | `transaction.py` | Sharing one connection across providers inside a transaction | `set_transaction_connection`, `clear_transaction_connection`, `in_transaction` |
 
-### PostgreSQL
+Every read and write is scoped by `project_id`. Filters arrive as the filter AST in `agentic_inquiry/database/filters/` and each provider translates the AST to its own query language; a provider must reject fields and operators it does not know rather than interpolate them. Similarity metrics are declared through `BackendConfig.similarity_metric` and translated by `agentic_inquiry/storage/similarity.py`.
 
-Production-grade backend with full ACID compliance. This is the **unified provider** that also handles CloudSQL and AlloyDB.
+The local providers commit per operation. `StorageFacade.transaction()` raises `TransactionError` for them; an external provider that implements `TransactionProtocol` and `TransactionAwareProvider` gets coordinated vector and graph writes through the same facade call.
 
-```yaml
-backends:
-  postgres_primary:
-    type: postgresql
-    host: localhost
-    port: 5432
-    database: agentic-inquiry
-    user: ${POSTGRES_USER}
-    password: ${POSTGRES_PASSWORD}
-    pool_size: 20
-    max_overflow: 10
+## What an external provider for governed projects must add
 
-    # Embedding strategy
-    embedding_strategy: local  # "local" or "server_side" (AlloyDB only)
-    embedding_model: all-MiniLM-L6-v2
-    embedding_dim: 384
-```
+The contract above is what the runtime needs. A governed deployment needs the following on top, and none of it exists in the local providers:
 
-Required extension: `pgvector` for vector storage.
+- **Identity and tenancy.** `project_id` is the only scope the runtime passes. A governed provider must map it to an owning principal or tenant and refuse cross-project reads and writes at the database, not only in the facade. `query_across_projects` must be restricted to explicitly shared projects.
+- **Authentication.** Providers receive `BackendConfig` (`agentic_inquiry/storage/config.py`). Credentials must come from the environment or a secret store the operator controls; nothing in the runtime persists them.
+- **Audit.** `EventStorageProtocol` is the audit surface. A governed provider must make events append-only and attributable, and must not let `delete_before` erase records inside a retention window.
+- **Embedding placement.** `ProviderCapabilities.embedding_strategy` declares whether vectors are produced locally or by the database. A server-side strategy changes dimensions and the indexing pipeline's expectations; the pipeline calls `generate_embeddings()` hooks that are no-ops for local providers.
+- **Schema evolution and backup.** The runtime assumes a provider owns its schema. A governed provider needs versioned schema migration, backup and restore paths that keep durable records and knowledge intact; the local backup command in `agentic_inquiry/library.py` is the behavioural reference.
+- **Capabilities.** Register the provider in `PROVIDER_REGISTRY` and add a `ProviderCapabilities` entry; consumers rely on that entry for feature detection.
 
-### AlloyDB
-
-GCP-managed PostgreSQL with server-side embedding support. Uses the **unified PostgreSQL provider** with `embedding_strategy: server_side`.
-
-```yaml
-backends:
-  alloydb:
-    type: alloydb  # Maps to PostgreSQL provider internally
-    project: your-gcp-project
-    region: us-central1
-    cluster: your-cluster
-    instance: your-instance
-    database: agentic-inquiry
-    user: postgres
-    password: ${ALLOYDB_PASSWORD}
-
-    # Server-side embedding (auto-configured by validate_alloydb_config)
-    embedding_strategy: server_side
-    embedding_model: text-embedding-005
-    embedding_dim: 768
-
-    # Connection pooling
-    pool_size: 5
-    max_overflow: 2
-```
-
-**Key Differences from Standard PostgreSQL:**
-- **Server-side embedding:** Pipeline skips local embedding, uses AlloyDB's `text-embedding-005` model
-- **Auto-embedding generation:** Calls `generate_embeddings()` after indexing
-  - Fresh tables: `ai.initialize_embeddings()` at ~136-400 chunks/sec
-  - Incremental: per-row `embedding()` at ~25-35 chunks/sec
-- **Search:** Pass query text directly, AlloyDB generates embeddings server-side
-- **Performance:** 16.6 files/sec average (27x faster than GENERATED ALWAYS AS approach)
-
-**Architecture:** Registry maps backend type `"alloydb"` → `PostgresVectorProvider` + `PostgresGraphProvider`. The old `storage/providers/alloydb/` package is dead code.
-
-### SQLite
-
-Lightweight local storage for events and file tracking.
-
-```yaml
-backends:
-  sqlite_local:
-    type: sqlite
-    path: /path/to/database.db
-```
-
-## Mixed Backends
-
-You can use different backends for different roles:
-
-```yaml
-storage:
-  backends:
-    lancedb:
-      type: lancedb
-      uri: /data/vectors
-
-    postgres:
-      type: postgresql
-      host: db.example.com
-      database: agentic-inquiry
-
-    sqlite:
-      type: sqlite
-      path: /data/local.db
-
-  # Fast local vector search
-  vector_backend: lancedb
-
-  # Centralized graph for team access
-  graph_backend: postgres
-
-  # Local event logging
-  events_backend: sqlite
-
-  # Local file tracking
-  file_tracker_backend_v2: sqlite
-```
-
-## Connection Pooling
-
-PostgreSQL backends automatically share connection pools when using the same backend name for multiple roles. This is managed by `BackendPoolManager`.
-
-## Programmatic Usage
-
-### Using StorageFacade (Recommended)
-
-The `StorageFacade` provides a unified interface across all backend types:
-
-```python
-from agentic_inquiry.config import Config
-from agentic_inquiry.storage.facade import StorageFacade
-
-# Create facade from config
-config = Config.load()
-facade = await StorageFacade.from_config(config, project_id="my-project")
-
-# Use facade methods
-await facade.upsert_chunks(chunks)
-results = await facade.hybrid_search(query_embedding, "search text")
-
-# Access individual providers if needed
-vector_provider = facade.vector_provider  # PostgresVectorProvider, LanceDBVectorProvider, etc.
-graph_provider = facade.graph_provider
-events_provider = facade.events_provider  # May be None if not configured
-
-# Cleanup
-await facade.close()
-```
-
-**Benefits:**
-- Single entry point for all storage operations
-- Automatic provider selection based on configuration
-- Connection pooling managed automatically
-- Type-safe provider protocols
-
-### Direct Provider Access
-
-```python
-from agentic_inquiry.storage.registry import create_provider
-
-# Create a specific provider
-events_provider = create_provider(
-    config.storage,
-    role="events",
-    project_id="my-project"
-)
-await events_provider.initialize()
-
-# Use provider
-await events_provider.write_events([event])
-
-# Cleanup
-await events_provider.close()
-```
-
-## Protocols
-
-All providers implement typed protocols:
-
-- `VectorStorageProtocol` - 14 methods for vector operations
-- `GraphStorageProtocol` - 16+ methods for graph operations
-- `EventStorageProtocol` - 9 methods for event operations
-- `FileTrackerProtocol` - 14 methods for file tracking
-
-See `agentic_inquiry.storage.protocols` for full protocol definitions.
-
-## Migration
-
-### From Legacy to New-Style
-
-1. Add `backends` section with your provider configuration
-2. Add role assignments (`vector_backend`, `graph_backend`, etc.)
-3. Keep existing config for backward compatibility during transition
-
-The system automatically detects which configuration style is in use.
-
-## Deprecations
-
-The following methods are deprecated and will emit warnings:
-
-- `StorageFacade.count_records()` - Use `count_chunks()` or `provider.count()`
-- `StorageFacade.advanced_filter()` - Use `provider.query()`
-
-## Requirements
-
-- LanceDB: Included in base package
-- PostgreSQL: Install with `pip install agentic-inquiry[postgresql]`
-- SQLite: Included in base package (uses aiosqlite)
+Implementation guidance for the adapter layer is in [docs/development/adapter-implementation-guide.md](development/adapter-implementation-guide.md) and [docs/architecture/storage-adapters.md](architecture/storage-adapters.md). Both describe the earlier PostgreSQL-family reference implementation, which is not part of this distribution; read them as design input, not as a description of shipped code.

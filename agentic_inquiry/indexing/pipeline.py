@@ -414,70 +414,12 @@ class IndexingPipeline:
     async def _generate_server_side_embeddings(
         self, diagnostics: Dict[str, Any]
     ) -> None:
-        """Generate server-side embeddings after indexing completes.
-
-        Calls generate_embeddings() on both vector and graph providers
-        when the backend supports server-side embedding (e.g. AlloyDB).
-        This must run immediately after indexing, before any rows have
-        embeddings, to use the fast ai.initialize_embeddings() path.
-
-        Args:
-            diagnostics: Dict to store embedding statistics
-        """
-        from agentic_inquiry.storage.providers.postgresql.vector import PostgresVectorProvider
-        from agentic_inquiry.storage.providers.postgresql.graph import PostgresGraphProvider
-
-        facade = self._storage_facade
-        if facade is None:
-            logger.debug("No StorageFacade available, skipping server-side embeddings")
-            return
-
-        # Generate chunk embeddings
-        vector_provider = facade._vector_provider
-        if isinstance(vector_provider, PostgresVectorProvider):
-            logger.info("Generating server-side chunk embeddings...")
-            chunk_result = await vector_provider.generate_embeddings()
-            diagnostics["chunk_embeddings"] = chunk_result
-            logger.info("Chunk embeddings: %s", chunk_result)
-
-        # Generate entity embeddings
-        graph_provider = facade._graph_provider
-        if isinstance(graph_provider, PostgresGraphProvider):
-            logger.info("Generating server-side entity embeddings...")
-            entity_result = await graph_provider.generate_embeddings()
-            diagnostics["entity_embeddings"] = entity_result
-            logger.info("Entity embeddings: %s", entity_result)
+        """Local providers embed during indexing; nothing runs server side."""
+        diagnostics.setdefault("server_side_embeddings", "not applicable")
 
     async def _count_null_embeddings(self) -> int:
-        """Count chunks with NULL embeddings in the current project.
-
-        Queries the storage provider's embeddings table to determine how many
-        chunks still lack embeddings (server-side generation pending).
-
-        Returns:
-            Number of chunks with NULL embeddings, or 0 if unable to query.
-        """
-        from agentic_inquiry.storage.providers.postgresql.vector import PostgresVectorProvider
-
-        facade = self._storage_facade
-        if facade is None:
-            return 0
-
-        vector_provider = facade._vector_provider
-        if not isinstance(vector_provider, PostgresVectorProvider):
-            return 0
-
-        try:
-            embeddings_table = vector_provider._embeddings_table
-            count = await vector_provider._fetchval(
-                f"SELECT COUNT(*) FROM {embeddings_table} "
-                f"WHERE project_id = $1 AND embedding IS NULL",
-                self.project_id,
-            )
-            return int(count or 0)
-        except Exception as e:
-            logger.warning("Failed to count null embeddings: %s", e)
-            return 0
+        """Local providers store embeddings with each chunk, so none are pending."""
+        return 0
 
     async def _poll_embedding_completion(
         self,
@@ -2141,7 +2083,7 @@ class IndexingPipeline:
 
                 if _skip_local_embedding:
                     chunk_embedder, chunk_dims = None, 768  # text-embedding-005 dimensionality
-                    logger.debug("AlloyDB backend: skipping local chunk embedding generation")
+                    logger.debug("Server-side embedding backend: skipping local chunk embedding generation")
                 else:
                     chunk_embedder, chunk_dims = self.embedding_service.get_embedder_configuration("document_chunks", "vector")
 

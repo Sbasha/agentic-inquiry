@@ -224,9 +224,9 @@ def test_env_resolver_returns_cloud_detected_when_gcp_imds_responds(tmp_path):
     """When GCP IMDS responds, resolve_environment must return source='cloud_detected'."""
     # Ensure no env vars override discovery
     env_overrides = {
-        "AI_CONFIG": None,
-        "AI_ENV": None,
-        "AI_HOME": str(tmp_path / ".agentic-inquiry"),
+        "INQUIRY_CONFIG": None,
+        "INQUIRY_ENV": None,
+        "INQUIRY_HOME": str(tmp_path / ".agentic-inquiry"),
     }
 
     class _FakeResponse:
@@ -265,9 +265,9 @@ def test_env_resolver_returns_cloud_detected_when_gcp_imds_responds(tmp_path):
 def test_env_resolver_falls_back_to_default_when_no_cloud(tmp_path):
     """When IMDS probes all fail, resolve_environment must return source='default'."""
     env_overrides = {
-        "AI_CONFIG": None,
-        "AI_ENV": None,
-        "AI_HOME": str(tmp_path / ".agentic-inquiry"),
+        "INQUIRY_CONFIG": None,
+        "INQUIRY_ENV": None,
+        "INQUIRY_HOME": str(tmp_path / ".agentic-inquiry"),
     }
 
     def _all_fail(req, timeout=None):

@@ -17,7 +17,6 @@ if TYPE_CHECKING:
     from agentic_inquiry.config import Config
     from agentic_inquiry.storage.providers.lancedb import LanceDBProvider
     from agentic_inquiry.storage.providers.memory import InMemoryProvider
-    from agentic_inquiry.storage.providers.postgresql import PostgreSQLProvider
 
 logger = logging.getLogger(__name__)
 
@@ -36,10 +35,6 @@ _PROVIDER_REGISTRY: Dict[str, tuple[str, str]] = {
     "memory": (
         "agentic_inquiry.storage.providers.memory",
         "InMemoryProvider",
-    ),
-    "postgresql": (
-        "agentic_inquiry.storage.providers.postgresql",
-        "PostgreSQLProvider",
     ),
 }
 
@@ -116,7 +111,7 @@ async def create_provider(
     name: str,
     config: "Config",
     project_id: str,
-) -> "LanceDBProvider | InMemoryProvider | PostgreSQLProvider":
+) -> "LanceDBProvider | InMemoryProvider":
     """Create and initialize a provider instance.
 
     Args:

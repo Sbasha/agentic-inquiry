@@ -10,8 +10,8 @@ Design principles:
     - Type-safe: Returns protocol-compatible provider classes
 
 Example:
-    >>> provider_class = get_provider_class("postgresql", "events")
-    >>> provider = provider_class(connection_string="postgres://...")
+    >>> provider_class = get_provider_class("sqlite", "events")
+    >>> provider = provider_class(database_path="...")
     >>> await provider.initialize()
 """
 
@@ -42,76 +42,6 @@ PROVIDER_REGISTRY: Dict[str, Dict[StorageRole, Tuple[str, str]]] = {
         "vector": ("agentic_inquiry.storage.providers.lancedb", "LanceDBProvider"),
         "graph": ("agentic_inquiry.storage.providers.lancedb", "LanceDBProvider"),
     },
-    "postgresql": {
-        "vector": ("agentic_inquiry.storage.providers.postgresql", "PostgresVectorProvider"),
-        "graph": ("agentic_inquiry.storage.providers.postgresql", "PostgresGraphProvider"),
-        "events": ("agentic_inquiry.storage.providers.postgresql", "PostgresEventProvider"),
-        "file_tracker": (
-            "agentic_inquiry.storage.providers.postgresql",
-            "PostgresFileTrackerProvider",
-        ),
-        "onboard_metadata": (
-            "agentic_inquiry.onboard.providers.postgresql",
-            "PostgresOnboardMetadataProvider",
-        ),
-    },
-    "cloudsql": {
-        # Duck-typing: CloudSQLConnectionManager implements same interface as PostgresConnectionManager
-        # PostgreSQL providers work directly with CloudSQL connections via pool.py routing
-        "vector": ("agentic_inquiry.storage.providers.postgresql", "PostgresVectorProvider"),
-        "graph": ("agentic_inquiry.storage.providers.postgresql", "PostgresGraphProvider"),
-        "events": ("agentic_inquiry.storage.providers.postgresql", "PostgresEventProvider"),
-        "file_tracker": (
-            "agentic_inquiry.storage.providers.postgresql",
-            "PostgresFileTrackerProvider",
-        ),
-        "onboard_metadata": (
-            "agentic_inquiry.onboard.providers.postgresql",
-            "PostgresOnboardMetadataProvider",
-        ),
-    },
-    "alloydb": {
-        # AlloyDB uses unified PostgreSQL provider with AlloyDBAdapter
-        "vector": ("agentic_inquiry.storage.providers.postgresql", "PostgresVectorProvider"),
-        "graph": ("agentic_inquiry.storage.providers.postgresql", "PostgresGraphProvider"),
-        "events": ("agentic_inquiry.storage.providers.postgresql", "PostgresEventProvider"),
-        "file_tracker": (
-            "agentic_inquiry.storage.providers.postgresql",
-            "PostgresFileTrackerProvider",
-        ),
-        "onboard_metadata": (
-            "agentic_inquiry.onboard.providers.postgresql",
-            "PostgresOnboardMetadataProvider",
-        ),
-    },
-    "rds": {
-        # AWS RDS uses unified PostgreSQL provider with RDSAdapter
-        "vector": ("agentic_inquiry.storage.providers.postgresql", "PostgresVectorProvider"),
-        "graph": ("agentic_inquiry.storage.providers.postgresql", "PostgresGraphProvider"),
-        "events": ("agentic_inquiry.storage.providers.postgresql", "PostgresEventProvider"),
-        "file_tracker": (
-            "agentic_inquiry.storage.providers.postgresql",
-            "PostgresFileTrackerProvider",
-        ),
-        "onboard_metadata": (
-            "agentic_inquiry.onboard.providers.postgresql",
-            "PostgresOnboardMetadataProvider",
-        ),
-    },
-    "azure": {
-        # Azure Database for PostgreSQL uses unified providers with AzurePostgresAdapter
-        "vector": ("agentic_inquiry.storage.providers.postgresql", "PostgresVectorProvider"),
-        "graph": ("agentic_inquiry.storage.providers.postgresql", "PostgresGraphProvider"),
-        "events": ("agentic_inquiry.storage.providers.postgresql", "PostgresEventProvider"),
-        "file_tracker": (
-            "agentic_inquiry.storage.providers.postgresql",
-            "PostgresFileTrackerProvider",
-        ),
-        "onboard_metadata": (
-            "agentic_inquiry.onboard.providers.postgresql",
-            "PostgresOnboardMetadataProvider",
-        ),
-    },
     "sqlite": {
         "events": ("agentic_inquiry.storage.providers.sqlite", "SQLiteEventProvider"),
         "file_tracker": (
@@ -122,9 +52,6 @@ PROVIDER_REGISTRY: Dict[str, Dict[StorageRole, Tuple[str, str]]] = {
             "agentic_inquiry.onboard.providers.sqlite",
             "SQLiteOnboardMetadataProvider",
         ),
-    },
-    "spanner": {
-        "graph": ("agentic_inquiry.storage.providers.spanner", "SpannerGraphProvider"),
     },
     "memory": {
         "vector": ("agentic_inquiry.storage.providers.memory", "InMemoryVectorProvider"),
@@ -186,7 +113,7 @@ def get_supported_backends() -> Set[str]:
     """Get all registered backend types.
 
     Returns:
-        Set of backend type names (e.g., {"lancedb", "postgresql", "sqlite"})
+        Set of backend type names (e.g., {"lancedb", "sqlite", "memory"})
     """
     return set(PROVIDER_REGISTRY.keys())
 
@@ -233,7 +160,7 @@ def get_provider_class(backend_type: BackendType, role: StorageRole) -> Type[Any
     The returned class can be instantiated with appropriate configuration.
 
     Args:
-        backend_type: The backend type (lancedb, postgresql, sqlite, spanner, memory)
+        backend_type: The backend type (lancedb, sqlite, memory)
         role: The storage role (vector, graph, events, file_tracker)
 
     Returns:

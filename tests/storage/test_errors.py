@@ -79,21 +79,3 @@ class TestDimensionMismatch:
         rendered = str(mismatch)
         assert mismatch.remediation is None
         assert "ai schema migrate" not in rendered
-
-
-class TestBackwardCompatReExport:
-    """Legacy code imports from ``schema_tracker``; that path must still work."""
-
-    def test_schema_mismatch_error_reexported(self):
-        from agentic_inquiry.storage.providers.postgresql.schema_tracker import (
-            SchemaMismatchError as LegacyError,
-        )
-
-        assert LegacyError is SchemaMismatchError
-
-    def test_dimension_mismatch_reexported(self):
-        from agentic_inquiry.storage.providers.postgresql.schema_tracker import (
-            DimensionMismatch as LegacyMismatch,
-        )
-
-        assert LegacyMismatch is DimensionMismatch

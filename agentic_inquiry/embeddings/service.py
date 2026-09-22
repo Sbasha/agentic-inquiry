@@ -41,7 +41,6 @@ class EmbeddingService:
         - "sentence_transformer": Uses SentenceTransformerEmbedder (default)
         - "hashing": Uses HashingEmbedder for fast, deterministic embeddings
         - "local_model": Uses LocalModelEmbedder for ONNX models
-        - "bedrock": Uses BedrockEmbedder for Amazon Titan v2 (RFC 0003)
 
         Note: this is the *second* dispatcher (the factory in
         ``embeddings/factory.py`` is the first). Both must accept the
@@ -101,35 +100,6 @@ class EmbeddingService:
                 "Created LocalModelEmbedder (%s, %d dims)",
                 local_config.model_path,
                 embedder.ndims()
-            )
-            return embedder
-
-        elif provider == "bedrock":
-            from agentic_inquiry.embeddings.bedrock import BedrockEmbedder
-            from agentic_inquiry.exceptions import ConfigurationError
-
-            bd_config = self.config.embeddings.bedrock
-            if not bd_config.region:
-                raise ConfigurationError(
-                    "embeddings.bedrock.region is required when "
-                    "default_provider == 'bedrock'. Set it in YAML or "
-                    "via AI_EMBEDDINGS_BEDROCK_REGION."
-                )
-            embedder = BedrockEmbedder(
-                region=bd_config.region,
-                model_id=bd_config.model_id,
-                ndims=bd_config.output_dim,
-                normalize=bd_config.normalize,
-                batch_size=bd_config.batch_size,
-                max_retries=bd_config.max_retries,
-                timeout_seconds=bd_config.timeout_seconds,
-                request_concurrency=bd_config.request_concurrency,
-            )
-            logger.info(
-                "Created BedrockEmbedder (%s, %d dims, region=%s)",
-                bd_config.model_id,
-                embedder.ndims(),
-                bd_config.region,
             )
             return embedder
 

@@ -45,7 +45,7 @@ Normal Mode                    Dev Mode
 Creates:
 - `.agentic-inquiry/.dev-mode` marker file
 - `.agentic-inquiry/dev/` directory with isolated storage
-- Sets `AI_PROJECT_ID=ai-dev`
+- Sets `INQUIRY_PROJECT_ID=ai-dev`
 
 ### Work in Dev Mode
 

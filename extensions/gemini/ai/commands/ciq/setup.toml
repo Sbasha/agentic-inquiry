@@ -1,77 +1,50 @@
-description = "Configure Agentic Inquiry storage backend (LanceDB, PostgreSQL, GCP, AWS, or Azure)"
+description = "Configure the local Agentic Inquiry storage environment (LanceDB)"
 prompt = """
-Configure Agentic Inquiry storage backend (LanceDB, PostgreSQL, GCP, AWS, or Azure)
+Configure the local Agentic Inquiry storage environment (LanceDB)
 
-Usage: /ai:setup [local|postgres|gcp|aws|azure] [project-name]
+Usage: /ai:setup [local] [project-name]
 
 # /ai:setup
 
-Configure Agentic Inquiry storage and create a new project.
+Configure local Agentic Inquiry storage and create a new project.
 
 ## Quick Start
 
 ```bash
-/ai:setup local myproject      # Local LanceDB (recommended for dev)
-/ai:setup gcp production       # Cloud PostgreSQL (GCP)
-/ai:setup aws production       # RDS PostgreSQL (AWS)
+/ai:setup local myproject      # Local LanceDB
 ```
 
-## Storage Options
+## Storage
 
-| Option | Backend | Best For | Setup Time |
-|--------|---------|----------|------------|
-| `local` | LanceDB | Development, testing | Instant |
-| `postgres` | PostgreSQL | Self-managed DB | 2-5 min |
-| `gcp` | Cloud SQL | GCP Production | 5-10 min |
-| `aws` | RDS | AWS Production | 5-10 min |
-| `azure` | Azure DB | Azure Production | 5-10 min |
-
-## Selection Requirement
-
-**CRITICAL:** If the user has not specified a backend in their request, you MUST use the `AskUserQuestion` tool to let them choose from the available options. Do NOT assume a default backend.
+Agentic Inquiry is local only. The one backend is LanceDB, created instantly with no external dependencies. If the user asks for anything else, explain that only local storage exists and that an external database for governed projects is future design work.
 
 ## What Gets Created
 
-**Local Setup:**
 ```
-config/local.yaml           # Storage configuration
-.env                        # API keys template
-.agentic-inquiry/         # Storage directory
+.agentic-inquiry/env-registry.json          # Environment registry
+.agentic-inquiry/envs/<name>/config.yaml    # Storage configuration
+.agentic-inquiry/envs/<name>/lancedb/       # Local vector store
 ```
-
-**Cloud Setup:**
-- Managed Database instance configuration
-- Cloud Proxy configuration (if applicable)
-- `config/postgresql.yaml` or equivalent
 
 ## Environment Variables
 
-Required in `.env`:
-```bash
-OPENAI_API_KEY=sk-...           # Required for embeddings
+The local default embeds with a local sentence-transformer model and needs no API key. Only set an embedding key if you explicitly switch to a hosted embedder:
 
-# Database settings (for non-local)
-POSTGRES_HOST=localhost
-POSTGRES_DB=agentic-inquiry
-POSTGRES_USER=ai
-POSTGRES_PASSWORD=<generated>
+```bash
+OPENAI_API_KEY=sk-...           # Optional, hosted embedders only
 ```
 
 ## After Setup
 
 ```bash
-# /ai:setup
-uv run --env-file .env ai index . --project-id <project-name>
-
-# /ai:setup
-uv run --env-file .env ai search "main entry point" --project-id <project-name>
+ai index . --project-id <project-name>
+ai search "main entry point" --project-id <project-name>
 ```
 
 ## Troubleshooting
 
-- **Config not loading**: Check `AI_CONFIG` env var
-- **OpenAI errors**: Verify `OPENAI_API_KEY` is valid
-- **Connection errors**: Verify database is reachable and credentials are correct
+- **Config not loading**: Check `INQUIRY_CONFIG` env var
+- **Embedding errors**: The local model downloads on first use; check network access once
 
 User Arguments: {{args}}
 

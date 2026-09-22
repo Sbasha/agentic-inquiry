@@ -8,19 +8,8 @@ Each provider is initialized, used for tests, and then cleaned up.
 Supported providers:
 - memory: In-memory provider (always available)
 - lancedb: LanceDB file-based provider (always available)
-- postgres: PostgreSQL with pgvector (requires running PostgreSQL)
-- alloydb: AlloyDB with server-side embeddings (requires ALLOYDB_CONNECTION_STRING)
-
-To run with PostgreSQL:
-    docker-compose -f docker-compose.dev.yaml up -d
-    pytest tests/storage/contracts/ -v
-
-To run with AlloyDB:
-    export ALLOYDB_CONNECTION_STRING="postgresql://user:pass@host:port/db"
-    pytest tests/storage/contracts/ -v -m alloydb
 """
 
-import os
 import uuid
 
 import pytest
@@ -89,144 +78,9 @@ async def lancedb_provider(test_config, project_id):
 
 
 # =============================================================================
-# Provider Fixtures - PostgreSQL
+# Provider Fixtures
 # =============================================================================
 
-
-def _get_postgres_url() -> str:
-    """Get PostgreSQL connection URL from environment or default."""
-    if url := os.environ.get("POSTGRES_URL"):
-        return url
-
-    host = os.environ.get("POSTGRES_HOST", "localhost")
-    port = os.environ.get("POSTGRES_PORT", "5432")
-    user = os.environ.get("POSTGRES_USER", "dev")
-    password = os.environ.get("POSTGRES_PASSWORD", "dev")
-    database = os.environ.get("POSTGRES_DB", "agentic-inquiry")
-
-    return f"postgresql://{user}:{password}@{host}:{port}/{database}"
-
-
-@pytest_asyncio.fixture
-async def postgres_connection_manager():
-    """Create a PostgresConnectionManager for contract testing.
-
-    Skips tests if PostgreSQL is not available.
-    """
-    try:
-        from agentic_inquiry.storage.providers.postgresql import PostgresConnectionManager
-    except ImportError:
-        pytest.skip("asyncpg not installed")
-        return
-
-    # Use unique table prefix for contract tests to avoid conflicts
-    manager = PostgresConnectionManager(
-        connection_string=_get_postgres_url(),
-        table_prefix="ai_contract_",
-        pool_size=5,
-    )
-
-    try:
-        await manager.initialize()
-    except Exception as e:
-        pytest.skip(f"PostgreSQL not available: {e}")
-        return
-
-    yield manager
-
-    await manager.close()
-
-
-@pytest_asyncio.fixture
-async def postgres_provider(postgres_connection_manager, project_id):
-    """Create and initialize a PostgreSQL vector provider."""
-    from agentic_inquiry.storage.providers.postgresql import PostgresVectorProvider
-
-    provider = PostgresVectorProvider(
-        connection_manager=postgres_connection_manager,
-        project_id=project_id,
-        embedding_dim=384,
-    )
-    await provider.initialize()
-    yield provider
-    await provider.close()
-
-
-# =============================================================================
-# Provider Fixtures - AlloyDB
-# =============================================================================
-
-
-def _get_alloydb_url() -> str | None:
-    """Get AlloyDB connection URL from environment.
-
-    Returns None if ALLOYDB_CONNECTION_STRING is not set.
-    """
-    return os.environ.get("ALLOYDB_CONNECTION_STRING")
-
-
-@pytest_asyncio.fixture
-async def alloydb_provider(project_id):
-    """Create and initialize an AlloyDB vector provider.
-
-    Skips tests if ALLOYDB_CONNECTION_STRING is not set.
-    AlloyDB uses 768-dim server-side embeddings (text-embedding-005).
-    """
-    url = _get_alloydb_url()
-    if not url:
-        pytest.skip("ALLOYDB_CONNECTION_STRING not set")
-        return
-
-    try:
-        from agentic_inquiry.storage.providers.postgresql import (
-            PostgresConnectionManager,
-            PostgresVectorProvider,
-        )
-    except ImportError:
-        pytest.skip("asyncpg not installed")
-        return
-
-    prefix = f"ai_alloydb_ct_{project_id[:8]}_"
-    manager = PostgresConnectionManager(
-        connection_string=url,
-        table_prefix=prefix,
-        pool_size=5,
-    )
-
-    try:
-        await manager.initialize()
-    except Exception as e:
-        pytest.skip(f"AlloyDB not available: {e}")
-        return
-
-    try:
-        provider = PostgresVectorProvider(
-            connection_manager=manager,
-            project_id=project_id,
-            embedding_dim=768,
-        )
-        await provider.initialize()
-        yield provider
-        await provider.close()
-    finally:
-        # Clean up test tables
-        try:
-            async with manager.acquire() as conn:
-                result = await conn.fetch(
-                    """
-                    SELECT tablename FROM pg_tables
-                    WHERE schemaname = 'public' AND tablename LIKE $1
-                    """,
-                    f"{prefix}%",
-                )
-                for row in result:
-                    await conn.execute(
-                        f'DROP TABLE IF EXISTS "{row["tablename"]}" CASCADE'
-                    )
-        except Exception:
-            pass  # Ignore cleanup errors
-
-        await manager.close()
 
 
 # =============================================================================
@@ -235,15 +89,8 @@ async def alloydb_provider(project_id):
 
 
 def _collect_provider_params() -> list[str]:
-    """Build parameterized provider list based on environment.
-
-    Always includes memory and lancedb. Includes postgres and alloydb
-    only when their connection env vars are set.
-    """
-    params = ["memory", "lancedb", "postgres"]
-    if os.environ.get("ALLOYDB_CONNECTION_STRING"):
-        params.append("alloydb")
-    return params
+    """Local providers only."""
+    return ["memory", "lancedb"]
 
 
 @pytest.fixture(params=_collect_provider_params())
@@ -257,8 +104,6 @@ async def vector_provider(provider_type, test_config, project_id):
     """Create a parameterized vector provider.
 
     This fixture runs the same tests against multiple provider implementations.
-    PostgreSQL tests will be skipped if the database is not available.
-    AlloyDB tests will be skipped if ALLOYDB_CONNECTION_STRING is not set.
     """
     if provider_type == "memory":
         provider = InMemoryProvider(project_id=project_id)
@@ -271,116 +116,6 @@ async def vector_provider(provider_type, test_config, project_id):
         await provider.initialize()
         yield provider
         await provider.close()
-
-    elif provider_type == "postgres":
-        # Check if asyncpg is available
-        try:
-            from agentic_inquiry.storage.providers.postgresql import (
-                PostgresConnectionManager,
-                PostgresVectorProvider,
-            )
-        except ImportError:
-            pytest.skip("asyncpg not installed")
-            return
-
-        # Create connection manager
-        manager = PostgresConnectionManager(
-            connection_string=_get_postgres_url(),
-            table_prefix=f"ai_ct_{project_id[:8]}_",  # Unique prefix per test
-            pool_size=5,
-        )
-
-        try:
-            await manager.initialize()
-        except Exception as e:
-            pytest.skip(f"PostgreSQL not available: {e}")
-            return
-
-        try:
-            provider = PostgresVectorProvider(
-                connection_manager=manager,
-                project_id=project_id,
-                embedding_dim=384,
-            )
-            await provider.initialize()
-            yield provider
-            await provider.close()
-        finally:
-            # Clean up tables before closing manager
-            try:
-                async with manager.acquire() as conn:
-                    # Drop all tables with this test's prefix
-                    prefix = f"ai_ct_{project_id[:8]}_"
-                    result = await conn.fetch(
-                        """
-                        SELECT tablename FROM pg_tables
-                        WHERE schemaname = 'public' AND tablename LIKE $1
-                        """,
-                        f"{prefix}%",
-                    )
-                    for row in result:
-                        await conn.execute(
-                            f'DROP TABLE IF EXISTS "{row["tablename"]}" CASCADE'
-                        )
-            except Exception:
-                pass  # Ignore cleanup errors
-
-            await manager.close()
-
-    elif provider_type == "alloydb":
-        url = _get_alloydb_url()
-        if not url:
-            pytest.skip("ALLOYDB_CONNECTION_STRING not set")
-            return
-
-        try:
-            from agentic_inquiry.storage.providers.postgresql import (
-                PostgresConnectionManager,
-                PostgresVectorProvider,
-            )
-        except ImportError:
-            pytest.skip("asyncpg not installed")
-            return
-
-        prefix = f"ai_ct_alloy_{project_id[:8]}_"
-        manager = PostgresConnectionManager(
-            connection_string=url,
-            table_prefix=prefix,
-            pool_size=5,
-        )
-
-        try:
-            await manager.initialize()
-        except Exception as e:
-            pytest.skip(f"AlloyDB not available: {e}")
-            return
-
-        try:
-            provider = PostgresVectorProvider(
-                connection_manager=manager,
-                project_id=project_id,
-                embedding_dim=768,
-            )
-            await provider.initialize()
-            yield provider
-            await provider.close()
-        finally:
-            try:
-                async with manager.acquire() as conn:
-                    result = await conn.fetch(
-                        """
-                        SELECT tablename FROM pg_tables
-                        WHERE schemaname = 'public' AND tablename LIKE $1
-                        """,
-                        f"{prefix}%",
-                    )
-                    for row in result:
-                        await conn.execute(
-                            f'DROP TABLE IF EXISTS "{row["tablename"]}" CASCADE'
-                        )
-            except Exception:
-                pass
-            await manager.close()
 
     else:
         pytest.skip(f"Unknown provider type: {provider_type}")

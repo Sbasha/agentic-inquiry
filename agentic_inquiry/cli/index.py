@@ -271,18 +271,6 @@ async def index_command(args: argparse.Namespace) -> int:
     except Exception as e:
         logger.warning("Onboard gate check failed: %s", e)
 
-    # Ensure required services are running (e.g., AlloyDB Auth Proxy)
-    from agentic_inquiry.cli.proxy_manager import (
-        ensure_cloud_sql_proxy,
-        register_cleanup_handler,
-    )
-    from agentic_inquiry.cli.env_resolver import resolve_environment
-
-    env = resolve_environment()
-    if not getattr(args, "no_auto_start", False) and config.services.auto_start_proxy:
-        register_cleanup_handler()
-        await ensure_cloud_sql_proxy(config, env_name=env.name)
-
     # Determine branch to index
     branch_name: str = getattr(args, "branch", None) or "main"
 
@@ -321,8 +309,10 @@ async def index_command(args: argparse.Namespace) -> int:
             index_path = worktree_path
 
         # Configure embedder based on storage backend capabilities
+        from agentic_inquiry.cli.env_resolver import resolve_environment
         from agentic_inquiry.embeddings.factory import configure_embedder_for_backend
 
+        env = resolve_environment()
         hatch_dir = (
             Path(env.config_path).parent
             if env.config_path is not None

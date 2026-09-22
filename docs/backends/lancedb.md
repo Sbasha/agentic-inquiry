@@ -67,7 +67,7 @@ storage:
 
 ```bash
 # Set config path
-export AI_CONFIG_PATH=config/test-lancedb.yaml
+export INQUIRY_CONFIG_PATH=config/test-lancedb.yaml
 
 # Run tests using the ai-test MCP server
 # (MCP tools will use local LanceDB automatically)

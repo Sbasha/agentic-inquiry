@@ -12,9 +12,7 @@ Contract 5: test_upsert_and_query_relationships — relationship CRUD
 Contract 6: test_graph_traversal — recursive neighbor traversal
 
 Each test is run against all providers via the parameterized ``vector_provider``
-fixture (memory, lancedb, postgres, and alloydb when available).
-
-AlloyDB-specific tests are additionally gated behind ``@pytest.mark.alloydb``.
+fixture (memory and lancedb).
 """
 
 import pytest
@@ -509,40 +507,3 @@ class TestContract6GraphTraversal:
 # =============================================================================
 
 
-@pytest.mark.alloydb
-class TestAlloyDBServerSideEmbedding:
-    """AlloyDB-specific: verify server-side embedding workflow.
-
-    These tests only run when ALLOYDB_CONNECTION_STRING is set and validate
-    the unique AlloyDB behavior of inserting with NULL embeddings and
-    generating them server-side.
-    """
-
-    @pytest.mark.asyncio
-    async def test_upsert_with_null_embedding(
-        self, alloydb_provider, project_id, chunk_factory
-    ):
-        """AlloyDB: upsert chunks with None vector (server-side embedding).
-
-        When embedding_strategy is server_side, chunks should be accepted
-        with NULL embeddings. After generate_embeddings() is called, search
-        should return results.
-        """
-        chunks = [
-            chunk_factory(
-                chunk_id="alloy_null_vec",
-                project_id=project_id,
-                content="server side embedding test for authentication",
-                vector=None,
-            ),
-        ]
-
-        count = await alloydb_provider.upsert_chunks(chunks, project_id)
-        assert count == 1
-
-        # Verify the chunk was stored
-        retrieved = await alloydb_provider.get_chunks_by_file(
-            "/test/file.py", project_id
-        )
-        assert len(retrieved) == 1
-        assert retrieved[0].id == "alloy_null_vec"

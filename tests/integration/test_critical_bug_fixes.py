@@ -225,10 +225,10 @@ parsers:
 """)
     
     # Set valid environment variables
-    monkeypatch.setenv("AI_STORAGE_ROOT", "./custom_data")
-    monkeypatch.setenv("AI_STORAGE_DEFAULT_PROJECT_ID", "custom_project")
-    monkeypatch.setenv("AI_CACHE_DOCUMENT_CACHE_MAX_SIZE", "5000")
-    monkeypatch.setenv("AI_SEARCH_DEFAULT_LIMIT", "25")
+    monkeypatch.setenv("INQUIRY_STORAGE_ROOT", "./custom_data")
+    monkeypatch.setenv("INQUIRY_STORAGE_DEFAULT_PROJECT_ID", "custom_project")
+    monkeypatch.setenv("INQUIRY_CACHE_DOCUMENT_CACHE_MAX_SIZE", "5000")
+    monkeypatch.setenv("INQUIRY_SEARCH_DEFAULT_LIMIT", "25")
     
     # Load config
     config = Config.load(str(config_file))
@@ -282,8 +282,8 @@ parsers:
     # Set environment variables with typos
     # NOTE: Option-level typos (DEFAUT_PROJECT_ID) are silently ignored
     # Only section-level typos (STORAG, DOCUMNT) are detected
-    monkeypatch.setenv("AI_STORAG_ROOT", "./typo_data")  # typo: STORAG instead of STORAGE
-    monkeypatch.setenv("AI_DATABSE_PATH", "./db")  # typo: DATABSE instead of DATABASE (not valid anyway)
+    monkeypatch.setenv("INQUIRY_STORAG_ROOT", "./typo_data")  # typo: STORAG instead of STORAGE
+    monkeypatch.setenv("INQUIRY_DATABSE_PATH", "./db")  # typo: DATABSE instead of DATABASE (not valid anyway)
 
     # Load config with logging
     with caplog.at_level(logging.WARNING):
@@ -293,7 +293,7 @@ parsers:
     warning_messages = [record.message for record in caplog.records if record.levelname == "WARNING"]
 
     # Should have warnings about invalid section names
-    assert any("AI_STORAG_ROOT" in msg for msg in warning_messages)
+    assert any("INQUIRY_STORAG_ROOT" in msg for msg in warning_messages)
 
     # Warning should list valid sections
     assert any("storage" in msg and "cache" in msg for msg in warning_messages)
@@ -334,8 +334,8 @@ parsers:
 """)
     
     # Set environment variables with invalid sections
-    monkeypatch.setenv("AI_INVALID_SECTION_KEY", "value")
-    monkeypatch.setenv("AI_DATABASE_PATH", "./db")  # DATABASE is not a valid section
+    monkeypatch.setenv("INQUIRY_INVALID_SECTION_KEY", "value")
+    monkeypatch.setenv("INQUIRY_DATABASE_PATH", "./db")  # DATABASE is not a valid section
     
     # Load config with logging
     with caplog.at_level(logging.WARNING):
@@ -391,7 +391,7 @@ parsers:
 """)
 
     # Set an environment variable with a section-level typo
-    monkeypatch.setenv("AI_STORAG_ROOT", "./test")  # typo: STORAG instead of STORAGE
+    monkeypatch.setenv("INQUIRY_STORAG_ROOT", "./test")  # typo: STORAG instead of STORAGE
 
     # Load config with logging
     with caplog.at_level(logging.WARNING):
@@ -401,8 +401,8 @@ parsers:
     warning_messages = [record.message for record in caplog.records if record.levelname == "WARNING"]
 
     # Should have a clear warning about the section typo
-    typo_warnings = [msg for msg in warning_messages if "AI_STORAG_ROOT" in msg]
-    assert len(typo_warnings) > 0, f"Expected warning about AI_STORAG_ROOT, got: {warning_messages}"
+    typo_warnings = [msg for msg in warning_messages if "INQUIRY_STORAG_ROOT" in msg]
+    assert len(typo_warnings) > 0, f"Expected warning about INQUIRY_STORAG_ROOT, got: {warning_messages}"
 
     # Warning should list valid sections as suggestions
     assert any("storage" in msg for msg in typo_warnings), "Warning should list 'storage' as valid section"

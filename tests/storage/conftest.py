@@ -1,103 +1,10 @@
-"""Pytest fixtures for storage integration tests.
+"""Pytest fixtures for storage integration tests over the local providers."""
 
-These fixtures provide PostgreSQL connections for integration tests.
-Tests using these fixtures should be marked with @pytest.mark.postgres.
-
-Usage:
-    docker-compose -f docker-compose.dev.yaml up -d
-    pytest -m postgres tests/storage/
-"""
-
-import os
 import uuid
 
 import pytest
 import pytest_asyncio
 
-
-def _get_postgres_url() -> str:
-    """Get PostgreSQL connection URL from environment or default."""
-    # Allow override via environment variable
-    if url := os.environ.get("POSTGRES_URL"):
-        return url
-
-    # Default for docker-compose.dev.yaml
-    host = os.environ.get("POSTGRES_HOST", "localhost")
-    port = os.environ.get("POSTGRES_PORT", "5432")
-    user = os.environ.get("POSTGRES_USER", "dev")
-    password = os.environ.get("POSTGRES_PASSWORD", "dev")
-    database = os.environ.get("POSTGRES_DB", "agentic-inquiry")
-
-    return f"postgresql://{user}:{password}@{host}:{port}/{database}"
-
-
-@pytest.fixture(scope="session")
-def integration_postgres_url() -> str:
-    """Get PostgreSQL connection URL."""
-    return _get_postgres_url()
-
-
-@pytest.fixture
-async def postgres_connection_manager(integration_postgres_url: str):
-    """Create a PostgresConnectionManager for testing.
-
-    Yields:
-        PostgresConnectionManager: Initialized connection manager
-    """
-    try:
-        from agentic_inquiry.storage.providers.postgresql import PostgresConnectionManager
-    except ImportError:
-        pytest.skip("asyncpg not installed")
-
-    manager = PostgresConnectionManager(
-        connection_string=integration_postgres_url,
-        table_prefix="ai_test_",
-        pool_size=5,
-    )
-
-    try:
-        await manager.initialize()
-    except Exception as e:
-        pytest.skip(f"PostgreSQL not available: {e}")
-
-    yield manager
-
-    await manager.close()
-
-
-@pytest.fixture
-async def clean_postgres_tables(postgres_connection_manager):
-    """Clean up test tables before and after tests.
-
-    This fixture drops and recreates test tables to ensure
-    a clean state for each test.
-    """
-    # Tables created by PostgreSQL providers with test prefix
-    test_tables = [
-        "ai_test_v_chunks",
-        "ai_test_v_chunks_fts",
-        "ai_test_g_entities",
-        "ai_test_g_relationships",
-        "ai_test_e_events",
-        "ai_test_f_file_hashes",
-    ]
-
-    # Clean up before test using connection manager's acquire context manager
-    async with postgres_connection_manager.acquire() as conn:
-        for table in test_tables:
-            await conn.execute(f"DROP TABLE IF EXISTS {table} CASCADE")
-
-    yield
-
-    # Clean up after test
-    async with postgres_connection_manager.acquire() as conn:
-        for table in test_tables:
-            await conn.execute(f"DROP TABLE IF EXISTS {table} CASCADE")
-
-
-# =============================================================================
-# Re-export fixtures from contracts/conftest.py for project isolation tests
-# =============================================================================
 
 
 def generate_project_id() -> str:
@@ -129,7 +36,6 @@ async def vector_provider(provider_type, test_config, project_id):
     """Create a parameterized vector provider for testing.
 
     This fixture runs tests against multiple provider implementations.
-    PostgreSQL tests will be skipped if the database is not available.
     """
     from agentic_inquiry.storage.providers import InMemoryProvider, LanceDBProvider
 
@@ -145,64 +51,11 @@ async def vector_provider(provider_type, test_config, project_id):
         yield provider
         await provider.close()
 
-    elif provider_type == "postgres":
-        # Check if asyncpg is available
-        try:
-            from agentic_inquiry.storage.providers.postgresql import (
-                PostgresConnectionManager,
-                PostgresVectorProvider,
-            )
-        except ImportError:
-            pytest.skip("asyncpg not installed")
-            return
-
-        # Create connection manager
-        manager = PostgresConnectionManager(
-            connection_string=_get_postgres_url(),
-            table_prefix=f"ai_iso_{project_id[:8]}_",  # Unique prefix per test
-            pool_size=5,
-        )
-
-        try:
-            await manager.initialize()
-        except Exception as e:
-            pytest.skip(f"PostgreSQL not available: {e}")
-            return
-
-        try:
-            provider = PostgresVectorProvider(
-                connection_manager=manager,
-                project_id=project_id,
-                embedding_dim=384,
-            )
-            await provider.initialize()
-            yield provider
-            await provider.close()
-        finally:
-            # Clean up tables before closing manager
-            try:
-                async with manager.acquire() as conn:
-                    # Drop all tables with this test's prefix
-                    prefix = f"ai_iso_{project_id[:8]}_"
-                    result = await conn.fetch(
-                        """
-                        SELECT tablename FROM pg_tables
-                        WHERE schemaname = 'public' AND tablename LIKE $1
-                        """,
-                        f"{prefix}%",
-                    )
-                    for row in result:
-                        await conn.execute(f'DROP TABLE IF EXISTS "{row["tablename"]}" CASCADE')
-            except Exception:
-                pass  # Ignore cleanup errors
-
-            await manager.close()
-
     else:
         pytest.skip(f"Unknown provider type: {provider_type}")
 
 
-@pytest.fixture(params=["memory", "lancedb", "postgres"])
+@pytest.fixture(params=["memory", "lancedb"])
 def provider_type(request):
     """Parameterized fixture for provider type."""
     return request.param

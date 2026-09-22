@@ -41,7 +41,7 @@ def _default_port_for_env(env: str) -> int:
 
 def get_agv_home() -> str:
     """Get the ai home directory."""
-    return os.environ.get("AI_HOME", os.path.expanduser("~/.agentic-inquiry"))
+    return os.environ.get("INQUIRY_HOME", os.path.expanduser("~/.agentic-inquiry"))
 
 
 def get_pid_path(env: str = ENV_DEFAULT) -> str:

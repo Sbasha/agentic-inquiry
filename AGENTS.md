@@ -94,7 +94,7 @@ canonical `.claude/` tree for Copilot and Codex compatibility.
 | Component | Location | Purpose |
 |-----------|----------|---------|
 | Config | `agentic_inquiry/config.py` | Env → yaml → defaults |
-| Storage | `agentic_inquiry/storage/facade.py` | Unified `StorageFacade` (LanceDB / PostgreSQL / CloudSQL / AlloyDB / RDS / Azure) |
+| Storage | `agentic_inquiry/storage/facade.py` | Unified `StorageFacade` over the LanceDB, SQLite and in-memory providers |
 | Search | `agentic_inquiry/search/service.py` | Vector + FTS + hybrid with IDF-weighted reranking |
 | Parsers | `agentic_inquiry/parsers/chain.py` | Tree-sitter code + DOCX/PDF/DOC docs |
 | Indexing | `agentic_inquiry/indexing/pipeline.py` | Parse → embed → store |
@@ -102,18 +102,13 @@ canonical `.claude/` tree for Copilot and Codex compatibility.
 | MCP | `agentic_inquiry/mcp/` | Model Context Protocol server (secondary to plugins) |
 | CLI | `agentic_inquiry/cli/` | `ai index`, `ai search`, … |
 
-AlloyDB and CloudSQL use the **unified PostgreSQL provider**
-(`storage/providers/postgresql/`). Per-backend setup is documented in
-[`docs/backends/`](docs/backends/).
+Storage is local only: LanceDB for vectors and graph, SQLite for events,
+file tracking and onboarding metadata. The provider contract for a future
+external database is in [`docs/storage-backends.md`](docs/storage-backends.md).
 
 **Operational guardrails worth knowing before you touch the affected
 code** (full detail in the per-subsystem docs):
 
-- **AlloyDB server-side embedding has a 4 MB Vertex AI ordering
-  constraint.** `ai.initialize_embeddings()` MUST run before any rows
-  have embeddings; once rows exist, the per-row `embedding()` fallback
-  is the only path. See [`docs/backends/`](docs/backends/) and
-  `storage/providers/postgresql/`.
 - **Document parsing is single-worker by design.** `pypdfium2` segfaults
   under concurrency, so `parsers/implementations/document.py` uses a
   single-worker `ThreadPoolExecutor`. The hard file-size limit is 50 MB
@@ -190,9 +185,10 @@ Subsystem-specific rationale:
 - **Record new dependencies in `pyproject.toml` and an ADR**
   before adding them. Dependencies are forever.
 - **Grep to verify a function or class exists** before importing it.
-- **Don't drop a storage backend, embedder, or connector** on a "no tests
-  + no docs" heuristic — multi-cloud / multi-client deployment is a hard
-  product constraint (see [`CHARTER.md`](docs/CHARTER.md)).
+- **Don't drop a provider, embedder, or connector** on a "no tests
+  + no docs" heuristic — multi-client support is a hard product
+  constraint, and the storage provider contract is the seam for a future
+  external database (see [`CHARTER.md`](docs/CHARTER.md)).
 - **Propose new top-level directories via RFC.** The structure is
   intentional.
 

@@ -14,7 +14,7 @@ Quick reference for all Agentic Inquiry commands.
 | Command | Description |
 |---------|-------------|
 | `ai:onboard` | Intelligent onboarding - parallel index, explore, validate |
-| `ai:setup` | Configure storage backend (local/gcp/alloydb) |
+| `ai:setup` | Configure local storage (LanceDB) |
 | `ai:status` | Show current project, index, and mode status |
 | `ai:env` | Manage isolated environments |
 
@@ -50,8 +50,7 @@ Quick reference for all Agentic Inquiry commands.
 ## Quick Start
 
 ```bash
-ai:setup local myproject   # 1a. Configure (local)
-ai:setup alloydb myproject # 1b. Configure (AlloyDB - server-side embeddings)
+ai:setup local myproject   # 1. Configure (local LanceDB)
 ai:index .                 # 2. Index
 ai:search "auth flow"      # 3. Search
 ```

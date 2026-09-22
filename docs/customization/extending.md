@@ -9,6 +9,8 @@ last_updated: 2026-02-16
 
 # Extending Agentic Inquiry
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 ## Overview
 
 Agentic Inquiry is designed to be extensible at multiple levels. You can customize parsers to handle new file formats, implement custom embedding models for domain-specific search, tune search behavior for your use case, and even integrate alternative storage backends.

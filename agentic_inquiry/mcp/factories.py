@@ -16,7 +16,6 @@ from agentic_inquiry.indexing.pipeline import IndexingPipeline
 from agentic_inquiry.memory.system import MemorySystem
 from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 from agentic_inquiry.memory.adapters.inmemory_adapter import InMemoryMemoryAdapter
-from agentic_inquiry.memory.adapters.postgresql_adapter import PostgresMemoryAdapter
 from agentic_inquiry.embeddings.registry import embedding_registry
 from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
 
@@ -248,47 +247,6 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
                 embedding_dims=embedding_dims,
             )
             logger.debug("Using LanceDBMemoryAdapter for memory storage")
-        elif backend_type in (
-            "postgresql",
-            "cloudsql",
-            "postgres",
-            "alloydb",
-            "rds",
-            "azure",
-        ):
-            # PostgreSQL backend - use PostgresMemoryAdapter with pgvector
-            # Get the PostgreSQL connection manager from storage
-            conn_manager = storage.get_connection_manager()
-            if conn_manager is None:
-                logger.warning(
-                    "PostgreSQL backend configured but no connection manager available. "
-                    "Using InMemoryMemoryAdapter - memories will NOT be persisted!"
-                )
-                episodic_storage = InMemoryMemoryAdapter(embedding_dims=embedding_dims)
-                semantic_storage = InMemoryMemoryAdapter(embedding_dims=embedding_dims)
-            else:
-                # Use capabilities to determine server-side embedding model
-                embedding_model = capabilities.embedding_model if capabilities.uses_server_side_embedding else None
-
-                if embedding_model:
-                    logger.info(
-                        "Memory adapters will use server-side embedding: model=%s (backend=%s)",
-                        embedding_model, backend_type,
-                    )
-
-                episodic_storage = PostgresMemoryAdapter(
-                    connection_manager=conn_manager,
-                    table_name="memory_episodic",
-                    embedding_dims=embedding_dims,
-                    embedding_model=embedding_model,
-                )
-                semantic_storage = PostgresMemoryAdapter(
-                    connection_manager=conn_manager,
-                    table_name="memory_semantic",
-                    embedding_dims=embedding_dims,
-                    embedding_model=embedding_model,
-                )
-                logger.debug("Using PostgresMemoryAdapter for memory storage")
         else:
             # Unknown backend - use in-memory adapter (no persistence)
             logger.warning(

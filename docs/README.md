@@ -11,10 +11,10 @@ How Agentic Inquiry is built — components, data flows, and design rationale.
 | Document | Description |
 |----------|-------------|
 | [README.md](architecture/README.md) | Architecture section overview and quick navigation by role |
-| [overview.md](architecture/overview.md) | System architecture — components, layers, plugin system, storage backends |
+| [overview.md](architecture/overview.md) | System architecture — components, layers, plugin system, storage providers |
 | [search.md](architecture/search.md) | Search pipeline — hybrid vector+FTS, RRF reranking, IDF-weighted content boost |
-| [indexing.md](architecture/indexing.md) | Indexing pipeline — parsing, chunking, embedding, server-side strategy |
-| [storage-adapters.md](architecture/storage-adapters.md) | Storage adapter layer — registry, unified PostgreSQL provider, config-driven routing |
+| [indexing.md](architecture/indexing.md) | Indexing pipeline — parsing, chunking, embedding |
+| [storage-adapters.md](architecture/storage-adapters.md) | Storage adapter layer — registry and config-driven routing (historical reference for the removed PostgreSQL provider) |
 | [event-system.md](architecture/event-system.md) | Event system — EventSystem (queue+batching), EventBus (pub/sub), EventStore (SQLite) |
 | [async-architecture.md](architecture/async-architecture.md) | Async patterns — task coordination, cancellation, timeouts |
 | [parsers.md](architecture/parsers.md) | Parser architecture — tree-sitter, priority chain, document parsing |
@@ -41,23 +41,19 @@ Normative specifications — the contracts that implementations must satisfy.
 | [query-semantics.md](design/query-semantics.md) | Query semantics — how search queries are parsed, split, and executed |
 | [result-contract.md](design/result-contract.md) | Result contract — SearchResult shape, scoring, metadata |
 | [logical-schema-reference.md](design/logical-schema-reference.md) | Schema reference — document_chunks, graph_entities, graph_relationships tables |
-| [hybrid-embedding-strategy.md](design/hybrid-embedding-strategy.md) | Embedding strategy — local vs server-side, unified PostgreSQL provider, auto-config |
+| [hybrid-embedding-strategy.md](design/hybrid-embedding-strategy.md) | Embedding strategy — local vs server-side (historical reference) |
 | [ownership-and-extension-points.md](design/ownership-and-extension-points.md) | Ownership map — who owns what, extension points, plugin layer |
 
 ---
 
 ## Storage Backends
 
-Setup and configuration for each supported backend.
+Local providers and the external provider contract.
 
 | Document | Description |
 |----------|-------------|
-| [storage-backends.md](storage-backends.md) | Backend comparison — all backends, capabilities, when to use each |
-| [backends/lancedb.md](backends/lancedb.md) | LanceDB — zero-config local storage, file-based, default for development |
-| [backends/postgresql.md](backends/postgresql.md) | PostgreSQL — self-hosted with pgvector, local embedding |
-| [backends/cloudsql.md](backends/cloudsql.md) | CloudSQL — GCP managed PostgreSQL, connection pooling, proxy setup |
-| [backends/rds.md](backends/rds.md) | AWS RDS / Aurora — managed PostgreSQL with optional Bedrock embeddings (Titan v2) |
-| [backends/azure.md](backends/azure.md) | Azure Database for PostgreSQL — Flexible Server with `azure_ai` extension for server-side embeddings |
+| [storage-backends.md](storage-backends.md) | Shipped providers, role assignment and the contract a future external database provider must satisfy |
+| [backends/lancedb.md](backends/lancedb.md) | LanceDB — zero-config local storage, file-based, default |
 
 ---
 
@@ -110,7 +106,7 @@ Guides for contributors building on Agentic Inquiry.
 | [development/async-best-practices.md](development/async-best-practices.md) | Async patterns — event loops, task management, error handling |
 | [development/parser-guidelines.md](development/parser-guidelines.md) | Writing parsers — tree-sitter queries, metadata constraints, chunk quality |
 | [development/adapter-implementation-guide.md](development/adapter-implementation-guide.md) | Building storage adapters — BaseVectorProvider, BaseGraphProvider, embedding strategy |
-| [development/connector-guide.md](development/connector-guide.md) | Connector development — FileSystem, S3, custom data sources (optional feature) |
+| [development/connector-guide.md](development/connector-guide.md) | Connector development — FileSystem and custom data sources |
 | [development/filter-translation-guide.md](development/filter-translation-guide.md) | Filter translation — converting Filter AST nodes to backend-specific queries |
 | [development/reranker-guide.md](development/reranker-guide.md) | Reranker development — RRF, cross-encoder, custom reranking strategies |
 | [development/error-message-security.md](development/error-message-security.md) | Error message security — safe error reporting without information leakage |

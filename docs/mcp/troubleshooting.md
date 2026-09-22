@@ -1,5 +1,7 @@
 # Troubleshooting Guide
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 > **Note:** The MCP server is a secondary/advanced interface. **Most users should use the [Claude Code plugins](../../README.md) as the primary interface.** This troubleshooting guide applies to all usage modes (CLI, plugins, MCP server). MCP-specific issues are clearly marked.
 
 This guide helps you diagnose and resolve common issues with Agentic Inquiry. Most sections apply to all usage modes (CLI, plugins, MCP server). MCP-specific issues are clearly marked.

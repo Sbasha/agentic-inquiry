@@ -9,6 +9,8 @@ last_updated: 2025-11-30
 
 # Search Architecture
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 The search system provides multiple search strategies with intelligent ranking. This document explains how search works, the different strategies available, and how results are ranked.
 
 ## Quick Navigation

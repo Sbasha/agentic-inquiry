@@ -1,5 +1,7 @@
 # Adapter Implementation Guide
 
+> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+
 This guide is for engineers implementing a new database adapter (vector store, graph store) for Agentic Inquiry.
 
 ## Prerequisites

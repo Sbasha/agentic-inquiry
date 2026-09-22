@@ -15,7 +15,7 @@ Example:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
@@ -95,70 +95,10 @@ LANCEDB_CAPABILITIES = ProviderCapabilities(
     backend_type="lancedb",
 )
 
-POSTGRESQL_CAPABILITIES = ProviderCapabilities(
-    embedding_strategy=EmbeddingStrategy.LOCAL,
-    embedding_dimensions=384,
-    embedding_model=None,
-    requires_proxy=False,
-    is_postgresql_compatible=True,
-    supports_fts=True,
-    supports_graph=True,
-    backend_type="postgresql",
-)
 
-CLOUDSQL_CAPABILITIES = ProviderCapabilities(
-    embedding_strategy=EmbeddingStrategy.LOCAL,
-    embedding_dimensions=384,
-    embedding_model=None,
-    requires_proxy=True,
-    proxy_type="cloud-sql-proxy",
-    proxy_port=5433,
-    is_postgresql_compatible=True,
-    supports_fts=True,
-    supports_graph=True,
-    backend_type="cloudsql",
-)
 
-ALLOYDB_CAPABILITIES = ProviderCapabilities(
-    embedding_strategy=EmbeddingStrategy.SERVER_SIDE,
-    embedding_dimensions=768,
-    embedding_model="text-embedding-005",
-    requires_proxy=True,
-    proxy_type="alloydb-auth-proxy",
-    proxy_port=5432,
-    is_postgresql_compatible=True,
-    supports_fts=True,
-    supports_graph=True,
-    backend_type="alloydb",
-)
 
-RDS_CAPABILITIES = ProviderCapabilities(
-    embedding_strategy=EmbeddingStrategy.LOCAL,
-    embedding_dimensions=384,
-    embedding_model=None,
-    requires_proxy=False,
-    is_postgresql_compatible=True,
-    supports_fts=True,
-    supports_graph=True,
-    backend_type="rds",
-)
 
-# Azure Database for PostgreSQL Flexible Server, server-side embedding
-# via the ``azure_ai`` extension to Azure OpenAI. Defaults match the
-# ``cli/setup/templates.py::AZURE_TEMPLATE`` defaults — operators
-# running ``text-embedding-3-large`` or a custom AOAI deployment
-# override at the BackendConfig layer (provider checks the per-backend
-# config first, falls back to these capability defaults).
-AZURE_CAPABILITIES = ProviderCapabilities(
-    embedding_strategy=EmbeddingStrategy.SERVER_SIDE,
-    embedding_dimensions=1536,
-    embedding_model="text-embedding-3-small",
-    requires_proxy=False,
-    is_postgresql_compatible=True,
-    supports_fts=True,
-    supports_graph=True,
-    backend_type="azure",
-)
 
 
 def get_capabilities_for_backend(backend_type: str) -> ProviderCapabilities:
@@ -177,12 +117,6 @@ def get_capabilities_for_backend(backend_type: str) -> ProviderCapabilities:
     """
     registry = {
         "lancedb": LANCEDB_CAPABILITIES,
-        "postgresql": POSTGRESQL_CAPABILITIES,
-        "postgres": POSTGRESQL_CAPABILITIES,
-        "cloudsql": CLOUDSQL_CAPABILITIES,
-        "alloydb": ALLOYDB_CAPABILITIES,
-        "rds": RDS_CAPABILITIES,
-        "azure": AZURE_CAPABILITIES,
         "sqlite": LANCEDB_CAPABILITIES,
         "memory": LANCEDB_CAPABILITIES,
     }

@@ -18,13 +18,13 @@ storage:
   project_id: "changeme"
 
   # Backend selection for database components
-  # Defaults to LanceDB for local development. Options: lancedb, postgresql, cloudsql, alloydb
+  # Local providers only: lancedb (vectors and graph), memory (tests)
   backend: "lancedb"
 
-  # Event store backend: sqlite (default), postgresql
+  # Event store backend: sqlite
   event_store_backend: "sqlite"
 
-  # File tracker backend: sqlite (default), postgresql
+  # File tracker backend: sqlite
   file_tracker_backend: "sqlite"
 
   # LanceDB configuration (vector database)
@@ -65,7 +65,7 @@ storage:
     # LanceDB-specific configuration (used when provider is "lancedb")
     lancedb:
       # Path relative to storage.root (inherits from storage.lancedb.path if not set)
-      path: "${AI_STORAGE_ROOT:-./.agentic-inquiry}/lancedb"
+      path: "${INQUIRY_STORAGE_ROOT:-./.agentic-inquiry}/lancedb"
 
   # Graph storage provider configuration
   graph:
@@ -85,7 +85,7 @@ storage:
     # SQLite-specific configuration (used when provider is "sqlite")
     sqlite:
       # Path relative to storage.root
-      path: "${AI_STORAGE_ROOT:-./.agentic-inquiry}/agentic-inquiry.db"
+      path: "${INQUIRY_STORAGE_ROOT:-./.agentic-inquiry}/agentic-inquiry.db"
 
   # Feature flag for StorageFacade migration
   # When true, internal services use the new StorageFacade abstraction
@@ -627,7 +627,7 @@ logging:
 # Connectors configuration
 # Connectors provide a unified interface for accessing content from various sources
 connectors:
-  # Default connector type: filesystem, s3, gcs, github (future)
+  # Default connector type: filesystem
   default_connector: "filesystem"
 
   # Local filesystem connector
@@ -694,10 +694,10 @@ connectors:
     change_detection_enabled: true
 
     # Enable real-time file watching for incremental indexing
-    # Set AI_CONNECTORS_FILESYSTEM_WATCH_ENABLED=false to disable for CI/CD
+    # Set INQUIRY_CONNECTORS_FILESYSTEM_WATCH_ENABLED=false to disable for CI/CD
     watch_enabled: true
 
-  # Remote connector content caching (for S3, GCS, GitHub, etc.)
+  # Connector content caching for non-filesystem connectors
   remote_cache:
     # Enable caching of remote content
     enabled: true

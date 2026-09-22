@@ -162,7 +162,7 @@ embeddings:
   # AWS credentials use the standard boto3 chain (env vars, profile,
   # instance role) — set AWS_ACCESS_KEY_ID / AWS_PROFILE outside this
   # file. The Bedrock *region* must come from agentic-inquiry config
-  # (``embeddings.bedrock.region`` or ``AI_EMBEDDINGS_BEDROCK_REGION``);
+  # (``embeddings.bedrock.region`` or ``INQUIRY_EMBEDDINGS_BEDROCK_REGION``);
   # ``AWS_REGION`` does not satisfy the dispatcher requirement and the
   # embedder will raise ConfigurationError if region is empty.
   # RFC 0003 documents the full surface.
@@ -387,21 +387,21 @@ context:
 # Environment variable overrides:
 # You can also override any setting using environment variables with the AI_ prefix.
 # Examples:
-#   AI_STORAGE_ROOT=./.agentic-inquiry
-#   AI_STORAGE_DEFAULT_PROJECT_ID=my_project
-#   AI_STORAGE_LANCEDB_PATH=lancedb
-#   AI_CACHE_DOCUMENT_CACHE_MAX_SIZE=2000
-#   AI_SEARCH_DEFAULT_LIMIT=20
-#   AI_EMBEDDINGS_DEFAULT_PROVIDER=hashing
-#   AI_EMBEDDINGS_DEFAULT_DIMENSIONS=384
-#   AI_INDEXING_PROCESSING_SEMAPHORE_LIMIT=20
-#   AI_EVENTS_ENABLED=true
-#   AI_EVENTS_BATCH_SIZE=100
-#   AI_MEMORY_WORKING_MEMORY_CAPACITY=20
-#   AI_PROGRESS_ENABLED=true
-#   AI_CONTEXT_TOKEN_BUDGET_DEFAULT_BUDGET=50000
-#   AI_LOGGING_DIRECTORY=/var/log/agentic-inquiry
-#   AI_LOGGING_LEVEL=DEBUG
-#   AI_LOGGING_MAX_BYTES=20971520
-#   AI_LOGGING_RETENTION_HOURS=48
-#   AI_LOGGING_SERVICE_LEVELS_PARSERS=DEBUG
+#   INQUIRY_STORAGE_ROOT=./.agentic-inquiry
+#   INQUIRY_STORAGE_DEFAULT_PROJECT_ID=my_project
+#   INQUIRY_STORAGE_LANCEDB_PATH=lancedb
+#   INQUIRY_CACHE_DOCUMENT_CACHE_MAX_SIZE=2000
+#   INQUIRY_SEARCH_DEFAULT_LIMIT=20
+#   INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER=hashing
+#   INQUIRY_EMBEDDINGS_DEFAULT_DIMENSIONS=384
+#   INQUIRY_INDEXING_PROCESSING_SEMAPHORE_LIMIT=20
+#   INQUIRY_EVENTS_ENABLED=true
+#   INQUIRY_EVENTS_BATCH_SIZE=100
+#   INQUIRY_MEMORY_WORKING_MEMORY_CAPACITY=20
+#   INQUIRY_PROGRESS_ENABLED=true
+#   INQUIRY_CONTEXT_TOKEN_BUDGET_DEFAULT_BUDGET=50000
+#   INQUIRY_LOGGING_DIRECTORY=/var/log/agentic-inquiry
+#   INQUIRY_LOGGING_LEVEL=DEBUG
+#   INQUIRY_LOGGING_MAX_BYTES=20971520
+#   INQUIRY_LOGGING_RETENTION_HOURS=48
+#   INQUIRY_LOGGING_SERVICE_LEVELS_PARSERS=DEBUG

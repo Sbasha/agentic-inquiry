@@ -67,18 +67,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "adapters: library assumption tests")
     config.addinivalue_line("markers", "slow: tests exceeding time budget")
     config.addinivalue_line("markers", "model: tests that load neural network models")
-    config.addinivalue_line("markers", "postgres: PostgreSQL-specific tests (require Docker postgres)")
     config.addinivalue_line("markers", "contracts: storage provider contract tests")
-    config.addinivalue_line("markers", "alloydb: AlloyDB-specific tests (require ALLOYDB_CONNECTION_STRING)")
-    config.addinivalue_line(
-        "markers",
-        "cloud_smoke: smoke tests that hit live cloud endpoints "
-        "(AWS RDS / Aurora / Bedrock, Azure Postgres / OpenAI, and "
-        "S3 / GCS object storage via AI_SMOKE_S3_BUCKET / "
-        "AI_SMOKE_GCS_BUCKET). Skipped by default; opt in with "
-        "`-m cloud_smoke` and the appropriate credentials in the "
-        "environment.",
-    )
 
 
 def pytest_collection_modifyitems(items):
@@ -133,37 +122,26 @@ def pytest_sessionfinish(session, exitstatus):
 
     # 2. Clean up LanceDB old versions to prevent disk space bloat
     # Tests create thousands of versions; cleanup with aggressive timing
-    # GUARD: Only run LanceDB cleanup if LanceDB was actually the backend
-    # (skip for PostgreSQL/CloudSQL tests to avoid cross-backend contamination)
     try:
         from datetime import timedelta
         import lancedb
         import os
 
-        # Check if a non-LanceDB backend was configured for this test session
-        # If so, skip LanceDB cleanup to avoid touching data from other backends
-        backend_env = os.environ.get("AI_STORAGE_BACKEND", "").lower()
-        cloudsql_configured = bool(os.environ.get("CLOUDSQL_CONNECTION_NAME"))
-        postgres_configured = bool(os.environ.get("POSTGRES_CONNECTION_STRING"))
-
-        if backend_env in ("postgresql", "cloudsql", "postgres") or cloudsql_configured or postgres_configured:
-            pass  # Skip LanceDB cleanup for non-LanceDB backends
-        else:
-            lancedb_path = ".agentic-inquiry/lancedb"
-            if os.path.exists(lancedb_path):
-                db = lancedb.connect(lancedb_path)
-                for table_name in db.table_names():
-                    try:
-                        table = db.open_table(table_name)
-                        # Compact fragments first
-                        table.optimize.compact_files()
-                        # Aggressive cleanup: 60 seconds (removes almost all test versions)
-                        table.cleanup_old_versions(
-                            older_than=timedelta(seconds=60),
-                            delete_unverified=True
-                        )
-                    except Exception:
-                        pass  # Ignore individual table errors
+        lancedb_path = ".agentic-inquiry/lancedb"
+        if os.path.exists(lancedb_path):
+            db = lancedb.connect(lancedb_path)
+            for table_name in db.table_names():
+                try:
+                    table = db.open_table(table_name)
+                    # Compact fragments first
+                    table.optimize.compact_files()
+                    # Aggressive cleanup: 60 seconds (removes almost all test versions)
+                    table.cleanup_old_versions(
+                        older_than=timedelta(seconds=60),
+                        delete_unverified=True
+                    )
+                except Exception:
+                    pass  # Ignore individual table errors
     except Exception:
         pass  # Ignore if lancedb not available or path doesn't exist
 
@@ -219,23 +197,6 @@ class _DummyEmbedder:
     def ndims(self):
         """Return embedding dimensions."""
         return 384
-
-
-@pytest.fixture(autouse=True)
-def reset_cloud_detect_cache_global():
-    """Reset the cloud detection cache before each test for isolation.
-
-    detect_cloud_context() caches its result at module level so IMDS probes
-    only run once per process. This is correct for production but breaks tests
-    that mock different probe outcomes in different test cases.
-    """
-    try:
-        import agentic_inquiry.cli.cloud_detect as _cloud_detect_mod
-        _cloud_detect_mod._cloud_context_cache = _cloud_detect_mod._UNSET
-        yield
-        _cloud_detect_mod._cloud_context_cache = _cloud_detect_mod._UNSET
-    except ImportError:
-        yield
 
 
 @pytest.fixture(autouse=True)

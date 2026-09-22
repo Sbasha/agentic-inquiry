@@ -76,12 +76,12 @@ def cleanup_env_vars() -> Generator[None, None, None]:
     # Store original values
     original_env = {}
     env_vars = [
-        "AI_LOGGING_DIRECTORY",
-        "AI_LOGGING_LEVEL",
-        "AI_LOGGING_MAX_BYTES",
-        "AI_LOGGING_RETENTION_HOURS",
-        "AI_LOGGING_SERVICE_LEVELS_PARSERS",
-        "AI_LOGGING_SERVICE_LEVELS_DATABASE",
+        "INQUIRY_LOGGING_DIRECTORY",
+        "INQUIRY_LOGGING_LEVEL",
+        "INQUIRY_LOGGING_MAX_BYTES",
+        "INQUIRY_LOGGING_RETENTION_HOURS",
+        "INQUIRY_LOGGING_SERVICE_LEVELS_PARSERS",
+        "INQUIRY_LOGGING_SERVICE_LEVELS_DATABASE",
     ]
     
     for var in env_vars:
@@ -497,12 +497,12 @@ class TestEnvironmentVariableOverrides:
     """Test environment variable overrides."""
     
     def test_env_var_overrides_directory(self, tmp_path, temp_config_file):
-        """Test that AI_LOGGING_DIRECTORY overrides config."""
+        """Test that INQUIRY_LOGGING_DIRECTORY overrides config."""
         env_log_dir = tmp_path / "env_logs"
         config_log_dir = tmp_path / "config_logs"
         
         # Set environment variable
-        os.environ["AI_LOGGING_DIRECTORY"] = str(env_log_dir)
+        os.environ["INQUIRY_LOGGING_DIRECTORY"] = str(env_log_dir)
         
         config_data = create_minimal_config(tmp_path, {
             "directory": str(config_log_dir)
@@ -517,8 +517,8 @@ class TestEnvironmentVariableOverrides:
         assert config.logging.directory == str(env_log_dir)
     
     def test_env_var_overrides_level(self, tmp_path, temp_config_file):
-        """Test that AI_LOGGING_LEVEL overrides config."""
-        os.environ["AI_LOGGING_LEVEL"] = "ERROR"
+        """Test that INQUIRY_LOGGING_LEVEL overrides config."""
+        os.environ["INQUIRY_LOGGING_LEVEL"] = "ERROR"
         
         config_data = create_minimal_config(tmp_path, {
             "directory": str(tmp_path / "logs"),
@@ -533,8 +533,8 @@ class TestEnvironmentVariableOverrides:
         assert config.logging.level == "ERROR"
     
     def test_env_var_overrides_max_bytes(self, tmp_path, temp_config_file):
-        """Test that AI_LOGGING_MAX_BYTES overrides config."""
-        os.environ["AI_LOGGING_MAX_BYTES"] = "20971520"
+        """Test that INQUIRY_LOGGING_MAX_BYTES overrides config."""
+        os.environ["INQUIRY_LOGGING_MAX_BYTES"] = "20971520"
         
         config_data = create_minimal_config(tmp_path, {
             "directory": str(tmp_path / "logs"),
@@ -549,8 +549,8 @@ class TestEnvironmentVariableOverrides:
         assert config.logging.max_bytes == 20971520
     
     def test_env_var_overrides_retention_hours(self, tmp_path, temp_config_file):
-        """Test that AI_LOGGING_RETENTION_HOURS overrides config."""
-        os.environ["AI_LOGGING_RETENTION_HOURS"] = "72"
+        """Test that INQUIRY_LOGGING_RETENTION_HOURS overrides config."""
+        os.environ["INQUIRY_LOGGING_RETENTION_HOURS"] = "72"
         
         config_data = create_minimal_config(tmp_path, {
             "directory": str(tmp_path / "logs"),
@@ -565,9 +565,9 @@ class TestEnvironmentVariableOverrides:
         assert config.logging.retention_hours == 72
     
     def test_env_var_overrides_service_levels(self, tmp_path, temp_config_file):
-        """Test that AI_LOGGING_SERVICE_LEVELS_* overrides config."""
-        os.environ["AI_LOGGING_SERVICE_LEVELS_PARSERS"] = "ERROR"
-        os.environ["AI_LOGGING_SERVICE_LEVELS_DATABASE"] = "CRITICAL"
+        """Test that INQUIRY_LOGGING_SERVICE_LEVELS_* overrides config."""
+        os.environ["INQUIRY_LOGGING_SERVICE_LEVELS_PARSERS"] = "ERROR"
+        os.environ["INQUIRY_LOGGING_SERVICE_LEVELS_DATABASE"] = "CRITICAL"
         
         config_data = create_minimal_config(tmp_path, {
             "directory": str(tmp_path / "logs"),

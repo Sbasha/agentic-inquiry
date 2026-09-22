@@ -5,15 +5,12 @@ appropriate backend-specific handlers based on command-line arguments.
 
 Usage:
     ai setup                  # Interactive mode - prompts for backend type
-    ai setup local [name]     # LanceDB (development)
-    ai setup postgres [name]  # PostgreSQL (direct connection)
-    ai setup gcp [name]       # CloudSQL (GCP managed)
+    ai setup local [name]     # LanceDB (local)
     ai setup --dev            # Create test environment
 
 Environment Naming:
     - Default: 'ai' (production)
     - With --dev: 'ai-test' or 'ai-test-<name>'
-    - Test environments never auto-start proxy
 """
 
 from __future__ import annotations
@@ -29,10 +26,6 @@ from agentic_inquiry.cli.setup.base import (
     print_info,
 )
 from agentic_inquiry.cli.setup.local_setup import LocalSetup
-from agentic_inquiry.cli.setup.postgres_setup import PostgresSetup
-from agentic_inquiry.cli.setup.gcp_setup import GCPSetup
-from agentic_inquiry.cli.setup.alloydb_setup import AlloyDBSetup
-from agentic_inquiry.cli.setup.aws_setup import AWSSetup
 
 
 def create_parser() -> argparse.ArgumentParser:
@@ -47,19 +40,15 @@ def create_parser() -> argparse.ArgumentParser:
         epilog="""
 Examples:
   ai setup                    Interactive mode
-  ai setup local              LanceDB (development)
-  ai setup alloydb            AlloyDB (GCP, server-side embeddings)
-  ai setup gcp                CloudSQL (GCP, standard PostgreSQL)
-  ai setup postgres           PostgreSQL (direct connection)
-  ai setup aws                RDS (AWS managed)
+  ai setup local              LanceDB (local, default)
 """,
     )
 
     parser.add_argument(
         "backend",
         nargs="?",
-        choices=["local", "postgres", "gcp", "alloydb", "aws", "azure"],
-        help="Backend type: local (LanceDB), postgres (PostgreSQL), gcp (CloudSQL), alloydb (AlloyDB), aws (RDS), azure (PostgreSQL)",
+        choices=["local"],
+        help="Backend type: local (LanceDB)",
     )
 
     parser.add_argument(
@@ -71,7 +60,7 @@ Examples:
     parser.add_argument(
         "--dev",
         action="store_true",
-        help="Create a test/development environment (no auto-start proxy)",
+        help="Create a test/development environment",
     )
 
     parser.add_argument(
@@ -79,67 +68,6 @@ Examples:
         type=Path,
         default=None,
         help="Workspace root path (default: current directory)",
-    )
-
-    # PostgreSQL-specific options
-    parser.add_argument(
-        "--connection-string",
-        help="PostgreSQL connection string (for postgres backend)",
-    )
-
-    # GCP/AlloyDB-specific options
-    parser.add_argument(
-        "--project",
-        help="GCP project ID (for gcp/alloydb backend)",
-    )
-
-    parser.add_argument(
-        "--region",
-        help="Cloud region — GCP region (for gcp/alloydb) or AWS region (for aws backend)",
-    )
-
-    parser.add_argument(
-        "--cluster",
-        help="AlloyDB cluster name (for alloydb backend)",
-    )
-
-    parser.add_argument(
-        "--instance",
-        help="Cloud instance name — Cloud SQL instance (for gcp) or AlloyDB instance (for alloydb) or RDS identifier (for aws)",
-    )
-
-    parser.add_argument(
-        "--database",
-        help="Database name (for postgres/gcp/aws backend)",
-    )
-
-    parser.add_argument(
-        "--user",
-        help="Database user (for gcp/aws backend)",
-    )
-
-    parser.add_argument(
-        "--table-prefix",
-        default="agv_",
-        help="Table prefix for schema isolation (default: agv_)",
-    )
-
-    # AWS-specific options
-    parser.add_argument(
-        "--host",
-        help="RDS endpoint hostname (for aws backend; auto-discovered if omitted)",
-    )
-
-    parser.add_argument(
-        "--password",
-        help="Database password (for aws backend; omit when using --use-iam-auth)",
-    )
-
-    parser.add_argument(
-        "--use-iam-auth",
-        action="store_true",
-        default=False,
-        help="Use AWS IAM token authentication for RDS (for aws backend)",
     )
 
     return parser
@@ -169,48 +97,9 @@ def run_interactive_setup(
     print_info("  - Fast, embedded vector database")
     print_info("  - SQLite for metadata")
     print_info("")
-    print_info("PostgreSQL (Direct) - For self-managed PostgreSQL")
-    print_info("  - Direct connection via connection string")
-    print_info("  - Requires pgvector extension")
-    print_info("  - Good for on-premise or cloud PostgreSQL")
-    print_info("")
-    print_info("AlloyDB (GCP) - [RECOMMENDED for GCP]")
-    print_info("  - Native server-side embeddings via Vertex AI")
-    print_info("  - Highest performance vector search")
-    print_info("  - Automatic AlloyDB Auth Proxy management")
-    print_info("")
-    print_info("CloudSQL (GCP) - For standard GCP PostgreSQL")
-    print_info("  - IAM authentication via ADC")
-    print_info("  - Automatic Cloud SQL Proxy management")
-    print_info("")
-    print_info("RDS (AWS) - For AWS-managed PostgreSQL")
-    print_info("  - Direct SSL connection to RDS")
-    print_info("  - Password or IAM token authentication")
-    print_info("  - Best for AWS production environments")
-    print_info("")
-    print_info("Azure (Managed) - For Azure Database for PostgreSQL")
-    print_info("  - Direct connection to Azure PostgreSQL")
-    print_info("  - Native server-side embeddings via Azure OpenAI")
-    print_info("  - Best for Azure production environments")
+    prompt_choice("\nSelect storage backend:", ["LanceDB (Local)"])
 
-    choice = prompt_choice(
-        "\nSelect storage backend:",
-        ["LanceDB (Local)", "AlloyDB (GCP)", "CloudSQL (GCP)", "PostgreSQL (Direct)", "RDS (AWS)", "Azure (Managed)"],
-    )
-
-    if choice.startswith("LanceDB"):
-        setup = LocalSetup(is_dev=is_dev, workspace=workspace)
-    elif choice.startswith("AlloyDB"):
-        setup = AlloyDBSetup(is_dev=is_dev, workspace=workspace)
-    elif choice.startswith("PostgreSQL"):
-        setup = PostgresSetup(is_dev=is_dev, workspace=workspace)
-    elif choice.startswith("RDS"):
-        setup = AWSSetup(is_dev=is_dev, workspace=workspace)
-    elif choice.startswith("Azure"):
-        from agentic_inquiry.cli.setup.azure_setup import AzureSetup
-        setup = AzureSetup(is_dev=is_dev, workspace=workspace)
-    else:
-        setup = GCPSetup(is_dev=is_dev, workspace=workspace)
+    setup = LocalSetup(is_dev=is_dev, workspace=workspace)
 
     return setup.run()
 
@@ -240,75 +129,6 @@ def run_setup(args: Optional[list[str]] = None) -> bool:
             env_name=parsed.name,
             is_dev=is_dev,
             workspace=workspace,
-        )
-        return setup.run()
-
-    elif parsed.backend == "alloydb":
-        setup = AlloyDBSetup(
-            env_name=parsed.name,
-            is_dev=is_dev,
-            workspace=workspace,
-            project=parsed.project,
-            region=parsed.region,
-            cluster=parsed.cluster,
-            instance=parsed.instance,
-            database=parsed.database,
-            user=parsed.user,
-            table_prefix=parsed.table_prefix,
-        )
-        return setup.run()
-
-    elif parsed.backend == "postgres":
-        setup = PostgresSetup(
-            env_name=parsed.name,
-            is_dev=is_dev,
-            workspace=workspace,
-            connection_string=parsed.connection_string,
-            table_prefix=parsed.table_prefix,
-        )
-        return setup.run()
-
-    elif parsed.backend == "gcp":
-        setup = GCPSetup(
-            env_name=parsed.name,
-            is_dev=is_dev,
-            workspace=workspace,
-            project=parsed.project,
-            region=parsed.region,
-            instance=parsed.instance,
-            database=parsed.database,
-            user=parsed.user,
-            table_prefix=parsed.table_prefix,
-        )
-        return setup.run()
-
-    elif parsed.backend == "aws":
-        setup = AWSSetup(
-            env_name=parsed.name,
-            is_dev=is_dev,
-            workspace=workspace,
-            region=parsed.region,
-            instance=parsed.instance,
-            host=getattr(parsed, "host", None),
-            database=parsed.database,
-            user=parsed.user,
-            password=getattr(parsed, "password", None),
-            use_iam_auth=getattr(parsed, "use_iam_auth", False),
-            table_prefix=parsed.table_prefix,
-        )
-        return setup.run()
-
-    elif parsed.backend == "azure":
-        from agentic_inquiry.cli.setup.azure_setup import AzureSetup
-        setup = AzureSetup(
-            env_name=parsed.name,
-            is_dev=is_dev,
-            workspace=workspace,
-            host=getattr(parsed, "host", None),
-            database=parsed.database,
-            user=parsed.user,
-            password=getattr(parsed, "password", None),
-            table_prefix=parsed.table_prefix,
         )
         return setup.run()
 
