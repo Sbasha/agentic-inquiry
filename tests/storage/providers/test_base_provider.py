@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.storage.providers.base import (
+from agentic_inquiry.storage.providers.base import (
     BaseProvider,
     MaintenanceMixin,
     ProviderNotInitializedError,

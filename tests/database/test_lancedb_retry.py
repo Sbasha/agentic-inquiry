@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import pytest
 
-from agent_vault.database.lancedb_manager import (
+from agentic_inquiry.database.lancedb_manager import (
     _is_retryable_lancedb_error,
     _retry_lancedb_write,
 )
-from agent_vault.exceptions import StorageError
+from agentic_inquiry.exceptions import StorageError
 
 
 @pytest.mark.parametrize(
@@ -41,7 +41,7 @@ def test_is_retryable_follows_cause_chain() -> None:
 @pytest.mark.asyncio
 async def test_retry_succeeds_on_third_attempt(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(
-        "agent_vault.database.lancedb_manager.asyncio.sleep",
+        "agentic_inquiry.database.lancedb_manager.asyncio.sleep",
         _instant_sleep,
     )
     calls = {"n": 0}

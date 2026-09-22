@@ -14,8 +14,8 @@ pytestmark = pytest.mark.unit
 
 from unittest.mock import Mock, patch
 
-from agent_vault.config import Config
-from agent_vault.mcp.server import MCPServer
+from agentic_inquiry.config import Config
+from agentic_inquiry.mcp.server import MCPServer
 
 
 @pytest.fixture
@@ -88,8 +88,8 @@ class TestMCPServerInitialization:
     @pytest.mark.asyncio
     async def test_initialize_with_project_id(self, mock_config, mcp_services):
         """Test server initialization with project_id."""
-        with patch('agent_vault.mcp.server.FastMCP') as mock_fastmcp, \
-             patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
+        with patch('agentic_inquiry.mcp.server.FastMCP') as mock_fastmcp, \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
             
             server = MCPServer(config=mock_config, project_id="test_project")
             await server.initialize()
@@ -125,8 +125,8 @@ class TestMCPServerInitialization:
     @pytest.mark.asyncio
     async def test_initialize_idempotent(self, mock_config, mcp_services):
         """Test initialization is idempotent."""
-        with patch('agent_vault.mcp.server.FastMCP'), \
-             patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
+        with patch('agentic_inquiry.mcp.server.FastMCP'), \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
             
             server = MCPServer(config=mock_config, project_id="test_project")
             
@@ -142,8 +142,8 @@ class TestMCPServerInitialization:
         """Test initialization with direct access tools enabled."""
         mock_config.mcp.tools.direct_access = {"enabled": True}
         
-        with patch('agent_vault.mcp.server.FastMCP'), \
-             patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
+        with patch('agentic_inquiry.mcp.server.FastMCP'), \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
             
             server = MCPServer(config=mock_config, project_id="test_project")
             await server.initialize()
@@ -157,8 +157,8 @@ class TestServiceCreation:
     @pytest.mark.asyncio
     async def test_services_created_successfully(self, mock_config, mcp_services):
         """Test services are created successfully."""
-        with patch('agent_vault.mcp.server.FastMCP'), \
-             patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services) as mock_create:
+        with patch('agentic_inquiry.mcp.server.FastMCP'), \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services) as mock_create:
             
             server = MCPServer(config=mock_config, project_id="test_project")
             await server.initialize()
@@ -175,8 +175,8 @@ class TestServiceCreation:
     @pytest.mark.asyncio
     async def test_service_creation_failure_propagates(self, mock_config):
         """Test service creation failure propagates."""
-        with patch('agent_vault.mcp.server.FastMCP'), \
-             patch('agent_vault.mcp.server.create_mcp_services', side_effect=Exception("Service creation failed")):
+        with patch('agentic_inquiry.mcp.server.FastMCP'), \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', side_effect=Exception("Service creation failed")):
             
             server = MCPServer(config=mock_config, project_id="test_project")
             
@@ -198,8 +198,8 @@ class TestServerLifecycle:
     @pytest.mark.asyncio
     async def test_start_after_initialization(self, mock_config, mcp_services):
         """Test server can start after initialization."""
-        with patch('agent_vault.mcp.server.FastMCP'), \
-             patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
+        with patch('agentic_inquiry.mcp.server.FastMCP'), \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
             
             server = MCPServer(config=mock_config, project_id="test_project")
             await server.initialize()
@@ -211,8 +211,8 @@ class TestServerLifecycle:
     @pytest.mark.asyncio
     async def test_shutdown_cleans_up_services(self, mock_config, mcp_services):
         """Test shutdown cleans up services."""
-        with patch('agent_vault.mcp.server.FastMCP'), \
-             patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
+        with patch('agentic_inquiry.mcp.server.FastMCP'), \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
             
             server = MCPServer(config=mock_config, project_id="test_project")
             await server.initialize()
@@ -249,8 +249,8 @@ class TestServerLifecycle:
         task = asyncio.create_task(_never_finishes())
         services_with_task = {**mcp_services, "maintenance_task": task}
 
-        with patch('agent_vault.mcp.server.FastMCP'), \
-             patch('agent_vault.mcp.server.create_mcp_services', return_value=services_with_task):
+        with patch('agentic_inquiry.mcp.server.FastMCP'), \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=services_with_task):
             server = MCPServer(config=mock_config, project_id="test_project")
             await server.initialize()
             assert not task.done(), "task must still be running before shutdown"
@@ -268,8 +268,8 @@ class TestGetApp:
     @pytest.mark.asyncio
     async def test_get_app_after_initialization(self, mock_config, mcp_services):
         """Test get_app returns app after initialization."""
-        with patch('agent_vault.mcp.server.FastMCP') as mock_fastmcp, \
-             patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
+        with patch('agentic_inquiry.mcp.server.FastMCP') as mock_fastmcp, \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
             
             mock_app = Mock()
             mock_fastmcp.return_value = mock_app
@@ -294,8 +294,8 @@ class TestConfigurationHandling:
     @pytest.mark.asyncio
     async def test_uses_config_values(self, mock_config, mcp_services):
         """Test server uses configuration values."""
-        with patch('agent_vault.mcp.server.FastMCP') as mock_fastmcp, \
-             patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
+        with patch('agentic_inquiry.mcp.server.FastMCP') as mock_fastmcp, \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
             
             server = MCPServer(config=mock_config, project_id="test_project")
             await server.initialize()
@@ -311,8 +311,8 @@ class TestConfigurationHandling:
     @pytest.mark.asyncio
     async def test_project_id_override(self, mock_config, mcp_services):
         """Test project_id can be overridden in initialize."""
-        with patch('agent_vault.mcp.server.FastMCP'), \
-             patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services) as mock_create:
+        with patch('agentic_inquiry.mcp.server.FastMCP'), \
+             patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services) as mock_create:
             
             server = MCPServer(config=mock_config, project_id="original_project")
             await server.initialize(project_id="override_project")

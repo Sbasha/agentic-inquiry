@@ -6,7 +6,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agent_vault.database.schema_manager import LanceDBSchemaManager
+from agentic_inquiry.database.schema_manager import LanceDBSchemaManager
 
 pytestmark = pytest.mark.unit
 

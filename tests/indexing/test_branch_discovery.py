@@ -21,7 +21,7 @@ from pathlib import Path
 
 import pytest
 
-from agent_vault.indexing.branch_discovery import _detect_default_branch, discover_branches
+from agentic_inquiry.indexing.branch_discovery import _detect_default_branch, discover_branches
 
 
 # ---------------------------------------------------------------------------

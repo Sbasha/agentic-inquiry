@@ -21,8 +21,8 @@ pytestmark = pytest.mark.unit
 
 pa = pytest.importorskip("pyarrow")
 
-from agent_vault.database.schema_manager import LanceDBSchemaManager
-from agent_vault.storage.errors import SchemaMismatchError
+from agentic_inquiry.database.schema_manager import LanceDBSchemaManager
+from agentic_inquiry.storage.errors import SchemaMismatchError
 
 
 def _make_fake_table(dim: int, column: str = "vector") -> Any:

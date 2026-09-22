@@ -8,7 +8,7 @@
 
 ## Test Suite Overview
 
-This test evaluates how effectively an agent can generate documentation using Agent-Vault to:
+This test evaluates how effectively an agent can generate documentation using Agentic Inquiry to:
 - Find all code that needs documenting
 - Understand component purpose and behavior
 - Map relationships between components
@@ -40,7 +40,7 @@ Documentation generation is successful if the agent can:
 
 **Step 1: Create Session with Unique Project ID**
 ```python
-project_id = "agv_test08_docs_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test08_docs_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Documentation generation test")
 ```
 

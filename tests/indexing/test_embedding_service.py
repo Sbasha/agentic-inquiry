@@ -4,9 +4,9 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.exceptions import StorageError
-from agent_vault.indexing.embedding_service import EmbeddingService
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.exceptions import StorageError
+from agentic_inquiry.indexing.embedding_service import EmbeddingService
 
 
 class _DummyEmbedder:

@@ -20,12 +20,12 @@ from typing import Any, AsyncIterator, Dict, List
 import lancedb
 import pytest
 
-from agent_vault.config import Config, StorageConfig
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.database.lancedb_schemas import get_graph_relationships_schema
-from agent_vault.models.document_chunk import BRANCH_INDEXING_FIELDS, DocumentChunk
-from agent_vault.models.graph_entity import GraphEntity
-from agent_vault.models.graph_relationship import GraphRelationship
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.database.lancedb_schemas import get_graph_relationships_schema
+from agentic_inquiry.models.document_chunk import BRANCH_INDEXING_FIELDS, DocumentChunk
+from agentic_inquiry.models.graph_entity import GraphEntity
+from agentic_inquiry.models.graph_relationship import GraphRelationship
 
 pytestmark = pytest.mark.integration
 
@@ -140,7 +140,7 @@ async def test_concurrent_writes_never_conflict_or_duplicate_keys(
 ) -> None:
     # STUB: AC 9
     await write(manager, build("seed"))
-    caplog.set_level(logging.WARNING, logger="agent_vault.database.lancedb_manager")
+    caplog.set_level(logging.WARNING, logger="agentic_inquiry.database.lancedb_manager")
 
     batches = [build("shared") for _ in range(8)] + [build(f"unique{i}") for i in range(8)]
     results = await asyncio.gather(
@@ -167,7 +167,7 @@ async def test_concurrent_cold_opens_create_each_index_once(
     lancedb.connect(str(db_dir)).create_table(
         "document_chunks", data=[_strip(c.to_dict()) for c in _chunks("seed", 20)]
     )
-    caplog.set_level(logging.INFO, logger="agent_vault.database")
+    caplog.set_level(logging.INFO, logger="agentic_inquiry.database")
 
     writes = [manager.add_document_chunks(_chunks(f"w{i}", 20)) for i in range(16)]
     results = await asyncio.gather(*writes, return_exceptions=True)
@@ -260,7 +260,7 @@ async def test_create_table_from_schema_on_missing_table_returns(
     manager: LanceDBManager,
 ) -> None:
     # STUB: AC 10 construction (memory adapter initialize path)
-    from agent_vault.database.lancedb_schemas import get_graph_entities_schema
+    from agentic_inquiry.database.lancedb_schemas import get_graph_entities_schema
 
     await asyncio.wait_for(
         manager.create_table_from_schema("graph_entities", get_graph_entities_schema(_DIMS)),
@@ -342,7 +342,7 @@ async def test_maintenance_concurrent_with_writes_keeps_every_row(
 ) -> None:
     # STUB: AC 14
     await manager.add_graph_entities(_entities("seed"), project_id="demo")
-    caplog.set_level(logging.WARNING, logger="agent_vault.database.lancedb_manager")
+    caplog.set_level(logging.WARNING, logger="agentic_inquiry.database.lancedb_manager")
 
     async def maintain() -> Dict[str, Any]:
         return await manager.run_maintenance(

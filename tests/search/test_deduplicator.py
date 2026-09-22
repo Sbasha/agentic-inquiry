@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.search.deduplicator import SearchDeduplicator
+from agentic_inquiry.search.deduplicator import SearchDeduplicator
 
 
 class TestSearchDeduplicator:
@@ -166,7 +166,7 @@ class TestSearchDeduplicator:
         import logging
         
         # Set log level for the specific logger
-        caplog.set_level(logging.WARNING, logger="agent_vault.search.deduplicator")
+        caplog.set_level(logging.WARNING, logger="agentic_inquiry.search.deduplicator")
         
         # Use max_results_per_file=3 to keep multiple results from same file
         deduplicator = SearchDeduplicator(

@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.mcp.utils.facets import generate_facets, generate_refinement_suggestions
+from agentic_inquiry.mcp.utils.facets import generate_facets, generate_refinement_suggestions
 
 
 def test_generate_facets_empty_results():

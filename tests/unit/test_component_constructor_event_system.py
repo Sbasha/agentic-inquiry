@@ -14,12 +14,12 @@ import pytest_asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config
-from agent_vault.events.system import EventSystem
-from agent_vault.search.service import SearchService
-from agent_vault.parsers.chain import ParserChain
-from agent_vault.watching.watcher import FileWatcher
-from agent_vault.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.config import Config
+from agentic_inquiry.events.system import EventSystem
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.parsers.chain import ParserChain
+from agentic_inquiry.watching.watcher import FileWatcher
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
 
 
 @pytest_asyncio.fixture

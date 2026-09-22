@@ -1,5 +1,5 @@
 ---
-title: "Extending Agent-Vault"
+title: "Extending Agentic Inquiry"
 tier: 3
 audience: developer
 journey: ["extension-developer"]
@@ -7,17 +7,17 @@ related: ["../architecture/design-decisions.md", "../api-reference/api.md"]
 last_updated: 2026-02-16
 ---
 
-# Extending Agent-Vault
+# Extending Agentic Inquiry
 
 ## Overview
 
-Agent-Vault is designed to be extensible at multiple levels. You can customize parsers to handle new file formats, implement custom embedding models for domain-specific search, tune search behavior for your use case, and even integrate alternative storage backends.
+Agentic Inquiry is designed to be extensible at multiple levels. You can customize parsers to handle new file formats, implement custom embedding models for domain-specific search, tune search behavior for your use case, and even integrate alternative storage backends.
 
 This guide covers all extension points with consistent patterns and examples.
 
 ## Extension Points
 
-Agent-Vault provides four primary extension points:
+Agentic Inquiry provides four primary extension points:
 
 1. **Custom Parsers** - Handle specialized file formats or extraction strategies
 2. **Custom Embeddings** - Use domain-specific or external embedding models
@@ -26,23 +26,23 @@ Agent-Vault provides four primary extension points:
 
 ## Plugin System
 
-**Primary Interface**: Users interact with Agent-Vault through Claude Code plugin skills, not direct API calls.
+**Primary Interface**: Users interact with Agentic Inquiry through Claude Code plugin skills, not direct API calls.
 
 Plugin skills (installed via `.claude/settings.json`):
-- `/agv:search <query>` - Semantic search across code and docs
-- `/agv:index <path>` - Index a codebase
-- `/agv:onboard <path>` - AI-powered codebase onboarding
-- `/agv:entity <name>` - Understand a code entity
-- `/agv:impact <symbol>` - Analyze change impact
-- `/agv:lineage <symbol>` - Trace data flow
-- `/agv:memory` - Save/recall project insights
-- `/agv:setup` - Configure storage backend
-- `/agv:env` - Manage environments
-- `/agv:status` - Show project state
+- `/ai:search <query>` - Semantic search across code and docs
+- `/ai:index <path>` - Index a codebase
+- `/ai:onboard <path>` - AI-powered codebase onboarding
+- `/ai:entity <name>` - Understand a code entity
+- `/ai:impact <symbol>` - Analyze change impact
+- `/ai:lineage <symbol>` - Trace data flow
+- `/ai:memory` - Save/recall project insights
+- `/ai:setup` - Configure storage backend
+- `/ai:env` - Manage environments
+- `/ai:status` - Show project state
 
-Developer skills: `/agv-dev:coding-guidelines`, `/agv-dev:testing`, `/agv-dev:quality`, `/agv-dev:review`, `/agv-dev:commit`
+Developer skills: `/ai-dev:coding-guidelines`, `/ai-dev:testing`, `/ai-dev:quality`, `/ai-dev:review`, `/ai-dev:commit`
 
-Plugins are located in `extensions/claude/agv/` and `extensions/claude/agv-dev/`. The CLI (`agv` command) is available for scripting and automation, but plugin skills are the recommended interface for interactive use. Repo-local `.github/` and `.codex/` mirrors point back to the same canonical Claude tree for Copilot and Codex installs.
+Plugins are located in `extensions/claude/ai/` and `extensions/claude/ai-dev/`. The CLI (`ai` command) is available for scripting and automation, but plugin skills are the recommended interface for interactive use. Repo-local `.github/` and `.codex/` mirrors point back to the same canonical Claude tree for Copilot and Codex installs.
 
 ## Custom Parsers
 
@@ -62,7 +62,7 @@ Create custom parsers to handle specialized file formats, extract domain-specifi
 Parsers follow a simple protocol:
 
 ```python
-from agent_vault.parsers.models import ParsedDocument
+from agentic_inquiry.parsers.models import ParsedDocument
 
 class MyParser:
     def can_parse(self, path: str) -> bool:
@@ -82,7 +82,7 @@ Minimal custom parser for CSV files:
 ```python
 import csv
 from pathlib import Path
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
 
 class CSVParser:
     """Parse CSV files into structured chunks."""
@@ -180,7 +180,7 @@ chunk = ParserChunk(
 Use the `@register_parser` decorator:
 
 ```python
-from agent_vault.parsers.executor import register_parser
+from agentic_inquiry.parsers.executor import register_parser
 
 @register_parser("csv")
 class CSVParser:
@@ -195,7 +195,7 @@ class CSVParser:
 Then use in parser chains:
 
 ```python
-from agent_vault.parsers.chain import ParserChain
+from agentic_inquiry.parsers.chain import ParserChain
 
 chain = ParserChain(["csv", "unified_code", "fallback_text"])
 doc = chain.parse("data.csv")
@@ -230,7 +230,7 @@ Implement custom embedders to use specialized models, integrate with external se
 All embedders must implement the `Embedder` abstract base class:
 
 ```python
-from agent_vault.embeddings.base import Embedder
+from agentic_inquiry.embeddings.base import Embedder
 from typing import List
 
 class MyEmbedder(Embedder):
@@ -248,7 +248,7 @@ class MyEmbedder(Embedder):
 Simple custom embedder using OpenAI's API:
 
 ```python
-from agent_vault.embeddings.base import Embedder
+from agentic_inquiry.embeddings.base import Embedder
 from typing import List
 import openai
 import os
@@ -279,7 +279,7 @@ class OpenAIEmbedder(Embedder):
 Basic template for custom embedders:
 
 ```python
-from agent_vault.embeddings.base import Embedder
+from agentic_inquiry.embeddings.base import Embedder
 from typing import List
 import logging
 
@@ -332,7 +332,7 @@ class CustomEmbedder(Embedder):
 Register your embedder with the global registry:
 
 ```python
-from agent_vault.embeddings.registry import embedding_registry
+from agentic_inquiry.embeddings.registry import embedding_registry
 
 # Create your embedder
 my_embedder = CustomEmbedder(model_name="my-model", ndims=768)
@@ -398,7 +398,7 @@ class BatchedEmbedder(Embedder):
 
 ### Overview
 
-Agent-Vault provides hybrid search combining vector similarity and full-text search with graph-aware ranking. Tune search behavior for optimal results in your specific use case.
+Agentic Inquiry provides hybrid search combining vector similarity and full-text search with graph-aware ranking. Tune search behavior for optimal results in your specific use case.
 
 **Use cases:**
 - Optimize search relevance for your domain
@@ -413,7 +413,7 @@ Agent-Vault provides hybrid search combining vector similarity and full-text sea
 Basic search tuning via configuration:
 
 ```yaml
-# agent-vault.yaml
+# agentic-inquiry.yaml
 search:
   default_limit: 10
   max_limit: 100
@@ -475,7 +475,7 @@ search:
 Filter results by metadata:
 
 ```python
-from agent_vault.search.service import SearchService
+from agentic_inquiry.search.service import SearchService
 
 # Filter by file type
 results = await search_service.hybrid_search(
@@ -563,7 +563,7 @@ search:
 
 ### Overview
 
-Agent-Vault supports multiple storage backends for different deployment scenarios. Choose based on your requirements for scale, infrastructure, and embedding strategy.
+Agentic Inquiry supports multiple storage backends for different deployment scenarios. Choose based on your requirements for scale, infrastructure, and embedding strategy.
 
 **Use cases:**
 - Local development with embedded database (LanceDB)
@@ -597,7 +597,7 @@ Best for local development and prototyping:
 - **Columnar**: Efficient storage and query performance
 - **Integrated**: Vector + FTS + metadata in one system
 
-Configure LanceDB via `agent-vault.yaml`:
+Configure LanceDB via `agentic-inquiry.yaml`:
 
 ```yaml
 storage:
@@ -623,8 +623,8 @@ storage:
       embedding_dim: 384
       host: localhost
       port: 5432
-      database: agent-vault
-      user: agv_user
+      database: agentic-inquiry
+      user: ai_user
       password: ${POSTGRES_PASSWORD}
       pool_size: 10
       max_overflow: 5
@@ -644,8 +644,8 @@ storage:
       embedding_model: all-MiniLM-L6-v2
       embedding_dim: 384
       instance_connection_name: project:region:instance
-      database: agent-vault
-      user: agv_user
+      database: agentic-inquiry
+      user: ai_user
       password: ${GCP_PASSWORD}
       pool_size: 5  # CloudSQL has max_connections=25
       max_overflow: 2
@@ -667,7 +667,7 @@ storage:
       embedding_model: text-embedding-005
       embedding_dim: 768
       instance_connection_name: projects/PROJECT/locations/REGION/clusters/CLUSTER/instances/INSTANCE
-      database: agent-vault
+      database: agentic-inquiry
       user: postgres
       password: ${ALLOYDB_PASSWORD}
       pool_size: 10
@@ -690,7 +690,7 @@ storage:
 The `StorageFacade` class provides the unified storage interface:
 
 ```python
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.storage.facade import StorageFacade
 
 class StorageFacade:
     """Unified storage interface across all backends."""
@@ -728,7 +728,7 @@ class StorageFacade:
 For local embedding (LanceDB, PostgreSQL, CloudSQL):
 ```python
 # Generate embedding locally
-from agent_vault.embeddings.service import EmbeddingService
+from agentic_inquiry.embeddings.service import EmbeddingService
 embedding_service = EmbeddingService(config)
 query_vector = await embedding_service.embed_async(query_text)
 
@@ -786,9 +786,9 @@ Create provider classes implementing the storage protocols. You need both a Vect
 
 ```python
 from typing import Any, Dict, List, Optional, Union
-from agent_vault.storage.base import BaseVectorProvider
-from agent_vault.search.results import SearchResult
-from agent_vault.config import BackendConfig
+from agentic_inquiry.storage.base import BaseVectorProvider
+from agentic_inquiry.search.results import SearchResult
+from agentic_inquiry.config import BackendConfig
 
 class CustomVectorProvider(BaseVectorProvider):
     """Custom vector storage backend implementation.
@@ -894,7 +894,7 @@ class CustomVectorProvider(BaseVectorProvider):
 **GraphProvider Example:**
 
 ```python
-from agent_vault.storage.base import BaseGraphProvider
+from agentic_inquiry.storage.base import BaseGraphProvider
 
 class CustomGraphProvider(BaseGraphProvider):
     """Custom graph storage backend implementation.
@@ -919,8 +919,8 @@ class CustomGraphProvider(BaseGraphProvider):
 Register your custom provider and use it via StorageFacade:
 
 ```python
-from agent_vault.storage.facade import StorageFacade
-from agent_vault.storage.registry import StorageRegistry
+from agentic_inquiry.storage.facade import StorageFacade
+from agentic_inquiry.storage.registry import StorageRegistry
 
 # Register your custom providers
 registry = StorageRegistry()
@@ -930,7 +930,7 @@ registry.register_backend(
     graph_provider_class=CustomGraphProvider,
 )
 
-# Configure in agent-vault.yaml
+# Configure in agentic-inquiry.yaml
 # storage:
 #   backend: custom
 #   backends:
@@ -942,7 +942,7 @@ registry.register_backend(
 #       connection_string: "..."
 
 # Use via facade
-from agent_vault.config import Config
+from agentic_inquiry.config import Config
 
 config = Config.load()
 facade = await StorageFacade.from_config(config, project_id="my-project")
@@ -1031,7 +1031,7 @@ See `storage/providers/postgresql/` for the production-ready implementation used
 ```python
 import pytest
 from pathlib import Path
-from agent_vault.parsers.models import ParsedDocument
+from agentic_inquiry.parsers.models import ParsedDocument
 
 def test_parser_basic():
     parser = CustomParser()
@@ -1098,4 +1098,4 @@ def test_search_configuration():
 - [Architecture Overview](../architecture/overview.md) - System architecture
 - [API Reference](../api-reference/api.md) - Complete API documentation
 - [Adapter Implementation Guide](../development/adapter-implementation-guide.md) - Detailed backend implementation guide
-- [Storage Providers](../../agent-vault/storage/providers/) - Reference implementations
+- [Storage Providers](../../agentic-inquiry/storage/providers/) - Reference implementations

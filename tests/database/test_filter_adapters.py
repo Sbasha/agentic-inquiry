@@ -1,6 +1,6 @@
 """Unit tests for backend-agnostic filter translator adapters.
 
-Covers the contract in :mod:`agent_vault.database.filters.protocol` and
+Covers the contract in :mod:`agentic_inquiry.database.filters.protocol` and
 the three concrete adapters. The parametrized-SQL output for the Postgres
 adapter is the main new surface — these tests pin the shape (fragment,
 params, next_index) and guarantee injection-safe field handling.
@@ -12,7 +12,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.database.filters import (
+from agentic_inquiry.database.filters import (
     LanceDBFilterAdapter,
     MemoryFilterAdapter,
     PostgresFilter,
@@ -59,7 +59,7 @@ class TestNormalizeToAST:
         assert normalize_to_ast({"score": (">", 0.5)}) == gt("score", 0.5)
         assert normalize_to_ast({"score": (">=", 0.5)}) == (
             __import__(
-                "agent_vault.database.filters",
+                "agentic_inquiry.database.filters",
                 fromlist=["gte"],
             ).gte("score", 0.5)
         )
@@ -321,7 +321,7 @@ class TestMemoryIncomparableLogging:
     def test_lt_logs_on_type_mismatch(self, caplog):
         import logging
 
-        caplog.set_level(logging.DEBUG, logger="agent_vault.database.filters.memory_adapter")
+        caplog.set_level(logging.DEBUG, logger="agentic_inquiry.database.filters.memory_adapter")
         pred = MemoryFilterAdapter().translate(lt("x", 5))
         assert pred is not None
         assert pred({"x": "not-a-number"}) is False
@@ -340,9 +340,9 @@ class TestLanceDBProjectIDEscaping:
     """
 
     def test_single_quote_in_project_id_is_escaped(self):
-        from agent_vault.database.filters import and_ as _and_
-        from agent_vault.database.filters import eq as _eq
-        from agent_vault.database.filters import translate_filter
+        from agentic_inquiry.database.filters import and_ as _and_
+        from agentic_inquiry.database.filters import eq as _eq
+        from agentic_inquiry.database.filters import translate_filter
 
         combined = _and_(_eq("project_id", "alice's-proj"), _eq("x", 1))
         expr = translate_filter(combined)

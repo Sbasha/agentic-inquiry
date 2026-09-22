@@ -5,9 +5,9 @@ name: LanceDB
 description: Local embedded vector database with zero configuration
 type: lancedb
 requires_setup: false
-mcp_server: agv-test
+mcp_server: ai-test
 config_file: config/test-lancedb.yaml
-data_directory: .agv/test/
+data_directory: .agentic-inquiry/test/
 port: null
 
 maintenance:
@@ -23,9 +23,9 @@ setup:
 teardown:
   steps:
     - description: Remove test data directory
-      command: rm -rf .agv/test/
+      command: rm -rf .agentic-inquiry/test/
   cleanup_files:
-    - .agv/test/
+    - .agentic-inquiry/test/
 ---
 
 ## Overview
@@ -54,7 +54,7 @@ Standard test configuration is at `config/test-lancedb.yaml`:
 
 ```yaml
 storage:
-  root: ".agv/test/"
+  root: ".agentic-inquiry/test/"
   backends:
     default:
       type: lancedb
@@ -67,9 +67,9 @@ storage:
 
 ```bash
 # Set config path
-export agv_CONFIG_PATH=config/test-lancedb.yaml
+export AI_CONFIG_PATH=config/test-lancedb.yaml
 
-# Run tests using the agv-test MCP server
+# Run tests using the ai-test MCP server
 # (MCP tools will use local LanceDB automatically)
 ```
 
@@ -81,7 +81,7 @@ LanceDB requires periodic maintenance to compact data and reclaim disk space. Th
 
 ```bash
 # Check data directory size
-du -sh .agv/test/
+du -sh .agentic-inquiry/test/
 
 # Check available disk space
 df -h .
@@ -101,18 +101,18 @@ Use the CLI maintenance command:
 
 ```bash
 # Run all maintenance operations
-agv maintenance run --operation all
+ai maintenance run --operation all
 
 # With custom config file
-agv maintenance run --config config/test-lancedb.yaml --operation all
+ai maintenance run --config config/test-lancedb.yaml --operation all
 ```
 
 Or manually compact:
 
 ```bash
 # Remove stale data files
-find .agv/test/ -name "*.tmp" -delete
-find .agv/test/ -name "*.lock" -mmin +60 -delete
+find .agentic-inquiry/test/ -name "*.tmp" -delete
+find .agentic-inquiry/test/ -name "*.lock" -mmin +60 -delete
 ```
 
 ### When to Run Maintenance
@@ -128,10 +128,10 @@ Remove all test data:
 
 ```bash
 # Remove test data directory
-rm -rf .agv/test/
+rm -rf .agentic-inquiry/test/
 
 # Verify cleanup
-ls -la .agv/test/ 2>/dev/null || echo "Clean"
+ls -la .agentic-inquiry/test/ 2>/dev/null || echo "Clean"
 ```
 
 ## Troubleshooting
@@ -142,10 +142,10 @@ If tests fail to clean up:
 
 ```bash
 # Force remove with sudo if permissions issue
-sudo rm -rf .agv/test/
+sudo rm -rf .agentic-inquiry/test/
 
 # Or check for processes holding files
-lsof +D .agv/test/
+lsof +D .agentic-inquiry/test/
 ```
 
 ### Disk Space Issues
@@ -155,7 +155,7 @@ If disk space is exhausted:
 1. Stop all tests immediately
 2. Run aggressive cleanup:
    ```bash
-   rm -rf .agv/test/
+   rm -rf .agentic-inquiry/test/
    ```
 3. Free up system disk space if needed
 4. Restart with smaller test scope
@@ -166,7 +166,7 @@ If LanceDB reports corruption:
 
 ```bash
 # Remove and recreate
-rm -rf .agv/test/
+rm -rf .agentic-inquiry/test/
 # Data will be recreated on next test run
 ```
 

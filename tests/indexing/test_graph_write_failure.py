@@ -11,10 +11,10 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from agent_vault.cli.index import exit_code_for_index_result
-from agent_vault.exceptions import StorageError
-from agent_vault.indexing.relationship_batch_processor import RelationshipBatchProcessor
-from agent_vault.models.graph_relationship import GraphRelationship
+from agentic_inquiry.cli.index import exit_code_for_index_result
+from agentic_inquiry.exceptions import StorageError
+from agentic_inquiry.indexing.relationship_batch_processor import RelationshipBatchProcessor
+from agentic_inquiry.models.graph_relationship import GraphRelationship
 
 pytestmark = pytest.mark.unit
 
@@ -54,7 +54,7 @@ async def test_commit_batch_does_not_swallow_graph_write_error() -> None:
 @pytest.mark.asyncio
 async def test_graph_builder_commit_batch_does_not_swallow_error() -> None:
     # STUB: AC2
-    from agent_vault.indexing.graph_builder import GraphBuilder
+    from agentic_inquiry.indexing.graph_builder import GraphBuilder
 
     db_manager = MagicMock()
     db_manager.add_graph_relationships = AsyncMock(
@@ -77,8 +77,8 @@ async def test_graph_builder_commit_batch_does_not_swallow_error() -> None:
 
 def test_graph_write_failure_with_chunks_exits_1_and_names_error() -> None:
     # STUB: AC2
-    from agent_vault.indexing.models import IndexingResult
-    from agent_vault.indexing.pipeline import _graph_write_indexing_error
+    from agentic_inquiry.indexing.models import IndexingResult
+    from agentic_inquiry.indexing.pipeline import _graph_write_indexing_error
 
     err = _graph_write_indexing_error(StorageError(_GRAPH_ERROR))
     result = IndexingResult(

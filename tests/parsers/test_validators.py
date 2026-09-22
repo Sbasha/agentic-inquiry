@@ -2,8 +2,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.exceptions import ParsingError
-from agent_vault.parsers import (
+from agentic_inquiry.exceptions import ParsingError
+from agentic_inquiry.parsers import (
     ParserChunk,
     ParsedDocument,
     assert_valid_chunks,

@@ -50,7 +50,7 @@ class GraphProtocol(Protocol):
 - Documentation in AGENTS.md "Architecture" section
 
 ## References
-- `agent_vault/storage/protocols/` - Protocol definitions
-- `agent_vault/storage/providers/lancedb.py` - Reference implementation
+- `agentic_inquiry/storage/protocols/` - Protocol definitions
+- `agentic_inquiry/storage/providers/lancedb.py` - Reference implementation
 - AGENTS.md "Architecture Principles" section
 - Retrospective: 05-ARCHITECTURE-DECISION-ANALYSIS.md

@@ -6,15 +6,15 @@ pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 from datetime import datetime
 
-from agent_vault.database.results import SearchResult
-from agent_vault.mcp.services.context_builder import (
+from agentic_inquiry.database.results import SearchResult
+from agentic_inquiry.mcp.services.context_builder import (
     ContextBuilder,
     ContextItem,
     TokenBudget
 )
-from agent_vault.mcp.services.token_optimizer import TokenOptimizer
-from agent_vault.mcp.models.session import Session, SessionState
-from agent_vault.memory.models import MemoryItem, MemoryContext, MemoryTier, RetrievalResult
+from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
+from agentic_inquiry.mcp.models.session import Session, SessionState
+from agentic_inquiry.memory.models import MemoryItem, MemoryContext, MemoryTier, RetrievalResult
 
 
 @pytest.fixture

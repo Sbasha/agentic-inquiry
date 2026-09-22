@@ -1,12 +1,12 @@
-# Agent-Vault Default Configuration
+# Agentic Inquiry Default Configuration
 # This file contains sensible defaults for all configuration options.
-# To customize settings, create a agent-vault.yaml file in your project root.
+# To customize settings, create a agentic-inquiry.yaml file in your project root.
 
 # Storage configuration
 storage:
   # Root directory for all persistent data
   # All storage components will store data under this directory
-  root: "./.agv"
+  root: "./.agentic-inquiry"
 
   # Default project identifier for data isolation
   # Used when no explicit project_id is provided to Config.for_project()
@@ -65,7 +65,7 @@ storage:
     # LanceDB-specific configuration (used when provider is "lancedb")
     lancedb:
       # Path relative to storage.root (inherits from storage.lancedb.path if not set)
-      path: "${AGV_STORAGE_ROOT:-./.agv}/lancedb"
+      path: "${AI_STORAGE_ROOT:-./.agentic-inquiry}/lancedb"
 
   # Graph storage provider configuration
   graph:
@@ -85,7 +85,7 @@ storage:
     # SQLite-specific configuration (used when provider is "sqlite")
     sqlite:
       # Path relative to storage.root
-      path: "${AGV_STORAGE_ROOT:-./.agv}/agent-vault.db"
+      path: "${AI_STORAGE_ROOT:-./.agentic-inquiry}/agentic-inquiry.db"
 
   # Feature flag for StorageFacade migration
   # When true, internal services use the new StorageFacade abstraction
@@ -694,7 +694,7 @@ connectors:
     change_detection_enabled: true
 
     # Enable real-time file watching for incremental indexing
-    # Set AGV_CONNECTORS_FILESYSTEM_WATCH_ENABLED=false to disable for CI/CD
+    # Set AI_CONNECTORS_FILESYSTEM_WATCH_ENABLED=false to disable for CI/CD
     watch_enabled: true
 
   # Remote connector content caching (for S3, GCS, GitHub, etc.)

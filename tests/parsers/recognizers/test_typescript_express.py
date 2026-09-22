@@ -15,12 +15,12 @@ from pathlib import Path
 
 import pytest
 
-from agent_vault.parsers.models import (
+from agentic_inquiry.parsers.models import (
     ParsedDocument,
     ParserChunk,
     ParserRelationship,
 )
-from agent_vault.parsers.recognizers.typescript_express import (
+from agentic_inquiry.parsers.recognizers.typescript_express import (
     TypeScriptExpressRecognizer,
 )
 
@@ -723,7 +723,7 @@ app.post('/users', createUser);
 """
         file_path = _write_ts(tmp_path, src, name="app.ts")
 
-        from agent_vault.parsers.chain import ParserChain
+        from agentic_inquiry.parsers.chain import ParserChain
 
         chain = ParserChain.from_config()
         parsed = await chain.parse(str(file_path))

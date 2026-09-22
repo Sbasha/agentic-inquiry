@@ -1,6 +1,6 @@
 # Security Best Practices
 
-This document outlines security best practices for developing with and extending Agent-Vault, focusing on injection prevention, path validation, and secure coding patterns.
+This document outlines security best practices for developing with and extending Agentic Inquiry, focusing on injection prevention, path validation, and secure coding patterns.
 
 ## Filter Construction Security
 
@@ -23,11 +23,11 @@ This vulnerability allows malicious input to:
 
 ### The Solution: Filter AST
 
-Agent-Vault provides a **Filter AST** (`agent_vault.database.filters`) for injection-safe filter construction:
+Agentic Inquiry provides a **Filter AST** (`agentic_inquiry.database.filters`) for injection-safe filter construction:
 
 ```python
 # ✅ SAFE: Using Filter AST
-from agent_vault.database.filters import eq
+from agentic_inquiry.database.filters import eq
 
 filter_ast = eq("doc_id", user_input)  # Type-validated, auto-escaped at translation time
 # Translates to: doc_id = 'escaped_value' (safe)
@@ -55,7 +55,7 @@ This allows simple fields (`status`, `project_id`) and nested fields (`metadata.
 Only safe types are permitted: `str`, `int`, `float`, `bool`, `None`, and lists of these types.
 
 ```python
-from agent_vault.database.filters import eq, is_in
+from agentic_inquiry.database.filters import eq, is_in
 
 eq("score", 0.5)              # Valid
 eq("language", "python")      # Valid
@@ -68,7 +68,7 @@ eq("data", {"key": "value"})  # Raises ValueError: unsupported type
 Backend adapters translate the AST to native queries with proper escaping:
 
 ```python
-from agent_vault.database.filters import eq
+from agentic_inquiry.database.filters import eq
 
 # Input with single quotes
 filter_ast = eq("name", "O'Brien")
@@ -80,7 +80,7 @@ filter_ast = eq("name", "O'Brien")
 NULL comparisons must use dedicated operators:
 
 ```python
-from agent_vault.database.filters import is_null, is_not_null
+from agentic_inquiry.database.filters import is_null, is_not_null
 
 is_null("deleted_at")         # Valid: deleted_at IS NULL
 is_not_null("project_id")     # Valid: project_id IS NOT NULL
@@ -94,7 +94,7 @@ eq("field", None)             # Raises ValueError: use is_null() instead
 Use these functions instead of constructing Filter directly:
 
 ```python
-from agent_vault.database.filters import (
+from agentic_inquiry.database.filters import (
     eq, ne, gt, gte, lt, lte,  # Comparison
     is_in, not_in,             # Set membership
     is_null, is_not_null,      # NULL checks
@@ -122,7 +122,7 @@ and_(
 Empty lists have defined semantics:
 
 ```python
-from agent_vault.database.filters import is_in, not_in
+from agentic_inquiry.database.filters import is_in, not_in
 
 is_in("type", [])      # Evaluates to FALSE (no matches)
 not_in("type", [])     # Evaluates to TRUE (no restrictions)
@@ -131,7 +131,7 @@ not_in("type", [])     # Evaluates to TRUE (no restrictions)
 #### Combining Filters
 
 ```python
-from agent_vault.database.filters import and_, or_, eq, gt, is_in
+from agentic_inquiry.database.filters import and_, or_, eq, gt, is_in
 
 # AND: all conditions must match
 filter_ast = and_(
@@ -161,8 +161,8 @@ filter_ast = and_(
 Filter AST integrates with storage providers:
 
 ```python
-from agent_vault.search import SearchService
-from agent_vault.database.filters import and_, eq, gt
+from agentic_inquiry.search import SearchService
+from agentic_inquiry.database.filters import and_, eq, gt
 
 # Create filter
 filter_ast = and_(
@@ -192,7 +192,7 @@ filter_expr = f"project_id = '{project_id}' AND score > 0.5"
 **After (safe):**
 ```python
 # ✅ SAFE
-from agent_vault.database.filters import and_, eq, gt
+from agentic_inquiry.database.filters import and_, eq, gt
 
 filter_ast = and_(
     eq("project_id", user_input),  # Validated and escaped
@@ -205,7 +205,7 @@ filter_ast = and_(
 Filter AST provides clear validation errors:
 
 ```python
-from agent_vault.database.filters import eq, is_in
+from agentic_inquiry.database.filters import eq, is_in
 
 try:
     eq("field; DROP TABLE", "value")  # Invalid field name
@@ -236,7 +236,7 @@ Use the built-in path validation utility:
 
 ```python
 # ✅ SAFE: Path validation
-from agent_vault.mcp.utils.validation import validate_file_path
+from agentic_inquiry.mcp.utils.validation import validate_file_path
 
 try:
     validated_path = validate_file_path(user_input, project_root)
@@ -326,13 +326,13 @@ Use environment variables instead:
 
 ```bash
 # ✅ GOOD: Environment variables
-export AGV_EMBEDDINGS_API_KEY="sk-1234567890abcdef"
+export AI_EMBEDDINGS_API_KEY="sk-1234567890abcdef"
 ```
 
 ```yaml
 # Config references environment variable
 embeddings:
-  api_key: ${AGV_EMBEDDINGS_API_KEY}
+  api_key: ${AI_EMBEDDINGS_API_KEY}
 ```
 
 ### .gitignore Configuration
@@ -340,10 +340,10 @@ embeddings:
 Ensure sensitive files are gitignored:
 
 ```gitignore
-# Agent-Vault
-agent-vault.yaml
+# Agentic Inquiry
+agentic-inquiry.yaml
 .env
-.agv/
+.agentic-inquiry/
 
 # API keys and secrets
 *.key
@@ -408,9 +408,9 @@ logger.info("Processing file: %s", safe_path)
 
 ## Security Checklist
 
-When developing with Agent-Vault:
+When developing with Agentic Inquiry:
 
-- [ ] Use **Filter AST** (`agent_vault.database.filters`) for all database filter construction
+- [ ] Use **Filter AST** (`agentic_inquiry.database.filters`) for all database filter construction
 - [ ] Use `validate_file_path()` for all file path operations
 - [ ] Use `secrets.compare_digest()` for API key comparison
 - [ ] Store sensitive configuration in environment variables
@@ -425,7 +425,7 @@ When developing with Agent-Vault:
 
 ## Reporting Security Issues
 
-If you discover a security vulnerability in Agent-Vault:
+If you discover a security vulnerability in Agentic Inquiry:
 
 1. **Do not** open a public GitHub issue
 2. Email security concerns to the maintainers

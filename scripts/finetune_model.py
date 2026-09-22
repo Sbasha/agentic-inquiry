@@ -135,7 +135,7 @@ def export_to_onnx(model_path: Path, output_path: Path, quantize: bool = False):
 
 def save_metadata(model_dir: Path, model_id: str, dimensions: int):
     \"\"\"Save metadata for LocalModelEmbedder compatibility.\"\"\"
-    # We need to reach into agent-vault to use the metadata class if possible
+    # We need to reach into agentic-inquiry to use the metadata class if possible
     # but for a standalone script, we can just write the JSON.
     metadata = {
         "model_id": model_id,

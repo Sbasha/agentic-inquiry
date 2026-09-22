@@ -16,13 +16,13 @@ LanceDB write serialization and FTS index shape).
 
 An operator who indexes a project into a local LanceDB environment, then
 saves memories against that same environment, gets one of two honest
-outcomes from `agv index`: the graph-relationship write finishes, or the
+outcomes from `ai index`: the graph-relationship write finishes, or the
 command exits 1 with a message that names the graph write failure (even
-when document chunks already exist). `agv memory save` exits 0 only when
+when document chunks already exist). `ai memory save` exits 0 only when
 that memory can be listed or recalled for the same project afterward.
-On Darwin, when `AGV_EMBEDDING_DEVICE` is unset, `agv index` and
-`agv memory save` print one stderr line pointing at the CPU hatch in
-`.agv/envs/<name>/.env` before the embedding model loads.
+On Darwin, when `AI_EMBEDDING_DEVICE` is unset, `ai index` and
+`ai memory save` print one stderr line pointing at the CPU hatch in
+`.agentic-inquiry/envs/<name>/.env` before the embedding model loads.
 
 Indexing a real repository of at least 1,400 files into a local LanceDB
 environment exits 0 with no write-conflict failures. Writes, index
@@ -38,7 +38,7 @@ version `uv tool install .` resolves today (0.38.0) as well as the
 locked development version (0.25.2). The chunk embedding is computed
 from the same projection, so a token that the projection drops is
 reachable by neither FTS nor vector search; that recall question is an
-open item in `docs/backlog.md`. Re-running `agv index` over an index
+open item in `docs/backlog.md`. Re-running `ai index` over an index
 left by a failed or interrupted run completes and adds no duplicate
 keys.
 
@@ -54,16 +54,16 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
   by `(id, project_id)` (or the key columns that call site passed); keep
   the last row; log how many rows were collapsed.
 - Treat a failed graph-relationship write as an index failure: status is
-  not `completed`, `agv index` exits 1, and the printed result names the
+  not `completed`, `ai index` exits 1, and the printed result names the
   graph write failure. Chunk rows already written stay on disk.
-- Exit `agv memory save` with code 0 only after a read-back shows the
+- Exit `ai memory save` with code 0 only after a read-back shows the
   stored row for that project. Print the memory id, summary, importance,
   and tier on success.
-- Exit `agv memory save` with code 1, and do not print `Memory saved:`,
+- Exit `ai memory save` with code 1, and do not print `Memory saved:`,
   when importance is below 0.7 (working memory only) or when the row
   cannot be read back.
-- On Darwin, if `AGV_EMBEDDING_DEVICE` is unset, print one stderr line
-  naming the hatch file (`.agv/envs/<name>/.env`) before constructing
+- On Darwin, if `AI_EMBEDDING_DEVICE` is unset, print one stderr line
+  naming the hatch file (`.agentic-inquiry/envs/<name>/.env`) before constructing
   the embedder. Leave the hatch line commented in new env files.
 - Serialize writes, index creation, compaction, and version cleanup per
   table with one in-process `asyncio.Lock` per table name, owned by
@@ -82,20 +82,20 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
   a Tantivy-era `<table>.lance/_indices/fts` directory if present; it
   holds no row data and blocks or captures native FTS.
 - Keep the qualification corpus, index, logs, and receipts private under
-  `~/.agv/qualification/`. Receipts hold counts, hashes, exit codes, and
+  `~/.agentic-inquiry/qualification/`. Receipts hold counts, hashes, exit codes, and
   error-class tallies, never file contents or corpus paths beyond the
   root.
 
 ### Ask first
 
-- Uncomment `AGV_EMBEDDING_DEVICE=cpu` by default on Mac.
+- Uncomment `AI_EMBEDDING_DEVICE=cpu` by default on Mac.
 - Add a cross-process LanceDB lock (file lock, lock manager package).
 - Change `maintenance_interval_files` or the 5-minute version-cleanup
   window.
 - Repair duplicate-key rows that an earlier, unserialized writer left in
   an existing table.
 - Pass a `FileSystemConnector` with hash-based change detection from
-  `agv index` so unchanged files are skipped on re-run.
+  `ai index` so unchanged files are skipped on re-run.
 - Opt `merge_insert` into LanceDB FirstSeen (or any database-side silent
   drop) without collapsing duplicates in our writer first.
 - Change persist thresholds (episodic at 0.7, semantic at 0.9).
@@ -109,20 +109,20 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
 - Amend `docs/specs/first-run-reliability/` or reopen its four shipped
   decisions (onboard warning, index exit on chunks, retry filter, env
   file load rules).
-- Expand Salesforce indexer coverage, convert `/agv:onboard` to a Python
+- Expand Salesforce indexer coverage, convert `/ai:onboard` to a Python
   explorer, convert Gemini or Codex mirrors, or hand-edit `CHANGELOG.md`.
 
 ## Testing Strategy
 
 - Duplicate-key collapse in `_upsert_rows`, index status and exit code
-  when a graph write fails, and `agv memory save` exit codes (persisted
+  when a graph write fails, and `ai memory save` exit codes (persisted
   row vs missing row vs working-memory): **TDD**. Each is a compressible
   invariant. Storage-layer cases run against on-disk LanceDB.
 - CLI using config table names (`memory_episodic_medium` /
   `memory_semantic_high` defaults), Darwin hint gated on unset device,
   hatch line still commented in LocalSetup, and README upgrade/hatch
   paragraph: **goal-based check** (`grep` / file exists).
-- `agv memory save -i 0.85 --project <id>` then `agv memory list
+- `ai memory save -i 0.85 --project <id>` then `ai memory list
   --project <id>` on a temp LanceDB env: **visual / manual QA** of the
   built CLI.
 - Same-table write serialization, no-`optimize()` visibility, native
@@ -130,10 +130,10 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
   **TDD** against on-disk LanceDB. The storage test subset also runs
   under lancedb 0.38.0 in an isolated environment (**goal-based
   check**), because that is what `uv tool install .` resolves.
-- Full `agv index` of the supplied repository into the real partial
-  index, a fresh-process `agv status` and `agv search`, an interrupted
+- Full `ai index` of the supplied repository into the real partial
+  index, a fresh-process `ai status` and `ai search`, an interrupted
   run followed by a completing re-run, and one search-to-source journey:
-  **visual / manual QA** with receipts under `~/.agv/qualification/`.
+  **visual / manual QA** with receipts under `~/.agentic-inquiry/qualification/`.
 
 ## Acceptance Criteria
 
@@ -146,7 +146,7 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
       (including `Ambiguous merge inserts`) are not retried. When
       `add_graph_relationships` still fails after collapse, the index
       result `status` is not `completed`. `exit_code_for_index_result`
-      returns 1 even if `chunks_created > 0`. `agv index` prints a
+      returns 1 even if `chunks_created > 0`. `ai index` prints a
       message that names the graph write failure.
 - [x] Save, list, and recall share
       `config.memory.episodic_memory.table_name` and
@@ -154,26 +154,26 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
       `memory_episodic_medium` and `memory_semantic_high`). After a
       successful save, that table exists on disk under the LanceDB
       environment directory.
-- [x] Given importance `>= 0.7` and a LanceDB backend, `agv memory save`
-      exits 0 only if a subsequent `agv memory list --project <id>` or
-      `agv memory recall --project <id>` returns that memory id.
+- [x] Given importance `>= 0.7` and a LanceDB backend, `ai memory save`
+      exits 0 only if a subsequent `ai memory list --project <id>` or
+      `ai memory recall --project <id>` returns that memory id.
       Otherwise it exits 1 and does not print `Memory saved:`.
-- [x] Given importance `< 0.7`, `agv memory save` exits 1, states that
+- [x] Given importance `< 0.7`, `ai memory save` exits 1, states that
       the write is session-only and not persisted, and does not print
       `Memory saved:`.
-- [x] `agv memory save --project <id>` stores that project id on the
-      row. `agv memory list --project <id>` and `agv memory recall
+- [x] `ai memory save --project <id>` stores that project id on the
+      row. `ai memory list --project <id>` and `ai memory recall
       --project <id>` filter to that project.
-- [x] On Darwin with `AGV_EMBEDDING_DEVICE` unset, `agv index` and
-      `agv memory save` print one stderr line pointing at
-      `.agv/envs/<name>/.env` and `AGV_EMBEDDING_DEVICE=cpu` before
+- [x] On Darwin with `AI_EMBEDDING_DEVICE` unset, `ai index` and
+      `ai memory save` print one stderr line pointing at
+      `.agentic-inquiry/envs/<name>/.env` and `AI_EMBEDDING_DEVICE=cpu` before
       embedder construction. With the variable set, they do not print
       that line. New env files still contain a commented
-      `AGV_EMBEDDING_DEVICE=cpu` line.
-- [x] README documents reinstalling the global `agv` with
+      `AI_EMBEDDING_DEVICE=cpu` line.
+- [x] README documents reinstalling the global `ai` with
       `uv tool install . --reinstall` so the env-file loader is on
-      PATH, then uncommenting `AGV_EMBEDDING_DEVICE=cpu` in
-      `.agv/envs/<name>/.env` if Metal/MPS aborts.
+      PATH, then uncommenting `AI_EMBEDDING_DEVICE=cpu` in
+      `.agentic-inquiry/envs/<name>/.env` if Metal/MPS aborts.
 - [x] Given 16 concurrent `add_graph_relationships` calls on one on-disk
       table, eight of which carry the same 300 new keys, every call
       returns without error, no retryable-conflict retry is logged, and
@@ -206,29 +206,29 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
       while 16 writes to that table are in flight completes without
       error, every write completes without error, no retryable-conflict
       retry is logged, and the table holds every written row afterwards.
-- [x] `agv index <corpus>` against the real partial index (branch code,
+- [x] `ai index <corpus>` against the real partial index (branch code,
       lancedb 0.38.0) exits 0 and its `error.log` contains zero
       occurrences of `Retryable commit conflict`, `Ambiguous merge
       inserts`, and `Object at location`; any file it reports failed has
       a non-write cause named in the receipt. The uninterrupted fresh
       run of the same corpus indexes at least 32 files per minute, twice
-      the failed run's rate. A fresh `agv status`
+      the failed run's rate. A fresh `ai status`
       process reports counts equal to the on-disk row counts, and a
-      fresh `agv search` process returns results with `file_path` values
+      fresh `ai search` process returns results with `file_path` values
       that exist in the corpus. Receipts record the command, exit code,
       wall-clock, stdout and stderr hashes, reported summary, and
       error-class tallies; a redacted summary is committed under
       `notes/`.
-- [x] A second `agv index` of the same corpus over the same index exits
+- [x] A second `ai index` of the same corpus over the same index exits
       0; the number of distinct `(id, project_id)` keys in
       `document_chunks` and `graph_entities` is unchanged, and the count
       of duplicate-key rows in every table does not grow.
       `graph_relationships` may gain keys on a re-run (the graph builder
       resolves against the entities the first run stored; recorded in
-      `docs/backlog.md`). An `agv index` run killed with SIGTERM mid-way,
+      `docs/backlog.md`). An `ai index` run killed with SIGTERM mid-way,
       followed by a full re-run, ends with the same distinct chunk and
       entity key counts as the uninterrupted run.
-- [x] One `agv search` query on the qualified index returns a result
+- [x] One `ai search` query on the qualified index returns a result
       whose `file_path` and line range point at a corpus file that
       contains the returned content; the receipt records the query, the
       returned `file_path`, line range, and SHA-256 of that corpus file.
@@ -237,16 +237,16 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
 
 - Technical: `add_graph_relationships` upserts on `["id", "project_id"]`
   via `merge_insert`; retry matches only `commit conflict` / `Retryable`
-  (source: `agent_vault/database/lancedb_manager.py`).
+  (source: `agentic_inquiry/database/lancedb_manager.py`).
 - Technical: relationship ids are a deterministic `edge_` + 8-hex-char
   hash of `source_id:target_id:type`; the pending-relationship queue
-  allows duplicate entries (source: `agent_vault/indexing/graph_builder.py`;
+  allows duplicate entries (source: `agentic_inquiry/indexing/graph_builder.py`;
   `tests/indexing/test_relationship_queue_manager.py`).
 - Technical: relationship batch commit logs the error and returns
   `False` without failing the index; pipeline flush does not fail the
   operation on relationship flush errors (source:
-  `agent_vault/indexing/relationship_batch_processor.py`;
-  `agent_vault/indexing/pipeline.py`).
+  `agentic_inquiry/indexing/relationship_batch_processor.py`;
+  `agentic_inquiry/indexing/pipeline.py`).
 - Technical: LanceDB `merge_insert` fails closed on duplicate source
   join keys by default; Python 0.25.2 docs do not document
   `source_dedupe_behavior` on `LanceMergeInsertBuilder` (source:
@@ -264,9 +264,9 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
   the same new key both take the not-matched branch (source: the
   failed run's `error.log`, tallied in receipt
   `00-real-partial-index-inspect` and the baseline receipt `01-*` under
-  `~/.agv/qualification/index-durability-20260921/receipts/`;
-  `agent_vault/database/lancedb_manager.py` `_flush_table`;
-  `agent_vault/indexing/pipeline.py`; synthetic probe on 0.25.2 and
+  `~/.agentic-inquiry/qualification/index-durability-20260921/receipts/`;
+  `agentic_inquiry/database/lancedb_manager.py` `_flush_table`;
+  `agentic_inquiry/indexing/pipeline.py`; synthetic probe on 0.25.2 and
   0.38.0, 2026-09-21).
 - Technical: `merge_insert` against a target that already holds two
   rows for one key does not raise; both copies take the new payload
@@ -277,12 +277,12 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
   language keywords, bare numbers, and single characters, capped at
   1,000 words; document chunks use `_generate_fts_text`; plain text uses
   the content itself (source:
-  `agent_vault/parsers/implementations/unified_code.py`,
+  `agentic_inquiry/parsers/implementations/unified_code.py`,
   `document.py`, `fallback_text.py`). The chunk embedding text is
   `fts_text or content` (source:
-  `agent_vault/indexing/schema_processor.py`,
-  `agent_vault/indexing/document_processor.py`).
-- Technical: re-running `agv index` over a complete index leaves chunk
+  `agentic_inquiry/indexing/schema_processor.py`,
+  `agentic_inquiry/indexing/document_processor.py`).
+- Technical: re-running `ai index` over a complete index leaves chunk
   and entity keys unchanged but adds `calls` and `imports` relationship
   keys whose `target_id` matches no stored entity (receipt `20-*`:
   59,548 to 66,813 distinct relationship keys, unresolved targets 296
@@ -290,7 +290,7 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
   already on disk and emits edges the first run did not; the write
   layer stores them once each. Not introduced by this change (source:
   receipts `10-*`, `20-*`, `inspect_rels` under
-  `~/.agv/qualification/index-durability-20260921/`).
+  `~/.agentic-inquiry/qualification/index-durability-20260921/`).
 - Technical: the failed run indexed 1,230 files between 15:16 and
   16:32 on 2026-09-21, about 16 files per minute, with `optimize()` on
   every write (source: `main.log` timestamps of that run, tallied in
@@ -322,19 +322,19 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
   `uv tool install .` resolved on 2026-09-04; native FTS accepts one
   column per index on both versions (source: `lancedb/table.py` in both
   versions).
-- Technical: `agv index` passes no connector, so `file_states` stays
+- Technical: `ai index` passes no connector, so `file_states` stays
   empty and every run re-parses every file; re-runs are idempotent
   through deterministic ids and `merge_insert` (source:
-  `agent_vault/cli/index.py`; `agent_vault/indexing/pipeline.py`;
+  `agentic_inquiry/cli/index.py`; `agentic_inquiry/indexing/pipeline.py`;
   `metadata.db` of the real partial index).
-- Technical: `agv memory save` prints `Memory saved:` after `store()`
+- Technical: `ai memory save` prints `Memory saved:` after `store()`
   with no read-back; CLI and `MemorySystem` hardcode `memory_episodic`
   / `memory_semantic`; config defaults are `memory_episodic_medium` /
   `memory_semantic_high`; adapter `initialize()` only connects (source:
-  `agent_vault/cli/memory.py`; `agent_vault/memory/system.py`;
-  `agent_vault/config.py`; `agent_vault/memory/adapters/lancedb_adapter.py`).
+  `agentic_inquiry/cli/memory.py`; `agentic_inquiry/memory/system.py`;
+  `agentic_inquiry/config.py`; `agentic_inquiry/memory/adapters/lancedb_adapter.py`).
 - Technical: importance `>= 0.9` is semantic, `>= 0.7` is episodic,
-  otherwise working memory (source: `agent_vault/memory/system.py`).
+  otherwise working memory (source: `agentic_inquiry/memory/system.py`).
 - Product: keep-last collapse in our writer; verify-on-save for memory;
   Darwin hatch hint before embedder load; no default CPU; no lock
   manager; no LanceDB FirstSeen (source: user confirmation 2026-09-04

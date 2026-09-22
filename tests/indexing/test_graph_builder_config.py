@@ -17,7 +17,7 @@ import logging
 from hypothesis import assume, given, strategies as st, settings, HealthCheck
 from unittest.mock import MagicMock
 
-from agent_vault.indexing.graph_builder import GraphBuilderConfig
+from agentic_inquiry.indexing.graph_builder import GraphBuilderConfig
 
 
 # =============================================================================

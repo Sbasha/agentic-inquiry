@@ -9,7 +9,7 @@ This test verifies that timing is properly instrumented for:
 import pytest
 
 
-from agent_vault.metrics import get_metrics_tracker, reset_metrics
+from agentic_inquiry.metrics import get_metrics_tracker, reset_metrics
 
 
 class TestResolutionTiming:
@@ -18,8 +18,8 @@ class TestResolutionTiming:
     @pytest.mark.asyncio
     async def test_relationship_resolver_tracks_timing(self):
         """Verify RelationshipResolver tracks resolution timing."""
-        from agent_vault.indexing.relationship_resolver import RelationshipResolver
-        from agent_vault.indexing.symbol_registry import SymbolRegistry
+        from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
+        from agentic_inquiry.indexing.symbol_registry import SymbolRegistry
         import tempfile
         
         # Reset metrics
@@ -55,8 +55,8 @@ class TestDatabaseTiming:
     @pytest.mark.asyncio
     async def test_add_document_chunks_tracks_timing(self, tmp_path):
         """Verify add_document_chunks tracks timing."""
-        from agent_vault.database.lancedb_manager import LanceDBManager
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.database.lancedb_manager import LanceDBManager
+        from agentic_inquiry.config import Config, StorageConfig
         
         # Reset metrics
         reset_metrics()
@@ -78,8 +78,8 @@ class TestDatabaseTiming:
     @pytest.mark.asyncio
     async def test_add_graph_entities_tracks_timing(self, tmp_path):
         """Verify add_graph_entities tracks timing."""
-        from agent_vault.database.lancedb_manager import LanceDBManager
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.database.lancedb_manager import LanceDBManager
+        from agentic_inquiry.config import Config, StorageConfig
         
         # Reset metrics
         reset_metrics()
@@ -101,8 +101,8 @@ class TestDatabaseTiming:
     @pytest.mark.asyncio
     async def test_add_graph_relationships_tracks_timing(self, tmp_path):
         """Verify add_graph_relationships tracks timing."""
-        from agent_vault.database.lancedb_manager import LanceDBManager
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.database.lancedb_manager import LanceDBManager
+        from agentic_inquiry.config import Config, StorageConfig
         
         # Reset metrics
         reset_metrics()
@@ -124,8 +124,8 @@ class TestDatabaseTiming:
     @pytest.mark.asyncio
     async def test_advanced_filter_tracks_timing(self, tmp_path):
         """Verify advanced_filter tracks timing."""
-        from agent_vault.database.lancedb_manager import LanceDBManager
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.database.lancedb_manager import LanceDBManager
+        from agentic_inquiry.config import Config, StorageConfig
         
         # Reset metrics
         reset_metrics()
@@ -147,8 +147,8 @@ class TestDatabaseTiming:
     @pytest.mark.asyncio
     async def test_query_across_projects_tracks_timing(self, tmp_path):
         """Verify query_across_projects tracks timing."""
-        from agent_vault.database.lancedb_manager import LanceDBManager
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.database.lancedb_manager import LanceDBManager
+        from agentic_inquiry.config import Config, StorageConfig
         
         # Reset metrics
         reset_metrics()
@@ -179,7 +179,7 @@ class TestEmbeddingTiming:
     @pytest.mark.slow
     def test_embedder_tracks_timing(self):
         """Verify SentenceTransformerEmbedder tracks timing."""
-        from agent_vault.embeddings.sentence_transformer import SentenceTransformerEmbedder
+        from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
         
         # Reset metrics
         reset_metrics()
@@ -210,7 +210,7 @@ class TestPerformanceMetrics:
     @pytest.mark.asyncio
     async def test_slow_operations_logged(self, caplog):
         """Verify slow operations are logged as warnings."""
-        from agent_vault.metrics import MetricsTracker
+        from agentic_inquiry.metrics import MetricsTracker
         import time
         
         tracker = MetricsTracker()
@@ -226,7 +226,7 @@ class TestPerformanceMetrics:
     
     def test_metrics_summary_includes_all_operations(self):
         """Verify metrics summary includes all tracked operations."""
-        from agent_vault.metrics import MetricsTracker
+        from agentic_inquiry.metrics import MetricsTracker
         
         tracker = MetricsTracker()
         

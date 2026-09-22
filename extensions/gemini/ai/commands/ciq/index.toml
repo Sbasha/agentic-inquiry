@@ -1,0 +1,64 @@
+description = "Index a codebase for semantic search. Use when setting up ai for a project, updating the index after changes, or checking index status."
+prompt = """
+Index a codebase for semantic search. Use when setting up ai for a project, updating the index after changes, or checking index status.
+
+Usage: /ai:index [path] [--project-id name] [status]
+
+# /ai:index
+
+Index code and documentation for semantic search.
+
+## Quick Start
+
+```bash
+/ai:index .                    # Index current directory
+/ai:index src/                 # Index specific path
+/ai:index status               # Show index statistics
+```
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `path` | Directory to index (default: `.`) |
+| `--project-id` | Project identifier for isolation |
+| `status` | Show current index stats |
+
+## Examples
+
+```bash
+# /ai:index
+/ai:index . --project-id myproject
+
+# /ai:index
+/ai:index src/ --project-id myproject
+
+# /ai:index
+/ai:index status --project-id myproject
+```
+
+## CLI Equivalent
+
+```bash
+uv run --env-file .env ai index . --project-id myproject
+uv run --env-file .env ai index status --project-id myproject
+```
+
+## What Gets Indexed
+
+- **Code**: Functions, classes, methods with relationships
+- **Docs**: Markdown, text files, docstrings
+- **Structure**: Import graphs, call hierarchies
+
+## Index Statistics
+
+The `status` subcommand shows:
+- Total entities indexed
+- Breakdown by type (functions, classes, etc.)
+- Last index timestamp
+- Storage size
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `ai` CLI command(s) using the available tools.
+"""

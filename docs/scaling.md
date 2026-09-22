@@ -1,10 +1,10 @@
 # Scaling Guide
 
-Practical thresholds for the storage backends agent-vault ships with, and what to do when you hit them. Defaults-by-default guidance lives next to each provider's code:
+Practical thresholds for the storage backends agentic-inquiry ships with, and what to do when you hit them. Defaults-by-default guidance lives next to each provider's code:
 
-- `agent_vault/storage/providers/lancedb/AGENTS.md`
-- `agent_vault/storage/providers/postgresql/AGENTS.md`
-- `agent_vault/storage/providers/sqlite/AGENTS.md`
+- `agentic_inquiry/storage/providers/lancedb/AGENTS.md`
+- `agentic_inquiry/storage/providers/postgresql/AGENTS.md`
+- `agentic_inquiry/storage/providers/sqlite/AGENTS.md`
 
 This doc is the cross-cutting "when should I migrate?" view. It doesn't duplicate the per-backend defaults — it tells you which defaults to stop trusting, and when.
 
@@ -29,7 +29,7 @@ This doc is the cross-cutting "when should I migrate?" view. It doesn't duplicat
 | `events` | — | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
 | `file_tracker` | — | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | — |
 
-Roles can be mixed across backends — `vector_backend`, `graph_backend`, `events_backend`, `file_tracker_backend_v2` in the `storage:` section of `agent-vault.yaml` are independent pointers.
+Roles can be mixed across backends — `vector_backend`, `graph_backend`, `events_backend`, `file_tracker_backend_v2` in the `storage:` section of `agentic-inquiry.yaml` are independent pointers.
 
 ## Thresholds that actually matter
 
@@ -56,7 +56,7 @@ If you're about to hit 100k graph relationships and can't immediately migrate, r
 
 ### Postgres family (when you've migrated)
 
-Not really a scaling-out story for most agent-vault workloads — Postgres with pgvector handles millions of rows per tenant at reasonable latencies. Watchpoints:
+Not really a scaling-out story for most agentic-inquiry workloads — Postgres with pgvector handles millions of rows per tenant at reasonable latencies. Watchpoints:
 
 | Signal | What to check |
 |---|---|
@@ -97,21 +97,21 @@ storage:
   backends:
     vectors:
       type: lancedb
-      database_path: ./.agv/lancedb
+      database_path: ./.agentic-inquiry/lancedb
     graph_db:
       type: postgresql
-      connection_string: "postgresql://user:pass@host/agv"
+      connection_string: "postgresql://user:pass@host/ai"
       pool_size: 10
     metadata:
       type: sqlite
-      database_path: ./.agv/metadata.db
+      database_path: ./.agentic-inquiry/metadata.db
   vector_backend: vectors
   graph_backend: graph_db
   events_backend: metadata
   file_tracker_backend_v2: metadata
 ```
 
-Re-run `agv index` against your repo. Chunks stay in LanceDB, entities/relationships are written to Postgres. Searches use both (hybrid).
+Re-run `ai index` against your repo. Chunks stay in LanceDB, entities/relationships are written to Postgres. Searches use both (hybrid).
 
 ### Full cutover to Postgres
 
@@ -120,7 +120,7 @@ storage:
   backends:
     primary:
       type: postgresql
-      connection_string: "postgresql://user:pass@host/agv"
+      connection_string: "postgresql://user:pass@host/ai"
       pool_size: 10
       similarity_metric: cosine
       index_type: hnsw
@@ -130,7 +130,7 @@ storage:
   file_tracker_backend_v2: primary
 ```
 
-Re-indexing is the migration tool — there's no `agv migrate` that copies LanceDB data into Postgres. Existing event history in SQLite doesn't transfer automatically either; export manually if you need it.
+Re-indexing is the migration tool — there's no `ai migrate` that copies LanceDB data into Postgres. Existing event history in SQLite doesn't transfer automatically either; export manually if you need it.
 
 ### GCP production (AlloyDB server-side embedding)
 
@@ -146,8 +146,8 @@ storage:
       region: us-central1
       cluster: my-alloydb-cluster
       instance: my-alloydb-instance
-      database: agv
-      user: agv_user
+      database: ai
+      user: ai_user
       # embedding_strategy / embedding_model / embedding_dim are auto-set to
       # server_side / text-embedding-005 / 768 by validate_alloydb_config —
       # listed here for visibility.
@@ -186,7 +186,7 @@ Every AGENTS.md file has the full evaluation. A recent pass tightened several de
 
 1. **Postgres `embedding_dim=384`** when using a server-side embedding model. 768 for AlloyDB `text-embedding-005` (auto-flipped), 1024 for RDS Bedrock (not auto-flipped), 1536 for Azure `text-embedding-3` (not auto-flipped). Until auto-flip covers all variants, set this explicitly on RDS/Azure.
 2. **SQLite `events.sampling_enabled=false` is correct, but read the semantics.** The sampler drops PROGRESS events unconditionally when enabled, not just under backpressure. It's a noise dial, not a backpressure bridge. If you see dropped-event warnings, size `queue_max_size` up or migrate events to Postgres before enabling sampling.
-3. **Pool / timeout keys in LanceDB configs.** `pool_size`, `max_overflow`, `backend_timeouts.*` are schema-accepted but ignored. No-op noise in `agv setup`'s output; not a runtime issue.
+3. **Pool / timeout keys in LanceDB configs.** `pool_size`, `max_overflow`, `backend_timeouts.*` are schema-accepted but ignored. No-op noise in `ai setup`'s output; not a runtime issue.
 
 ## Testing the migration
 

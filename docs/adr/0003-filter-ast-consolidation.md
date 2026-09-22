@@ -62,7 +62,7 @@ graph_filter = {"$and": [{"type": "function"}, {"language": "python"}]}
 - Documentation in `database/filter_helpers.py`
 
 ## References
-- `agent_vault/database/filter_helpers.py` - Filter utilities
-- `agent_vault/database/lancedb_manager.py` - LanceDB translation
+- `agentic_inquiry/database/filter_helpers.py` - Filter utilities
+- `agentic_inquiry/database/lancedb_manager.py` - LanceDB translation
 - tests/database/test_filter_helpers.py - Filter tests
 - Retrospective: 05-ARCHITECTURE-DECISION-ANALYSIS.md

@@ -1,1 +1,1 @@
-"""Integration tests for agent_vault."""
+"""Integration tests for agentic_inquiry."""

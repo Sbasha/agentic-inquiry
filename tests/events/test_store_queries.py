@@ -15,8 +15,8 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.events.store import EventStore
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.events.store import EventStore
 
 
 @pytest.fixture

@@ -11,7 +11,7 @@ import logging
 from unittest.mock import AsyncMock, MagicMock
 from datetime import datetime
 
-from agent_vault.mcp.tools.session import create_session
+from agentic_inquiry.mcp.tools.session import create_session
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def mcp_services():
     # Mock server configuration
     server_config = {
         "default_project_id": "default_project",
-        "server_name": "Agent-Vault MCP Server",
+        "server_name": "Agentic Inquiry MCP Server",
         "server_version": "1.0.0",
         "server_description": "Intelligent search and knowledge management"
     }

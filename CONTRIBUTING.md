@@ -1,10 +1,10 @@
-# Contributing to Agent-Vault
+# Contributing to Agentic Inquiry
 
 ## Getting Started
 
 ```bash
-git clone https://github.com/sbasha/agent-vault.git
-cd agent-vault
+git clone https://github.com/sbasha/agentic-inquiry.git
+cd agentic-inquiry
 uv sync
 uv run --env-file .env pytest -x   # Verify setup
 ```
@@ -13,9 +13,9 @@ uv run --env-file .env pytest -x   # Verify setup
 
 | Directory | Purpose |
 |-----------|---------|
-| `agent_vault/` | Core library (config, storage, search, parsers, indexing, memory, MCP, CLI) |
-| `extensions/claude/agv/` | Claude Code plugin — user-facing commands, hooks, agents |
-| `extensions/claude/agv-dev/` | Claude Code plugin — developer commands, skills, agents |
+| `agentic_inquiry/` | Core library (config, storage, search, parsers, indexing, memory, MCP, CLI) |
+| `extensions/claude/ai/` | Claude Code plugin — user-facing commands, hooks, agents |
+| `extensions/claude/ai-dev/` | Claude Code plugin — developer commands, skills, agents |
 | `tests/` | Unit and integration tests |
 | `docs/` | Architecture, design, and development guides |
 | `scripts/` | Utility and infrastructure scripts |
@@ -28,7 +28,7 @@ uv run --env-file .env pytest -x   # Verify setup
 uv run --env-file .env ruff format .    # Format
 uv run --env-file .env ruff check .     # Lint
 uv run --env-file .env ruff check --fix # Lint + autofix
-uv run --env-file .env mypy agent_vault/  # Type check
+uv run --env-file .env mypy agentic_inquiry/  # Type check
 ```
 
 ### Before Committing
@@ -38,7 +38,7 @@ All four must pass:
 ```bash
 uv run --env-file .env ruff format . && \
 uv run --env-file .env ruff check . && \
-uv run --env-file .env mypy agent_vault/ && \
+uv run --env-file .env mypy agentic_inquiry/ && \
 uv run --env-file .env pytest
 ```
 
@@ -79,7 +79,7 @@ uv run --env-file .env pytest                          # All tests
 uv run --env-file .env pytest tests/path/test_file.py  # Specific file
 uv run --env-file .env pytest -k parser                # By pattern
 uv run --env-file .env pytest -m unit                  # By marker (unit/integration/golden/stress/adapters)
-uv run --env-file .env pytest --cov=agent_vault       # With coverage
+uv run --env-file .env pytest --cov=agentic_inquiry       # With coverage
 ```
 
 ### Fixture naming
@@ -107,7 +107,7 @@ Cross-tool integration is the highest-yield investment: most bugs we have shippe
 
 ## Storage Backends
 
-Agent-Vault supports multiple storage backends. When developing:
+Agentic Inquiry supports multiple storage backends. When developing:
 
 | Backend | Config `type` | Embedding | Use Case |
 |---------|--------------|-----------|----------|
@@ -119,53 +119,53 @@ AlloyDB and CloudSQL use the **unified PostgreSQL provider** at `storage/provide
 
 ## Plugin System
 
-Agent-Vault is primarily used through Claude Code plugins in `extensions/claude/`:
+Agentic Inquiry is primarily used through Claude Code plugins in `extensions/claude/`:
 
-**agv** — User-facing plugin (`/agv:search`, `/agv:index`, `/agv:entity`, etc.)
-- Commands: `extensions/claude/agv/commands/`
-- Agents: `extensions/claude/agv/agents/`
-- Hooks: `extensions/claude/agv/hooks/`
-- Scripts: `extensions/claude/agv/scripts/`
-- Servers: `extensions/claude/agv/servers/`
+**ai** — User-facing plugin (`/ai:search`, `/ai:index`, `/ai:entity`, etc.)
+- Commands: `extensions/claude/ai/commands/`
+- Agents: `extensions/claude/ai/agents/`
+- Hooks: `extensions/claude/ai/hooks/`
+- Scripts: `extensions/claude/ai/scripts/`
+- Servers: `extensions/claude/ai/servers/`
 
-**agv-dev** — Developer plugin (`/agv-dev:test`, `/agv-dev:review`, etc.)
-- Commands: `extensions/claude/agv-dev/commands/`
-- Skills: `extensions/claude/agv-dev/skills/`
-- Agents: `extensions/claude/agv-dev/agents/`
+**ai-dev** — Developer plugin (`/ai-dev:test`, `/ai-dev:review`, etc.)
+- Commands: `extensions/claude/ai-dev/commands/`
+- Skills: `extensions/claude/ai-dev/skills/`
+- Agents: `extensions/claude/ai-dev/agents/`
 
 ### Plugin Conventions
 
 - Hook scripts use `${CLAUDE_PLUGIN_ROOT}` for paths (never hardcoded)
 - Shared utilities live in `scripts/` (imported via `from scripts.socket_client import ...`)
 - Command files use frontmatter: `description`, `argument-hint`, `allowed-tools`
-- Command references use colon syntax: `/agv:search`, `/agv-dev:test`
+- Command references use colon syntax: `/ai:search`, `/ai-dev:test`
 - Plugin manifests (`plugin.json`) list explicit file paths for commands/agents
 
 ### Running the MCP Server
 
 ```bash
-uv run --env-file .env agv serve                              # Default
-uv run --env-file .env agv serve --project-id my_project      # Specific project
-uv run --env-file .env agv serve --transport stdio             # For AI tool integration
-uv run --env-file .env agv --list-tools                        # List available tools
+uv run --env-file .env ai serve                              # Default
+uv run --env-file .env ai serve --project-id my_project      # Specific project
+uv run --env-file .env ai serve --transport stdio             # For AI tool integration
+uv run --env-file .env ai --list-tools                        # List available tools
 ```
 
 ## Environment System
 
-Agent-Vault uses an environment system for isolating configurations:
+Agentic Inquiry uses an environment system for isolating configurations:
 
-- Global storage: `~/.agv/` (environments, registry, events, logs)
-- Project-local: `.agv/` (test/dev data, gitignored)
-- `agv_HOME` env var overrides `~/.agv/`
-- Environment configs: `~/.agv/envs/<name>/config.yaml`
-- Active environment tracked in `~/.agv/env-registry.json`
+- Global storage: `~/.agentic-inquiry/` (environments, registry, events, logs)
+- Project-local: `.agentic-inquiry/` (test/dev data, gitignored)
+- `AI_HOME` env var overrides `~/.agentic-inquiry/`
+- Environment configs: `~/.agentic-inquiry/envs/<name>/config.yaml`
+- Active environment tracked in `~/.agentic-inquiry/env-registry.json`
 
 ## Pull Requests
 
 1. Create a feature branch from `main`
 2. Make your changes following the code style above
 3. Ensure all checks pass (format, lint, types, tests)
-4. Open a PR against `feature-agent-vault-search-implementation`
+4. Open a PR against `feature-agentic-inquiry-search-implementation`
 5. Include a clear description of what changed and why
 
 ## Additional Resources

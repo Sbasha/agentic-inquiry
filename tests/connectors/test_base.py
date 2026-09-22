@@ -16,13 +16,13 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.connectors.base import (
+from agentic_inquiry.connectors.base import (
     DEFAULT_BINARY_EXTENSIONS,
     DEFAULT_IGNORE_PATTERNS,
     FsspecConnector,
 )
-from agent_vault.connectors.protocols import ConnectorProtocol
-from agent_vault.connectors.types import SourceItem
+from agentic_inquiry.connectors.protocols import ConnectorProtocol
+from agentic_inquiry.connectors.types import SourceItem
 
 
 class TestFsspecConnectorCreation:

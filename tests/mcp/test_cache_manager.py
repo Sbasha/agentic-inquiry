@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 import time
 
-from agent_vault.mcp.utils.cache import MCPCacheManager
+from agentic_inquiry.mcp.utils.cache import MCPCacheManager
 
 
 def test_cache_set_and_get():

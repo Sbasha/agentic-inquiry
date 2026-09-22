@@ -5,7 +5,7 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.search.graph_search import GraphSearchService
+from agentic_inquiry.search.graph_search import GraphSearchService
 
 
 @pytest.fixture

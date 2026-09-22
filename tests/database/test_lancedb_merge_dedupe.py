@@ -10,9 +10,9 @@ from pathlib import Path
 
 import pytest
 
-from agent_vault.config import Config, StorageConfig
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.models.graph_relationship import GraphRelationship
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.models.graph_relationship import GraphRelationship
 
 pytestmark = pytest.mark.integration
 

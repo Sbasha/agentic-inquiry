@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.search.query_sanitizer import QuerySanitizer
+from agentic_inquiry.search.query_sanitizer import QuerySanitizer
 
 
 class TestQuerySanitizer:

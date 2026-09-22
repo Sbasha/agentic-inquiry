@@ -15,14 +15,14 @@ import pytest_asyncio
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
-from agent_vault.parsers.executor import execute_parser
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.executor import execute_parser
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 # Trigger parser auto-registration
-import agent_vault.parsers.implementations  # noqa: F401
+import agentic_inquiry.parsers.implementations  # noqa: F401
 
 
 class _DummyEmbedder:
@@ -65,7 +65,7 @@ async def mock_db_manager(mock_embedding_registry):
 async def pipeline(mock_db_manager, temp_project_root, mock_embedding_registry):
     """Create an IndexingPipeline instance."""
     import uuid
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
 
     config = Config()
     config.storage = StorageConfig(root=temp_project_root)
@@ -366,7 +366,7 @@ class Greeter:
         
         # Parse the file
         try:
-            from agent_vault.parsers.executor import get_parser_instance
+            from agentic_inquiry.parsers.executor import get_parser_instance
             parser = get_parser_instance("unified_code")
             parsed_doc = await execute_parser(parser, str(test_file))
             
@@ -426,7 +426,7 @@ More content here.
         
         # Parse the file
         try:
-            from agent_vault.parsers.executor import get_parser_instance
+            from agentic_inquiry.parsers.executor import get_parser_instance
             parser = get_parser_instance("document")
             parsed_doc = await execute_parser(parser, str(test_file))
             
@@ -471,7 +471,7 @@ And should be parsed by the fallback text parser.
         
         # Parse the file
         try:
-            from agent_vault.parsers.executor import get_parser_instance
+            from agentic_inquiry.parsers.executor import get_parser_instance
             parser = get_parser_instance("fallback_text")  # Fixed: use correct parser name
             parsed_doc = await execute_parser(parser, str(test_file))
             
@@ -626,7 +626,7 @@ Content for section two.
 """)
 
         # Parse the markdown file
-        from agent_vault.parsers.executor import get_parser_instance
+        from agentic_inquiry.parsers.executor import get_parser_instance
         parser = get_parser_instance("document")
         parsed_doc = await execute_parser(parser, str(test_file))
 
@@ -717,7 +717,7 @@ More content.
 """)
 
         # Parse the markdown file
-        from agent_vault.parsers.executor import get_parser_instance
+        from agentic_inquiry.parsers.executor import get_parser_instance
         parser = get_parser_instance("document")
         parsed_doc = await execute_parser(parser, str(test_file))
 

@@ -17,7 +17,7 @@ import time
 from hypothesis import given, strategies as st, settings
 from unittest.mock import MagicMock, AsyncMock
 
-from agent_vault.indexing.relationship_resolver import (
+from agentic_inquiry.indexing.relationship_resolver import (
     RelationshipResolver,
     SimpleCache,
 )

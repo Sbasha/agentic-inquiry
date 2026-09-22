@@ -1,4 +1,4 @@
-"""Tests for agent_vault.server.http_client - HTTP client for REST API."""
+"""Tests for agentic_inquiry.server.http_client - HTTP client for REST API."""
 
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
@@ -6,7 +6,7 @@ from threading import Thread
 
 import pytest
 
-from agent_vault.server.http_client import agvClient, HookClient
+from agentic_inquiry.server.http_client import agvClient, HookClient
 
 
 @pytest.fixture
@@ -43,7 +43,7 @@ def mock_server():
 
 
 class TestagvClient:
-    """Test the agv HTTP client."""
+    """Test the ai HTTP client."""
 
     def test_get_request(self, mock_server):
         client = agvClient(base_url=mock_server, auto_start=False)
@@ -81,13 +81,13 @@ class TestHookClient:
         """HookClient should NOT auto-start the server."""
         client = HookClient(timeout=1.0)
         # Should be not available since no server is running at default location
-        # (This test relies on no agv server actually running)
+        # (This test relies on no ai server actually running)
         assert isinstance(client.available, bool)
 
     def test_hook_client_post(self, mock_server):
         """HookClient can make POST requests when server available."""
         # Manually construct with available base URL
-        from agent_vault.server.http_client import agvClient
+        from agentic_inquiry.server.http_client import agvClient
         inner = agvClient(base_url=mock_server, auto_start=False)
         # Use inner client directly since HookClient wraps it
         result = inner.post("/api/v1/hooks/post_bash", data={"command": "ls"})

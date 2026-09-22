@@ -1,6 +1,6 @@
 # Logical Schema Reference (Canonical Field Names)
 
-This document defines the canonical logical schemas used by Agent-Vault. Adapters may store data differently (physical schema), but must map to these logical field names at the boundary.
+This document defines the canonical logical schemas used by Agentic Inquiry. Adapters may store data differently (physical schema), but must map to these logical field names at the boundary.
 
 ## Goals
 
@@ -18,7 +18,7 @@ This document defines the canonical logical schemas used by Agent-Vault. Adapter
 
 ### `document_chunks`
 
-Canonical fields (based on `agent_vault/models/document_chunk.py` and current LanceDB schema):
+Canonical fields (based on `agentic_inquiry/models/document_chunk.py` and current LanceDB schema):
 
 - `id` (str, required)
 - `doc_id` (str, required)
@@ -50,7 +50,7 @@ Notes:
 
 ### `graph_entities`
 
-Canonical fields (based on `agent_vault/models/graph_entity.py` and current LanceDB schema):
+Canonical fields (based on `agentic_inquiry/models/graph_entity.py` and current LanceDB schema):
 
 - `id` (str, required)
 - `name` (str, required)
@@ -72,7 +72,7 @@ Important:
 
 ### `graph_relationships`
 
-Canonical fields (based on `agent_vault/models/graph_relationship.py` and current LanceDB schema):
+Canonical fields (based on `agentic_inquiry/models/graph_relationship.py` and current LanceDB schema):
 
 - `id` (str, required)
 - `source_id` (str, required)
@@ -92,7 +92,7 @@ Memory tables are owned by the memory subsystem but must still adhere to canonic
 
 ### `memory_episodic_medium`
 
-Canonical fields (based on `agent_vault/memory/layers/episodic.py`):
+Canonical fields (based on `agentic_inquiry/memory/layers/episodic.py`):
 
 - `id` (str)
 - `agent_id` (str)
@@ -124,7 +124,7 @@ Canonical fields (based on `agent_vault/memory/layers/episodic.py`):
 
 ### `memory_semantic_high`
 
-Canonical fields (based on `agent_vault/memory/layers/semantic.py`):
+Canonical fields (based on `agentic_inquiry/memory/layers/semantic.py`):
 
 - `id` (str)
 - `agent_id` (str)
@@ -158,7 +158,7 @@ Canonical fields (based on `agent_vault/memory/layers/semantic.py`):
 
 Physical table names vary by backend:
 - **LanceDB:** Uses logical names directly (`document_chunks`, `graph_entities`, `graph_relationships`)
-- **PostgreSQL/CloudSQL/AlloyDB:** Uses `agv_` prefix (`agv_v_chunks`, `agv_g_entities`, `agv_g_relationships`)
+- **PostgreSQL/CloudSQL/AlloyDB:** Uses `agv_` prefix (`ai_v_chunks`, `ai_g_entities`, `ai_g_relationships`)
 
 Adapters handle the mapping between logical and physical names transparently.
 

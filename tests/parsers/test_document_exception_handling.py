@@ -12,8 +12,8 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import patch
 
-from agent_vault.parsers.implementations.document import DocumentParser
-from agent_vault.exceptions import DocumentParsingError, ParsingError
+from agentic_inquiry.parsers.implementations.document import DocumentParser
+from agentic_inquiry.exceptions import DocumentParsingError, ParsingError
 
 
 @pytest.fixture
@@ -37,7 +37,7 @@ class TestDocumentParsingError:
         invalid_file.write_bytes(b"Not a valid PDF file")
         
         # Mock the partition function to raise an exception
-        with patch('agent_vault.parsers.implementations.document.partition') as mock_partition:
+        with patch('agentic_inquiry.parsers.implementations.document.partition') as mock_partition:
             mock_partition.side_effect = ValueError("Invalid PDF format")
             
             # Should raise DocumentParsingError, not generic Exception
@@ -58,7 +58,7 @@ class TestDocumentParsingError:
         
         # Mock the partition function to raise a specific exception
         original_error = IOError("Cannot read file")
-        with patch('agent_vault.parsers.implementations.document.partition') as mock_partition:
+        with patch('agentic_inquiry.parsers.implementations.document.partition') as mock_partition:
             mock_partition.side_effect = original_error
             
             # Catch the exception
@@ -79,7 +79,7 @@ class TestDocumentParsingError:
         
         # Mock the partition function to raise an exception
         original_error = RuntimeError("Parsing failed")
-        with patch('agent_vault.parsers.implementations.document.partition') as mock_partition:
+        with patch('agentic_inquiry.parsers.implementations.document.partition') as mock_partition:
             mock_partition.side_effect = original_error
             
             # Catch the exception
@@ -109,7 +109,7 @@ class TestDocumentParsingError:
         invalid_file.write_text("# Test content")
 
         # Mock the partition function to raise an exception
-        with patch('agent_vault.parsers.implementations.document.partition') as mock_partition:
+        with patch('agentic_inquiry.parsers.implementations.document.partition') as mock_partition:
             mock_partition.side_effect = ValueError("Unsupported format")
 
             # Catch the exception
@@ -136,7 +136,7 @@ class TestDocumentParsingError:
         ]
         
         for original_error in error_types:
-            with patch('agent_vault.parsers.implementations.document.partition') as mock_partition:
+            with patch('agentic_inquiry.parsers.implementations.document.partition') as mock_partition:
                 mock_partition.side_effect = original_error
                 
                 with pytest.raises(DocumentParsingError) as exc_info:
@@ -159,7 +159,7 @@ class TestExceptionLogging:
         invalid_file = tmp_path / "invalid.pdf"
         invalid_file.write_bytes(b"Not valid")
         
-        with patch('agent_vault.parsers.implementations.document.partition') as mock_partition:
+        with patch('agentic_inquiry.parsers.implementations.document.partition') as mock_partition:
             mock_partition.side_effect = ValueError("Parse error")
             
             with pytest.raises(DocumentParsingError):

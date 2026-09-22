@@ -5,8 +5,8 @@ import pytest
 pytestmark = pytest.mark.unit
 from typing import Set
 
-from agent_vault.connectors.protocols import HashTrackerProtocol, has_hash_tracker
-from agent_vault.connectors.base import InMemoryFileTracker
+from agentic_inquiry.connectors.protocols import HashTrackerProtocol, has_hash_tracker
+from agentic_inquiry.connectors.base import InMemoryFileTracker
 
 
 class TestHashTrackerProtocol:

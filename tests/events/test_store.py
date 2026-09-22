@@ -17,8 +17,8 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.events.store import EventStore
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.events.store import EventStore
 
 
 @pytest.mark.asyncio
@@ -569,7 +569,7 @@ class TestLifecycleManagement:
     
     async def test_from_config_with_project_context(self, tmp_path: Path):
         """Test from_config with ProjectContext."""
-        from agent_vault.config import Config, StorageConfig, EventStoreConfig
+        from agentic_inquiry.config import Config, StorageConfig, EventStoreConfig
         
         config = Config()
         config.storage = StorageConfig(

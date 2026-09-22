@@ -23,14 +23,14 @@ sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROTOCOLS_DIR))  # allows "from protocols import ..."
 
 RUN_ID = "20260320_213916"
-OUTPUT_DIR = PROJECT_ROOT / "test_results" / "agv" / RUN_ID / "onboarding"
-ENV_PATH = str(PROJECT_ROOT / ".agv" / "envs" / "agv-prod" / "config.yaml")
-PROJECT_ID = f"agv_test02_onboard_{RUN_ID}"
+OUTPUT_DIR = PROJECT_ROOT / "test_results" / "ai" / RUN_ID / "onboarding"
+ENV_PATH = str(PROJECT_ROOT / ".agentic-inquiry" / "envs" / "ai-prod" / "config.yaml")
+PROJECT_ID = f"ai_test02_onboard_{RUN_ID}"
 
 
 async def main():
-    from agent_vault.config import Config
-    from agent_vault.mcp.factories import create_mcp_services
+    from agentic_inquiry.config import Config
+    from agentic_inquiry.mcp.factories import create_mcp_services
     # Import via package to support relative imports in protocol module
     from protocols import test_02_onboarding as mod
 

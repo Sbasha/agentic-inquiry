@@ -7,7 +7,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.storage.registry import (
+from agentic_inquiry.storage.registry import (
     PROVIDER_REGISTRY,
     STORAGE_ROLES,
     UnknownBackendError,
@@ -144,7 +144,7 @@ class TestProviderRegistration:
         register_provider(
             "custom_db",
             "events",
-            "agent_vault.storage.providers.memory",
+            "agentic_inquiry.storage.providers.memory",
             "InMemoryVectorProvider",  # Using existing class for test
         )
 
@@ -164,7 +164,7 @@ class TestProviderRegistration:
         register_provider(
             "memory",
             "events",
-            "agent_vault.storage.providers.memory",
+            "agentic_inquiry.storage.providers.memory",
             "InMemoryVectorProvider",
         )
 
@@ -200,5 +200,5 @@ class TestRegistryInfo:
 
         # Check format is "module.ClassName"
         lancedb_vector = info["lancedb"]["vector"]
-        assert "agent_vault.storage.providers.lancedb" in lancedb_vector
+        assert "agentic_inquiry.storage.providers.lancedb" in lancedb_vector
         assert "LanceDBProvider" in lancedb_vector

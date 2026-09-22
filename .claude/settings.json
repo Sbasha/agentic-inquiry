@@ -1,10 +1,10 @@
 {
   "enabledPlugins": {
-    "agv@agent-vault": true,
-    "agv-dev@agent-vault": true
+    "ai@agentic-inquiry": true,
+    "ai-dev@agentic-inquiry": true
   },
   "extraKnownMarketplaces": {
-    "agent-vault": {
+    "agentic-inquiry": {
       "source": {
         "source": "directory",
         "path": "./extensions/claude"

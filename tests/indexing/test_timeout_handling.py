@@ -17,7 +17,7 @@ import asyncio
 from hypothesis import given, strategies as st, settings
 from unittest.mock import MagicMock, AsyncMock
 
-from agent_vault.indexing.graph_builder import GraphBuilderConfig
+from agentic_inquiry.indexing.graph_builder import GraphBuilderConfig
 
 
 # =============================================================================

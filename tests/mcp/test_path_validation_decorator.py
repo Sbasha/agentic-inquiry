@@ -8,7 +8,7 @@ import tempfile
 from pathlib import Path
 from hypothesis import given, settings, strategies as st
 
-from agent_vault.mcp.utils.validation import (
+from agentic_inquiry.mcp.utils.validation import (
     PathValidationError,
     validate_path,
 )

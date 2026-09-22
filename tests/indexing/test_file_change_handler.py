@@ -15,7 +15,7 @@ import asyncio
 import pytest
 from unittest.mock import MagicMock, patch
 
-from agent_vault.indexing.file_change_handler import FileChangeHandler
+from agentic_inquiry.indexing.file_change_handler import FileChangeHandler
 
 
 class MockIndexingPipeline:
@@ -223,9 +223,9 @@ class TestFileChangeHandlerInit:
 
         # Patch at the source module level since imports happen inside initialize()
         with patch(
-            "agent_vault.watching.file_tracker.FileTracker.from_config"
+            "agentic_inquiry.watching.file_tracker.FileTracker.from_config"
         ) as mock_ft_factory, patch(
-            "agent_vault.parsers.chain.ParserChain.from_config"
+            "agentic_inquiry.parsers.chain.ParserChain.from_config"
         ) as mock_pc_factory:
             mock_ft = MockFileTracker()
             mock_pc = MockParserChain()
@@ -251,9 +251,9 @@ class TestFileChangeHandlerInit:
 
         # Patch at the source module level since imports happen inside initialize()
         with patch(
-            "agent_vault.watching.file_tracker.FileTracker.from_config"
+            "agentic_inquiry.watching.file_tracker.FileTracker.from_config"
         ) as mock_ft, patch(
-            "agent_vault.parsers.chain.ParserChain.from_config"
+            "agentic_inquiry.parsers.chain.ParserChain.from_config"
         ) as mock_pc:
             mock_ft.return_value = MockFileTracker()
             mock_pc.return_value = MockParserChain()
@@ -626,7 +626,7 @@ class TestFileChangeHandlerWithFileWatchManager:
         self, handler, tmp_path
     ):
         """Test that FileWatchManager can use FileChangeHandler."""
-        from agent_vault.indexing.file_watch_manager import FileWatchManager
+        from agentic_inquiry.indexing.file_watch_manager import FileWatchManager
 
         # Create manager with handler
         manager = FileWatchManager(
@@ -640,7 +640,7 @@ class TestFileChangeHandlerWithFileWatchManager:
     @pytest.mark.asyncio
     async def test_set_file_change_handler(self, handler, tmp_path):
         """Test setting handler after construction."""
-        from agent_vault.indexing.file_watch_manager import FileWatchManager
+        from agentic_inquiry.indexing.file_watch_manager import FileWatchManager
 
         manager = FileWatchManager(project_root=str(tmp_path))
         assert not manager.has_file_change_handler()

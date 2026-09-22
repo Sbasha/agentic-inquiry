@@ -1,0 +1,8 @@
+{
+  "name": "ai-dev",
+  "version": "1.5.0",
+  "description": "Agentic Inquiry development tools - coding guidelines, testing, configuration, and contributor workflows",
+  "author": {
+    "name": "Agentic Inquiry Team"
+  }
+}

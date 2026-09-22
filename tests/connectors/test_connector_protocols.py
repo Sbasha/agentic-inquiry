@@ -12,7 +12,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.connectors.protocols import (
+from agentic_inquiry.connectors.protocols import (
     AuthCapability,
     ChangeDetectionCapability,
     ConnectorProtocol,
@@ -22,7 +22,7 @@ from agent_vault.connectors.protocols import (
     has_change_detection,
     has_watch_capability,
 )
-from agent_vault.connectors.types import SourceContent, SourceItem
+from agentic_inquiry.connectors.types import SourceContent, SourceItem
 
 
 class MockConnector:

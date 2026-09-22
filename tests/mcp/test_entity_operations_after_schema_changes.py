@@ -21,7 +21,7 @@ import pytest_asyncio
 from pathlib import Path
 from unittest.mock import MagicMock, AsyncMock
 
-from agent_vault.config import Config
+from agentic_inquiry.config import Config
 
 
 async def _wait_for_indexing_completion(session_manager, session_id, operation_id, timeout=30.0):
@@ -43,9 +43,9 @@ async def _wait_for_indexing_completion(session_manager, session_id, operation_i
     return {"status": "timeout", "error": "Indexing did not complete in time"}
 
 
-from agent_vault.mcp.factories import create_mcp_services
-from agent_vault.mcp.tools.knowledge import add_knowledge
-from agent_vault.mcp.tools.analysis import understand_entity, analyze_impact
+from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.tools.knowledge import add_knowledge
+from agentic_inquiry.mcp.tools.analysis import understand_entity, analyze_impact
 
 
 @pytest_asyncio.fixture

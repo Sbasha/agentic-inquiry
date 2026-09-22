@@ -1,8 +1,8 @@
-"""Tests for agent_vault.server.session.state - Session state management."""
+"""Tests for agentic_inquiry.server.session.state - Session state management."""
 
 import pytest
 
-from agent_vault.server.session.state import SessionState
+from agentic_inquiry.server.session.state import SessionState
 
 
 @pytest.fixture

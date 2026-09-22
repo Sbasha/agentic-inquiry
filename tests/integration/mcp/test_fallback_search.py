@@ -16,7 +16,7 @@ import asyncio
 import shutil
 from pathlib import Path
 
-from agent_vault.mcp.utils.fallback_search import (
+from agentic_inquiry.mcp.utils.fallback_search import (
     ast_grep_search,
     execute_fallback_search,
     python_glob_search,
@@ -703,7 +703,7 @@ async def test_fallback_returns_guidance_on_timeout(
     async def mock_glob_timeout(*args, **kwargs):
         raise asyncio.TimeoutError()
 
-    import agent_vault.mcp.utils.fallback_search as fallback_module
+    import agentic_inquiry.mcp.utils.fallback_search as fallback_module
     monkeypatch.setattr(fallback_module, "ripgrep_search", mock_ripgrep_timeout)
     monkeypatch.setattr(fallback_module, "python_glob_search", mock_glob_timeout)
 
@@ -796,7 +796,7 @@ async def test_result_path_validation(sample_codebase: Path) -> None:
 
     Verifies that path validation prevents directory traversal.
     """
-    from agent_vault.mcp.utils.fallback_search import validate_result_path
+    from agentic_inquiry.mcp.utils.fallback_search import validate_result_path
 
     # Valid path within project
     valid_path = str(sample_codebase / "src" / "main.py")

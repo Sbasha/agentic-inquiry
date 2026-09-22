@@ -8,8 +8,8 @@ import logging
 from pathlib import Path
 
 
-from agent_vault.config import Config
-from agent_vault.utils.logging_setup import LoggingConfigurator
+from agentic_inquiry.config import Config
+from agentic_inquiry.utils.logging_setup import LoggingConfigurator
 
 
 def test_logging_path_relative_to_storage_root():
@@ -44,9 +44,9 @@ def test_logging_path_relative_to_storage_root():
         f"Expected: {expected_log_dir}, Got: {log_dir}"
     )
     
-    # Verify it's under .agv
-    assert ".agv" in str(log_dir), (
-        f"Logs should be under .agv, got: {log_dir}"
+    # Verify it's under .agentic-inquiry
+    assert ".agentic-inquiry" in str(log_dir), (
+        f"Logs should be under .agentic-inquiry, got: {log_dir}"
     )
 
 
@@ -54,7 +54,7 @@ def test_logging_path_relative_to_storage_root():
 
 
 def test_default_logging_path():
-    """Verify default config places logs under .agv/logs."""
+    """Verify default config places logs under .agentic-inquiry/logs."""
     # Load default config
     config = Config.load()
     
@@ -71,10 +71,10 @@ def test_default_logging_path():
     
     assert len(log_paths) > 0, "No log handlers found"
     
-    # Verify logs are under .agv/logs
+    # Verify logs are under .agentic-inquiry/logs
     log_dir = log_paths[0].parent
 
-    # Expected path: .agv/logs
+    # Expected path: .agentic-inquiry/logs
     storage_root = Path(config.storage.root)
     if not storage_root.is_absolute():
         storage_root = Path.cwd() / storage_root
@@ -85,7 +85,7 @@ def test_default_logging_path():
         f"Expected: {expected_log_dir}, Got: {log_dir}"
     )
     
-    # Verify it's under .agv
-    assert ".agv" in str(log_dir), (
-        f"Logs should be under .agv, got: {log_dir}"
+    # Verify it's under .agentic-inquiry
+    assert ".agentic-inquiry" in str(log_dir), (
+        f"Logs should be under .agentic-inquiry, got: {log_dir}"
     )

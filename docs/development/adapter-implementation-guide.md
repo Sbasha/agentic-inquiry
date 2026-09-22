@@ -1,17 +1,17 @@
 # Adapter Implementation Guide
 
-This guide is for engineers implementing a new database adapter (vector store, graph store) for Agent-Vault.
+This guide is for engineers implementing a new database adapter (vector store, graph store) for Agentic Inquiry.
 
 ## Prerequisites
 
 - Understand the current storage architecture (see below)
-- Review existing provider implementations in `agent_vault/storage/providers/`
+- Review existing provider implementations in `agentic_inquiry/storage/providers/`
 - Understand embedding strategies (local vs server-side)
-- Review configuration schemas in `agent_vault/storage/schemas/`
+- Review configuration schemas in `agentic_inquiry/storage/schemas/`
 
 ## Current Storage Architecture
 
-Agent-Vault uses a provider-based storage architecture with four production backends:
+Agentic Inquiry uses a provider-based storage architecture with four production backends:
 
 | Backend | Providers | Location | Embedding Strategy |
 |---------|-----------|----------|-------------------|
@@ -346,7 +346,7 @@ def capabilities(self) -> Dict[str, Any]:
 The app layer checks capabilities before using features:
 
 ```python
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.storage.facade import StorageFacade
 
 facade = await StorageFacade.from_config(config, project_id="test")
 
@@ -401,9 +401,9 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional, Union
 import logging
 
-from agent_vault.config import BackendConfig
-from agent_vault.storage.base import BaseVectorProvider
-from agent_vault.search.results import SearchResult
+from agentic_inquiry.config import BackendConfig
+from agentic_inquiry.storage.base import BaseVectorProvider
+from agentic_inquiry.search.results import SearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -627,7 +627,7 @@ class MinimalVectorProvider(BaseVectorProvider):
 
 ## Example: Custom Backend Integration
 
-This example shows how to integrate a custom backend (e.g., Qdrant) with Agent-Vault:
+This example shows how to integrate a custom backend (e.g., Qdrant) with Agentic Inquiry:
 
 ```python
 """Example: Qdrant VectorProvider implementation."""
@@ -639,9 +639,9 @@ import logging
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance, VectorParams, PointStruct, Filter as QdrantFilter
 
-from agent_vault.config import BackendConfig
-from agent_vault.storage.base import BaseVectorProvider
-from agent_vault.search.results import SearchResult
+from agentic_inquiry.config import BackendConfig
+from agentic_inquiry.storage.base import BaseVectorProvider
+from agentic_inquiry.search.results import SearchResult
 
 logger = logging.getLogger(__name__)
 
@@ -662,7 +662,7 @@ class QdrantVectorProvider(BaseVectorProvider):
     def __init__(self, config: BackendConfig) -> None:
         super().__init__(config)
         self._client: Optional[AsyncQdrantClient] = None
-        self._collection_name = "agv_chunks"
+        self._collection_name = "ai_chunks"
 
     @classmethod
     async def from_config(cls, config: BackendConfig) -> "QdrantVectorProvider":
@@ -849,9 +849,9 @@ class QdrantVectorProvider(BaseVectorProvider):
     # =========================================================================
 
     def _build_filter(self, filters: Dict[str, Any]) -> QdrantFilter:
-        """Build Qdrant filter from agv filter dict."""
+        """Build Qdrant filter from ai filter dict."""
         # TODO: Implement filter translation
-        # Convert agv filters to Qdrant filter format
+        # Convert ai filters to Qdrant filter format
         raise NotImplementedError
 ```
 
@@ -895,8 +895,8 @@ Create `storage/schemas/yourbackend.schema.json`:
 In `storage/registry.py`:
 ```python
 # Import your providers
-from agent_vault.storage.providers.yourbackend.vector import YourVectorProvider
-from agent_vault.storage.providers.yourbackend.graph import YourGraphProvider
+from agentic_inquiry.storage.providers.yourbackend.vector import YourVectorProvider
+from agentic_inquiry.storage.providers.yourbackend.graph import YourGraphProvider
 
 # Register in _initialize_builtin_backends()
 registry.register_backend(
@@ -922,8 +922,8 @@ def validate_yourbackend_config(config: BackendConfig) -> BackendConfig:
 Create `tests/storage/providers/test_yourbackend.py`:
 ```python
 import pytest
-from agent_vault.config import BackendConfig
-from agent_vault.storage.providers.yourbackend.vector import YourVectorProvider
+from agentic_inquiry.config import BackendConfig
+from agentic_inquiry.storage.providers.yourbackend.vector import YourVectorProvider
 
 @pytest.mark.asyncio
 async def test_provider_lifecycle():

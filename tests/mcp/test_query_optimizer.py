@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 import time
 
-from agent_vault.mcp.utils.query_optimizer import (
+from agentic_inquiry.mcp.utils.query_optimizer import (
     QueryOptimizer,
     QueryProfile,
     QueryStatistics,

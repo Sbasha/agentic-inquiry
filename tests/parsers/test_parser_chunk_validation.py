@@ -9,7 +9,7 @@ import pytest
 pytestmark = pytest.mark.unit
 from pydantic import ValidationError
 
-from agent_vault.parsers.models import ParserChunk
+from agentic_inquiry.parsers.models import ParserChunk
 
 
 class TestParserChunkMetadataValidation:

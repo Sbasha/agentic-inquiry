@@ -9,15 +9,15 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config
-from agent_vault.database.factories import (
+from agentic_inquiry.config import Config
+from agentic_inquiry.database.factories import (
     create_event_store,
     create_file_tracker,
     create_vector_adapter,
 )
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.events.store import EventStore
-from agent_vault.watching.file_tracker import FileTracker
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.events.store import EventStore
+from agentic_inquiry.watching.file_tracker import FileTracker
 
 
 class TestVectorAdapterFactory:

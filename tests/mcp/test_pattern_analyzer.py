@@ -7,7 +7,7 @@ pytestmark = pytest.mark.unit
 import numpy as np
 from unittest.mock import AsyncMock, patch
 
-from agent_vault.mcp.services.pattern_analyzer import PatternAnalyzer
+from agentic_inquiry.mcp.services.pattern_analyzer import PatternAnalyzer
 
 
 @pytest.fixture

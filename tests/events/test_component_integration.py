@@ -10,14 +10,14 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.events import EventSystem
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.parsers.chain import ParserChain
-from agent_vault.search.service import SearchService
-from agent_vault.storage.facade import StorageFacade
-from agent_vault.watching.watcher import FileWatcher
+from agentic_inquiry.config import Config
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.events import EventSystem
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.parsers.chain import ParserChain
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.storage.facade import StorageFacade
+from agentic_inquiry.watching.watcher import FileWatcher
 
 
 @pytest.mark.asyncio

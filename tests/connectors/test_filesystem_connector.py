@@ -17,7 +17,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.connectors import (
+from agentic_inquiry.connectors import (
     FileSystemConnector,
     SourceItem,
     get_connector,
@@ -25,7 +25,7 @@ from agent_vault.connectors import (
     has_watch_capability,
     list_connectors,
 )
-from agent_vault.connectors.protocols import (
+from agentic_inquiry.connectors.protocols import (
     ChangeDetectionCapability,
     ConnectorProtocol,
     WatchCapability,

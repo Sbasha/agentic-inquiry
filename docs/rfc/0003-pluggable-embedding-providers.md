@@ -11,12 +11,12 @@ related: ["0002-aws-support.md", "#159", "#168"]
 
 ## Summary
 
-Add a thin `RemoteEmbedder` wrapper layer to `agent_vault/embeddings/`
+Add a thin `RemoteEmbedder` wrapper layer to `agentic_inquiry/embeddings/`
 so cloud-hosted embedding APIs become first-class peers of the existing
 in-process embedders (`SentenceTransformer`, `FastEmbed`, `LocalModel`,
 `Hashing`). Standardize the configuration conventions for these
 providers — one sub-config dataclass per provider, snake_case attribute
-on `EmbeddingsConfig`, `AGV_EMBEDDINGS_<PROVIDER>_*` env vars — so
+on `EmbeddingsConfig`, `AI_EMBEDDINGS_<PROVIDER>_*` env vars — so
 adding the next provider after this is a four-file change rather than a
 new pattern. Land **Amazon Titan v2** (`amazon.titan-embed-text-v2:0`,
 via Bedrock) as the first concrete `RemoteEmbedder` implementation.
@@ -96,7 +96,7 @@ What stays bad if this doesn't land:
 
 **In scope:**
 
-- A `RemoteEmbedder` base class under `agent_vault/embeddings/remote.py`
+- A `RemoteEmbedder` base class under `agentic_inquiry/embeddings/remote.py`
   that captures the shared concerns of any cloud-API embedder:
   auth/region resolution, async invocation path, retry on throttling,
   per-batch chunking against provider request limits, output-dim
@@ -136,7 +136,7 @@ What stays bad if this doesn't land:
 
 ### `RemoteEmbedder` base class
 
-`agent_vault/embeddings/remote.py` (new):
+`agentic_inquiry/embeddings/remote.py` (new):
 
 ```python
 class RemoteEmbedder(Embedder):
@@ -229,7 +229,7 @@ Key behaviours:
 
 ### `BedrockEmbedder` for Titan v2
 
-`agent_vault/embeddings/bedrock.py` (new):
+`agentic_inquiry/embeddings/bedrock.py` (new):
 
 ```python
 class BedrockEmbedder(RemoteEmbedder):
@@ -279,7 +279,7 @@ The convention codified by this RFC:
 
 #### 1. One `<Provider>Config` dataclass per provider
 
-In `agent_vault/config.py`, mounted on `EmbeddingsConfig` as a
+In `agentic_inquiry/config.py`, mounted on `EmbeddingsConfig` as a
 snake_case attribute:
 
 ```python
@@ -310,7 +310,7 @@ elif provider == "bedrock":
         raise ConfigurationError(
             "embeddings.bedrock.region is required when "
             "default_provider == 'bedrock'. Set it in YAML or via "
-            "AGV_EMBEDDINGS_BEDROCK_REGION."
+            "AI_EMBEDDINGS_BEDROCK_REGION."
         )
     # construct BedrockEmbedder ...
 
@@ -361,7 +361,7 @@ Future providers extend this literal. The factory dispatches on it.
 
 ```python
 elif provider == "bedrock":
-    from agent_vault.embeddings.bedrock import BedrockEmbedder
+    from agentic_inquiry.embeddings.bedrock import BedrockEmbedder
     bd = config.embeddings.bedrock
     embedder = BedrockEmbedder(
         model_id=bd.model_id,
@@ -380,7 +380,7 @@ The `CachingEmbedder` wrap follows the same logic as the existing
 in-process providers — `cache.enabled and max_entries > 0`.
 
 The same arm has to land in
-`agent_vault/embeddings/service.py::EmbeddingService._create_embedder`,
+`agentic_inquiry/embeddings/service.py::EmbeddingService._create_embedder`,
 which is the second dispatcher: it's instantiated directly by
 `MemorySystem`, `MemoryConsolidation`, `MemoryRetrieval`,
 `graph_search.GraphSearchService`, `mcp.utils.suggestions`, and the
@@ -395,24 +395,24 @@ cleanup lands.
 
 #### 4. Env-var convention
 
-`AGV_EMBEDDINGS_<PROVIDER>_<FIELD>` for each sub-config field, where
+`AI_EMBEDDINGS_<PROVIDER>_<FIELD>` for each sub-config field, where
 `<PROVIDER>` matches the full snake_case provider attribute on
 `EmbeddingsConfig`. The convention is enforced by `_set_nested` in
-`agent_vault/config.py`, which walks the dataclass tree segment by
+`agentic_inquiry/config.py`, which walks the dataclass tree segment by
 segment — the env var must match the actual key path, no shortcuts.
 For Bedrock:
 
 | Env var | Maps to |
 |---|---|
-| `AGV_EMBEDDINGS_BEDROCK_MODEL_ID` | `embeddings.bedrock.model_id` |
-| `AGV_EMBEDDINGS_BEDROCK_REGION` | `embeddings.bedrock.region` |
-| `AGV_EMBEDDINGS_BEDROCK_OUTPUT_DIM` | `embeddings.bedrock.output_dim` |
-| `AGV_EMBEDDINGS_BEDROCK_NORMALIZE` | `embeddings.bedrock.normalize` |
-| `AGV_EMBEDDINGS_BEDROCK_BATCH_SIZE` | `embeddings.bedrock.batch_size` |
-| `AGV_EMBEDDINGS_BEDROCK_MAX_RETRIES` | `embeddings.bedrock.max_retries` |
-| `AGV_EMBEDDINGS_BEDROCK_TIMEOUT_SECONDS` | `embeddings.bedrock.timeout_seconds` |
+| `AI_EMBEDDINGS_BEDROCK_MODEL_ID` | `embeddings.bedrock.model_id` |
+| `AI_EMBEDDINGS_BEDROCK_REGION` | `embeddings.bedrock.region` |
+| `AI_EMBEDDINGS_BEDROCK_OUTPUT_DIM` | `embeddings.bedrock.output_dim` |
+| `AI_EMBEDDINGS_BEDROCK_NORMALIZE` | `embeddings.bedrock.normalize` |
+| `AI_EMBEDDINGS_BEDROCK_BATCH_SIZE` | `embeddings.bedrock.batch_size` |
+| `AI_EMBEDDINGS_BEDROCK_MAX_RETRIES` | `embeddings.bedrock.max_retries` |
+| `AI_EMBEDDINGS_BEDROCK_TIMEOUT_SECONDS` | `embeddings.bedrock.timeout_seconds` |
 
-AWS auth is *not* a Agent-Vault env var. boto3 already reads
+AWS auth is *not* a Agentic Inquiry env var. boto3 already reads
 `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` /
 `AWS_PROFILE` / IAM role from the environment via the standard provider
 chain. Don't shadow that.
@@ -436,7 +436,7 @@ embeddings:
     max_entries: 10000
 ```
 
-The agent-vault.yaml.example template gets a commented `bedrock:` block
+The agentic-inquiry.yaml.example template gets a commented `bedrock:` block
 mirroring the other providers.
 
 ### Decoupling from storage backend
@@ -459,7 +459,7 @@ combinations are:
 | `azure` (capability registry entry pending — [#159][cluster159]) | SERVER_SIDE | (NoOpEmbedder; embedder choice ignored) |
 
 [rfc0002]: 0002-aws-support.md
-[cluster159]: https://github.com/sbasha/agent-vault/issues/159
+[cluster159]: https://github.com/sbasha/agentic-inquiry/issues/159
 
 Caveat: `azure` is in the `BackendType` literal and has a working
 `AzurePostgresAdapter`, but `get_capabilities_for_backend` has no
@@ -525,7 +525,7 @@ hit is a saved network round-trip plus billable token cost.
 - `docs/api-reference/embeddings.md` — gains `BedrockEmbedder` /
   `RemoteEmbedder` reference and a "Configuring a new remote embedder"
   recipe.
-- `agent-vault.yaml.example` — adds the commented Bedrock block.
+- `agentic-inquiry.yaml.example` — adds the commented Bedrock block.
 - README storage-backends table gains a footnote that any LOCAL backend
   can be paired with `bedrock`.
 
@@ -610,25 +610,25 @@ Make remote-API embedders a third strategy alongside `LOCAL` and
 
 A reviewer can call this RFC "implemented" when:
 
-- `agent_vault/embeddings/remote.py` exposes `RemoteEmbedder` with
+- `agentic_inquiry/embeddings/remote.py` exposes `RemoteEmbedder` with
   the documented interface.
-- `agent_vault/embeddings/bedrock.py` exposes `BedrockEmbedder`
+- `agentic_inquiry/embeddings/bedrock.py` exposes `BedrockEmbedder`
   subclassing `RemoteEmbedder`; `provider_name == "bedrock"`.
-- `agent_vault/config.py` `EmbeddingsConfig` has a `bedrock:
+- `agentic_inquiry/config.py` `EmbeddingsConfig` has a `bedrock:
   BedrockConfig` field; `default_provider` accepts `"bedrock"`.
-- `agent_vault/embeddings/factory.py` `configure_embedder_for_backend`
+- `agentic_inquiry/embeddings/factory.py` `configure_embedder_for_backend`
   dispatches on `provider == "bedrock"` and wires the config in.
-- `agent_vault/embeddings/service.py` `EmbeddingService._create_embedder`
+- `agentic_inquiry/embeddings/service.py` `EmbeddingService._create_embedder`
   also gets a `provider == "bedrock"` arm. This is the second dispatch
   path — used by `MemorySystem`, `MemoryConsolidation`,
-  `MemoryRetrieval`, `agent_vault.search.graph_search`,
-  `agent_vault.mcp.utils.suggestions`, and the CLI memory subcommands,
+  `MemoryRetrieval`, `agentic_inquiry.search.graph_search`,
+  `agentic_inquiry.mcp.utils.suggestions`, and the CLI memory subcommands,
   which instantiate `EmbeddingService(config)` directly without going
   through the factory. Without this arm, `default_provider: "bedrock"`
   silently falls back to `SentenceTransformerEmbedder` in those
   consumers. (Long-term cleanup: collapse the two dispatchers into one
   helper. Out of scope for this RFC; tracked in cluster #168.)
-- `agent-vault.yaml.example` shows a commented `embeddings.bedrock`
+- `agentic-inquiry.yaml.example` shows a commented `embeddings.bedrock`
   block.
 - `docs/architecture/embeddings.md` "What's missing" section is gone;
   a "Remote embedders" section replaces it.
@@ -648,7 +648,7 @@ A reviewer can call this RFC "implemented" when:
   first, drop this bullet from 0003's gate** (the only remaining
   obligation is adding the `bedrock-titan-v2-1024` row, which folds
   into the next bullet).
-- `grep -rn '== "bedrock"' agent_vault/` returns exactly two hits —
+- `grep -rn '== "bedrock"' agentic_inquiry/` returns exactly two hits —
   `embeddings/factory.py::configure_embedder_for_backend` and
   `embeddings/service.py::EmbeddingService._create_embedder`. Anything
   more is a third hand-rolled dispatch that needs to be folded into
@@ -688,16 +688,16 @@ A reviewer can call this RFC "implemented" when:
 
 - `docs/architecture/embeddings.md` — current-state architecture doc
   (companion to this RFC).
-- `agent_vault/embeddings/base.py` — `Embedder` protocol.
-- `agent_vault/embeddings/factory.py` — `configure_embedder_for_backend`
+- `agentic_inquiry/embeddings/base.py` — `Embedder` protocol.
+- `agentic_inquiry/embeddings/factory.py` — `configure_embedder_for_backend`
   dispatch.
-- `agent_vault/embeddings/registry.py` — `EmbeddingRegistry` and the
+- `agentic_inquiry/embeddings/registry.py` — `EmbeddingRegistry` and the
   per-table override mechanism.
-- `agent_vault/embeddings/caching.py` — wrapper composition pattern
+- `agentic_inquiry/embeddings/caching.py` — wrapper composition pattern
   this RFC reuses.
-- `agent_vault/storage/capabilities.py` — `EmbeddingStrategy` enum
+- `agentic_inquiry/storage/capabilities.py` — `EmbeddingStrategy` enum
   and per-backend capability declarations (untouched by this RFC).
-- `agent_vault/storage/providers/postgresql/adapter.py` — the
+- `agentic_inquiry/storage/providers/postgresql/adapter.py` — the
   server-side SQL adapters (untouched, included for context).
 - [RFC 0001](0001-golden-bench.md) — golden bench, currently a
   single-baseline shape; this RFC extends it to a per-embedder shape

@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 import asyncio
 import logging
-from agent_vault.correlation import (
+from agentic_inquiry.correlation import (
     generate_correlation_id,
     get_correlation_id,
     set_correlation_id,

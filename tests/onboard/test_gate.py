@@ -5,8 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
-from agent_vault.onboard.gate import check_onboard_gate
-from agent_vault.onboard.staleness import StalenessResult
+from agentic_inquiry.onboard.gate import check_onboard_gate
+from agentic_inquiry.onboard.staleness import StalenessResult
 
 
 class TestOnboardGate:
@@ -36,7 +36,7 @@ class TestOnboardGate:
         assert result is not None
         assert result.reason == "no_onboard"
 
-    @patch("agent_vault.onboard.gate.check_onboard_staleness")
+    @patch("agentic_inquiry.onboard.gate.check_onboard_staleness")
     async def test_gate_passes_when_fresh(self, mock_check: AsyncMock) -> None:
         mock_check.return_value = StalenessResult(
             is_stale=False,
@@ -54,7 +54,7 @@ class TestOnboardGate:
         assert result is not None
         assert result.is_stale is False
 
-    @patch("agent_vault.onboard.gate.check_onboard_staleness")
+    @patch("agentic_inquiry.onboard.gate.check_onboard_staleness")
     async def test_gate_warns_when_stale(self, mock_check: AsyncMock) -> None:
         mock_check.return_value = StalenessResult(
             is_stale=True,

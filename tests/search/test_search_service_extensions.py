@@ -8,12 +8,12 @@ import json
 from unittest.mock import AsyncMock, MagicMock
 import pytest_asyncio
 
-from agent_vault.config import Config, StorageConfig
-from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.models.graph_entity import GraphEntity, EntityType
-from agent_vault.models.graph_relationship import GraphRelationship, RelationshipType
-from agent_vault.search.service import SearchService
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.models.graph_entity import GraphEntity, EntityType
+from agentic_inquiry.models.graph_relationship import GraphRelationship, RelationshipType
+from agentic_inquiry.search.service import SearchService
 
 
 @pytest.fixture

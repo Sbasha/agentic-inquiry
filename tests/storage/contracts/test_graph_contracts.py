@@ -9,8 +9,8 @@ Each test is run against all provider implementations via the parameterized
 
 import pytest
 
-from agent_vault.models.graph_entity import EntityType
-from agent_vault.models.graph_relationship import RelationshipType
+from agentic_inquiry.models.graph_entity import EntityType
+from agentic_inquiry.models.graph_relationship import RelationshipType
 
 pytestmark = [pytest.mark.unit, pytest.mark.contracts]
 

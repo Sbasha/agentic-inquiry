@@ -1,4 +1,4 @@
-"""Deep search test suite for agv search relevance improvement.
+"""Deep search test suite for ai search relevance improvement.
 
 Runs 10 queries against a large-scale production index and scores results.
 Categories: keyword (exact match), conceptual (semantic), structural (architecture).
@@ -195,11 +195,11 @@ def score_result(test: QueryTest, results: list[dict]) -> QueryResult:
 
 
 async def run_search(query: str, limit: int = 20, env_name: str = "alloydb") -> list[dict]:
-    """Run a agv hybrid search and return results."""
-    from agent_vault.cli.env_resolver import load_config_for_environment
-    from agent_vault.embeddings.factory import configure_embedder_for_backend
-    from agent_vault.search.service import SearchService
-    from agent_vault.storage.facade import StorageFacade
+    """Run a ai hybrid search and return results."""
+    from agentic_inquiry.cli.env_resolver import load_config_for_environment
+    from agentic_inquiry.embeddings.factory import configure_embedder_for_backend
+    from agentic_inquiry.search.service import SearchService
+    from agentic_inquiry.storage.facade import StorageFacade
 
     # Load config via environment resolver
     config = load_config_for_environment(None)
@@ -218,7 +218,7 @@ async def run_search(query: str, limit: int = 20, env_name: str = "alloydb") -> 
             query_vector = query
         else:
             # For local embedding backends
-            from agent_vault.embeddings.service import EmbeddingService
+            from agentic_inquiry.embeddings.service import EmbeddingService
             embed_service = EmbeddingService()
             query_vector = await embed_service.embed_async(query)
 
@@ -259,13 +259,13 @@ async def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Deep search test suite")
-    parser.add_argument("--env", default="alloydb", help="agv environment name")
+    parser.add_argument("--env", default="alloydb", help="ai environment name")
     parser.add_argument("--limit", type=int, default=20, help="Results per query")
     parser.add_argument("--output", default=None, help="Output JSON file path")
     args = parser.parse_args()
 
     print("=" * 70)
-    print("agv DEEP SEARCH TEST SUITE")
+    print("ai DEEP SEARCH TEST SUITE")
     print(f"Environment: {args.env}  |  Limit: {args.limit}")
     print("=" * 70)
 

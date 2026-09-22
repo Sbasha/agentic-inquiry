@@ -13,9 +13,9 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.exceptions import ParsingError
-from agent_vault.parsers.implementations.fallback_text import FallbackTextParser
-from agent_vault.parsers.models import ParsedDocument
+from agentic_inquiry.exceptions import ParsingError
+from agentic_inquiry.parsers.implementations.fallback_text import FallbackTextParser
+from agentic_inquiry.parsers.models import ParsedDocument
 
 
 @pytest.fixture

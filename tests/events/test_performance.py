@@ -17,10 +17,10 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config
-from agent_vault.events import EventSystem
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.events.store import EventStore
+from agentic_inquiry.config import Config
+from agentic_inquiry.events import EventSystem
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.events.store import EventStore
 
 
 class TestEventEmissionLatency:

@@ -11,15 +11,15 @@ pytestmark = pytest.mark.integration
 
 from pathlib import Path
 
-from agent_vault.config import Config
-from agent_vault.embeddings.base import Embedder
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.indexing.document_processor import DocumentProcessor
-from agent_vault.indexing.embedding_service import EmbeddingService
-from agent_vault.indexing.graph_builder import GraphBuilder
-from agent_vault.indexing.relationship_resolver import RelationshipResolver
-from agent_vault.indexing.symbol_registry import SymbolRegistry
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.config import Config
+from agentic_inquiry.embeddings.base import Embedder
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.indexing.document_processor import DocumentProcessor
+from agentic_inquiry.indexing.embedding_service import EmbeddingService
+from agentic_inquiry.indexing.graph_builder import GraphBuilder
+from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
+from agentic_inquiry.indexing.symbol_registry import SymbolRegistry
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 

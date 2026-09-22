@@ -8,7 +8,7 @@
 
 ## Test Suite Overview
 
-This test evaluates how effectively an agent can investigate performance issues using Agent-Vault to:
+This test evaluates how effectively an agent can investigate performance issues using Agentic Inquiry to:
 - Identify performance bottlenecks
 - Understand data flow and volume
 - Find existing optimizations
@@ -40,7 +40,7 @@ Performance investigation is successful if the agent can:
 
 **Step 1: Create Session with Unique Project ID**
 ```python
-project_id = "agv_test10_perf_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test10_perf_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Performance investigation test")
 ```
 

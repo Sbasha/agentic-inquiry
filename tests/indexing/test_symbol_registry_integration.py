@@ -6,10 +6,10 @@ pytestmark = pytest.mark.integration
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.embeddings.base import Embedder
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.embeddings.base import Embedder
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -34,7 +34,7 @@ class _DummyEmbedder(Embedder):
 def test_symbol_registry_integration():
     """Test that symbols are registered with rich metadata."""
     async def run():
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.config import Config, StorageConfig
         
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
@@ -134,7 +134,7 @@ def test_symbol_registry_integration():
 def test_symbol_registry_multiple_definitions():
     """Test that multiple definitions of the same symbol are tracked."""
     async def run():
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.config import Config, StorageConfig
         
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
@@ -212,7 +212,7 @@ def test_symbol_registry_multiple_definitions():
 def test_symbol_registry_get_symbol_count():
     """Test get_symbol_count() method."""
     async def run():
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.config import Config, StorageConfig
         
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
@@ -297,7 +297,7 @@ def test_symbol_registry_get_symbol_count():
 def test_symbol_registry_get_file_count():
     """Test get_file_count() method."""
     async def run():
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.config import Config, StorageConfig
         
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
@@ -384,7 +384,7 @@ def test_symbol_registry_get_file_count():
 def test_symbol_registry_get_statistics():
     """Test get_statistics() method."""
     async def run():
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.config import Config, StorageConfig
         
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")

@@ -10,8 +10,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.database.filter_helpers import by_id
-from agent_vault.database.filters import Filter, FilterOperator
+from agentic_inquiry.database.filter_helpers import by_id
+from agentic_inquiry.database.filters import Filter, FilterOperator
 
 
 class TestIdFieldConsistency:

@@ -11,10 +11,10 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.correlation import get_correlation_id
+from agentic_inquiry.correlation import get_correlation_id
 from tests.helpers.async_utils import AsyncTestHelper
-from agent_vault.events.context_managers import OperationTracker, track_operation
-from agent_vault.events.models import EventStatus
+from agentic_inquiry.events.context_managers import OperationTracker, track_operation
+from agentic_inquiry.events.models import EventStatus
 
 
 class TestOperationTracker:

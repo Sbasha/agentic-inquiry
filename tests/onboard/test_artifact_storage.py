@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from agent_vault.onboard.artifact_storage import (
+from agentic_inquiry.onboard.artifact_storage import (
     LocalOnboardArtifactStorage,
     create_onboard_artifact_storage,
 )
@@ -95,7 +95,7 @@ class TestCreateOnboardArtifactStorage:
 
     def test_default_local_storage(self, tmp_path: Path) -> None:
         """Default config produces LocalOnboardArtifactStorage."""
-        from agent_vault.config import Config
+        from agentic_inquiry.config import Config
 
         config = Config()
         # Override storage root so it doesn't use the default
@@ -106,7 +106,7 @@ class TestCreateOnboardArtifactStorage:
 
     def test_explicit_local_type(self, tmp_path: Path) -> None:
         """Explicit type=local produces LocalOnboardArtifactStorage."""
-        from agent_vault.config import Config
+        from agentic_inquiry.config import Config
 
         config = Config()
         config.storage.root = str(tmp_path)
@@ -117,7 +117,7 @@ class TestCreateOnboardArtifactStorage:
 
     def test_gcs_type_without_gcsfs_raises(self) -> None:
         """GCS config with missing gcsfs raises ImportError."""
-        from agent_vault.config import Config
+        from agentic_inquiry.config import Config
 
         config = Config()
         config.onboard.artifact_storage.type = "gcs"
@@ -152,7 +152,7 @@ class TestOnboardConfig:
     """Tests for OnboardConfig dataclass."""
 
     def test_defaults(self) -> None:
-        from agent_vault.config import OnboardConfig
+        from agentic_inquiry.config import OnboardConfig
 
         cfg = OnboardConfig()
         assert cfg.gate_enabled is True
@@ -161,21 +161,21 @@ class TestOnboardConfig:
         assert cfg.artifact_storage.gcs_bucket is None
 
     def test_invalid_storage_type_raises(self) -> None:
-        from agent_vault.config import OnboardArtifactStorageConfig
-        from agent_vault.exceptions import ConfigurationError
+        from agentic_inquiry.config import OnboardArtifactStorageConfig
+        from agentic_inquiry.exceptions import ConfigurationError
 
         with pytest.raises(ConfigurationError, match="Invalid artifact storage type"):
             OnboardArtifactStorageConfig(type="s3")
 
     def test_gcs_without_bucket_raises(self) -> None:
-        from agent_vault.config import OnboardArtifactStorageConfig
-        from agent_vault.exceptions import ConfigurationError
+        from agentic_inquiry.config import OnboardArtifactStorageConfig
+        from agentic_inquiry.exceptions import ConfigurationError
 
         with pytest.raises(ConfigurationError, match="gcs_bucket is required"):
             OnboardArtifactStorageConfig(type="gcs", gcs_bucket=None)
 
     def test_config_class_has_onboard(self) -> None:
-        from agent_vault.config import Config
+        from agentic_inquiry.config import Config
 
         config = Config()
         assert hasattr(config, "onboard")

@@ -12,7 +12,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.database.lancedb_manager import _NO_VERSION_CLEANUP, LanceDBManager
+from agentic_inquiry.database.lancedb_manager import _NO_VERSION_CLEANUP, LanceDBManager
 
 
 class MockFragment:

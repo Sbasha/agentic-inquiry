@@ -55,10 +55,10 @@ async def run(
     run_id: str,
     output_dir: Path,
 ) -> Dict[str, Any]:
-    from agent_vault.mcp.tools.search import search_knowledge
-    from agent_vault.mcp.tools.analysis import understand_entity
-    from agent_vault.mcp.tools.info import get_project_info, list_entities
-    from agent_vault.mcp.tools.memory import save_memory, recall_memories
+    from agentic_inquiry.mcp.tools.search import search_knowledge
+    from agentic_inquiry.mcp.tools.analysis import understand_entity
+    from agentic_inquiry.mcp.tools.info import get_project_info, list_entities
+    from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
 
     results: Dict[str, Any] = {}
     issues: list = []
@@ -312,9 +312,9 @@ async def run(
         check(results, issues, "T3_2_org_conventions", org_ok, {
             "tool_files_found": len(tool_files),
             "sample_files": list(tool_files)[:5],
-            "directory_pattern": "agent_vault/mcp/tools/<module>.py",
+            "directory_pattern": "agentic_inquiry/mcp/tools/<module>.py",
             "module_grouping": "Grouped by capability (search, analysis, knowledge, session, info)",
-            "new_api_location": "agent_vault/mcp/tools/navigation.py",
+            "new_api_location": "agentic_inquiry/mcp/tools/navigation.py",
         }, fail_msg="Could not confirm organizational conventions")
         note_adoption(journal, "found tool module files via entity file_path filter — structured codebase navigation", "positive" if org_ok else "negative")
     except Exception as e:
@@ -422,8 +422,8 @@ async def run(
             "factory_hits": len(factory_hits),
             "resolver_hits": len(resolver_hits),
             "integration_points": [
-                "agent_vault/mcp/tools/__init__.py - export new function",
-                "agent_vault/mcp/server.py or factories.py - register tool",
+                "agentic_inquiry/mcp/tools/__init__.py - export new function",
+                "agentic_inquiry/mcp/server.py or factories.py - register tool",
                 "services['entity_resolver'] - core dependency for entity lookup",
                 "services['storage'] - for direct graph queries",
                 "validate_entity_name() - input validation",
@@ -448,7 +448,7 @@ async def run(
         check(results, issues, "T5_2_backward_compatibility", True, {
             "breaking_changes": 0,
             "approach": "additive",
-            "strategy": "New module agent_vault/mcp/tools/navigation.py, add to __init__ exports and server registration",
+            "strategy": "New module agentic_inquiry/mcp/tools/navigation.py, add to __init__ exports and server registration",
             "existing_code_impact": "None - no modifications to existing tool signatures",
             "context_hits": len(hits),
         })
@@ -494,7 +494,7 @@ async def run(
         design_spec = """
 API Design: navigate_to_definition
 
-Location: agent_vault/mcp/tools/navigation.py
+Location: agentic_inquiry/mcp/tools/navigation.py
 
 Interface:
   async def navigate_to_definition(
@@ -560,7 +560,7 @@ Design decisions:
 
     # ── Honest assessment: design workflow limitations ──────────────────
     note_adoption(journal,
-        "agv helped discover existing API patterns but the design spec (T6.2) was hand-written, not generated "
+        "ai helped discover existing API patterns but the design spec (T6.2) was hand-written, not generated "
         "— the tool finds examples to follow but doesn't synthesize a design, so the agent does the real work",
         "neutral")
 

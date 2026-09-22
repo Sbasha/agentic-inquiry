@@ -11,9 +11,9 @@ from unittest.mock import AsyncMock, MagicMock
 from hypothesis import given, settings, HealthCheck
 from hypothesis import strategies as st
 
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.config import Config, StorageConfig
-from agent_vault.watching import register_watcher
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.watching import register_watcher
 
 
 class MockWatcher:
@@ -74,7 +74,7 @@ def mock_watcher(request):
     watcher._test_watcher_name = watcher_name
     yield watcher
     # Cleanup
-    from agent_vault.watching import _watcher_registry
+    from agentic_inquiry.watching import _watcher_registry
     try:
         _watcher_registry.unregister(watcher_name)
     except (KeyError, AttributeError):

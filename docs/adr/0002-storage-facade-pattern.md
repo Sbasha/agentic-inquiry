@@ -56,7 +56,7 @@ class StorageFacade:
 - Document as fragile area in AGENTS.md
 
 ## References
-- `agent_vault/storage/facade.py` - Implementation
+- `agentic_inquiry/storage/facade.py` - Implementation
 - ADR-001 - Protocol architecture (prerequisite)
 - AGENTS.md "Fragile Areas" section
 - Retrospective: 05-ARCHITECTURE-DECISION-ANALYSIS.md

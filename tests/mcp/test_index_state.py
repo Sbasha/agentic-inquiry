@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from agent_vault.mcp.utils.index_state import (
+from agentic_inquiry.mcp.utils.index_state import (
     IndexState,
     IndexStateInfo,
     detect_index_state,

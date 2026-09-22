@@ -8,9 +8,9 @@ from pathlib import Path
 
 import pytest
 
-from agent_vault.onboard.models import OnboardRun
-from agent_vault.onboard.providers.sqlite import SQLiteOnboardMetadataProvider
-from agent_vault.onboard.metadata_service import OnboardMetadataService
+from agentic_inquiry.onboard.models import OnboardRun
+from agentic_inquiry.onboard.providers.sqlite import SQLiteOnboardMetadataProvider
+from agentic_inquiry.onboard.metadata_service import OnboardMetadataService
 
 
 @pytest.fixture

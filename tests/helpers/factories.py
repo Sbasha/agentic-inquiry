@@ -4,8 +4,8 @@ Provides factory functions for creating test data objects.
 """
 
 from typing import Dict, List, Optional
-from agent_vault.models.document_chunk import DocumentChunk
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.models.document_chunk import DocumentChunk
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
 
 
 def create_test_chunk(

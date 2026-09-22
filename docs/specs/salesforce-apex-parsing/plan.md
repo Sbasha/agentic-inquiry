@@ -5,8 +5,8 @@
 
 ## Assumption trio
 
-- **Files touched:** `agent_vault/parsers/implementations/queries/apex.scm`;
-  `agent_vault/parsers/implementations/unified_code.py`
+- **Files touched:** `agentic_inquiry/parsers/implementations/queries/apex.scm`;
+  `agentic_inquiry/parsers/implementations/unified_code.py`
   (`_DEFINITION_NODE_TYPES`, `_extract_class_bases`);
   `tests/parsers/test_apex_extraction.py` (new);
   `tests/parsers/test_unified_code_all_languages.py`

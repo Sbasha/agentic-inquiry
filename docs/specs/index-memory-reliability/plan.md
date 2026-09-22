@@ -12,7 +12,7 @@
 
 Four seams on the same post-index path, each testable alone: collapse
 duplicate merge keys in `_upsert_rows`, stop swallowing graph-write
-failures so `agv index` exits 1, make `agv memory save` verify the row
+failures so `ai index` exits 1, make `ai memory save` verify the row
 on the canonical tables, then print the CPU hatch on Darwin before the
 embedder loads. No new libraries. No lock manager. Storage tests use
 on-disk LanceDB.
@@ -55,16 +55,16 @@ span tasks.
 status, memory honesty, and the hatch hint do not share a single new
 integration surface.
 
-**Manual verification:** on a temp LanceDB env, `agv memory save -i 0.85
---project demo` then `agv memory list --project demo` shows the row;
-`agv index` summary still prints when a graph write forces exit 1.
+**Manual verification:** on a temp LanceDB env, `ai memory save -i 0.85
+--project demo` then `ai memory list --project demo` shows the row;
+`ai index` summary still prints when a graph write forces exit 1.
 
 ## Design (LLD)
 
 Shape is `mixed`. UI-only sub-sections (state and control flow) are
 omitted. Stack is the existing Python CLI + LanceDB path
-(`agent_vault/database/lancedb_manager.py`, `agent_vault/cli/`,
-`agent_vault/memory/`). No `docs/architecture/reference.md` is present.
+(`agentic_inquiry/database/lancedb_manager.py`, `agentic_inquiry/cli/`,
+`agentic_inquiry/memory/`). No `docs/architecture/reference.md` is present.
 
 ### Design decisions
 
@@ -79,7 +79,7 @@ omitted. Stack is the existing Python CLI + LanceDB path
   LanceDB.
 - Table names come from `config.memory.*.table_name`. Traces to AC 3.
 - Darwin hatch hint prints to stderr before embedder construction.
-  Traces to AC 7-8. Alternative (docs-only) misses a global `agv` that
+  Traces to AC 7-8. Alternative (docs-only) misses a global `ai` that
   has not been reinstalled.
 - One `asyncio.Lock` per table name, owned by `TableManager`
   (`table_lock(name)`), taken around open/create plus
@@ -127,37 +127,37 @@ Traces to AC 3. · contracts: none.
 
 No OpenAPI / MCP contract file. Public CLI behavior:
 
-- `agv index` exit 1 and a graph-write failure line when
+- `ai index` exit 1 and a graph-write failure line when
   `add_graph_relationships` fails. Traces to AC 2.
-- `agv memory save` success line and exit 0 only after read-back.
+- `ai memory save` success line and exit 0 only after read-back.
   Traces to AC 4-5.
 - `--project` on save/list/recall is stored and used as a filter.
   Traces to AC 6.
 
-`exit_code_for_index_result` in `agent_vault/cli/index.py` already
+`exit_code_for_index_result` in `agentic_inquiry/cli/index.py` already
 returns 1 for any status other than `completed` with chunks; T2 feeds
 it a non-`completed` status. Traces to AC 2.
 
 ### Component / module decomposition
 
 - Dedupe helper next to `_upsert_rows` in
-  `agent_vault/database/lancedb_manager.py`.
+  `agentic_inquiry/database/lancedb_manager.py`.
 - Graph-write failure propagation in
   `relationship_batch_processor.commit_batch`,
   `graph_builder._commit_batch`, and `IndexingPipeline` flush paths.
-- Memory honesty in `agent_vault/cli/memory.py` (verify, project
+- Memory honesty in `agentic_inquiry/cli/memory.py` (verify, project
   context, reject in-memory fallback) plus adapter initialize and
   `MemorySystem` table names from config.
-- Hatch hint helper on `agent_vault/cli/env_resolver.py` (env path is
+- Hatch hint helper on `agentic_inquiry/cli/env_resolver.py` (env path is
   already resolved there); called from `index.py` and `memory.py`.
   Not a new package.
 - Per-table lock and write path in
-  `agent_vault/database/lancedb_manager.py`; FTS config in
-  `agent_vault/database/lancedb_schemas.py`; index creation in
-  `agent_vault/database/tables.py` and
-  `agent_vault/database/schema_manager.py`.
+  `agentic_inquiry/database/lancedb_manager.py`; FTS config in
+  `agentic_inquiry/database/lancedb_schemas.py`; index creation in
+  `agentic_inquiry/database/tables.py` and
+  `agentic_inquiry/database/schema_manager.py`.
 - Qualification scripts (receipt runner, read-only index inspector)
-  live under `~/.agv/qualification/index-durability-20260921/work/`,
+  live under `~/.agentic-inquiry/qualification/index-durability-20260921/work/`,
   outside the repository, because they name the private corpus.
 
 Traces to AC 1-17. · contracts: none.
@@ -171,9 +171,9 @@ Traces to AC 1-17. · contracts: none.
 - Memory store exception, missing table after write, or in-memory
   adapter: exit 1, no success line.
 - Working memory (`importance < 0.7`): exit 1, session-only message.
-- Hatch hint: skip when `AGV_EMBEDDING_DEVICE` is set or platform is
+- Hatch hint: skip when `AI_EMBEDDING_DEVICE` is set or platform is
   not Darwin. Process kill 137/139 remains uncatchable.
-- Cross-process commit conflict (another `agv` process writing the same
+- Cross-process commit conflict (another `ai` process writing the same
   table): still retried five times with backoff, then fails the file.
 - Reader in another process holding a version older than five minutes
   when `run_maintenance` prunes: unchanged, out of scope.
@@ -201,7 +201,7 @@ Traces to AC 2, 4, 7.
 
 **Depends on:** none
 
-**Touches:** agent_vault/database/lancedb_manager.py, tests/database/test_lancedb_merge_dedupe.py
+**Touches:** agentic_inquiry/database/lancedb_manager.py, tests/database/test_lancedb_merge_dedupe.py
 
 **Mode:** TDD
 
@@ -226,11 +226,11 @@ Traces to AC 2, 4, 7.
 **Done when:** `tests/database/test_lancedb_merge_dedupe.py` is green
 and retry tests still pass.
 
-### T2: Graph write failure makes `agv index` exit 1
+### T2: Graph write failure makes `ai index` exit 1
 
 **Depends on:** T1
 
-**Touches:** agent_vault/indexing/relationship_batch_processor.py, agent_vault/indexing/graph_builder.py, agent_vault/indexing/pipeline.py, tests/indexing/test_flush_relationships.py, tests/cli/test_index_exit_code.py, tests/database/test_lancedb_retry.py
+**Touches:** agentic_inquiry/indexing/relationship_batch_processor.py, agentic_inquiry/indexing/graph_builder.py, agentic_inquiry/indexing/pipeline.py, tests/indexing/test_flush_relationships.py, tests/cli/test_index_exit_code.py, tests/database/test_lancedb_retry.py
 
 **Mode:** TDD
 
@@ -265,11 +265,11 @@ and retry tests still pass.
 `tests/cli/test_index_exit_code.py` still maps non-completed status to
 1.
 
-### T3: `agv memory save` exits 0 only when the row is readable
+### T3: `ai memory save` exits 0 only when the row is readable
 
 **Depends on:** none
 
-**Touches:** agent_vault/cli/memory.py, agent_vault/memory/system.py, agent_vault/memory/adapters/lancedb_adapter.py, tests/cli/test_memory_exit_code.py, tests/memory/test_lancedb_integration.py
+**Touches:** agentic_inquiry/cli/memory.py, agentic_inquiry/memory/system.py, agentic_inquiry/memory/adapters/lancedb_adapter.py, tests/cli/test_memory_exit_code.py, tests/memory/test_lancedb_integration.py
 
 **Mode:** TDD
 
@@ -311,25 +311,25 @@ and retry tests still pass.
 
 **Depends on:** none
 
-**Touches:** agent_vault/cli/env_resolver.py, agent_vault/cli/index.py, agent_vault/cli/memory.py, tests/cli/test_env_resolver.py, README.md
+**Touches:** agentic_inquiry/cli/env_resolver.py, agentic_inquiry/cli/index.py, agentic_inquiry/cli/memory.py, tests/cli/test_env_resolver.py, README.md
 
 **Mode:** TDD (hint gating) and goal-based (README / commented hatch)
 
 **Tests:**
 - With `platform.system` patched to `Darwin` and
-  `AGV_EMBEDDING_DEVICE` unset, the helper writes one stderr line
-  containing `.env` and `AGV_EMBEDDING_DEVICE=cpu` (AC 7).
+  `AI_EMBEDDING_DEVICE` unset, the helper writes one stderr line
+  containing `.env` and `AI_EMBEDDING_DEVICE=cpu` (AC 7).
   stub: true (`tests/cli/test_env_resolver.py`)
 - With the variable set to `cpu` or `mps`, no line (AC 7).
   stub: true
 - With platform `Linux`, no line (AC 7).
   stub: true
 - Goal-based: `LocalSetup` env text still contains
-  `# AGV_EMBEDDING_DEVICE=cpu` (existing
+  `# AI_EMBEDDING_DEVICE=cpu` (existing
   `tests/cli/setup/test_local_setup.py`).
   no stub (mode)
 - Goal-based: README contains `uv tool install . --reinstall` and
-  `AGV_EMBEDDING_DEVICE=cpu` (AC 8).
+  `AI_EMBEDDING_DEVICE=cpu` (AC 8).
   no stub (mode)
 
 **Approach:**
@@ -339,7 +339,7 @@ and retry tests still pass.
   construction.
 - README: after the `uv tool install .` getting-started note, add
   reinstall (`uv tool install . --reinstall`) so a previously
-  installed global `agv` picks up the env-file loader, then uncomment
+  installed global `ai` picks up the env-file loader, then uncomment
   the hatch if Metal/MPS aborts. One sentence that two embedding
   processes on Metal can abort is enough. Do not default the hatch on.
 - Do not edit `CHANGELOG.md`. Living architecture docs may mention the
@@ -353,7 +353,7 @@ README.md` matches; LocalSetup hatch remains commented.
 
 **Depends on:** T6
 
-**Touches:** agent_vault/database/lancedb_manager.py, agent_vault/database/tables.py, agent_vault/database/schema_manager.py, agent_vault/database/adapters/lancedb_adapter.py, agent_vault/storage/protocols/indexing.py, agent_vault/storage/protocols/vector.py, agent_vault/indexing/schema_processor.py, agent_vault/parsers/implementations/unified_code.py, tests/database/test_lancedb_write_serialization.py, tests/database/test_lancedb_fts_index.py, tests/database/test_maintenance.py
+**Touches:** agentic_inquiry/database/lancedb_manager.py, agentic_inquiry/database/tables.py, agentic_inquiry/database/schema_manager.py, agentic_inquiry/database/adapters/lancedb_adapter.py, agentic_inquiry/storage/protocols/indexing.py, agentic_inquiry/storage/protocols/vector.py, agentic_inquiry/indexing/schema_processor.py, agentic_inquiry/parsers/implementations/unified_code.py, tests/database/test_lancedb_write_serialization.py, tests/database/test_lancedb_fts_index.py, tests/database/test_maintenance.py
 
 **Mode:** TDD
 
@@ -442,7 +442,7 @@ schema-manager tests green.
 
 **Depends on:** none
 
-**Touches:** agent_vault/database/lancedb_schemas.py, agent_vault/database/tables.py, agent_vault/database/schema_manager.py, docs/development/adapter-implementation-guide.md, tests/database/test_schema_manager.py, tests/database/test_lancedb_fts_index.py
+**Touches:** agentic_inquiry/database/lancedb_schemas.py, agentic_inquiry/database/tables.py, agentic_inquiry/database/schema_manager.py, docs/development/adapter-implementation-guide.md, tests/database/test_schema_manager.py, tests/database/test_lancedb_fts_index.py
 
 **Mode:** TDD (index shape) and goal-based (both LanceDB versions)
 
@@ -512,14 +512,14 @@ schema-manager tests green.
   partial index reproduces `Retryable commit conflict` retries on the
   same corpus and records wall-clock (AC 15 baseline).
   no stub (mode)
-- Receipt `10-*`: fixed code, same clone, `agv index` exit 0, zero
+- Receipt `10-*`: fixed code, same clone, `ai index` exit 0, zero
   conflict / ambiguous / not-found lines, any failed file attributed to
   a non-write cause (AC 15).
   no stub (mode)
-- Receipt `11-*`, `12-*`: fresh-process `agv status` and `agv search`
+- Receipt `11-*`, `12-*`: fresh-process `ai status` and `ai search`
   against that index; counts match the read-only inspector (AC 15).
   no stub (mode)
-- Receipt `20-*`: second `agv index` run; chunk and entity distinct-key
+- Receipt `20-*`: second `ai index` run; chunk and entity distinct-key
   counts unchanged, duplicate-key rows not grown, relationship growth
   recorded (AC 16).
   no stub (mode)
@@ -543,7 +543,7 @@ schema-manager tests green.
 
 **Approach:**
 - All runs use the isolated venv with lancedb 0.38.0 and the branch
-  checkout installed, `AGV_EMBEDDING_DEVICE=cpu`, the comparator env
+  checkout installed, `AI_EMBEDDING_DEVICE=cpu`, the comparator env
   config, and `--skip-onboard-check`.
 - The inspector reads tables with `lancedb` directly and prints only
   counts, versions, index names, and duplicate-key tallies.
@@ -560,14 +560,14 @@ committed; spec ACs ticked; backlog updated.
 Big bang in one PR. Reversible by revert. No infra. No feature flag.
 No schema migration beyond creating the canonical memory table names
 on first initialize or save. Operators with a half-written
-`graph_relationships` table re-run `agv index` after this ships.
+`graph_relationships` table re-run `ai index` after this ships.
 
 ## Risks
 
 - Keep-last may drop a real edge if two distinct relationships share
   an 8-hex-char id. Collapse is logged; unique keys are preserved.
 - Darwin hint runs on every Mac index/save until the operator sets
-  `AGV_EMBEDDING_DEVICE`. One line, not a CPU default.
+  `AI_EMBEDDING_DEVICE`. One line, not a CPU default.
 - Memory table rename (CLI hardcoded names vs config names) leaves any
   accidental `memory_episodic` rows unread. The explore report showed
   those tables never grew.

@@ -56,7 +56,7 @@ done
 
 # Try to find env file if test-id provided
 if [[ -n "$TEST_ID" && -z "$ENV_FILE" ]]; then
-    ENV_FILE=".agv/test/gcp-test-${TEST_ID}.env"
+    ENV_FILE=".agentic-inquiry/test/gcp-test-${TEST_ID}.env"
     # Fallback to legacy location
     if [[ ! -f "$ENV_FILE" && -f ".gcp-test-${TEST_ID}.env" ]]; then
         ENV_FILE=".gcp-test-${TEST_ID}.env"
@@ -83,7 +83,7 @@ if [[ -z "$PROJECT" ]]; then
     exit 1
 fi
 
-INSTANCE_NAME="agv-test-${TEST_ID}"
+INSTANCE_NAME="ai-test-${TEST_ID}"
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}  GCP Cloud SQL Test Environment Teardown${NC}"
@@ -116,7 +116,7 @@ fi
 
 # Step 2: Clean up env file
 echo -e "${YELLOW}[2/2] Cleaning up local files...${NC}"
-ENV_FILE=".agv/test/gcp-test-${TEST_ID}.env"
+ENV_FILE=".agentic-inquiry/test/gcp-test-${TEST_ID}.env"
 LEGACY_ENV_FILE=".gcp-test-${TEST_ID}.env"
 if [[ -f "$ENV_FILE" ]]; then
     rm -f "$ENV_FILE"

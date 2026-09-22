@@ -15,8 +15,8 @@ pytestmark = pytest.mark.unit
 from hypothesis import given, strategies as st, settings
 from unittest.mock import MagicMock
 
-from agent_vault.indexing.graph_builder import GraphBuilder
-from agent_vault.parsers.models import ParserRelationship
+from agentic_inquiry.indexing.graph_builder import GraphBuilder
+from agentic_inquiry.parsers.models import ParserRelationship
 
 
 # =============================================================================

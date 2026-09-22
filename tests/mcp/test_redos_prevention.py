@@ -10,7 +10,7 @@ import re
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.mcp.tools.info import (
+from agentic_inquiry.mcp.tools.info import (
     _is_safe_regex_pattern,
     _safe_regex_search,
     MAX_REGEX_PATTERN_LENGTH,

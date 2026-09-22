@@ -14,7 +14,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.connectors.types import (
+from agentic_inquiry.connectors.types import (
     SourceContent,
     SourceItem,
     compute_content_hash,

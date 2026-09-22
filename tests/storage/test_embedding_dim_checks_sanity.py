@@ -19,11 +19,11 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.storage.errors import DimensionMismatch
-from agent_vault.storage.providers.alloydb.schemas import (
+from agentic_inquiry.storage.errors import DimensionMismatch
+from agentic_inquiry.storage.providers.alloydb.schemas import (
     AlloyDBSchemaGenerator,
 )
-from agent_vault.storage.providers.postgresql.schemas import (
+from agentic_inquiry.storage.providers.postgresql.schemas import (
     ENTITIES_TABLE,
     ENTITY_EMBEDDINGS_TABLE,
     SchemaGenerator,
@@ -47,12 +47,12 @@ class TestSchemaHasEmbeddingColumn:
         server-side modes — a dim mismatch on ``g_entities`` must be
         detectable regardless of strategy.
         """
-        gen = SchemaGenerator(prefix="agv_test_", embedding_dim=384)
+        gen = SchemaGenerator(prefix="ai_test_", embedding_dim=384)
         ddl = gen.generate_create_table(ENTITIES_TABLE)
         assert "embedding vector(384)" in ddl
 
     def test_entity_embeddings_ddl_has_embedding_vector_column(self):
-        gen = SchemaGenerator(prefix="agv_test_", embedding_dim=384)
+        gen = SchemaGenerator(prefix="ai_test_", embedding_dim=384)
         ddl = gen.generate_create_table(ENTITY_EMBEDDINGS_TABLE)
         assert "embedding vector(384)" in ddl
 
@@ -63,7 +63,7 @@ class TestSchemaHasEmbeddingColumn:
         ``embedding vector(N)`` — so pg_attribute's ``atttypmod`` picks
         up the width and the dim check fires identically.
         """
-        gen = AlloyDBSchemaGenerator(prefix="agv_test_", embedding_dim=768)
+        gen = AlloyDBSchemaGenerator(prefix="ai_test_", embedding_dim=768)
         statements = gen.get_create_statements("graph")
         entities_ddl = next(s for s in statements if "entities" in s and "CREATE TABLE" in s)
         assert "embedding vector(768)" in entities_ddl

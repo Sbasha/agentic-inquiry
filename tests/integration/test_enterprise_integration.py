@@ -1,4 +1,4 @@
-"""Enterprise integration tests for Agent-Vault.
+"""Enterprise integration tests for Agentic Inquiry.
 
 Verifies that enterprise components work together end-to-end:
 - Auth middleware + search route
@@ -25,7 +25,7 @@ from httpx import AsyncClient, ASGITransport
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import (
+from agentic_inquiry.config import (
     Config,
     MCPAPIConfig,
     MCPConfig,
@@ -64,7 +64,7 @@ async def test_auth_middleware_unauthenticated_returns_401(tmp_path):
         default_project_id="test_auth",
     )
 
-    from agent_vault.server.app import create_app
+    from agentic_inquiry.server.app import create_app
     app = await create_app(config=config, project_id="test_auth")
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -87,7 +87,7 @@ async def test_auth_middleware_authenticated_not_401(tmp_path):
         default_project_id="test_auth",
     )
 
-    from agent_vault.server.app import create_app
+    from agentic_inquiry.server.app import create_app
     app = await create_app(config=config, project_id="test_auth")
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -110,7 +110,7 @@ async def test_health_endpoint_accessible_without_auth(tmp_path):
         default_project_id="test_health",
     )
 
-    from agent_vault.server.app import create_app
+    from agentic_inquiry.server.app import create_app
     app = await create_app(config=config, project_id="test_health")
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
@@ -137,7 +137,7 @@ async def test_search_with_local_diff_returns_local_changes_summary(tmp_path):
         default_project_id="test_diff",
     )
 
-    from agent_vault.server.app import create_app
+    from agentic_inquiry.server.app import create_app
     app = await create_app(config=config, project_id="test_diff")
 
     payload = {
@@ -183,7 +183,7 @@ async def test_search_with_local_diff_annotates_results(tmp_path):
         default_project_id="test_annotation",
     )
 
-    from agent_vault.server.app import create_app
+    from agentic_inquiry.server.app import create_app
     app = await create_app(config=config, project_id="test_annotation")
 
     # Inject a mock search service that returns a predictable result
@@ -224,9 +224,9 @@ def test_env_resolver_returns_cloud_detected_when_gcp_imds_responds(tmp_path):
     """When GCP IMDS responds, resolve_environment must return source='cloud_detected'."""
     # Ensure no env vars override discovery
     env_overrides = {
-        "agv_CONFIG": None,
-        "agv_ENV": None,
-        "agv_HOME": str(tmp_path / ".agv"),
+        "AI_CONFIG": None,
+        "AI_ENV": None,
+        "AI_HOME": str(tmp_path / ".agentic-inquiry"),
     }
 
     class _FakeResponse:
@@ -255,7 +255,7 @@ def test_env_resolver_returns_cloud_detected_when_gcp_imds_responds(tmp_path):
                 del os.environ[k]
 
         with patch("urllib.request.urlopen", side_effect=_fake_urlopen):
-            from agent_vault.cli.env_resolver import resolve_environment
+            from agentic_inquiry.cli.env_resolver import resolve_environment
             resolved = resolve_environment(workspace=tmp_path)
 
     assert resolved.source == "cloud_detected"
@@ -265,9 +265,9 @@ def test_env_resolver_returns_cloud_detected_when_gcp_imds_responds(tmp_path):
 def test_env_resolver_falls_back_to_default_when_no_cloud(tmp_path):
     """When IMDS probes all fail, resolve_environment must return source='default'."""
     env_overrides = {
-        "agv_CONFIG": None,
-        "agv_ENV": None,
-        "agv_HOME": str(tmp_path / ".agv"),
+        "AI_CONFIG": None,
+        "AI_ENV": None,
+        "AI_HOME": str(tmp_path / ".agentic-inquiry"),
     }
 
     def _all_fail(req, timeout=None):
@@ -279,7 +279,7 @@ def test_env_resolver_falls_back_to_default_when_no_cloud(tmp_path):
                 del os.environ[k]
 
         with patch("urllib.request.urlopen", side_effect=_all_fail):
-            from agent_vault.cli.env_resolver import resolve_environment
+            from agentic_inquiry.cli.env_resolver import resolve_environment
             resolved = resolve_environment(workspace=tmp_path)
 
     assert resolved.source == "default"
@@ -321,7 +321,7 @@ def _make_commit(repo_path: Path, filename: str = "file.txt", message: str = "co
 
 def test_branch_discovery_filters_stale_branches(tmp_path):
     """discover_branches must only return branches within age cutoff (plus default)."""
-    from agent_vault.indexing.branch_discovery import discover_branches, DiscoveredBranch
+    from agentic_inquiry.indexing.branch_discovery import discover_branches, DiscoveredBranch
 
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -361,7 +361,7 @@ def test_branch_discovery_filters_stale_branches(tmp_path):
 @pytest.mark.asyncio
 async def test_expire_stale_branches_soft_deletes_stale_and_exempts_default(tmp_path):
     """expire_stale_branches must soft-delete stale branches but not the default."""
-    from agent_vault.indexing.branch_expiry import expire_stale_branches
+    from agentic_inquiry.indexing.branch_expiry import expire_stale_branches
 
     # Build a mock storage facade with a LanceDB-style vector provider
     # that tracks advanced_filter calls and records update calls.
@@ -414,7 +414,7 @@ async def test_expire_stale_branches_soft_deletes_stale_and_exempts_default(tmp_
 
 def test_document_chunk_branch_field_defaults_to_main():
     """DocumentChunk.branch defaults to 'main' when not specified."""
-    from agent_vault.models.document_chunk import DocumentChunk
+    from agentic_inquiry.models.document_chunk import DocumentChunk
 
     chunk = DocumentChunk(
         id="c1",
@@ -430,7 +430,7 @@ def test_document_chunk_branch_field_defaults_to_main():
 
 def test_document_chunk_branch_field_can_be_set():
     """DocumentChunk.branch can be set to any branch name at construction time."""
-    from agent_vault.models.document_chunk import DocumentChunk
+    from agentic_inquiry.models.document_chunk import DocumentChunk
 
     chunk = DocumentChunk(
         id="c1",
@@ -454,9 +454,9 @@ async def test_indexing_pipeline_schema_processor_propagates_branch(tmp_path):
     This test verifies that the DocumentChunks passed to add_document_chunks()
     have a non-empty branch field (i.e., the default is preserved end-to-end).
     """
-    from agent_vault.indexing.schema_processor import SchemaProcessor
-    from agent_vault.parsers.models import ParsedDocument, ParserChunk
-    from agent_vault.models.document_chunk import DocumentChunk
+    from agentic_inquiry.indexing.schema_processor import SchemaProcessor
+    from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
+    from agentic_inquiry.models.document_chunk import DocumentChunk
 
     # Capture the DocumentChunk objects that reach add_document_chunks
     stored_chunks: list[DocumentChunk] = []
@@ -518,8 +518,8 @@ async def test_indexing_pipeline_schema_processor_propagates_branch(tmp_path):
 
 def test_truncation_caps_files_and_lines():
     """truncate_diff must respect max_per_file and max_total limits."""
-    from agent_vault.server.routes.search import LocalDiff, LocalDiffFile
-    from agent_vault.server.overlay.truncation import truncate_diff
+    from agentic_inquiry.server.routes.search import LocalDiff, LocalDiffFile
+    from agentic_inquiry.server.overlay.truncation import truncate_diff
 
     # 15 files x 200 changed_lines each = 3000 total (exceeds max_total=500)
     files = [
@@ -551,8 +551,8 @@ def test_truncation_caps_files_and_lines():
 
 def test_truncation_overlay_annotation_consistent_with_truncated_file_list():
     """Overlay annotations must reflect the truncated file list, not the original."""
-    from agent_vault.server.routes.search import LocalDiff, LocalDiffFile
-    from agent_vault.server.overlay.truncation import truncate_diff
+    from agentic_inquiry.server.routes.search import LocalDiff, LocalDiffFile
+    from agentic_inquiry.server.overlay.truncation import truncate_diff
 
     # 10 files, tight budget: only first 2 will survive (alphabetically)
     files = [
@@ -592,8 +592,8 @@ def test_truncation_overlay_annotation_consistent_with_truncated_file_list():
 
 def test_truncation_no_mutation_of_original():
     """truncate_diff must not mutate the original LocalDiff object."""
-    from agent_vault.server.routes.search import LocalDiff, LocalDiffFile
-    from agent_vault.server.overlay.truncation import truncate_diff
+    from agentic_inquiry.server.routes.search import LocalDiff, LocalDiffFile
+    from agentic_inquiry.server.overlay.truncation import truncate_diff
 
     files = [
         LocalDiffFile(path="a.py", changed_lines=list(range(200)), status="modified"),

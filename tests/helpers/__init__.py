@@ -1,4 +1,4 @@
-"""Test helper utilities for Agent-Vault test suite.
+"""Test helper utilities for Agentic Inquiry test suite.
 
 This package provides reusable test utilities, fixtures, and helper functions
 to reduce duplication and improve test maintainability.

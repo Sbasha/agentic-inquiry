@@ -6,10 +6,10 @@ pytestmark = pytest.mark.integration
 from datetime import datetime, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.mcp.tools.memory import recall_memories
-from agent_vault.mcp.services.session_manager import SessionManager
-from agent_vault.memory.models import MemoryItem, MemoryContext, MemoryTier, RetrievalResult
-from agent_vault.config import Config
+from agentic_inquiry.mcp.tools.memory import recall_memories
+from agentic_inquiry.mcp.services.session_manager import SessionManager
+from agentic_inquiry.memory.models import MemoryItem, MemoryContext, MemoryTier, RetrievalResult
+from agentic_inquiry.config import Config
 
 
 @pytest.fixture

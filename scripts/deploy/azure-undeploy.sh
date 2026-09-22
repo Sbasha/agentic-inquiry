@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 #
-# azure-undeploy.sh — Tear down a Agent-Vault Azure deployment
+# azure-undeploy.sh — Tear down a Agentic Inquiry Azure deployment
 #
 # Required environment variables:
-#   agv_AZURE_SUBSCRIPTION_ID  Azure subscription ID (required)
-#   agv_AZURE_RESOURCE_GROUP   Azure resource group (required)
+#   AI_AZURE_SUBSCRIPTION_ID  Azure subscription ID (required)
+#   AI_AZURE_RESOURCE_GROUP   Azure resource group (required)
 #
 # Optional environment variables:
-#   agv_SERVICE_NAME           Container App name (default: agent-vault)
-#   agv_PG_SERVER_NAME         PostgreSQL server name (default: agv-postgres)
-#   agv_CA_ENV_NAME            Container Apps Environment name (default: agv-env)
-#   agv_DEPLOY_STATE_DIR       Dir containing state markers (default: .agv/deploy)
-#   agv_DELETE_RESOURCE_GROUP  Set to "1" to delete the entire resource group (default: 0)
+#   AI_SERVICE_NAME           Container App name (default: agentic-inquiry)
+#   AI_PG_SERVER_NAME         PostgreSQL server name (default: ai-postgres)
+#   AI_CA_ENV_NAME            Container Apps Environment name (default: ai-env)
+#   AI_DEPLOY_STATE_DIR       Dir containing state markers (default: .agentic-inquiry/deploy)
+#   AI_DELETE_RESOURCE_GROUP  Set to "1" to delete the entire resource group (default: 0)
 #
 
 set -euo pipefail
@@ -22,55 +22,55 @@ log_ok()    { echo -e "${GREEN}[OK]${NC}    $*"; }
 log_warn()  { echo -e "${YELLOW}[WARN]${NC}  $*"; }
 die()       { echo -e "${RED}[ERROR]${NC} $*" >&2; exit 1; }
 
-agv_SERVICE_NAME="${agv_SERVICE_NAME:-agent-vault}"
-agv_PG_SERVER_NAME="${agv_PG_SERVER_NAME:-agv-postgres}"
-agv_CA_ENV_NAME="${agv_CA_ENV_NAME:-agv-env}"
-agv_DEPLOY_STATE_DIR="${agv_DEPLOY_STATE_DIR:-.agv/deploy}"
-agv_DELETE_RESOURCE_GROUP="${agv_DELETE_RESOURCE_GROUP:-0}"
+AI_SERVICE_NAME="${AI_SERVICE_NAME:-agentic-inquiry}"
+AI_PG_SERVER_NAME="${AI_PG_SERVER_NAME:-ai-postgres}"
+AI_CA_ENV_NAME="${AI_CA_ENV_NAME:-ai-env}"
+AI_DEPLOY_STATE_DIR="${AI_DEPLOY_STATE_DIR:-.agentic-inquiry/deploy}"
+AI_DELETE_RESOURCE_GROUP="${AI_DELETE_RESOURCE_GROUP:-0}"
 
-[[ -n "${agv_AZURE_SUBSCRIPTION_ID:-}" ]] || die "agv_AZURE_SUBSCRIPTION_ID is required"
-[[ -n "${agv_AZURE_RESOURCE_GROUP:-}" ]]  || die "agv_AZURE_RESOURCE_GROUP is required"
+[[ -n "${AI_AZURE_SUBSCRIPTION_ID:-}" ]] || die "AI_AZURE_SUBSCRIPTION_ID is required"
+[[ -n "${AI_AZURE_RESOURCE_GROUP:-}" ]]  || die "AI_AZURE_RESOURCE_GROUP is required"
 
-az account set --subscription "${agv_AZURE_SUBSCRIPTION_ID}" 2>/dev/null || true
+az account set --subscription "${AI_AZURE_SUBSCRIPTION_ID}" 2>/dev/null || true
 
-if [[ "${agv_DELETE_RESOURCE_GROUP}" == "1" ]]; then
-    log_info "Deleting resource group '${agv_AZURE_RESOURCE_GROUP}' and all its resources..."
-    az group delete --name "${agv_AZURE_RESOURCE_GROUP}" --yes --no-wait --output none
+if [[ "${AI_DELETE_RESOURCE_GROUP}" == "1" ]]; then
+    log_info "Deleting resource group '${AI_AZURE_RESOURCE_GROUP}' and all its resources..."
+    az group delete --name "${AI_AZURE_RESOURCE_GROUP}" --yes --no-wait --output none
     log_ok "Resource group deletion initiated (background)"
 else
     # Granular teardown (reverse deploy order)
-    log_info "Deleting Container App '${agv_SERVICE_NAME}'..."
+    log_info "Deleting Container App '${AI_SERVICE_NAME}'..."
     az containerapp delete \
-        --name "${agv_SERVICE_NAME}" \
-        --resource-group "${agv_AZURE_RESOURCE_GROUP}" \
+        --name "${AI_SERVICE_NAME}" \
+        --resource-group "${AI_AZURE_RESOURCE_GROUP}" \
         --yes --output none 2>/dev/null || log_warn "Container App not found, skipping"
 
-    log_info "Deleting Container Apps Environment '${agv_CA_ENV_NAME}'..."
+    log_info "Deleting Container Apps Environment '${AI_CA_ENV_NAME}'..."
     az containerapp env delete \
-        --name "${agv_CA_ENV_NAME}" \
-        --resource-group "${agv_AZURE_RESOURCE_GROUP}" \
+        --name "${AI_CA_ENV_NAME}" \
+        --resource-group "${AI_AZURE_RESOURCE_GROUP}" \
         --yes --output none 2>/dev/null || log_warn "Environment not found, skipping"
 
-    log_info "Deleting PostgreSQL server '${agv_PG_SERVER_NAME}'..."
+    log_info "Deleting PostgreSQL server '${AI_PG_SERVER_NAME}'..."
     az postgres flexible-server delete \
-        --name "${agv_PG_SERVER_NAME}" \
-        --resource-group "${agv_AZURE_RESOURCE_GROUP}" \
+        --name "${AI_PG_SERVER_NAME}" \
+        --resource-group "${AI_AZURE_RESOURCE_GROUP}" \
         --yes --output none 2>/dev/null || log_warn "PostgreSQL server not found, skipping"
 
-    KV_NAME="agv-kv-${agv_AZURE_RESOURCE_GROUP:0:10}"
+    KV_NAME="ai-kv-${AI_AZURE_RESOURCE_GROUP:0:10}"
     log_info "Purging Key Vault '${KV_NAME}'..."
-    az keyvault delete --name "${KV_NAME}" --resource-group "${agv_AZURE_RESOURCE_GROUP}" --output none 2>/dev/null || true
+    az keyvault delete --name "${KV_NAME}" --resource-group "${AI_AZURE_RESOURCE_GROUP}" --output none 2>/dev/null || true
     az keyvault purge --name "${KV_NAME}" --output none 2>/dev/null || true
 fi
 
 log_info "Removing deploy state markers..."
-if [[ -d "${agv_DEPLOY_STATE_DIR}" ]]; then
-    rm -f "${agv_DEPLOY_STATE_DIR}"/step-*.done \
-          "${agv_DEPLOY_STATE_DIR}"/azure-state.json \
-          "${agv_DEPLOY_STATE_DIR}"/service-url.txt \
-          "${agv_DEPLOY_STATE_DIR}"/image-path.txt \
-          "${agv_DEPLOY_STATE_DIR}"/pg-host.txt \
-          "${agv_DEPLOY_STATE_DIR}"/kv-name.txt
+if [[ -d "${AI_DEPLOY_STATE_DIR}" ]]; then
+    rm -f "${AI_DEPLOY_STATE_DIR}"/step-*.done \
+          "${AI_DEPLOY_STATE_DIR}"/azure-state.json \
+          "${AI_DEPLOY_STATE_DIR}"/service-url.txt \
+          "${AI_DEPLOY_STATE_DIR}"/image-path.txt \
+          "${AI_DEPLOY_STATE_DIR}"/pg-host.txt \
+          "${AI_DEPLOY_STATE_DIR}"/kv-name.txt
 fi
 
-log_ok "Azure undeploy complete for resource group '${agv_AZURE_RESOURCE_GROUP}'"
+log_ok "Azure undeploy complete for resource group '${AI_AZURE_RESOURCE_GROUP}'"

@@ -11,11 +11,11 @@ import sys
 
 MODEL = "text-embedding-005"
 DB_CONFIG = {
-    "host": os.environ.get("agv_DB_HOST", "127.0.0.1"),
-    "port": int(os.environ.get("agv_DB_PORT", "5434")),
-    "user": os.environ.get("agv_DB_USER", "postgres"),
-    "password": os.environ["agv_DB_PASSWORD"],  # Required - no default
-    "database": os.environ.get("agv_DB_NAME", "agent-vault"),
+    "host": os.environ.get("AI_DB_HOST", "127.0.0.1"),
+    "port": int(os.environ.get("AI_DB_PORT", "5434")),
+    "user": os.environ.get("AI_DB_USER", "postgres"),
+    "password": os.environ["AI_DB_PASSWORD"],  # Required - no default
+    "database": os.environ.get("AI_DB_NAME", "agentic-inquiry"),
 }
 WORKERS = 5
 BATCH_SIZE = 25  # Smaller batches = more parallelism
@@ -129,8 +129,8 @@ async def main():
     print("=" * 60, flush=True)
     start = time.time()
 
-    chunks = await embed_table("agv_v_chunks", "content", "CHUNKS")
-    entities = await embed_table("agv_g_entities", "qualified_name", "ENTITIES")
+    chunks = await embed_table("ai_v_chunks", "content", "CHUNKS")
+    entities = await embed_table("ai_g_entities", "qualified_name", "ENTITIES")
 
     elapsed = time.time() - start
     print(f"\nTOTAL: {chunks + entities:,} embeddings in {elapsed:.0f}s")

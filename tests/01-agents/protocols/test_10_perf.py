@@ -45,9 +45,9 @@ async def run(
     run_id: str,
     output_dir: Path,
 ) -> Dict[str, Any]:
-    from agent_vault.mcp.tools.search import search_knowledge
-    from agent_vault.mcp.tools.info import get_project_info, list_entities
-    from agent_vault.mcp.tools.analysis import understand_entity, analyze_impact
+    from agentic_inquiry.mcp.tools.search import search_knowledge
+    from agentic_inquiry.mcp.tools.info import get_project_info, list_entities
+    from agentic_inquiry.mcp.tools.analysis import understand_entity, analyze_impact
     
 
     results: Dict[str, Any] = {}
@@ -546,7 +546,7 @@ async def run(
 
     # ── Honest assessment: perf investigation overhead ──────────────────
     note_adoption(journal,
-        "agv surfaces performance-related code across multiple files but cannot measure actual runtime "
+        "ai surfaces performance-related code across multiple files but cannot measure actual runtime "
         "performance — the agent still needs profiling tools (cProfile, py-spy) for real bottleneck identification",
         "neutral")
 

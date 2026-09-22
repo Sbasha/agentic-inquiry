@@ -10,7 +10,7 @@ import pytest
 pytestmark = pytest.mark.unit
 from typing import Any, Dict, List, Optional, Sequence
 
-from agent_vault.database.protocols import (
+from agentic_inquiry.database.protocols import (
     BatchCapability,
     FTSCapability,
     GraphRankingCapability,
@@ -25,9 +25,9 @@ from agent_vault.database.protocols import (
     has_transactions,
     has_vector_search,
 )
-from agent_vault.database.filters import Filter
-from agent_vault.database.query_spec import QuerySpec
-from agent_vault.database.results import SearchResult
+from agentic_inquiry.database.filters import Filter
+from agentic_inquiry.database.query_spec import QuerySpec
+from agentic_inquiry.database.results import SearchResult
 
 
 # =============================================================================
@@ -521,7 +521,7 @@ class TestAsyncMethodSignatures:
 
         # Batch operations
         await adapter.add_batch("test", [])
-        from agent_vault.database.filters import eq
+        from agentic_inquiry.database.filters import eq
         await adapter.delete_batch("test", eq("id", "1"))
 
         # Transactions

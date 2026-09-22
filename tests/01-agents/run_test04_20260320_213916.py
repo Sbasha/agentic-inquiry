@@ -22,20 +22,20 @@ PROTOCOLS_DIR = PROJECT_ROOT / "tests" / "01-agents"
 sys.path.insert(0, str(PROTOCOLS_DIR))
 
 RUN_ID = "20260320_213916"
-OUTPUT_DIR = PROJECT_ROOT / "test_results" / "agv" / RUN_ID / "bug_investigation"
-CONFIG_PATH = str(PROJECT_ROOT / ".agv" / "envs" / "agv-prod" / "config.yaml")
+OUTPUT_DIR = PROJECT_ROOT / "test_results" / "ai" / RUN_ID / "bug_investigation"
+CONFIG_PATH = str(PROJECT_ROOT / ".agentic-inquiry" / "envs" / "ai-prod" / "config.yaml")
 
 
 async def main():
-    from agent_vault.config import Config
-    from agent_vault.mcp.factories import create_mcp_services
+    from agentic_inquiry.config import Config
+    from agentic_inquiry.mcp.factories import create_mcp_services
     from protocols.test_04_bug import run  # noqa
 
     print(f"Loading config from: {CONFIG_PATH}")
     config = Config.load(config_path=CONFIG_PATH)
 
     print("Creating MCP services...")
-    project_id = f"agv_test04_bug_{RUN_ID}"
+    project_id = f"ai_test04_bug_{RUN_ID}"
     services = await create_mcp_services(config, project_id)
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

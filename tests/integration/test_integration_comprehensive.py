@@ -1,4 +1,4 @@
-"""Comprehensive integration tests for agent-vault system."""
+"""Comprehensive integration tests for agentic-inquiry system."""
 
 import pytest
 
@@ -12,7 +12,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 import pytest_asyncio
 
-from agent_vault.config import Config, StorageConfig
+from agentic_inquiry.config import Config, StorageConfig
 
 
 def _create_mock_event_system():
@@ -22,14 +22,14 @@ def _create_mock_event_system():
     return mock_es
 
 
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
-from agent_vault.storage.facade import StorageFacade
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.search.service import SearchService
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+from agentic_inquiry.storage.facade import StorageFacade
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.search.service import SearchService
 
 # Trigger parser auto-registration
-import agent_vault.parsers.implementations  # noqa: F401
+import agentic_inquiry.parsers.implementations  # noqa: F401
 
 @pytest.fixture
 def temp_project_root():
@@ -72,7 +72,7 @@ async def test_config_with_db():
 
 @pytest_asyncio.fixture
 async def mock_embedding_registry():
-    from agent_vault.embeddings.registry import EmbeddingRegistry
+    from agentic_inquiry.embeddings.registry import EmbeddingRegistry
     
     class _DummyEmbedder:
         def generate(self, texts):
@@ -106,7 +106,7 @@ async def indexing_pipeline_fixture(mock_db_manager, test_config_with_db, mock_e
 class TestIndexingPipelineIntegration:
     
     async def test_complete_indexing_flow(self, indexing_pipeline_fixture, temp_project_root, mock_db_manager):
-        from agent_vault.parsers.executor import get_parser_instance, execute_parser
+        from agentic_inquiry.parsers.executor import get_parser_instance, execute_parser
         
         pipeline = indexing_pipeline_fixture
         python_files = list(temp_project_root.glob("*.py"))
@@ -143,7 +143,7 @@ class TestIndexingPipelineIntegration:
 class TestHybridSearchIntegration:
     
     async def test_hybrid_search_end_to_end(self, indexing_pipeline_fixture, temp_project_root, mock_db_manager, test_config_with_db, mock_embedding_registry):
-        from agent_vault.parsers.executor import get_parser_instance, execute_parser
+        from agentic_inquiry.parsers.executor import get_parser_instance, execute_parser
         
         pipeline = indexing_pipeline_fixture
         parser = get_parser_instance("unified_code")
@@ -179,7 +179,7 @@ class TestHybridSearchIntegration:
 class TestMultiProjectIntegration:
     
     async def test_multi_project_isolation(self, temp_project_root, test_config_with_db, mock_embedding_registry):
-        from agent_vault.parsers.executor import get_parser_instance, execute_parser
+        from agentic_inquiry.parsers.executor import get_parser_instance, execute_parser
 
         # Use the same db manager but different project_ids for isolation
         mock_event_system = _create_mock_event_system()
@@ -228,7 +228,7 @@ class TestConfigurationIntegration:
 class TestIntegrationPerformance:
     
     async def test_indexing_performance(self, indexing_pipeline_fixture, temp_project_root):
-        from agent_vault.parsers.executor import get_parser_instance, execute_parser
+        from agentic_inquiry.parsers.executor import get_parser_instance, execute_parser
         
         start_time = time.time()
         pipeline = indexing_pipeline_fixture

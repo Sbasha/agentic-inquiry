@@ -8,13 +8,13 @@ import asyncio
 import uuid
 from pathlib import Path
 
-from agent_vault.config import Config
-from agent_vault.database import LanceDBManager
-from agent_vault.embeddings import EmbeddingService
-from agent_vault.memory import MemoryContext, MemoryItem, MemoryTier
-from agent_vault.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
-from agent_vault.memory.layers.episodic import EpisodicMemory
-from agent_vault.memory.layers.semantic import SemanticMemory
+from agentic_inquiry.config import Config
+from agentic_inquiry.database import LanceDBManager
+from agentic_inquiry.embeddings import EmbeddingService
+from agentic_inquiry.memory import MemoryContext, MemoryItem, MemoryTier
+from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
+from agentic_inquiry.memory.layers.episodic import EpisodicMemory
+from agentic_inquiry.memory.layers.semantic import SemanticMemory
 
 
 @pytest.fixture

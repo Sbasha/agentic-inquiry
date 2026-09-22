@@ -6,12 +6,12 @@ from pathlib import Path
 
 import pytest
 
-from agent_vault.parsers.models import (
+from agentic_inquiry.parsers.models import (
     ParsedDocument,
     ParserChunk,
     ParserRelationship,
 )
-from agent_vault.parsers.recognizers.python_fastapi import (
+from agentic_inquiry.parsers.recognizers.python_fastapi import (
     PythonFastAPIRecognizer,
 )
 
@@ -542,7 +542,7 @@ def health():
 """
         file_path = _write_py(tmp_path, src, name="app.py")
 
-        from agent_vault.parsers.chain import ParserChain
+        from agentic_inquiry.parsers.chain import ParserChain
 
         chain = ParserChain.from_config()
         parsed = await chain.parse(str(file_path))

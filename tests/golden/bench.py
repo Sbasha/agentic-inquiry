@@ -39,7 +39,7 @@ BASELINE_FILE = GOLDEN_DIR / "baseline.json"
 # Bench artifacts live OUTSIDE the repo. The indexer walks up to the project
 # root and applies .gitignore; anything under the repo's `.benchmarks/`
 # matches `.benchmarks/` in .gitignore and gets excluded silently.
-BENCH_ROOT = Path(tempfile.gettempdir()) / "agv-golden-bench"
+BENCH_ROOT = Path(tempfile.gettempdir()) / "ai-golden-bench"
 RESULTS_FILE = BENCH_ROOT / "results.json"
 BENCH_INDEX_DIR = BENCH_ROOT / "index"
 BENCH_CORPUS_DIR = BENCH_ROOT / "corpus"
@@ -91,41 +91,41 @@ def _run_git(args: list[str]) -> str:
 
 
 _ENV_KEYS = (
-    "agv_CONFIG",
-    "AGV_STORAGE_ROOT",
-    "AGV_STORAGE_DEFAULT_PROJECT_ID",
-    "AGV_STORAGE_BACKEND",
-    "AGV_LOGGING_LEVEL",
+    "AI_CONFIG",
+    "AI_STORAGE_ROOT",
+    "AI_STORAGE_DEFAULT_PROJECT_ID",
+    "AI_STORAGE_BACKEND",
+    "AI_LOGGING_LEVEL",
 )
 
-# Pin the config source. Without this, Config.load() walks cwd → agv_CONFIG →
-# agent-vault.yaml → config/default.yaml — meaning a developer or CI host
-# with ~/.agv/config.yaml or a project-root agent-vault.yaml that defines
+# Pin the config source. Without this, Config.load() walks cwd → AI_CONFIG →
+# agentic-inquiry.yaml → config/default.yaml — meaning a developer or CI host
+# with ~/.agentic-inquiry/config.yaml or a project-root agentic-inquiry.yaml that defines
 # `storage.backends:` would silently override our LanceDB choice. Worse,
 # StorageFacade.from_config() ignores the legacy `storage.backend` field
-# (which our AGV_STORAGE_BACKEND env override populates) when multi-backend
-# `storage.backends` is present. Forcing agv_CONFIG at the repo's known-good
+# (which our AI_STORAGE_BACKEND env override populates) when multi-backend
+# `storage.backends` is present. Forcing AI_CONFIG at the repo's known-good
 # default is the only way to guarantee the bench runs against the same
 # config every time.
 _BENCH_CONFIG_PATH = REPO_ROOT / "config" / "default.yaml"
 
 
 def _setup_env(temp_root: Path) -> dict[str, str | None]:
-    """Point agv at the bench index dir, isolated from any user state.
+    """Point ai at the bench index dir, isolated from any user state.
 
     Returns the previous values of every key it sets so the caller can
     restore them. Matters in the pytest path: the bench process otherwise
-    leaves ``AGV_*`` and ``agv_*`` set for the rest of the session, which
+    leaves ``AI_*`` and ``agv_*`` set for the rest of the session, which
     would leak into co-running tests if anyone drops the ``slow`` marker.
     """
     prev: dict[str, str | None] = {k: os.environ.get(k) for k in _ENV_KEYS}
-    os.environ["agv_CONFIG"] = str(_BENCH_CONFIG_PATH)
-    os.environ["AGV_STORAGE_ROOT"] = str(temp_root)
-    os.environ["AGV_STORAGE_DEFAULT_PROJECT_ID"] = PROJECT_ID
+    os.environ["AI_CONFIG"] = str(_BENCH_CONFIG_PATH)
+    os.environ["AI_STORAGE_ROOT"] = str(temp_root)
+    os.environ["AI_STORAGE_DEFAULT_PROJECT_ID"] = PROJECT_ID
     # Force LanceDB regardless of any user overlay
-    os.environ["AGV_STORAGE_BACKEND"] = "lancedb"
+    os.environ["AI_STORAGE_BACKEND"] = "lancedb"
     # Quiet the CLI banners
-    os.environ.setdefault("AGV_LOGGING_LEVEL", "WARNING")
+    os.environ.setdefault("AI_LOGGING_LEVEL", "WARNING")
     return prev
 
 
@@ -155,7 +155,7 @@ def _build_corpus_dir(staging: Path) -> tuple[Path, bool]:
     staging.mkdir(parents=True, exist_ok=True)
     refreshed = False
     for sub in CORPUS_SUBDIRS:
-        src = REPO_ROOT / "agent_vault" / sub
+        src = REPO_ROOT / "agentic_inquiry" / sub
         if not src.exists():
             logger.warning("Corpus subdir missing: %s", src)
             continue
@@ -178,10 +178,10 @@ def _build_corpus_dir(staging: Path) -> tuple[Path, bool]:
 
 
 async def _index_corpus(corpus_path: Path) -> dict[str, Any]:
-    from agent_vault.config import Config
-    from agent_vault.embeddings.factory import configure_embedder_for_backend
-    from agent_vault.indexing.pipeline import IndexingPipeline
-    from agent_vault.storage.facade import StorageFacade
+    from agentic_inquiry.config import Config
+    from agentic_inquiry.embeddings.factory import configure_embedder_for_backend
+    from agentic_inquiry.indexing.pipeline import IndexingPipeline
+    from agentic_inquiry.storage.facade import StorageFacade
 
     config = Config.load()
     configure_embedder_for_backend(config, quiet=True)
@@ -196,11 +196,11 @@ async def _index_corpus(corpus_path: Path) -> dict[str, Any]:
 
 
 async def _run_queries(queries: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    from agent_vault.config import Config
-    from agent_vault.embeddings.factory import configure_embedder_for_backend
-    from agent_vault.embeddings.service import EmbeddingService
-    from agent_vault.search.service import SearchService
-    from agent_vault.storage.facade import StorageFacade
+    from agentic_inquiry.config import Config
+    from agentic_inquiry.embeddings.factory import configure_embedder_for_backend
+    from agentic_inquiry.embeddings.service import EmbeddingService
+    from agentic_inquiry.search.service import SearchService
+    from agentic_inquiry.storage.facade import StorageFacade
 
     config = Config.load()
     configure_embedder_for_backend(config, quiet=True)

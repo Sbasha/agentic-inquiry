@@ -15,11 +15,11 @@ from pathlib import Path
 from datetime import datetime
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agent_vault.mcp.tools.info import get_server_info
-from agent_vault.mcp.tools.session import create_session
-from agent_vault.mcp.tools.search import search_knowledge
-from agent_vault.mcp.models.session import Session
-from agent_vault.database.results import SearchResult
+from agentic_inquiry.mcp.tools.info import get_server_info
+from agentic_inquiry.mcp.tools.session import create_session
+from agentic_inquiry.mcp.tools.search import search_knowledge
+from agentic_inquiry.mcp.models.session import Session
+from agentic_inquiry.database.results import SearchResult
 
 
 @pytest.fixture
@@ -33,10 +33,10 @@ def mock_fallback_search_empty():
         return {"results": [], "source": "fallback", "source_note": "Mock fallback"}
 
     with patch(
-        "agent_vault.mcp.tools.search.execute_fallback_search",
+        "agentic_inquiry.mcp.tools.search.execute_fallback_search",
         side_effect=empty_fallback
     ), patch(
-        "agent_vault.mcp.tools.search.structural_search",
+        "agentic_inquiry.mcp.tools.search.structural_search",
         side_effect=empty_fallback
     ):
         yield
@@ -67,16 +67,16 @@ async def integration_services():
     
     # Mock server config
     server_config = {
-        "default_project_id": "agent-vault",
-        "server_name": "Agent-Vault MCP Server",
+        "default_project_id": "agentic-inquiry",
+        "server_name": "Agentic Inquiry MCP Server",
         "server_version": "1.0.0",
         "server_description": "Intelligent search and knowledge management"
     }
     
     # Mock project discovery - simulate chunks from multiple projects
     mock_chunks = [
-        {"project_id": "agent-vault", "created_at": datetime(2024, 1, 15, 10, 30, 0)},
-        {"project_id": "agent-vault", "created_at": datetime(2024, 1, 15, 11, 0, 0)},
+        {"project_id": "agentic-inquiry", "created_at": datetime(2024, 1, 15, 10, 30, 0)},
+        {"project_id": "agentic-inquiry", "created_at": datetime(2024, 1, 15, 11, 0, 0)},
         {"project_id": "test_project", "created_at": datetime(2024, 1, 14, 9, 0, 0)},
         {"project_id": "test_project", "created_at": datetime(2024, 1, 14, 10, 0, 0)},
         {"project_id": "another_project", "created_at": datetime(2024, 1, 13, 8, 0, 0)},
@@ -93,7 +93,7 @@ async def integration_services():
     # Mock project statistics
     async def mock_get_project_statistics(project_id):
         stats_map = {
-            "agent-vault": {
+            "agentic-inquiry": {
                 "total_chunks": 1234,
                 "total_files": 56,
                 "total_entities": 789,
@@ -156,7 +156,7 @@ async def integration_services():
         # Simulate different states for different projects
         if project_id == "empty_project":
             return 0
-        elif project_id == "agent-vault":
+        elif project_id == "agentic-inquiry":
             return 1234
         elif project_id == "test_project":
             return 500
@@ -209,11 +209,11 @@ async def test_discovery_flow_complete(integration_services):
     
     # Verify server info response structure
     assert "server" in server_info
-    assert server_info["server"]["name"] == "Agent-Vault MCP Server"
+    assert server_info["server"]["name"] == "Agentic Inquiry MCP Server"
     assert server_info["server"]["version"] == "1.0.0"
     
     assert "default_project" in server_info
-    assert server_info["default_project"]["project_id"] == "agent-vault"
+    assert server_info["default_project"]["project_id"] == "agentic-inquiry"
     
     assert "available_projects" in server_info
     assert len(server_info["available_projects"]) == 3
@@ -245,7 +245,7 @@ async def test_discovery_flow_complete(integration_services):
     
     # Verify warning about non-default project
     assert "warning" in session_result
-    assert "server default is 'agent-vault'" in session_result["warning"]["message"]
+    assert "server default is 'agentic-inquiry'" in session_result["warning"]["message"]
     assert "get_server_info()" in session_result["warning"]["suggestion"]
 
 
@@ -378,7 +378,7 @@ async def test_empty_search_flow_complete(integration_services, tmp_path):
     async def mock_count_after_indexing(table_name, project_id=None):
         if project_id == "empty_project":
             return 10  # Now has content
-        elif project_id == "agent-vault":
+        elif project_id == "agentic-inquiry":
             return 1234
         elif project_id == "test_project":
             return 500
@@ -470,7 +470,7 @@ async def test_project_mismatch_flow_complete(integration_services):
     """
     # Get default project from server config
     default_project = integration_services["server_config"]["default_project_id"]
-    assert default_project == "agent-vault"
+    assert default_project == "agentic-inquiry"
     
     # Create session with different project
     non_default_project = "test_project"

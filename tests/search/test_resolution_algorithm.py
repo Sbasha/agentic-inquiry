@@ -6,12 +6,12 @@ pytestmark = pytest.mark.integration
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.embeddings.base import Embedder
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.embeddings.base import Embedder
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
-from agent_vault.config import Config, StorageConfig
+from agentic_inquiry.config import Config, StorageConfig
 
 
 class _DummyEmbedder(Embedder):
@@ -181,7 +181,7 @@ def test_resolution_strategy_2_module_path():
         # Register a module - use the actual symbol name that would be imported
         doc = ParsedDocument(
             doc_id="doc-1",
-            file_path="/tmp/project/agent_vault/indexing/pipeline.py",
+            file_path="/tmp/project/agentic_inquiry/indexing/pipeline.py",
             chunks=[
                 ParserChunk(
                     content="# Pipeline module",
@@ -199,12 +199,12 @@ def test_resolution_strategy_2_module_path():
             target_type="class",
             source_file="/tmp/project/main.py",
             source_language="python",
-            import_path="agent_vault.indexing.pipeline"
+            import_path="agentic_inquiry.indexing.pipeline"
         )
 
         assert result is not None
         file_path, entity_type, confidence = result
-        assert file_path == "/tmp/project/agent_vault/indexing/pipeline.py"
+        assert file_path == "/tmp/project/agentic_inquiry/indexing/pipeline.py"
         assert confidence >= 0.9  # Very high confidence for import path resolution
 
     asyncio.run(run())

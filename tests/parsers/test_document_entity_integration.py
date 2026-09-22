@@ -17,14 +17,14 @@ pytestmark = pytest.mark.integration
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config, StorageConfig
-from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
-from agent_vault.embeddings.base import Embedder
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.parsers.implementations.document import DocumentParser
-from agent_vault.search.service import SearchService
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+from agentic_inquiry.embeddings.base import Embedder
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.parsers.implementations.document import DocumentParser
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.storage.facade import StorageFacade
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -103,7 +103,7 @@ def test_document_parser_entity_extraction_integration():
         # Verify document entities were registered in symbol registry
         # Check for some known headings from outline.md
         expected_headings = [
-            "Presentation Outline: Agent-Vault (Executive Version)",
+            "Presentation Outline: Agentic Inquiry (Executive Version)",
             "Slide 1: Title",
             "Slide 2: The \"Last Mile\" Problem with Enterprise AI",
         ]
@@ -197,7 +197,7 @@ def test_6_1_entity_registration_in_symbol_registry():
         
         # Test 1: Query for known heading entities
         test_headings = [
-            "Presentation Outline: Agent-Vault (Executive Version)",
+            "Presentation Outline: Agentic Inquiry (Executive Version)",
             "Slide 1: Title",
             "Slide 2: The \"Last Mile\" Problem with Enterprise AI",
             "Slide 3: The Solution: Four Breakthrough Capabilities",
@@ -403,7 +403,7 @@ def test_6_3_search_returns_document_entities():
         # Test 1: FTS search for heading text
         search_queries = [
             "Slide 1",
-            "Agent-Vault",
+            "Agentic Inquiry",
             "Memory System",
             "Solution",
         ]

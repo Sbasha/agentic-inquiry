@@ -15,10 +15,10 @@ import numpy as np
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
-from agent_vault.database.results import SearchResult
-from agent_vault.search.hybrid_search import HybridSearchService
-from agent_vault.embeddings.service import EmbeddingService
+from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+from agentic_inquiry.database.results import SearchResult
+from agentic_inquiry.search.hybrid_search import HybridSearchService
+from agentic_inquiry.embeddings.service import EmbeddingService
 
 
 @pytest.fixture
@@ -149,7 +149,7 @@ class TestZeroDimensionVectors:
         mock_config.embeddings.default_dimensions = 0
 
         # Mock the embedder to simulate zero-dimension output
-        with patch('agent_vault.embeddings.registry.embedding_registry') as mock_registry:
+        with patch('agentic_inquiry.embeddings.registry.embedding_registry') as mock_registry:
             mock_embedder = MagicMock()
             mock_embedder.ndims.return_value = 0
             mock_embedder.embed.return_value = np.array([])
@@ -477,7 +477,7 @@ class TestDimensionValidation:
         # Configure service
         mock_config.embeddings.default_dimensions = 384
 
-        with patch('agent_vault.embeddings.registry.embedding_registry') as mock_registry:
+        with patch('agentic_inquiry.embeddings.registry.embedding_registry') as mock_registry:
             mock_embedder = MagicMock()
             mock_embedder.ndims.return_value = 384
             mock_embedder.embed.return_value = np.array([0.1] * 384)

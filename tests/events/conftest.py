@@ -7,9 +7,9 @@ from typing import AsyncIterator
 
 import pytest_asyncio
 
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.events.store import EventStore
-from agent_vault.events.system import EventSystem
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.events.store import EventStore
+from agentic_inquiry.events.system import EventSystem
 
 
 # Note: pytest_sessionfinish is handled by the root tests/conftest.py
@@ -86,7 +86,7 @@ async def event_system(tmp_path: Path) -> AsyncIterator[EventSystem]:
     Yields:
         EventSystem instance ready for use in tests
     """
-    from agent_vault.config import Config, StorageConfig, EventStoreConfig, EventsConfig
+    from agentic_inquiry.config import Config, StorageConfig, EventStoreConfig, EventsConfig
     
     # Create config with temp storage
     config = Config()

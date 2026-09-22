@@ -45,7 +45,7 @@ Most construction tests live under **Tasks** below. Cross-cutting:
 cross-module behavior and it is covered by the registry test in T2.
 **Manual verification:** `make bench` recall@10 stays `1.0000` (sanity that the
 connectors change didn't perturb search/indexing); `uv run python -c "import
-agent-vault.connectors as c; print(c.list_connectors())"` shows `gcs` when
+agentic-inquiry.connectors as c; print(c.list_connectors())"` shows `gcs` when
 `gcsfs` is installed.
 
 ## Tasks
@@ -62,7 +62,7 @@ agent-vault.connectors as c; print(c.list_connectors())"` shows `gcs` when
 
 **Tests:** (write these RED first, before the fix)
 - `tests/connectors/test_gcs.py::...::test_gcs_registered_on_import`: after
-  `import agent_vault.connectors`, `"gcs"` is in `list_connectors()` and
+  `import agentic_inquiry.connectors`, `"gcs"` is in `list_connectors()` and
   `get_connector("gcs", bucket="b")` returns a `GCSConnector`
   (skip-guarded on `gcsfs` availability). RED today (decorator never fires).
 - `test_build_uri` / `test_uri_to_path` round-trip: `_build_uri("b/k") ==
@@ -71,14 +71,14 @@ agent-vault.connectors as c; print(c.list_connectors())"` shows `gcs` when
 - `test_protocol_is_gcs`: a `SourceItem` whose uri is `connector._build_uri(...)`
   has `.protocol == "gcs"`.
 - `test_import_without_gcsfs` (skip unless `gcsfs` absent) and the
-  `agent_vault.connectors.GCSConnector is None` fallback path.
+  `agentic_inquiry.connectors.GCSConnector is None` fallback path.
 
 **Approach:**
-- In `agent_vault/connectors/registry.py` `_register_builtin_connectors()`,
-  add a guarded import of `agent_vault.connectors.gcs` mirroring the existing
+- In `agentic_inquiry/connectors/registry.py` `_register_builtin_connectors()`,
+  add a guarded import of `agentic_inquiry.connectors.gcs` mirroring the existing
   S3 block (`try: from ...gcs import GCSConnector; except ImportError: debug
   log`).
-- In `agent_vault/connectors/gcs.py`, change `_build_uri` to return
+- In `agentic_inquiry/connectors/gcs.py`, change `_build_uri` to return
   `f"gcs://{path}"` and `_uri_to_path` to strip `"gcs://"` (len 6), matching
   the registered name and docs. **Leave `protocol="gcs"` passed to the fsspec
   base unchanged — this is by design: the fsspec *protocol* (what
@@ -87,15 +87,15 @@ agent-vault.connectors as c; print(c.list_connectors())"` shows `gcs` when
   "align" one to the other beyond this scheme change.** Keep the
   `_uri_to_path` override for symmetry with `s3.py` (the base would also
   handle `gcs://`, but S3 carries its own override and we mirror it).
-- In `agent_vault/connectors/__init__.py`, add the optional `GCSConnector`
+- In `agentic_inquiry/connectors/__init__.py`, add the optional `GCSConnector`
   import (guarded `try/except ImportError → None`, mirroring S3) and add
   `"GCSConnector"` to `__all__`.
-- In `agent_vault/connectors/types.py` (`SourceItem` docstring, ~lines 24-28),
+- In `agentic_inquiry/connectors/types.py` (`SourceItem` docstring, ~lines 24-28),
   add `- GCS: gcs://bucket/object` to the URI-conventions list (it omits GCS
   today, adjacent to the scheme change).
 
 **Done when:** the RED tests above pass; `ruff`/`mypy` clean;
-`uv run python -c "import agent_vault.connectors as c; assert 'gcs' in
+`uv run python -c "import agentic_inquiry.connectors as c; assert 'gcs' in
 c.list_connectors()"` succeeds.
 
 ### T2: broader GCS mocked-behavior tests + cloud_smoke pattern
@@ -113,12 +113,12 @@ c.list_connectors()"` succeeds.
   `SourceContent` (uri scheme, hash, decoded text). Do **not** assert on the
   mock object directly (the S3 mock tests do `len(mock_fs.glob(...))`, which
   proves the mock, not the connector — do not replicate that anti-shape).
-- A registry-level test asserting that after `import agent_vault.connectors`,
+- A registry-level test asserting that after `import agentic_inquiry.connectors`,
   both `"s3"` and `"gcs"` are present in `list_connectors()` (skip-guarded on
   `s3fs`/`gcsfs` availability).
 - `@pytest.mark.cloud_smoke` test for live S3 (gated on `AWS_*` creds /
-  `agv_SMOKE_S3_BUCKET`) and live GCS (gated on `GOOGLE_APPLICATION_CREDENTIALS`
-  / `agv_SMOKE_GCS_BUCKET`): list at least one object and round-trip its hash.
+  `AI_SMOKE_S3_BUCKET`) and live GCS (gated on `GOOGLE_APPLICATION_CREDENTIALS`
+  / `AI_SMOKE_GCS_BUCKET`): list at least one object and round-trip its hash.
 
 **Approach:**
 - Add a `MockGCSFileSystem` fixture in `tests/connectors/conftest.py` mirroring
@@ -127,7 +127,7 @@ c.list_connectors()"` succeeds.
 - Place the cloud_smoke tests with `pytest.mark.cloud_smoke` and
   credential-based `skip`/`skipif` (reuse the marker from `tests/conftest.py`).
 - Extend the `cloud_smoke` marker description in `tests/conftest.py:75-78` to
-  mention S3/GCS object storage (`agv_SMOKE_S3_BUCKET` / `agv_SMOKE_GCS_BUCKET`)
+  mention S3/GCS object storage (`AI_SMOKE_S3_BUCKET` / `AI_SMOKE_GCS_BUCKET`)
   so the marker's registered docstring covers the new tests, not only the
   AWS/Azure backend smoke tests it lists today.
 
@@ -146,8 +146,8 @@ returns nothing (scheme is `gcs://`).
 **Approach:**
 - Add a short "Content sources" subsection to `README.md` (near the storage
   backends table) listing filesystem (built-in), S3 (`pip install
-  agent-vault[s3]`, `s3://bucket/key`), and GCS (`pip install
-  agent-vault[gcs]`, `gcs://bucket/object`).
+  agentic-inquiry[s3]`, `s3://bucket/key`), and GCS (`pip install
+  agentic-inquiry[gcs]`, `gcs://bucket/object`).
 - Update `docs/development/connector-guide.md` to match the code: the URI
   conventions block already says `gcs://bucket/object` (correct after T1);
   **move `GCSConnector` from "Planned/Example Implementations" to "Active

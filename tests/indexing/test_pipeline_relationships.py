@@ -12,12 +12,12 @@ pytestmark = pytest.mark.integration
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config
-from agent_vault.embeddings.base import Embedder
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.indexing.models import IndexingResult
-from agent_vault.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.config import Config
+from agentic_inquiry.embeddings.base import Embedder
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.indexing.models import IndexingResult
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 

@@ -16,8 +16,8 @@ Covers:
 from __future__ import annotations
 
 
-from agent_vault.server.routes.search import LocalDiff, LocalDiffFile
-from agent_vault.server.overlay.truncation import truncate_diff
+from agentic_inquiry.server.routes.search import LocalDiff, LocalDiffFile
+from agentic_inquiry.server.overlay.truncation import truncate_diff
 
 
 # ---------------------------------------------------------------------------

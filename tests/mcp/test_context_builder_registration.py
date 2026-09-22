@@ -8,9 +8,9 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config
-from agent_vault.mcp.factories import create_mcp_services
-from agent_vault.mcp.services.context_builder import ContextBuilder
+from agentic_inquiry.config import Config
+from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.services.context_builder import ContextBuilder
 
 
 @pytest.mark.asyncio
@@ -34,11 +34,11 @@ async def test_context_builder_has_all_dependencies(mock_config):
     context_builder = services["context_builder"]
     
     # Verify all dependencies are set and have expected types
-    from agent_vault.search.service import SearchService
-    from agent_vault.memory.system import MemorySystem
-    from agent_vault.database.lancedb_manager import LanceDBManager
-    from agent_vault.mcp.services.session_manager import SessionManager
-    from agent_vault.mcp.services.token_optimizer import TokenOptimizer
+    from agentic_inquiry.search.service import SearchService
+    from agentic_inquiry.memory.system import MemorySystem
+    from agentic_inquiry.database.lancedb_manager import LanceDBManager
+    from agentic_inquiry.mcp.services.session_manager import SessionManager
+    from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
 
     assert context_builder.search is not None
     assert isinstance(context_builder.search, SearchService)
@@ -57,11 +57,11 @@ async def test_context_builder_has_all_dependencies(mock_config):
 @pytest.mark.asyncio
 async def test_context_builder_dependencies_are_correct_types(mock_config):
     """Test that ContextBuilder dependencies are correct types."""
-    from agent_vault.search.service import SearchService
-    from agent_vault.memory.system import MemorySystem
-    from agent_vault.database.lancedb_manager import LanceDBManager
-    from agent_vault.mcp.services.session_manager import SessionManager
-    from agent_vault.mcp.services.token_optimizer import TokenOptimizer
+    from agentic_inquiry.search.service import SearchService
+    from agentic_inquiry.memory.system import MemorySystem
+    from agentic_inquiry.database.lancedb_manager import LanceDBManager
+    from agentic_inquiry.mcp.services.session_manager import SessionManager
+    from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
     
     # Create services
     services = await create_mcp_services(mock_config, "test_project")

@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 import numpy as np
 
-from agent_vault.indexing.external_entity_manager import ExternalEntityManager
+from agentic_inquiry.indexing.external_entity_manager import ExternalEntityManager
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def mock_embedding_service():
 @pytest.fixture
 def mock_external_resolver():
     """Create a mock external resolver."""
-    from agent_vault.indexing.external_entity_resolver import ExternalCategory
+    from agentic_inquiry.indexing.external_entity_resolver import ExternalCategory
 
     resolver = MagicMock()
 
@@ -268,7 +268,7 @@ class TestCountEntitiesByCategory:
 
     def test_count_entities_single_category(self, external_entity_manager):
         """Test counting single category."""
-        from agent_vault.indexing.external_entity_resolver import ExternalCategory
+        from agentic_inquiry.indexing.external_entity_resolver import ExternalCategory
 
         mock_entity = MagicMock()
         mock_entity.category = ExternalCategory.EXTERNAL
@@ -278,7 +278,7 @@ class TestCountEntitiesByCategory:
 
     def test_count_entities_multiple_categories(self, external_entity_manager):
         """Test counting multiple categories."""
-        from agent_vault.indexing.external_entity_resolver import ExternalCategory
+        from agentic_inquiry.indexing.external_entity_resolver import ExternalCategory
 
         entities = []
         for _ in range(3):

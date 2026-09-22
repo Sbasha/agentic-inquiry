@@ -12,8 +12,8 @@ import uuid
 
 import numpy as np
 
-from agent_vault.memory.layers.working import WorkingMemory
-from agent_vault.memory.models import MemoryContext, MemoryItem, MemoryTier
+from agentic_inquiry.memory.layers.working import WorkingMemory
+from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier
 
 
 @pytest.fixture

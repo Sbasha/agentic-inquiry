@@ -1,6 +1,6 @@
-from agent_vault.metrics import MetricsTracker
-from agent_vault.metrics.health import HealthTracker
-from agent_vault.models.health import HealthStatus
+from agentic_inquiry.metrics import MetricsTracker
+from agentic_inquiry.metrics.health import HealthTracker
+from agentic_inquiry.models.health import HealthStatus
 
 def test_health_tracker_latency_degradation():
     metrics = MetricsTracker()

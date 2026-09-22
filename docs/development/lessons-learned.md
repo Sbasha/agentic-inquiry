@@ -52,7 +52,7 @@ From retrospective analysis (Jan 10, 2026). See source reports for full details.
 
 ---
 
-## Tooling (agv MCP)
+## Tooling (ai MCP)
 
 ### MUST-HAVE Tools
 - `search_knowledge` - Primary search, 8+/10 reliability
@@ -64,7 +64,7 @@ From retrospective analysis (Jan 10, 2026). See source reports for full details.
 - `graph_traverse` - **Requires relationships first**
 - `understand_entity` - Verify entity type consistency
 
-**Source:** [04-agv-TOOLING-ANALYSIS.md](../../.sdd/specs/retro-01-10/reports/04-agv-TOOLING-ANALYSIS.md)
+**Source:** [04-ai-TOOLING-ANALYSIS.md](../../.sdd/specs/retro-01-10/reports/04-ai-TOOLING-ANALYSIS.md)
 
 ---
 

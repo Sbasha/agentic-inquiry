@@ -33,8 +33,8 @@ class TestWorkspaceDetection:
             assert workspace_root == tmp_path
     
     def test_detect_workspace_root_with_yaml(self, tmp_path):
-        """Test workspace detection when agent-vault.yaml exists."""
-        (tmp_path / "agent-vault.yaml").write_text("# test config")
+        """Test workspace detection when agentic-inquiry.yaml exists."""
+        (tmp_path / "agentic-inquiry.yaml").write_text("# test config")
         
         with patch("convert_model.Path.cwd", return_value=tmp_path):
             workspace_root = convert_model.detect_workspace_root()

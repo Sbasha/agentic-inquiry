@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 import time
 
-from agent_vault.mcp.utils.performance import (
+from agentic_inquiry.mcp.utils.performance import (
     PerformanceMonitor,
     ToolExecutionMetric,
     ToolStatistics,

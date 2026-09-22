@@ -13,13 +13,13 @@ Mode: light (no risk trigger fired)
 
 ## Objective
 
-A Salesforce developer indexes a DX folder with `/agv:index`. Apex classes
+A Salesforce developer indexes a DX folder with `/ai:index`. Apex classes
 (`.cls` / `.apex`) and triggers (`.trigger`) produce the same kind of
 searchable symbols and graph edges Java already does: classes (including
 inner classes), interfaces, enums, methods, constructors, fields and
 properties, method calls, and superclass / interface inheritance. A method
 that runs a SOQL query in brackets (`[SELECT ... FROM Account]`) keeps that
-query text in its chunk, so `/agv:search` can find the object without a
+query text in its chunk, so `/ai:search` can find the object without a
 separate query language. Named `queries` edges, `@AuraEnabled` routing, and
 metadata XML (`*.object-meta.xml`, Flows, layouts) are out of this spec.
 
@@ -84,7 +84,7 @@ CI. No manual QA: there is no UI.
 
 ## Assumptions
 
-- Technical: Apex is already registered (`.apex` / `.cls` / `.trigger`) and parsed via `tree_sitter_language_pack.get_parser("apex")` (source: `agent_vault/parsers/implementations/utils/languages.py`, `pyproject.toml`).
+- Technical: Apex is already registered (`.apex` / `.cls` / `.trigger`) and parsed via `tree_sitter_language_pack.get_parser("apex")` (source: `agentic_inquiry/parsers/implementations/utils/languages.py`, `pyproject.toml`).
 - Technical: pack 0.10.0's Apex grammar exposes `class_declaration`, `trigger_declaration` (fields `name`, `object`, `events`, `body`), `constructor_declaration`, `enum_declaration`, `field_declaration` + `accessor_list`, `method_invocation` (`name` field, Java-shaped), `query_expression` / `soql_query_body`, `superclass` / `interfaces` with `type_identifier` children (source: probe `uv run python` against `get_parser("apex")` on 2026-09-04).
 - Technical: `_extract_call_info` already handles Java `method_invocation` via the `name`/`object` shape; Apex needs the query capture plus `trigger_declaration` in `_DEFINITION_NODE_TYPES` so trigger-body calls attach (source: `unified_code.py`, java-rust-calls-edges spec).
 - Technical: `_extract_class_bases` only reads `identifier` / `attribute` / `subscript` / `call` children, so Apex `type_identifier` names are dropped unless that helper also accepts `type_identifier` (source: `unified_code.py` `_extract_class_bases`).

@@ -11,17 +11,17 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config
-from agent_vault.database import LanceDBManager
-from agent_vault.indexing import IndexingPipeline
-from agent_vault.indexing.models import IndexingResult
+from agentic_inquiry.config import Config
+from agentic_inquiry.database import LanceDBManager
+from agentic_inquiry.indexing import IndexingPipeline
+from agentic_inquiry.indexing.models import IndexingResult
 
 
 @pytest.mark.asyncio
 async def test_agents_md_config_loading_example():
     """Test that AGENTS.md configuration loading example works."""
     # Example from AGENTS.md
-    config = Config.load()  # Loads: env (AGV_*) → agent-vault.yaml → config/default.yaml
+    config = Config.load()  # Loads: env (AI_*) → agentic-inquiry.yaml → config/default.yaml
     
     # Project ID is passed to components for data isolation
     # Example: LanceDBManager.from_config(config)
@@ -39,7 +39,7 @@ async def test_agents_md_synchronous_indexing_example():
     Full integration testing is done elsewhere.
     """
     # Verify the example code structure compiles and has correct types
-    from agent_vault.indexing.models import IndexingResult
+    from agentic_inquiry.indexing.models import IndexingResult
     
     # The example shows this pattern:
     # result: IndexingResult = await pipeline.index_directory(
@@ -134,7 +134,7 @@ async def test_mcp_tools_add_knowledge_asynchronous_example():
 @pytest.mark.asyncio
 async def test_api_reference_indexing_result_example():
     """Test that API reference IndexingResult example works."""
-    from agent_vault.indexing.models import IndexingError
+    from agentic_inquiry.indexing.models import IndexingError
     
     # Example from docs/api-reference/indexing.md
     result = IndexingResult(

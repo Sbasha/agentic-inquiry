@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# AlloyDB cluster and instance setup for Agent-Vault
+# AlloyDB cluster and instance setup for Agentic Inquiry
 #
 # Prerequisites:
 #   - gcloud CLI installed and authenticated
@@ -14,9 +14,9 @@ set -euo pipefail
 # Defaults
 PROJECT="${PROJECT:-$(gcloud config get-value project 2>/dev/null)}"
 REGION="${REGION:-us-central1}"
-CLUSTER="${CLUSTER:-agv-cluster}"
-INSTANCE="${INSTANCE:-agv-primary}"
-DATABASE="${DATABASE:-agent-vault}"
+CLUSTER="${CLUSTER:-ai-cluster}"
+INSTANCE="${INSTANCE:-ai-primary}"
+DATABASE="${DATABASE:-agentic-inquiry}"
 NETWORK="${NETWORK:-default}"
 PASSWORD="${PASSWORD:-}"
 
@@ -34,7 +34,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-echo "=== AlloyDB Setup for Agent-Vault ==="
+echo "=== AlloyDB Setup for Agentic Inquiry ==="
 echo "Project:  ${PROJECT}"
 echo "Region:   ${REGION}"
 echo "Cluster:  ${CLUSTER}"
@@ -124,5 +124,5 @@ echo "  3. Connect and create database:"
 echo "     psql -h 127.0.0.1 -p 5432 -U postgres -c 'CREATE DATABASE ${DATABASE};'"
 echo "     psql -h 127.0.0.1 -p 5432 -U postgres -d ${DATABASE} -c 'CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS google_ml_integration;'"
 echo ""
-echo "  4. Configure Agent-Vault:"
-echo "     agv setup alloydb"
+echo "  4. Configure Agentic Inquiry:"
+echo "     ai setup alloydb"

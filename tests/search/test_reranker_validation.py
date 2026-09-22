@@ -9,11 +9,11 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config
-from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
-from agent_vault.exceptions import ConfigurationError
-from agent_vault.search.service import SearchService
-from agent_vault.search.hybrid_search import VALID_RERANKER_TYPES
+from agentic_inquiry.config import Config
+from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+from agentic_inquiry.exceptions import ConfigurationError
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.search.hybrid_search import VALID_RERANKER_TYPES
 
 
 @pytest.fixture
@@ -212,7 +212,7 @@ class TestValidRerankerTypesExport:
 
     def test_constant_is_exported(self):
         """Test that VALID_RERANKER_TYPES can be imported."""
-        from agent_vault.search.hybrid_search import VALID_RERANKER_TYPES
+        from agentic_inquiry.search.hybrid_search import VALID_RERANKER_TYPES
         assert VALID_RERANKER_TYPES is not None
         assert isinstance(VALID_RERANKER_TYPES, frozenset)
         assert len(VALID_RERANKER_TYPES) > 0
@@ -222,7 +222,7 @@ class TestValidRerankerTypesExport:
 
     def test_constant_is_immutable(self):
         """Test that VALID_RERANKER_TYPES cannot be modified."""
-        from agent_vault.search.hybrid_search import VALID_RERANKER_TYPES
+        from agentic_inquiry.search.hybrid_search import VALID_RERANKER_TYPES
 
         # frozenset doesn't have add/remove methods
         assert isinstance(VALID_RERANKER_TYPES, frozenset)

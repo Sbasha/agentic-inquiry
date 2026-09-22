@@ -8,7 +8,7 @@
 
 ## Test Suite Overview
 
-This test evaluates how effectively an agent can analyze dependencies using Agent-Vault to:
+This test evaluates how effectively an agent can analyze dependencies using Agentic Inquiry to:
 - Find all direct and indirect usages
 - Map complete dependency chains
 - Assess coupling levels
@@ -41,7 +41,7 @@ Dependency analysis is successful if the agent can:
 **Step 1: Create Session with Unique Project ID**
 ```python
 # Use the naming convention from USE_CASES.md
-project_id = "agv_test09_deps_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test09_deps_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Dependency analysis test")
 ```
 

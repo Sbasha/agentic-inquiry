@@ -11,9 +11,9 @@ import pytest
 
 import tempfile
 from unittest.mock import patch, MagicMock
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.exceptions import StorageError
-from agent_vault.config import Config
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.exceptions import StorageError
+from agentic_inquiry.config import Config
 
 
 class TestDatabaseErrorMessages:

@@ -11,8 +11,8 @@ from typing import Generator
 
 import yaml
 
-from agent_vault.config import Config, LoggingConfig
-from agent_vault.utils.logging_setup import LogCleanupManager, LoggingConfigurator
+from agentic_inquiry.config import Config, LoggingConfig
+from agentic_inquiry.utils.logging_setup import LogCleanupManager, LoggingConfigurator
 
 
 @pytest.fixture
@@ -66,7 +66,7 @@ def cleanup_logging() -> Generator[None, None, None]:
     # Reset log levels for common loggers
     root_logger.setLevel(logging.WARNING)
     for service in ["parsers", "database", "search", "indexing", "embeddings", "caching"]:
-        logger = logging.getLogger(f"agent_vault.{service}")
+        logger = logging.getLogger(f"agentic_inquiry.{service}")
         logger.setLevel(logging.NOTSET)
 
 
@@ -76,12 +76,12 @@ def cleanup_env_vars() -> Generator[None, None, None]:
     # Store original values
     original_env = {}
     env_vars = [
-        "AGV_LOGGING_DIRECTORY",
-        "AGV_LOGGING_LEVEL",
-        "AGV_LOGGING_MAX_BYTES",
-        "AGV_LOGGING_RETENTION_HOURS",
-        "AGV_LOGGING_SERVICE_LEVELS_PARSERS",
-        "AGV_LOGGING_SERVICE_LEVELS_DATABASE",
+        "AI_LOGGING_DIRECTORY",
+        "AI_LOGGING_LEVEL",
+        "AI_LOGGING_MAX_BYTES",
+        "AI_LOGGING_RETENTION_HOURS",
+        "AI_LOGGING_SERVICE_LEVELS_PARSERS",
+        "AI_LOGGING_SERVICE_LEVELS_DATABASE",
     ]
     
     for var in env_vars:
@@ -110,7 +110,7 @@ class TestEndToEndLogging:
         LoggingConfigurator.setup(config)
         
         # Write some log messages
-        logger = logging.getLogger("agent_vault.test")
+        logger = logging.getLogger("agentic_inquiry.test")
         logger.info("Test info message")
         logger.warning("Test warning message")
         logger.error("Test error message")
@@ -134,7 +134,7 @@ class TestEndToEndLogging:
         LoggingConfigurator.setup(config)
         
         # Write a log message to trigger file creation
-        logger = logging.getLogger("agent_vault.test")
+        logger = logging.getLogger("agentic_inquiry.test")
         logger.error("Test error")
         
         # Flush handlers
@@ -156,7 +156,7 @@ class TestMainAndErrorLogSeparation:
         )
         LoggingConfigurator.setup(config)
         
-        logger = logging.getLogger("agent_vault.test")
+        logger = logging.getLogger("agentic_inquiry.test")
         logger.info("Info message")
         
         # Flush handlers
@@ -177,7 +177,7 @@ class TestMainAndErrorLogSeparation:
         )
         LoggingConfigurator.setup(config)
         
-        logger = logging.getLogger("agent_vault.test")
+        logger = logging.getLogger("agentic_inquiry.test")
         logger.warning("Warning message")
         
         # Flush handlers
@@ -198,7 +198,7 @@ class TestMainAndErrorLogSeparation:
         )
         LoggingConfigurator.setup(config)
         
-        logger = logging.getLogger("agent_vault.test")
+        logger = logging.getLogger("agentic_inquiry.test")
         logger.error("Error message")
         
         # Flush handlers
@@ -219,7 +219,7 @@ class TestMainAndErrorLogSeparation:
         )
         LoggingConfigurator.setup(config)
         
-        logger = logging.getLogger("agent_vault.test")
+        logger = logging.getLogger("agentic_inquiry.test")
         logger.critical("Critical message")
         
         # Flush handlers
@@ -247,7 +247,7 @@ class TestLogRotation:
         )
         LoggingConfigurator.setup(config)
         
-        logger = logging.getLogger("agent_vault.test")
+        logger = logging.getLogger("agentic_inquiry.test")
         
         # Write enough messages to exceed max_bytes
         for i in range(20):
@@ -275,7 +275,7 @@ class TestLogRotation:
         )
         LoggingConfigurator.setup(config)
         
-        logger = logging.getLogger("agent_vault.test")
+        logger = logging.getLogger("agentic_inquiry.test")
         
         # Write many messages to trigger multiple rotations
         for i in range(50):
@@ -362,11 +362,11 @@ class TestPerServiceLogLevels:
         LoggingConfigurator.setup(config)
         
         # Test parsers logger (should log DEBUG)
-        parsers_logger = logging.getLogger("agent_vault.parsers")
+        parsers_logger = logging.getLogger("agentic_inquiry.parsers")
         parsers_logger.debug("Parser debug message")
         
         # Test database logger (should use global WARNING)
-        database_logger = logging.getLogger("agent_vault.database")
+        database_logger = logging.getLogger("agentic_inquiry.database")
         database_logger.debug("Database debug message")
         database_logger.warning("Database warning message")
         
@@ -399,11 +399,11 @@ class TestPerServiceLogLevels:
         LoggingConfigurator.setup(config)
         
         # Test each service
-        logging.getLogger("agent_vault.parsers").debug("Parser debug")
-        logging.getLogger("agent_vault.database").warning("Database warning")
-        logging.getLogger("agent_vault.database").error("Database error")
-        logging.getLogger("agent_vault.search").info("Search info")
-        logging.getLogger("agent_vault.search").warning("Search warning")
+        logging.getLogger("agentic_inquiry.parsers").debug("Parser debug")
+        logging.getLogger("agentic_inquiry.database").warning("Database warning")
+        logging.getLogger("agentic_inquiry.database").error("Database error")
+        logging.getLogger("agentic_inquiry.search").info("Search info")
+        logging.getLogger("agentic_inquiry.search").warning("Search warning")
         
         # Flush handlers
         for handler in logging.getLogger().handlers:
@@ -474,9 +474,9 @@ class TestConfigLoadingFromYAML:
         LoggingConfigurator.setup(config.logging)
         
         # Test logging
-        logging.getLogger("agent_vault.parsers").debug("Parser debug")
-        logging.getLogger("agent_vault.database").info("Database info")
-        logging.getLogger("agent_vault.database").warning("Database warning")
+        logging.getLogger("agentic_inquiry.parsers").debug("Parser debug")
+        logging.getLogger("agentic_inquiry.database").info("Database info")
+        logging.getLogger("agentic_inquiry.database").warning("Database warning")
         
         # Flush handlers
         for handler in logging.getLogger().handlers:
@@ -497,12 +497,12 @@ class TestEnvironmentVariableOverrides:
     """Test environment variable overrides."""
     
     def test_env_var_overrides_directory(self, tmp_path, temp_config_file):
-        """Test that AGV_LOGGING_DIRECTORY overrides config."""
+        """Test that AI_LOGGING_DIRECTORY overrides config."""
         env_log_dir = tmp_path / "env_logs"
         config_log_dir = tmp_path / "config_logs"
         
         # Set environment variable
-        os.environ["AGV_LOGGING_DIRECTORY"] = str(env_log_dir)
+        os.environ["AI_LOGGING_DIRECTORY"] = str(env_log_dir)
         
         config_data = create_minimal_config(tmp_path, {
             "directory": str(config_log_dir)
@@ -517,8 +517,8 @@ class TestEnvironmentVariableOverrides:
         assert config.logging.directory == str(env_log_dir)
     
     def test_env_var_overrides_level(self, tmp_path, temp_config_file):
-        """Test that AGV_LOGGING_LEVEL overrides config."""
-        os.environ["AGV_LOGGING_LEVEL"] = "ERROR"
+        """Test that AI_LOGGING_LEVEL overrides config."""
+        os.environ["AI_LOGGING_LEVEL"] = "ERROR"
         
         config_data = create_minimal_config(tmp_path, {
             "directory": str(tmp_path / "logs"),
@@ -533,8 +533,8 @@ class TestEnvironmentVariableOverrides:
         assert config.logging.level == "ERROR"
     
     def test_env_var_overrides_max_bytes(self, tmp_path, temp_config_file):
-        """Test that AGV_LOGGING_MAX_BYTES overrides config."""
-        os.environ["AGV_LOGGING_MAX_BYTES"] = "20971520"
+        """Test that AI_LOGGING_MAX_BYTES overrides config."""
+        os.environ["AI_LOGGING_MAX_BYTES"] = "20971520"
         
         config_data = create_minimal_config(tmp_path, {
             "directory": str(tmp_path / "logs"),
@@ -549,8 +549,8 @@ class TestEnvironmentVariableOverrides:
         assert config.logging.max_bytes == 20971520
     
     def test_env_var_overrides_retention_hours(self, tmp_path, temp_config_file):
-        """Test that AGV_LOGGING_RETENTION_HOURS overrides config."""
-        os.environ["AGV_LOGGING_RETENTION_HOURS"] = "72"
+        """Test that AI_LOGGING_RETENTION_HOURS overrides config."""
+        os.environ["AI_LOGGING_RETENTION_HOURS"] = "72"
         
         config_data = create_minimal_config(tmp_path, {
             "directory": str(tmp_path / "logs"),
@@ -565,9 +565,9 @@ class TestEnvironmentVariableOverrides:
         assert config.logging.retention_hours == 72
     
     def test_env_var_overrides_service_levels(self, tmp_path, temp_config_file):
-        """Test that AGV_LOGGING_SERVICE_LEVELS_* overrides config."""
-        os.environ["AGV_LOGGING_SERVICE_LEVELS_PARSERS"] = "ERROR"
-        os.environ["AGV_LOGGING_SERVICE_LEVELS_DATABASE"] = "CRITICAL"
+        """Test that AI_LOGGING_SERVICE_LEVELS_* overrides config."""
+        os.environ["AI_LOGGING_SERVICE_LEVELS_PARSERS"] = "ERROR"
+        os.environ["AI_LOGGING_SERVICE_LEVELS_DATABASE"] = "CRITICAL"
         
         config_data = create_minimal_config(tmp_path, {
             "directory": str(tmp_path / "logs"),

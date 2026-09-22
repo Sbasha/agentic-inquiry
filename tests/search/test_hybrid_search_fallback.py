@@ -13,13 +13,13 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config
-from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
-from agent_vault.database.results import SearchResult
-from agent_vault.search.service import SearchService
-from agent_vault.search.hybrid_search import HybridSearchService
-from agent_vault.search.deduplicator import SearchDeduplicator
-from agent_vault.events.system import EventSystem
+from agentic_inquiry.config import Config
+from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+from agentic_inquiry.database.results import SearchResult
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.search.hybrid_search import HybridSearchService
+from agentic_inquiry.search.deduplicator import SearchDeduplicator
+from agentic_inquiry.events.system import EventSystem
 
 
 def _make_search_results(dicts: list, source: str = "test") -> list[SearchResult]:

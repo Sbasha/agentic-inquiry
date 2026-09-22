@@ -6,10 +6,10 @@ pytestmark = pytest.mark.integration
 import pytest_asyncio
 from unittest.mock import MagicMock, AsyncMock
 
-from agent_vault.config import Config
-from agent_vault.mcp.factories import create_mcp_services
-from agent_vault.mcp.tools.analysis import understand_entity
-from agent_vault.models.graph_entity import GraphEntity
+from agentic_inquiry.config import Config
+from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.tools.analysis import understand_entity
+from agentic_inquiry.models.graph_entity import GraphEntity
 
 
 @pytest_asyncio.fixture
@@ -47,7 +47,7 @@ async def indexed_services(test_services):
             id="entity_1",
             name="SearchService",
             type="class",
-            file_path="agent_vault/search/service.py",
+            file_path="agentic_inquiry/search/service.py",
             doc_id="doc_1",
             project_id="test_project",
             vector=[0.1] * 384,
@@ -57,7 +57,7 @@ async def indexed_services(test_services):
             id="entity_2",
             name="search",
             type="function",
-            file_path="agent_vault/search/service.py",
+            file_path="agentic_inquiry/search/service.py",
             doc_id="doc_2",
             project_id="test_project",
             vector=[0.2] * 384,
@@ -67,7 +67,7 @@ async def indexed_services(test_services):
             id="entity_3",
             name="hybrid_search",
             type="function",
-            file_path="agent_vault/search/service.py",
+            file_path="agentic_inquiry/search/service.py",
             doc_id="doc_3",
             project_id="test_project",
             vector=[0.15] * 384,
@@ -77,7 +77,7 @@ async def indexed_services(test_services):
             id="entity_4",
             name="IndexingPipeline",
             type="class",
-            file_path="agent_vault/indexing/pipeline.py",
+            file_path="agentic_inquiry/indexing/pipeline.py",
             doc_id="doc_4",
             project_id="test_project",
             vector=[0.12] * 384,
@@ -87,7 +87,7 @@ async def indexed_services(test_services):
             id="entity_5",
             name="index_file",
             type="function",
-            file_path="agent_vault/indexing/pipeline.py",
+            file_path="agentic_inquiry/indexing/pipeline.py",
             doc_id="doc_5",
             project_id="test_project",
             vector=[0.25] * 384,

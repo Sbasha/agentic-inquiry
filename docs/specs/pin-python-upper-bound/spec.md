@@ -9,14 +9,14 @@ surfaces.)
 
 ## Objective
 
-Cap Agent-Vault's supported Python range at `>=3.10,<3.14`. Some
+Cap Agentic Inquiry's supported Python range at `>=3.10,<3.14`. Some
 dependencies do not yet ship cp314 (CPython 3.14) wheels, so declaring
 3.14 support is a lie the resolver can't honor. Narrow the declared
 range, align user-facing docs, and regenerate the lock so it carries no
 3.14-only resolution artifacts.
 
-Migrated PR: sbasha/311256_agent-vault#154 (from
-sbasha/agent-vault#125).
+Migrated PR: sbasha/311256_agentic-inquiry#154 (from
+sbasha/agentic-inquiry#125).
 
 ## Acceptance Criteria
 
@@ -45,7 +45,7 @@ in Python files this change does not touch) are also out of scope.
 Goal-based verification (config + lockfile change, no logic):
 - `grep` assertions on the three edited files.
 - `uv lock --locked` for lock consistency.
-- `uv sync` + `import agent_vault` + `pytest --collect-only` as the
+- `uv sync` + `import agentic_inquiry` + `pytest --collect-only` as the
   environment smoke gate — the regenerated resolution still installs and
   imports.
 - Diff inspection of `uv.lock` to confirm no `name`/`version` block changed.

@@ -13,18 +13,18 @@ pytestmark = pytest.mark.integration
 from unittest.mock import AsyncMock, MagicMock
 import pytest_asyncio
 
-from agent_vault.config import Config, StorageConfig
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.search.service import SearchService
-from agent_vault.storage.facade import StorageFacade
-from agent_vault.mcp.tools.knowledge import add_knowledge
-from agent_vault.mcp.tools.info import list_entities
-from agent_vault.mcp.tools.analysis import understand_entity
-from agent_vault.mcp.tools.search import find_similar
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.storage.facade import StorageFacade
+from agentic_inquiry.mcp.tools.knowledge import add_knowledge
+from agentic_inquiry.mcp.tools.info import list_entities
+from agentic_inquiry.mcp.tools.analysis import understand_entity
+from agentic_inquiry.mcp.tools.search import find_similar
 
 # Trigger parser auto-registration
-import agent_vault.parsers.implementations  # noqa: F401
+import agentic_inquiry.parsers.implementations  # noqa: F401
 
 
 def _create_mock_event_system():
@@ -90,7 +90,7 @@ async def test_db_manager(test_config):
 @pytest_asyncio.fixture
 async def test_embedding_registry():
     """Create embedding registry with dummy embedder."""
-    from agent_vault.embeddings.registry import EmbeddingRegistry
+    from agentic_inquiry.embeddings.registry import EmbeddingRegistry
     return EmbeddingRegistry(default_embedder=_DummyEmbedder())
 
 
@@ -197,7 +197,7 @@ class TestIndexingWorkflow:
         )
         
         # Index the file
-        from agent_vault.parsers.executor import get_parser_instance, execute_parser
+        from agentic_inquiry.parsers.executor import get_parser_instance, execute_parser
         
         parser = get_parser_instance("unified_code")
         test_file = sample_python_code / "sample_module.py"
@@ -289,7 +289,7 @@ class TestSearchWorkflow:
         )
         
         # Index the file
-        from agent_vault.parsers.executor import get_parser_instance, execute_parser
+        from agentic_inquiry.parsers.executor import get_parser_instance, execute_parser
         
         parser = get_parser_instance("unified_code")
         test_file = sample_python_code / "sample_module.py"
@@ -354,7 +354,7 @@ class TestEntityQueryWorkflow:
         monkeypatch.chdir(sample_python_code)
 
         # Create MCP services with project_root set to sample code directory
-        from agent_vault.mcp.services.session_manager import SessionManager
+        from agentic_inquiry.mcp.services.session_manager import SessionManager
 
         mock_event_system = _create_mock_event_system()
         session_manager = SessionManager(test_storage_facade, test_config)
@@ -373,8 +373,8 @@ class TestEntityQueryWorkflow:
         test_storage_facade.embedding_registry = test_embedding_registry
 
         # Create entity resolver
-        from agent_vault.mcp.services.entity_resolver import EntityResolver
-        from agent_vault.indexing.embedding_service import EmbeddingService
+        from agentic_inquiry.mcp.services.entity_resolver import EntityResolver
+        from agentic_inquiry.indexing.embedding_service import EmbeddingService
 
         entity_resolver = EntityResolver(test_storage_facade, test_config)
         embedding_service = EmbeddingService(test_embedding_registry)

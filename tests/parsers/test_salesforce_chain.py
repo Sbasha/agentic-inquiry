@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from agent_vault.config import Config
-from agent_vault.parsers.chain import ParserChain
-from agent_vault.parsers.models import ParserRelationship
+from agentic_inquiry.config import Config
+from agentic_inquiry.parsers.chain import ParserChain
+from agentic_inquiry.parsers.models import ParserRelationship
 
 pytestmark = pytest.mark.integration
 

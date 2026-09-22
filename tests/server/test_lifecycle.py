@@ -1,4 +1,4 @@
-"""Tests for agent_vault.server.lifecycle - PID file, port, auto-start."""
+"""Tests for agentic_inquiry.server.lifecycle - PID file, port, auto-start."""
 
 import json
 import os
@@ -6,7 +6,7 @@ import tempfile
 
 import pytest
 
-from agent_vault.server.lifecycle import (
+from agentic_inquiry.server.lifecycle import (
     ENV_DEFAULT,
     ENV_TEST,
     _default_port_for_env,
@@ -26,8 +26,8 @@ from agent_vault.server.lifecycle import (
 
 @pytest.fixture
 def tmp_agv_home(tmp_path, monkeypatch):
-    """Use a temporary directory as agv home."""
-    monkeypatch.setenv("agv_HOME", str(tmp_path))
+    """Use a temporary directory as ai home."""
+    monkeypatch.setenv("AI_HOME", str(tmp_path))
     return tmp_path
 
 
@@ -56,7 +56,7 @@ class TestPIDFile:
 
     def test_write_creates_directory(self, tmp_path, monkeypatch):
         nested = tmp_path / "nested" / "dir"
-        monkeypatch.setenv("agv_HOME", str(nested))
+        monkeypatch.setenv("AI_HOME", str(nested))
         write_pid_file(1, 8765, "test")
         assert nested.exists()
         assert read_pid_file() is not None
@@ -88,15 +88,15 @@ class TestProcessChecks:
 
 
 class TestagvHome:
-    """Test agv home directory resolution."""
+    """Test ai home directory resolution."""
 
     def test_default_home(self, monkeypatch):
-        monkeypatch.delenv("agv_HOME", raising=False)
+        monkeypatch.delenv("AI_HOME", raising=False)
         home = get_agv_home()
-        assert home.endswith(".agv")
+        assert home.endswith(".agentic-inquiry")
 
     def test_custom_home(self, monkeypatch):
-        monkeypatch.setenv("agv_HOME", "/custom/path")
+        monkeypatch.setenv("AI_HOME", "/custom/path")
         assert get_agv_home() == "/custom/path"
 
 

@@ -2,7 +2,7 @@
 
 > **Note:** The MCP server is a secondary interface. Most users should use the [Claude Code plugins](../../README.md) instead.
 
-Complete guide to configuring the Agent-Vault MCP Server for advanced use cases.
+Complete guide to configuring the Agentic Inquiry MCP Server for advanced use cases.
 
 ## Primary Interface: Claude Code Plugins
 
@@ -15,7 +15,7 @@ Add to `.claude/settings.json` in your project:
 ```json
 {
   "extraKnownMarketplaces": {
-    "agent-vault": {
+    "agentic-inquiry": {
       "source": {
         "source": "directory",
         "path": "./extensions/claude"
@@ -23,8 +23,8 @@ Add to `.claude/settings.json` in your project:
     }
   },
   "enabledPlugins": {
-    "agv@agent-vault": true,
-    "agv-dev@agent-vault": true
+    "ai@agentic-inquiry": true,
+    "ai-dev@agentic-inquiry": true
   }
 }
 ```
@@ -33,12 +33,12 @@ Add to `.claude/settings.json` in your project:
 
 Once enabled, use skills directly in Claude Code:
 
-- `/agv:search <query>` - Semantic search across code and docs
-- `/agv:index <path>` - Index a codebase
-- `/agv:onboard <path>` - AI-powered codebase onboarding
-- `/agv:entity <name>` - Understand a code entity
-- `/agv:impact <symbol>` - Analyze change impact
-- `/agv:status` - Show project state
+- `/ai:search <query>` - Semantic search across code and docs
+- `/ai:index <path>` - Index a codebase
+- `/ai:onboard <path>` - AI-powered codebase onboarding
+- `/ai:entity <name>` - Understand a code entity
+- `/ai:impact <symbol>` - Analyze change impact
+- `/ai:status` - Show project state
 
 **Full plugin reference:** [AGENTS.md](../../AGENTS.md)
 
@@ -46,10 +46,10 @@ Once enabled, use skills directly in Claude Code:
 
 Only use the MCP server directly when you need:
 
-- **External tool integration** - Connect non-Claude clients to Agent-Vault
+- **External tool integration** - Connect non-Claude clients to Agentic Inquiry
 - **Production HTTP API** - Deploy as a standalone service for multiple clients
 - **Custom MCP workflows** - Build specialized MCP-based tooling
-- **Non-Claude MCP clients** - Use Agent-Vault from other MCP-compatible agents
+- **Non-Claude MCP clients** - Use Agentic Inquiry from other MCP-compatible agents
 
 For local development and Claude Code integration, the plugin system handles everything automatically.
 
@@ -80,31 +80,31 @@ mcp:
 
 ```bash
 # Uses current directory name as project
-uv run agv
+uv run ai
 
 # Specify a different project
-uv run agv my_project
+uv run ai my_project
 
 # HTTP transport for web deployments
-uv run agv --transport http --port 8000
+uv run ai --transport http --port 8000
 
 # All options combined
-uv run agv my_project --transport http --host 0.0.0.0 --port 8000
+uv run ai my_project --transport http --host 0.0.0.0 --port 8000
 ```
 
 ### Project ID
 
-The `agv` command automatically uses the current directory name as the project ID:
+The `ai` command automatically uses the current directory name as the project ID:
 
 ```bash
 # Uses current directory name
-uv run agv
+uv run ai
 
 # Override with specific project
-uv run agv my_project
+uv run ai my_project
 
 # Or use the flag
-uv run agv --project-id my_project
+uv run ai --project-id my_project
 ```
 
 **Project ID Requirements:**
@@ -128,10 +128,10 @@ Use `get_server_info()` to see format requirements and discover available projec
 Use a custom configuration file instead of defaults:
 
 ```bash
-uv run agv --config /path/to/custom.yaml
+uv run ai --config /path/to/custom.yaml
 
 # With specific project
-uv run agv my_project --config custom.yaml
+uv run ai my_project --config custom.yaml
 ```
 
 ### Command-Line Logging
@@ -140,13 +140,13 @@ Control log level and output:
 
 ```bash
 # Debug logging
-uv run agv --log-level DEBUG
+uv run ai --log-level DEBUG
 
 # Log to file
-uv run agv --log-file /var/log/AGV-mcp.log
+uv run ai --log-file /var/log/AGV-mcp.log
 
 # With specific project
-uv run agv my_project --log-level DEBUG --log-file debug.log
+uv run ai my_project --log-level DEBUG --log-file debug.log
 ```
 
 **Available log levels:**
@@ -172,10 +172,10 @@ For users running the MCP server, three transport mechanisms are available. Most
 **Usage:**
 ```bash
 # Simple - uses current directory as project name
-uv run agv
+uv run ai
 
 # Or specify project
-uv run agv my_project
+uv run ai my_project
 ```
 
 **How it works:**
@@ -200,20 +200,20 @@ uv run agv my_project
 **Usage:**
 ```bash
 # Localhost only
-uv run agv --transport http --host 127.0.0.1 --port 8000
+uv run ai --transport http --host 127.0.0.1 --port 8000
 
 # Or specify project
-uv run agv my_project --transport http --port 8000
+uv run ai my_project --transport http --port 8000
 
 # Accessible from network
-uv run agv --transport http --host 0.0.0.0 --port 8000
+uv run ai --transport http --host 0.0.0.0 --port 8000
 ```
 
 **Server endpoint:** `http://host:port/mcp`
 
 **Advanced usage:**
 ```bash
-uv run python -m agent_vault.mcp.cli \
+uv run python -m agentic_inquiry.mcp.cli \
   --project-id my_project \
   --transport http \
   --host 0.0.0.0 \
@@ -254,7 +254,7 @@ mcp:
 
 **Usage:**
 ```bash
-uv run agv --transport sse --port 8000
+uv run ai --transport sse --port 8000
 ```
 
 **Server endpoint:** `http://host:port/sse`
@@ -301,15 +301,15 @@ uv run agv --transport sse --port 8000
 ```yaml
 mcp:
   server:
-    name: "Agent-Vault"
+    name: "Agentic Inquiry"
     version: "1.0.0"
     description: "AI-powered code and knowledge search"
 ```
 
 **Environment Variables:**
-- `AGV_MCP_SERVER_NAME` - Server name
-- `AGV_MCP_SERVER_VERSION` - Server version
-- `AGV_MCP_SERVER_DESCRIPTION` - Server description
+- `AI_MCP_SERVER_NAME` - Server name
+- `AI_MCP_SERVER_VERSION` - Server version
+- `AI_MCP_SERVER_DESCRIPTION` - Server description
 
 ---
 
@@ -333,7 +333,7 @@ When using the MCP server, cognitive tools provide:
 - Knowledge management (add_knowledge, get_events)
 
 **Environment Variables:**
-- `AGV_MCP_TOOLS_COGNITIVE_ENABLED` - Enable/disable cognitive tools
+- `AI_MCP_TOOLS_COGNITIVE_ENABLED` - Enable/disable cognitive tools
 
 ### Direct Access Tools
 
@@ -352,11 +352,11 @@ Direct access tools include:
 - get_by_id - Bulk entity retrieval
 
 **Environment Variables:**
-- `AGV_MCP_TOOLS_DIRECT_ACCESS_ENABLED` - Enable/disable direct access tools
+- `AI_MCP_TOOLS_DIRECT_ACCESS_ENABLED` - Enable/disable direct access tools
 
 **CLI Override:**
 ```bash
-uv run python -m agent_vault.mcp.cli --enable-direct-tools
+uv run python -m agentic_inquiry.mcp.cli --enable-direct-tools
 ```
 
 ---
@@ -386,9 +386,9 @@ mcp:
 | `port` | 8765 | Port number |
 
 **Environment Variables:**
-- `AGV_MCP_API_ENABLED` - Enable/disable API
-- `AGV_MCP_API_HOST` - Bind address
-- `AGV_MCP_API_PORT` - Port number
+- `AI_MCP_API_ENABLED` - Enable/disable API
+- `AI_MCP_API_HOST` - Bind address
+- `AI_MCP_API_PORT` - Port number
 
 ### CORS Configuration
 
@@ -398,8 +398,8 @@ mcp:
 | `origins` | ["*"] | Allowed origins |
 
 **Environment Variables:**
-- `AGV_MCP_API_CORS_ENABLED` - Enable/disable CORS
-- `AGV_MCP_API_CORS_ORIGINS` - Comma-separated origins
+- `AI_MCP_API_CORS_ENABLED` - Enable/disable CORS
+- `AI_MCP_API_CORS_ORIGINS` - Comma-separated origins
 
 **Production Example:**
 ```yaml
@@ -420,8 +420,8 @@ mcp:
 | `api_key` | null | API key |
 
 **Environment Variables:**
-- `AGV_MCP_API_AUTH_ENABLED` - Enable/disable auth
-- `AGV_MCP_API_AUTH_API_KEY` - API key
+- `AI_MCP_API_AUTH_ENABLED` - Enable/disable auth
+- `AI_MCP_API_AUTH_API_KEY` - API key
 
 **Generate API Key:**
 ```bash
@@ -463,9 +463,9 @@ mcp:
 | `min_relevance` | 0.3 | Minimum relevance score |
 
 **Environment Variables:**
-- `AGV_MCP_DEFAULTS_SEARCH_LIMIT`
-- `AGV_MCP_DEFAULTS_SEARCH_HYBRID_WEIGHT`
-- `AGV_MCP_DEFAULTS_SEARCH_MIN_RELEVANCE`
+- `AI_MCP_DEFAULTS_SEARCH_LIMIT`
+- `AI_MCP_DEFAULTS_SEARCH_HYBRID_WEIGHT`
+- `AI_MCP_DEFAULTS_SEARCH_MIN_RELEVANCE`
 
 ### Context Defaults
 
@@ -485,9 +485,9 @@ mcp:
 | `include_relationships` | true | Include entity relationships |
 
 **Environment Variables:**
-- `AGV_MCP_DEFAULTS_CONTEXT_MAX_TOKENS`
-- `AGV_MCP_DEFAULTS_CONTEXT_DEPTH`
-- `AGV_MCP_DEFAULTS_CONTEXT_INCLUDE_RELATIONSHIPS`
+- `AI_MCP_DEFAULTS_CONTEXT_MAX_TOKENS`
+- `AI_MCP_DEFAULTS_CONTEXT_DEPTH`
+- `AI_MCP_DEFAULTS_CONTEXT_INCLUDE_RELATIONSHIPS`
 
 ### Impact Analysis Defaults
 
@@ -585,7 +585,7 @@ Schema mapping automatically transforms ParserChunk fields to match database sch
 | `field_mappings` | {...} | Field name mappings (ParserChunk → database) |
 
 **Environment Variables:**
-- `AGV_INDEXING_SCHEMA_MAPPING_ENABLED` - Enable/disable schema mapping
+- `AI_INDEXING_SCHEMA_MAPPING_ENABLED` - Enable/disable schema mapping
 
 **Field Mappings:**
 
@@ -630,9 +630,9 @@ Schema validation performs pre-flight checks before database writes, catching er
 | `cache_ttl_seconds` | 300 | Schema cache TTL |
 
 **Environment Variables:**
-- `AGV_INDEXING_SCHEMA_VALIDATION_ENABLED` - Enable/disable validation
-- `AGV_INDEXING_SCHEMA_VALIDATION_STRICT_MODE` - Enable strict mode
-- `AGV_INDEXING_SCHEMA_VALIDATION_CACHE_SCHEMAS` - Enable schema caching
+- `AI_INDEXING_SCHEMA_VALIDATION_ENABLED` - Enable/disable validation
+- `AI_INDEXING_SCHEMA_VALIDATION_STRICT_MODE` - Enable strict mode
+- `AI_INDEXING_SCHEMA_VALIDATION_CACHE_SCHEMAS` - Enable schema caching
 
 **Validation Modes:**
 
@@ -673,8 +673,8 @@ The context builder assembles intelligent context from code, documentation, and 
 | `fallback_to_search` | true | Fall back to search if builder fails |
 
 **Environment Variables:**
-- `AGV_CONTEXT_BUILDER_ENABLED` - Enable/disable context builder
-- `AGV_CONTEXT_BUILDER_FALLBACK_TO_SEARCH` - Enable fallback
+- `AI_CONTEXT_BUILDER_ENABLED` - Enable/disable context builder
+- `AI_CONTEXT_BUILDER_FALLBACK_TO_SEARCH` - Enable fallback
 
 **Fallback Strategy:**
 
@@ -722,9 +722,9 @@ Token budget management ensures context fits within LLM context windows.
 | `focus_allocations` | {...} | Budget allocation by focus type |
 
 **Environment Variables:**
-- `AGV_CONTEXT_TOKEN_BUDGET_DEFAULT_BUDGET` - Default budget
-- `AGV_CONTEXT_TOKEN_BUDGET_MIN_BUDGET` - Minimum budget
-- `AGV_CONTEXT_TOKEN_BUDGET_MAX_BUDGET` - Maximum budget
+- `AI_CONTEXT_TOKEN_BUDGET_DEFAULT_BUDGET` - Default budget
+- `AI_CONTEXT_TOKEN_BUDGET_MIN_BUDGET` - Minimum budget
+- `AI_CONTEXT_TOKEN_BUDGET_MAX_BUDGET` - Maximum budget
 
 **Focus Allocations:**
 
@@ -780,9 +780,9 @@ Depth limits control the number of items returned at each depth level.
 | `comprehensive` | 30 | Items for comprehensive depth |
 
 **Environment Variables:**
-- `AGV_CONTEXT_DEPTH_LIMITS_MINIMAL` - Minimal depth limit
-- `AGV_CONTEXT_DEPTH_LIMITS_FOCUSED` - Focused depth limit
-- `AGV_CONTEXT_DEPTH_LIMITS_COMPREHENSIVE` - Comprehensive depth limit
+- `AI_CONTEXT_DEPTH_LIMITS_MINIMAL` - Minimal depth limit
+- `AI_CONTEXT_DEPTH_LIMITS_FOCUSED` - Focused depth limit
+- `AI_CONTEXT_DEPTH_LIMITS_COMPREHENSIVE` - Comprehensive depth limit
 
 **Depth Levels:**
 
@@ -831,9 +831,9 @@ Query sanitization escapes special characters to prevent syntax errors in full-t
 | `preserve_wildcards` | false | Preserve * and ? as wildcards |
 
 **Environment Variables:**
-- `AGV_SEARCH_QUERY_SANITIZATION_ENABLED` - Enable/disable sanitization
-- `AGV_SEARCH_QUERY_SANITIZATION_ESCAPE_SPECIAL_CHARS` - Escape special chars
-- `AGV_SEARCH_QUERY_SANITIZATION_PRESERVE_WILDCARDS` - Preserve wildcards
+- `AI_SEARCH_QUERY_SANITIZATION_ENABLED` - Enable/disable sanitization
+- `AI_SEARCH_QUERY_SANITIZATION_ESCAPE_SPECIAL_CHARS` - Escape special chars
+- `AI_SEARCH_QUERY_SANITIZATION_PRESERVE_WILDCARDS` - Preserve wildcards
 
 **Special Characters Handled:**
 
@@ -917,9 +917,9 @@ Search deduplication ensures diverse results across files.
 | `min_diversity_ratio` | 0.7 | Target diversity ratio (unique files / total results) |
 
 **Environment Variables:**
-- `AGV_SEARCH_DEDUPLICATION_ENABLED` - Enable/disable deduplication
-- `AGV_SEARCH_DEDUPLICATION_MAX_RESULTS_PER_FILE` - Max per file
-- `AGV_SEARCH_DEDUPLICATION_MIN_DIVERSITY_RATIO` - Target diversity
+- `AI_SEARCH_DEDUPLICATION_ENABLED` - Enable/disable deduplication
+- `AI_SEARCH_DEDUPLICATION_MAX_RESULTS_PER_FILE` - Max per file
+- `AI_SEARCH_DEDUPLICATION_MIN_DIVERSITY_RATIO` - Target diversity
 
 **Quality Metrics:**
 
@@ -964,8 +964,8 @@ Path validation is always enabled to prevent directory traversal attacks. All fi
 | `follow_symlinks` | true | Resolve symlinks during validation |
 
 **Environment Variables:**
-- `AGV_MCP_SECURITY_PATH_VALIDATION_ENFORCE` - Always true
-- `AGV_MCP_SECURITY_PATH_VALIDATION_FOLLOW_SYMLINKS` - Default: true
+- `AI_MCP_SECURITY_PATH_VALIDATION_ENFORCE` - Always true
+- `AI_MCP_SECURITY_PATH_VALIDATION_FOLLOW_SYMLINKS` - Default: true
 
 **How it works:**
 - All file paths are resolved to absolute paths
@@ -1000,12 +1000,12 @@ mcp:
 | `cache_ttl_seconds` | 300 | Cache TTL in seconds |
 
 **Environment Variables:**
-- `AGV_MCP_BEHAVIOR_SUGGEST_ON_EMPTY`
-- `AGV_MCP_BEHAVIOR_INCLUDE_ALTERNATIVES`
-- `AGV_MCP_BEHAVIOR_LOG_ALL_REQUESTS`
-- `AGV_MCP_BEHAVIOR_TRACK_PERFORMANCE`
-- `AGV_MCP_BEHAVIOR_CACHE_RESPONSES`
-- `AGV_MCP_BEHAVIOR_CACHE_TTL_SECONDS`
+- `AI_MCP_BEHAVIOR_SUGGEST_ON_EMPTY`
+- `AI_MCP_BEHAVIOR_INCLUDE_ALTERNATIVES`
+- `AI_MCP_BEHAVIOR_LOG_ALL_REQUESTS`
+- `AI_MCP_BEHAVIOR_TRACK_PERFORMANCE`
+- `AI_MCP_BEHAVIOR_CACHE_RESPONSES`
+- `AI_MCP_BEHAVIOR_CACHE_TTL_SECONDS`
 
 ---
 
@@ -1030,11 +1030,11 @@ mcp:
 | `retention_days` | 30 | Log retention period |
 
 **Environment Variables:**
-- `AGV_MCP_LOGGING_LEVEL`
-- `AGV_MCP_LOGGING_FORMAT`
-- `AGV_MCP_LOGGING_LOG_DIR`
-- `AGV_MCP_LOGGING_MAX_SIZE_MB`
-- `AGV_MCP_LOGGING_RETENTION_DAYS`
+- `AI_MCP_LOGGING_LEVEL`
+- `AI_MCP_LOGGING_FORMAT`
+- `AI_MCP_LOGGING_LOG_DIR`
+- `AI_MCP_LOGGING_MAX_SIZE_MB`
+- `AI_MCP_LOGGING_RETENTION_DAYS`
 
 ---
 
@@ -1116,7 +1116,7 @@ mcp:
   logging:
     level: "INFO"
     format: "json"
-    log_dir: "/var/log/agent-vault"
+    log_dir: "/var/log/agentic-inquiry"
 
 # Indexing configuration
 indexing:
@@ -1175,40 +1175,40 @@ Complete list of environment variables:
 
 ```bash
 # Server
-AGV_MCP_ENABLED=true
-AGV_MCP_SERVER_NAME="Agent-Vault"
-AGV_MCP_SERVER_VERSION="1.0.0"
+AI_MCP_ENABLED=true
+AI_MCP_SERVER_NAME="Agentic Inquiry"
+AI_MCP_SERVER_VERSION="1.0.0"
 
 # API
-AGV_MCP_API_ENABLED=true
-AGV_MCP_API_HOST=localhost
-AGV_MCP_API_PORT=8765
-AGV_MCP_API_CORS_ENABLED=true
-AGV_MCP_API_CORS_ORIGINS="*"
-AGV_MCP_API_AUTH_ENABLED=false
-AGV_MCP_API_AUTH_API_KEY=""
+AI_MCP_API_ENABLED=true
+AI_MCP_API_HOST=localhost
+AI_MCP_API_PORT=8765
+AI_MCP_API_CORS_ENABLED=true
+AI_MCP_API_CORS_ORIGINS="*"
+AI_MCP_API_AUTH_ENABLED=false
+AI_MCP_API_AUTH_API_KEY=""
 
 # Tools
-AGV_MCP_TOOLS_COGNITIVE_ENABLED=true
-AGV_MCP_TOOLS_DIRECT_ACCESS_ENABLED=false
+AI_MCP_TOOLS_COGNITIVE_ENABLED=true
+AI_MCP_TOOLS_DIRECT_ACCESS_ENABLED=false
 
 # Defaults
-AGV_MCP_DEFAULTS_SEARCH_LIMIT=20
-AGV_MCP_DEFAULTS_SEARCH_HYBRID_WEIGHT=0.7
-AGV_MCP_DEFAULTS_CONTEXT_MAX_TOKENS=4000
-AGV_MCP_DEFAULTS_CONTEXT_DEPTH=broad
-AGV_MCP_DEFAULTS_IMPACT_MAX_DEPTH=2
+AI_MCP_DEFAULTS_SEARCH_LIMIT=20
+AI_MCP_DEFAULTS_SEARCH_HYBRID_WEIGHT=0.7
+AI_MCP_DEFAULTS_CONTEXT_MAX_TOKENS=4000
+AI_MCP_DEFAULTS_CONTEXT_DEPTH=broad
+AI_MCP_DEFAULTS_IMPACT_MAX_DEPTH=2
 
 # Behavior
-AGV_MCP_BEHAVIOR_SUGGEST_ON_EMPTY=true
-AGV_MCP_BEHAVIOR_CACHE_RESPONSES=true
-AGV_MCP_BEHAVIOR_CACHE_TTL_SECONDS=300
-AGV_MCP_BEHAVIOR_TRACK_PERFORMANCE=true
+AI_MCP_BEHAVIOR_SUGGEST_ON_EMPTY=true
+AI_MCP_BEHAVIOR_CACHE_RESPONSES=true
+AI_MCP_BEHAVIOR_CACHE_TTL_SECONDS=300
+AI_MCP_BEHAVIOR_TRACK_PERFORMANCE=true
 
 # Logging
-AGV_MCP_LOGGING_LEVEL=INFO
-AGV_MCP_LOGGING_FORMAT=json
-AGV_MCP_LOGGING_LOG_DIR="${HOME}/.AGV/logs"
+AI_MCP_LOGGING_LEVEL=INFO
+AI_MCP_LOGGING_FORMAT=json
+AI_MCP_LOGGING_LOG_DIR="${HOME}/.AGV/logs"
 ```
 
 ---
@@ -1220,7 +1220,7 @@ Validate configuration before starting:
 ```bash
 # Validate configuration file
 uv run python -c "
-from agent_vault.config import Config
+from agentic_inquiry.config import Config
 config = Config.load('config/mcp.yaml')
 print('Configuration valid!')
 print(f'MCP enabled: {config.mcp.enabled}')

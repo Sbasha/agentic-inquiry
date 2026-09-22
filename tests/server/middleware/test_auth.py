@@ -8,7 +8,7 @@ Covers:
 - Exempt paths bypass auth (/health, /docs, /openapi.json, /api/v1/health)
 - Exempt prefixes bypass auth (/mcp, /ui)
 - request_id set on state
-- X-agv-User header logged on success
+- X-ai-User header logged on success
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 
-from agent_vault.server.middleware.auth import APIKeyAuthMiddleware, EXEMPT_PATHS, EXEMPT_PREFIXES
+from agentic_inquiry.server.middleware.auth import APIKeyAuthMiddleware, EXEMPT_PATHS, EXEMPT_PREFIXES
 
 
 # ---------------------------------------------------------------------------
@@ -103,13 +103,13 @@ class TestValidBearer:
         assert resp.status_code == 200
 
     def test_valid_key_with_x_agv_user_header(self):
-        """X-agv-User header must not break auth flow."""
+        """X-ai-User header must not break auth flow."""
         client = TestClient(_build_app(_AUTH_CONFIG_ENABLED))
         resp = client.get(
             "/api/v1/search",
             headers={
                 "Authorization": "Bearer secret-key-123",
-                "X-agv-User": "alice",
+                "X-ai-User": "alice",
             },
         )
         assert resp.status_code == 200

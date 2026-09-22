@@ -1,4 +1,4 @@
-"""CLI honesty for agv memory save / list / recall.
+"""CLI honesty for ai memory save / list / recall.
 
 STUB: AC3-AC6 — exit 0 only after a same-project list/recall can see the id;
 working-memory and in-memory fallback exit 1; table names come from config.
@@ -13,11 +13,11 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-from agent_vault.cli import memory as memory_cli
-from agent_vault.config import Config, StorageConfig
-from agent_vault.embeddings.hashing import HashingEmbedder
-from agent_vault.embeddings.registry import embedding_registry
-from agent_vault.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
+from agentic_inquiry.cli import memory as memory_cli
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.embeddings.hashing import HashingEmbedder
+from agentic_inquiry.embeddings.registry import embedding_registry
+from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 
 pytestmark = pytest.mark.integration
 
@@ -179,7 +179,7 @@ async def test_in_memory_fallback_exits_1(
         return _NoPersist()
 
     monkeypatch.setattr(
-        "agent_vault.storage.facade.StorageFacade.from_config",
+        "agentic_inquiry.storage.facade.StorageFacade.from_config",
         _from_config,
     )
     code = await memory_cli.save_command(
@@ -253,7 +253,7 @@ async def test_project_filter_on_list_and_recall(
 @pytest.mark.asyncio
 async def test_adapter_initialize_creates_configured_table(tmp_path: Path) -> None:
     # STUB: AC3
-    from agent_vault.database.lancedb_manager import LanceDBManager
+    from agentic_inquiry.database.lancedb_manager import LanceDBManager
 
     config = _test_config(tmp_path)
     manager = LanceDBManager(config=config, project_id="demo")

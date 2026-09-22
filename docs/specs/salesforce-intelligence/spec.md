@@ -14,7 +14,7 @@ features in one PR)
 
 ## Objective
 
-A Salesforce developer indexes a DX-shaped folder with `/agv:index`.
+A Salesforce developer indexes a DX-shaped folder with `/ai:index`.
 Asking what uses `Account` lists:
 
 - the Apex trigger that runs on Account
@@ -34,7 +34,7 @@ the generic Apex grammar alone.
 
 - Prefix new relationship types with `salesforce_`.
 - Keep recognizers additive, idempotent, failure-safe, and cheap on
-  the no-op path ([`recognizers/AGENTS.md`](../../../agent_vault/parsers/recognizers/AGENTS.md)).
+  the no-op path ([`recognizers/AGENTS.md`](../../../agentic_inquiry/parsers/recognizers/AGENTS.md)).
 - Gate the metadata parser on filename suffix only; do not read file
   bytes in `can_parse`.
 - Keep relationship `metadata` values LanceDB-simple (`str`, `int`,
@@ -106,7 +106,7 @@ the generic Apex grammar alone.
 ## Assumptions
 
 - Technical: Phase 1 Apex extraction is shipped (`docs/specs/salesforce-apex-parsing/spec.md`, commit `feat(parsers): extract Apex classes...`).
-- Technical: recognizers dispatch on `Path.suffix` and attach to existing chunks (`agent_vault/parsers/recognizers/base.py`).
+- Technical: recognizers dispatch on `Path.suffix` and attach to existing chunks (`agentic_inquiry/parsers/recognizers/base.py`).
 - Technical: Apex annotations are `annotation` / `identifier` nodes; triggers expose `name`, `object`, `events`; SOQL FROM is `from_clause` / `storage_identifier` (probe `get_parser("apex")` 2026-09-04).
 - Technical: `.xml` is not claimed by `UnifiedCodeParser` (no `xml.scm`); `DocumentParser` claims `.xml` at priority 50 (`languages.py`, `document.py`, `config.py`).
 - Technical: `ParsersConfig(...)` call sites pass named fields and tolerate a new defaulted field (`tests/conftest.py`).

@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from pathlib import Path
 
-from agent_vault.cli.discover import (
+from agentic_inquiry.cli.discover import (
     CommandInfo,
     discover_agv_commands,
     format_commands_table,
@@ -71,7 +71,7 @@ class TestFindCommandsDirectory:
     def test_finds_local_extensions(self, tmp_path, monkeypatch):
         """Finds commands in local extensions."""
         # Create local extension structure
-        commands_dir = tmp_path / "extensions" / "claude" / "agv" / "commands"
+        commands_dir = tmp_path / "extensions" / "claude" / "ai" / "commands"
         commands_dir.mkdir(parents=True)
         (commands_dir / "search.md").write_text("---\ndescription: Search\n---")
 
@@ -79,9 +79,9 @@ class TestFindCommandsDirectory:
         monkeypatch.chdir(tmp_path)
 
         # Patch LOCAL_EXTENSION_PATHS
-        from agent_vault.cli import discover
+        from agentic_inquiry.cli import discover
         original_paths = discover.LOCAL_EXTENSION_PATHS
-        discover.LOCAL_EXTENSION_PATHS = [Path("extensions/claude/agv")]
+        discover.LOCAL_EXTENSION_PATHS = [Path("extensions/claude/ai")]
 
         try:
             result = find_commands_directory()
@@ -97,7 +97,7 @@ class TestDiscoveragvCommands:
     def test_discovers_commands(self, tmp_path, monkeypatch):
         """Discovers commands from directory."""
         # Create commands
-        commands_dir = tmp_path / "extensions" / "claude" / "agv" / "commands"
+        commands_dir = tmp_path / "extensions" / "claude" / "ai" / "commands"
         commands_dir.mkdir(parents=True)
 
         (commands_dir / "search.md").write_text('''---
@@ -114,12 +114,12 @@ argument-hint: "[path]"
 
         monkeypatch.chdir(tmp_path)
 
-        from agent_vault.cli import discover
+        from agentic_inquiry.cli import discover
         original_local_paths = discover.LOCAL_EXTENSION_PATHS
         original_cache_paths = discover.PLUGIN_CACHE_PATHS
         # Clear cache paths so only local paths are checked
         discover.PLUGIN_CACHE_PATHS = []
-        discover.LOCAL_EXTENSION_PATHS = [Path("extensions/claude/agv")]
+        discover.LOCAL_EXTENSION_PATHS = [Path("extensions/claude/ai")]
 
         try:
             commands = discover_agv_commands()
@@ -134,7 +134,7 @@ argument-hint: "[path]"
 
             # Check command info
             search_cmd = next(c for c in commands if c.name == "search")
-            assert search_cmd.full_name == "agv:search"
+            assert search_cmd.full_name == "ai:search"
             assert search_cmd.description == "Semantic search"
             assert search_cmd.argument_hint == "<query>"
         finally:
@@ -150,14 +150,14 @@ class TestFormatCommandsTable:
         commands = [
             CommandInfo(
                 name="search",
-                full_name="agv:search",
+                full_name="ai:search",
                 description="Search code",
                 argument_hint="<query>",
                 file_path=Path("search.md")
             ),
             CommandInfo(
                 name="index",
-                full_name="agv:index",
+                full_name="ai:index",
                 description="Index codebase",
                 argument_hint="",
                 file_path=Path("index.md")
@@ -167,7 +167,7 @@ class TestFormatCommandsTable:
         result = format_commands_table(commands)
 
         assert "| Command | Description |" in result
-        assert "`agv:search`" in result
+        assert "`ai:search`" in result
         assert "<query>" in result
         assert "Search code" in result
 
@@ -185,7 +185,7 @@ class TestFormatCommandsList:
         commands = [
             CommandInfo(
                 name="search",
-                full_name="agv:search",
+                full_name="ai:search",
                 description="Search code",
                 argument_hint="<query>",
                 file_path=Path("search.md")
@@ -193,7 +193,7 @@ class TestFormatCommandsList:
         ]
 
         result = format_commands_list(commands)
-        assert "agv:search" in result
+        assert "ai:search" in result
         assert "<query>" in result
         assert "Search code" in result
 
@@ -202,7 +202,7 @@ class TestFormatCommandsList:
         commands = [
             CommandInfo(
                 name="search",
-                full_name="agv:search",
+                full_name="ai:search",
                 description="Search code",
                 argument_hint="<query>",
                 file_path=Path("/path/to/search.md")
@@ -220,26 +220,26 @@ class TestGetCommandInfo:
 
     def test_finds_command(self, tmp_path, monkeypatch):
         """Finds specific command by name."""
-        commands_dir = tmp_path / "extensions" / "claude" / "agv" / "commands"
+        commands_dir = tmp_path / "extensions" / "claude" / "ai" / "commands"
         commands_dir.mkdir(parents=True)
         (commands_dir / "search.md").write_text("---\ndescription: Search\n---")
 
         monkeypatch.chdir(tmp_path)
 
-        from agent_vault.cli import discover
+        from agentic_inquiry.cli import discover
         original_local_paths = discover.LOCAL_EXTENSION_PATHS
         original_cache_paths = discover.PLUGIN_CACHE_PATHS
         discover.PLUGIN_CACHE_PATHS = []
-        discover.LOCAL_EXTENSION_PATHS = [Path("extensions/claude/agv")]
+        discover.LOCAL_EXTENSION_PATHS = [Path("extensions/claude/ai")]
 
         try:
             # Various name formats (colon format is canonical)
             assert get_command_info("search") is not None
-            assert get_command_info("agv:search") is not None
-            assert get_command_info("/agv:search") is not None
+            assert get_command_info("ai:search") is not None
+            assert get_command_info("/ai:search") is not None
             # Legacy hyphen format still works
-            assert get_command_info("/agv-search") is not None
-            assert get_command_info("agv-search") is not None
+            assert get_command_info("/ai-search") is not None
+            assert get_command_info("ai-search") is not None
             assert get_command_info("SEARCH") is not None  # Case insensitive
         finally:
             discover.LOCAL_EXTENSION_PATHS = original_local_paths
@@ -247,16 +247,16 @@ class TestGetCommandInfo:
 
     def test_not_found(self, tmp_path, monkeypatch):
         """Returns None for unknown command."""
-        commands_dir = tmp_path / "extensions" / "claude" / "agv" / "commands"
+        commands_dir = tmp_path / "extensions" / "claude" / "ai" / "commands"
         commands_dir.mkdir(parents=True)
 
         monkeypatch.chdir(tmp_path)
 
-        from agent_vault.cli import discover
+        from agentic_inquiry.cli import discover
         original_local_paths = discover.LOCAL_EXTENSION_PATHS
         original_cache_paths = discover.PLUGIN_CACHE_PATHS
         discover.PLUGIN_CACHE_PATHS = []
-        discover.LOCAL_EXTENSION_PATHS = [Path("extensions/claude/agv")]
+        discover.LOCAL_EXTENSION_PATHS = [Path("extensions/claude/ai")]
 
         try:
             assert get_command_info("nonexistent") is None

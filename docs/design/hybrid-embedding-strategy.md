@@ -3,7 +3,7 @@
 **Status:** Implemented
 **Created:** 2026-01-08
 **Updated:** 2026-01-08
-**Related:** [embeddings.md](../api-reference/embeddings.md), [executors.py](../../agent-vault/executors.py)
+**Related:** [embeddings.md](../api-reference/embeddings.md), [executors.py](../../agentic-inquiry/executors.py)
 
 ## Problem
 
@@ -48,8 +48,8 @@ Use different embedders optimized for each data type:
 The `EmbeddingRegistry` provides a convenience method to configure hybrid embeddings:
 
 ```python
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.embeddings.sentence_transformer import SentenceTransformerEmbedder
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
 
 # Configure default for semantic content
 registry = EmbeddingRegistry()
@@ -68,8 +68,8 @@ registry.configure_hybrid_embeddings()
 For more control, register embedders directly:
 
 ```python
-from agent_vault.embeddings.registry import embedding_registry
-from agent_vault.embeddings.hashing import HashingEmbedder
+from agentic_inquiry.embeddings.registry import embedding_registry
+from agentic_inquiry.embeddings.hashing import HashingEmbedder
 
 # Register fast embedder for relationships
 relationship_embedder = HashingEmbedder(ndims=384)
@@ -191,8 +191,8 @@ storage:
 ### Usage
 
 ```python
-from agent_vault.embeddings.noop import NoOpEmbedder
-from agent_vault.embeddings.registry import embedding_registry
+from agentic_inquiry.embeddings.noop import NoOpEmbedder
+from agentic_inquiry.embeddings.registry import embedding_registry
 
 # Configure NoOpEmbedder (no local computation)
 embedder = NoOpEmbedder(ndims=768)
@@ -284,7 +284,7 @@ falls back to the default embedder automatically.
 
 ## References
 
-- `agent_vault/embeddings/registry.py` - EmbeddingRegistry implementation
-- `agent_vault/embeddings/hashing.py` - HashingEmbedder implementation
-- `agent_vault/indexing/graph_builder.py` - Uses `get_embedder_configuration()`
+- `agentic_inquiry/embeddings/registry.py` - EmbeddingRegistry implementation
+- `agentic_inquiry/embeddings/hashing.py` - HashingEmbedder implementation
+- `agentic_inquiry/indexing/graph_builder.py` - Uses `get_embedder_configuration()`
 - `tests/embeddings/test_registry.py::TestHybridEmbeddings` - Test suite

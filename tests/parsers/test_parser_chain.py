@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 pytestmark = pytest.mark.unit
-from agent_vault.parsers import (
+from agentic_inquiry.parsers import (
     ParserChain,
     ParsingError,
     create_parser_chain,

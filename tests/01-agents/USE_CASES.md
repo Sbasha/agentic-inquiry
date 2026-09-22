@@ -1,8 +1,8 @@
-# AI Agent Testing Guide for agent-vault Library
+# AI Agent Testing Guide for agentic-inquiry Library
 
 ## Overview
 
-This document serves as the **primary guide for agents performing tests** on the agent-vault MCP server. It defines real-world use cases that AI agents need to perform when working with codebases, and provides clear references to detailed test procedures.
+This document serves as the **primary guide for agents performing tests** on the agentic-inquiry MCP server. It defines real-world use cases that AI agents need to perform when working with codebases, and provides clear references to detailed test procedures.
 
 ## How to Use This Guide
 
@@ -65,24 +65,24 @@ This document serves as the **primary guide for agents performing tests** on the
 
 ### Project ID Naming Convention
 
-Use the format: `agv_test{NN}_{slug}_{timestamp}`
+Use the format: `ai_test{NN}_{slug}_{timestamp}`
 
 | Test | Project ID Pattern | Example |
 |------|-------------------|---------|
-| TEST_01 | `agv_test01_core_{timestamp}` | `agv_test01_core_20251228_143022` |
-| TEST_02 | `agv_test02_onboard_{timestamp}` | `agv_test02_onboard_20251228_143022` |
-| TEST_03 | `agv_test03_feature_{timestamp}` | `agv_test03_feature_20251228_143022` |
-| TEST_04 | `agv_test04_bug_{timestamp}` | `agv_test04_bug_20251228_143022` |
-| TEST_05 | `agv_test05_refactor_{timestamp}` | `agv_test05_refactor_20251228_143022` |
-| TEST_06 | `agv_test06_knowledge_{timestamp}` | `agv_test06_knowledge_20251228_143022` |
-| TEST_07 | `agv_test07_review_{timestamp}` | `agv_test07_review_20251228_143022` |
-| TEST_08 | `agv_test08_docs_{timestamp}` | `agv_test08_docs_20251228_143022` |
-| TEST_09 | `agv_test09_deps_{timestamp}` | `agv_test09_deps_20251228_143022` |
-| TEST_10 | `agv_test10_perf_{timestamp}` | `agv_test10_perf_20251228_143022` |
-| TEST_11 | `agv_test11_api_{timestamp}` | `agv_test11_api_20251228_143022` |
-| TEST_12 | `agv_test12_codegraph_{timestamp}` | `agv_test12_codegraph_20251228_143022` |
-| TEST_13 | `agv_test13_docgraph_{timestamp}` | `agv_test13_docgraph_20251228_143022` |
-| TEST_14 | `agv_test14_semantic_{timestamp}` | `agv_test14_semantic_20251228_143022` |
+| TEST_01 | `ai_test01_core_{timestamp}` | `ai_test01_core_20251228_143022` |
+| TEST_02 | `ai_test02_onboard_{timestamp}` | `ai_test02_onboard_20251228_143022` |
+| TEST_03 | `ai_test03_feature_{timestamp}` | `ai_test03_feature_20251228_143022` |
+| TEST_04 | `ai_test04_bug_{timestamp}` | `ai_test04_bug_20251228_143022` |
+| TEST_05 | `ai_test05_refactor_{timestamp}` | `ai_test05_refactor_20251228_143022` |
+| TEST_06 | `ai_test06_knowledge_{timestamp}` | `ai_test06_knowledge_20251228_143022` |
+| TEST_07 | `ai_test07_review_{timestamp}` | `ai_test07_review_20251228_143022` |
+| TEST_08 | `ai_test08_docs_{timestamp}` | `ai_test08_docs_20251228_143022` |
+| TEST_09 | `ai_test09_deps_{timestamp}` | `ai_test09_deps_20251228_143022` |
+| TEST_10 | `ai_test10_perf_{timestamp}` | `ai_test10_perf_20251228_143022` |
+| TEST_11 | `ai_test11_api_{timestamp}` | `ai_test11_api_20251228_143022` |
+| TEST_12 | `ai_test12_codegraph_{timestamp}` | `ai_test12_codegraph_20251228_143022` |
+| TEST_13 | `ai_test13_docgraph_{timestamp}` | `ai_test13_docgraph_20251228_143022` |
+| TEST_14 | `ai_test14_semantic_{timestamp}` | `ai_test14_semantic_20251228_143022` |
 
 ### Why Full Isolation?
 
@@ -97,19 +97,19 @@ Use the format: `agv_test{NN}_{slug}_{timestamp}`
 When spawning a test subagent, pass the unique project_id:
 
 ```
-Project ID: agv_test{NN}_{slug}_{timestamp}
+Project ID: ai_test{NN}_{slug}_{timestamp}
 
 The subagent should:
 1. Create a new session with this project_id
 2. All operations use this isolated project context
-3. Results are written to test_results/agv/{timestamp}/{use_case_slug}/
+3. Results are written to test_results/ai/{timestamp}/{use_case_slug}/
 ```
 
 ### Session Creation Example
 
 ```python
 # In each test subagent
-session = await mcp.create_session(project_id="agv_test01_core_20251228_143022")
+session = await mcp.create_session(project_id="ai_test01_core_20251228_143022")
 # All subsequent operations use this session
 ```
 
@@ -293,7 +293,7 @@ When running multiple tests, agents may choose to execute tests in parallel for 
 
 **Example structure:**
 ```
-test_results/agv/{timestamp}/
+test_results/ai/{timestamp}/
 ├── test_name/
 │   ├── TEST_LOG.md      # Updated after each step
 │   ├── ISSUES_LOG.md    # Updated as issues found
@@ -326,7 +326,7 @@ An AI agent encounters a codebase for the first time and needs to understand its
 5. **Common patterns**: What patterns are used?
 6. **Dependencies**: What external libraries are used?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - Index entire codebase
 - Search for README, architecture docs, main modules
 - Query knowledge graph for top-level entities
@@ -365,7 +365,7 @@ Agent is asked to implement a new feature (e.g., "Add support for JSON config fi
 4. **Check dependencies**: What libraries/modules are needed?
 5. **Find tests**: How is similar functionality tested?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - Semantic search: "configuration file loading"
 - Entity understanding: ConfigLoader, Config classes
 - Pattern finding: "file format handlers"
@@ -404,7 +404,7 @@ Agent needs to investigate a bug: "Search results are empty for valid queries"
 4. **Check related issues**: Have similar bugs been fixed?
 5. **Understand data flow**: How does data move through the system?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - Hybrid search: "search query results empty"
 - Entity analysis: SearchService, vector_search
 - Relationship traversal: What calls SearchService?
@@ -443,7 +443,7 @@ Agent needs to refactor the parser system to support streaming
 4. **Assess impact**: What will break?
 5. **Plan migration**: What's the sequence of changes?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - Pattern analysis: Parser implementations
 - Entity understanding: ParserChain, BaseParse
 - Impact analysis: What depends on parser interface?
@@ -482,7 +482,7 @@ Agent works on the codebase over time and needs to remember learnings
 4. **Build expertise**: Accumulate knowledge over sessions
 5. **Share knowledge**: Help other agents/developers
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - Memory save: Important insights and patterns
 - Memory recall: Query past learnings
 - Event tracking: Record what was done
@@ -521,7 +521,7 @@ Agent reviews a pull request adding a new embedder
 4. **Find similar code**: How are other embedders implemented?
 5. **Verify completeness**: Are tests included?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - Pattern finding: Existing embedder implementations
 - Entity analysis: New classes/functions added
 - Impact analysis: What depends on embedder interface?
@@ -560,7 +560,7 @@ Agent needs to generate documentation for the search module
 4. **Find examples**: How is it used?
 5. **Identify edge cases**: What special handling exists?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - Entity queries: All search-related classes
 - Relationship traversal: Component interactions
 - Code search: Usage examples
@@ -599,7 +599,7 @@ Agent needs to understand what would break if we change LanceDB
 4. **Find abstractions**: Are there interface layers?
 5. **Plan migration**: What's the upgrade path?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - Impact analysis: LanceDBManager dependencies
 - Relationship queries: Multi-level dependency chains
 - Pattern analysis: Database abstraction patterns
@@ -638,7 +638,7 @@ Agent investigates why search is slow for large codebases
 4. **Check configurations**: Are there tuning options?
 5. **Identify alternatives**: What other approaches exist?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - Semantic search: "performance optimization indexing"
 - Entity analysis: SearchService, vector_search methods
 - Memory recall: Previous performance work
@@ -677,7 +677,7 @@ Agent designs a new MCP tool for code navigation
 4. **Identify requirements**: What infrastructure is needed?
 5. **Plan integration**: How does it fit in?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - Pattern analysis: Existing MCP tool implementations
 - Entity understanding: BaseMCPTool, tool decorators
 - Impact analysis: MCP server integration points
@@ -716,7 +716,7 @@ Agent needs to validate that code relationships (imports, calls, inheritance) ar
 4. **Impact analysis**: Can we identify what would break if we change a component?
 5. **Cross-file resolution**: Are imports resolved to actual target files?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - `list_entities` with type filters (class, function, method)
 - `understand_entity` to see dependencies and usage
 - `analyze_impact` to compute blast radius
@@ -755,7 +755,7 @@ Agent needs to validate that document structural relationships (sections, headin
 4. **Multi-format**: Do MD, PDF, DOCX, PPTX all work?
 5. **Document isolation**: Are relationships within documents only?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - `list_entities` with type filters (section, heading)
 - `understand_entity` to see document hierarchy
 - Index documents from multiple formats
@@ -793,7 +793,7 @@ Agent needs to validate that semantic similarity search works correctly, finding
 4. **Threshold filtering**: Do similarity thresholds work?
 5. **Context building**: Does `build_context` gather relevant content?
 
-### agent-vault Operations
+### agentic-inquiry Operations
 - `find_similar` with various queries
 - `build_context` for query-based context gathering
 - `search_knowledge` for hybrid search
@@ -841,7 +841,7 @@ See **TEST_14_SEMANTIC_GRAPH.md** for detailed test procedures including:
 ```python
 # ❌ WRONG - Will cause graph tests to fail
 index_files(file_paths=["config.py", "service.py"])
-add_knowledge(source="agent_vault/config.py", content_type="code")
+add_knowledge(source="agentic_inquiry/config.py", content_type="code")
 
 # ✅ CORRECT - Full codebase indexing
 add_knowledge(source=".", content_type="code")  # From project root
@@ -855,13 +855,13 @@ add_knowledge(source="docs/", content_type="document")  # Plus documentation
 - TEST_14: ≥100 total_chunks with embeddings
 >
 > **Why?** Each test uses a unique `project_id` for isolation. Data indexed under a different
-> project_id (e.g., `agent-vault` or another test's project_id) will NOT be visible to your
+> project_id (e.g., `agentic-inquiry` or another test's project_id) will NOT be visible to your
 > session. You must call `add_knowledge` to populate entities AND relationships for YOUR project_id.
 
 **Step 1: Create Session with Unique Project ID**
 ```python
 # Use the naming convention from Project Isolation Strategy above
-project_id = "agv_test{NN}_{slug}_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test{NN}_{slug}_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Test description")
 ```
 
@@ -1023,7 +1023,7 @@ result = await run_maintenance(
 **Verification:**
 ```bash
 # Check index sizes
-du -sh .agv/lancedb/*.lance | sort -rh
+du -sh .agentic-inquiry/lancedb/*.lance | sort -rh
 
 # Expected: ~100-500MB total
 # Warning sign: > 1GB may indicate maintenance isn't running
@@ -1112,8 +1112,8 @@ A test passes if:
 
 ### Server Issues
 - **Symptom**: Server not responding
-- **Check**: Is MCP server running? `ps aux | grep agv`
-- **Fix**: Restart server with `uv run agv [project]`
+- **Check**: Is MCP server running? `ps aux | grep ai`
+- **Fix**: Restart server with `uv run ai [project]`
 
 ### Indexing Issues
 - **Symptom**: No results or empty searches

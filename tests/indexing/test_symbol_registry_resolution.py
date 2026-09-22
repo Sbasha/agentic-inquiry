@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 import asyncio
 import pytest
 
-from agent_vault.indexing.symbol_registry import SymbolRegistry
+from agentic_inquiry.indexing.symbol_registry import SymbolRegistry
 
 
 @pytest.fixture

@@ -1,7 +1,7 @@
 """Tests for the recognizer Protocol + registry.
 
 Covers the dispatch + failure-isolation contract described in
-``agent_vault/parsers/recognizers/base.py``:
+``agentic_inquiry/parsers/recognizers/base.py``:
 
 - Extension-based dispatch routes only to recognizers that declare
   support for a file's extension.
@@ -16,8 +16,8 @@ from typing import FrozenSet
 
 import pytest
 
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
-from agent_vault.parsers.recognizers import (
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.parsers.recognizers import (
     apply_recognizers,
     get_recognizers_for_path,
     list_recognizers,
@@ -177,7 +177,7 @@ class TestApplyRecognizers:
         was only done in ``from_config``; pinning all three here
         prevents regressions.
         """
-        from agent_vault.parsers.chain import (
+        from agentic_inquiry.parsers.chain import (
             ParserChain,
             create_parser_chain,
         )
@@ -207,8 +207,8 @@ class TestApplyRecognizers:
         (and its ``threading.Lock``) that the registry immediately
         discards via name-dedup.
         """
-        from agent_vault.parsers.chain import ParserChain
-        from agent_vault.parsers.recognizers import java_spring
+        from agentic_inquiry.parsers.chain import ParserChain
+        from agentic_inquiry.parsers.recognizers import java_spring
 
         # Register the built-ins once.
         ParserChain()

@@ -9,8 +9,8 @@ import pytest
 pytestmark = pytest.mark.unit
 import inspect
 
-from agent_vault.mcp.tools.context import build_context
-from agent_vault.mcp.services.context_builder import ContextBuilder
+from agentic_inquiry.mcp.tools.context import build_context
+from agentic_inquiry.mcp.services.context_builder import ContextBuilder
 
 
 class TestBuildContextSignature:
@@ -222,7 +222,7 @@ class TestFindPatternsSignature:
     
     def test_find_patterns_has_pattern_type_parameter(self):
         """Verify find_patterns has pattern_type parameter."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         sig = inspect.signature(find_patterns)
         params = list(sig.parameters.keys())
@@ -234,7 +234,7 @@ class TestFindPatternsSignature:
     
     def test_find_patterns_has_required_parameters(self):
         """Verify find_patterns has all required parameters."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         sig = inspect.signature(find_patterns)
         params = list(sig.parameters.keys())
@@ -246,7 +246,7 @@ class TestFindPatternsSignature:
     
     def test_find_patterns_has_optional_parameters(self):
         """Verify find_patterns has expected optional parameters."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         sig = inspect.signature(find_patterns)
         params = sig.parameters
@@ -267,8 +267,8 @@ class TestFindPatternsSignature:
     
     def test_pattern_analyzer_signature_matches_tool(self):
         """Verify PatternAnalyzer.find_patterns accepts parameters passed by tool."""
-        from agent_vault.mcp.tools.analysis import find_patterns
-        from agent_vault.mcp.services.pattern_analyzer import PatternAnalyzer
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.services.pattern_analyzer import PatternAnalyzer
         
         tool_sig = inspect.signature(find_patterns)
         service_sig = inspect.signature(PatternAnalyzer.find_patterns)
@@ -295,7 +295,7 @@ class TestFindPatternsSignature:
     
     def test_pattern_type_values(self):
         """Verify pattern_type accepts expected values."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         sig = inspect.signature(find_patterns)
         
@@ -312,7 +312,7 @@ class TestFindPatternsExecution:
     @pytest.mark.asyncio
     async def test_find_patterns_with_auto_type(self, mock_pattern_services):
         """Test find_patterns with pattern_type='auto'."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         services = mock_pattern_services
         
@@ -339,7 +339,7 @@ class TestFindPatternsExecution:
     @pytest.mark.asyncio
     async def test_find_patterns_with_architectural_type(self, mock_pattern_services):
         """Test find_patterns with pattern_type='architectural'."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         services = mock_pattern_services
         
@@ -363,7 +363,7 @@ class TestFindPatternsExecution:
     @pytest.mark.asyncio
     async def test_find_patterns_with_design_type(self, mock_pattern_services):
         """Test find_patterns with pattern_type='design'."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         services = mock_pattern_services
         
@@ -381,7 +381,7 @@ class TestFindPatternsExecution:
     @pytest.mark.asyncio
     async def test_find_patterns_with_naming_type(self, mock_pattern_services):
         """Test find_patterns with pattern_type='naming'."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         services = mock_pattern_services
         
@@ -399,7 +399,7 @@ class TestFindPatternsExecution:
     @pytest.mark.asyncio
     async def test_find_patterns_with_antipattern_type(self, mock_pattern_services):
         """Test find_patterns with pattern_type='antipattern'."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         services = mock_pattern_services
         
@@ -417,7 +417,7 @@ class TestFindPatternsExecution:
     @pytest.mark.asyncio
     async def test_find_patterns_filters_by_type(self, mock_pattern_services):
         """Test that pattern_type parameter filters results correctly."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         services = mock_pattern_services
         
@@ -443,7 +443,7 @@ class TestFindPatternsExecution:
     @pytest.mark.asyncio
     async def test_find_patterns_default_parameters(self, mock_pattern_services):
         """Test find_patterns with default parameters."""
-        from agent_vault.mcp.tools.analysis import find_patterns
+        from agentic_inquiry.mcp.tools.analysis import find_patterns
         
         services = mock_pattern_services
         
@@ -464,7 +464,7 @@ class TestFindPatternsExecution:
 def mock_pattern_services():
     """Create mock MCP services for pattern testing."""
     from unittest.mock import AsyncMock, MagicMock
-    from agent_vault.mcp.models.session import Session
+    from agentic_inquiry.mcp.models.session import Session
     from datetime import datetime
     
     session_manager = MagicMock()
@@ -517,7 +517,7 @@ class TestGetSessionSignature:
     
     def test_get_session_has_required_parameters(self):
         """Verify get_session has all required parameters."""
-        from agent_vault.mcp.tools.session import get_session
+        from agentic_inquiry.mcp.tools.session import get_session
         
         sig = inspect.signature(get_session)
         params = list(sig.parameters.keys())
@@ -529,7 +529,7 @@ class TestGetSessionSignature:
     
     def test_session_model_has_status_field(self):
         """Verify Session model has status field."""
-        from agent_vault.mcp.models.session import Session
+        from agentic_inquiry.mcp.models.session import Session
         
         # Session is a Pydantic model, check its fields
         assert "status" in Session.model_fields, (
@@ -547,7 +547,7 @@ class TestUnderstandEntitySignature:
     
     def test_understand_entity_has_required_parameters(self):
         """Verify understand_entity has all required parameters."""
-        from agent_vault.mcp.tools.analysis import understand_entity
+        from agentic_inquiry.mcp.tools.analysis import understand_entity
         
         sig = inspect.signature(understand_entity)
         params = list(sig.parameters.keys())
@@ -559,7 +559,7 @@ class TestUnderstandEntitySignature:
     
     def test_understand_entity_has_optional_parameters(self):
         """Verify understand_entity has expected optional parameters."""
-        from agent_vault.mcp.tools.analysis import understand_entity
+        from agentic_inquiry.mcp.tools.analysis import understand_entity
         
         sig = inspect.signature(understand_entity)
         params = sig.parameters
@@ -572,8 +572,8 @@ class TestUnderstandEntitySignature:
     
     def test_entity_resolver_signature_matches_tool(self):
         """Verify EntityResolver.resolve_entity accepts parameters passed by tool."""
-        from agent_vault.mcp.tools.analysis import understand_entity
-        from agent_vault.mcp.services.entity_resolver import EntityResolver
+        from agentic_inquiry.mcp.tools.analysis import understand_entity
+        from agentic_inquiry.mcp.services.entity_resolver import EntityResolver
         
         inspect.signature(understand_entity)
         service_sig = inspect.signature(EntityResolver.resolve_entity)
@@ -596,7 +596,7 @@ class TestAnalyzeImpactSignature:
     
     def test_analyze_impact_has_required_parameters(self):
         """Verify analyze_impact has all required parameters."""
-        from agent_vault.mcp.tools.analysis import analyze_impact
+        from agentic_inquiry.mcp.tools.analysis import analyze_impact
         
         sig = inspect.signature(analyze_impact)
         params = list(sig.parameters.keys())
@@ -608,7 +608,7 @@ class TestAnalyzeImpactSignature:
     
     def test_analyze_impact_has_optional_parameters(self):
         """Verify analyze_impact has expected optional parameters."""
-        from agent_vault.mcp.tools.analysis import analyze_impact
+        from agentic_inquiry.mcp.tools.analysis import analyze_impact
         
         sig = inspect.signature(analyze_impact)
         params = sig.parameters
@@ -629,8 +629,8 @@ class TestAnalyzeImpactSignature:
     
     def test_impact_analyzer_signature_matches_tool(self):
         """Verify ImpactAnalyzer.analyze_impact accepts parameters passed by tool."""
-        from agent_vault.mcp.tools.analysis import analyze_impact
-        from agent_vault.mcp.services.impact_analyzer import ImpactAnalyzer
+        from agentic_inquiry.mcp.tools.analysis import analyze_impact
+        from agentic_inquiry.mcp.services.impact_analyzer import ImpactAnalyzer
         
         inspect.signature(analyze_impact)
         service_sig = inspect.signature(ImpactAnalyzer.analyze_impact)
@@ -654,7 +654,7 @@ class TestSearchKnowledgeSignature:
     
     def test_search_knowledge_has_required_parameters(self):
         """Verify search_knowledge has all required parameters."""
-        from agent_vault.mcp.tools.search import search_knowledge
+        from agentic_inquiry.mcp.tools.search import search_knowledge
         
         sig = inspect.signature(search_knowledge)
         params = list(sig.parameters.keys())
@@ -666,7 +666,7 @@ class TestSearchKnowledgeSignature:
     
     def test_search_knowledge_has_optional_parameters(self):
         """Verify search_knowledge has expected optional parameters."""
-        from agent_vault.mcp.tools.search import search_knowledge
+        from agentic_inquiry.mcp.tools.search import search_knowledge
         
         sig = inspect.signature(search_knowledge)
         params = sig.parameters
@@ -683,7 +683,7 @@ class TestMemoryToolsSignature:
     
     def test_save_memory_has_required_parameters(self):
         """Verify save_memory has all required parameters."""
-        from agent_vault.mcp.tools.memory import save_memory
+        from agentic_inquiry.mcp.tools.memory import save_memory
         
         sig = inspect.signature(save_memory)
         params = list(sig.parameters.keys())
@@ -695,7 +695,7 @@ class TestMemoryToolsSignature:
     
     def test_recall_memories_has_required_parameters(self):
         """Verify recall_memories has all required parameters."""
-        from agent_vault.mcp.tools.memory import recall_memories
+        from agentic_inquiry.mcp.tools.memory import recall_memories
         
         sig = inspect.signature(recall_memories)
         params = list(sig.parameters.keys())
@@ -711,7 +711,7 @@ class TestSessionToolsSignature:
     
     def test_create_session_has_required_parameters(self):
         """Verify create_session has all required parameters."""
-        from agent_vault.mcp.tools.session import create_session
+        from agentic_inquiry.mcp.tools.session import create_session
         
         sig = inspect.signature(create_session)
         params = list(sig.parameters.keys())
@@ -723,7 +723,7 @@ class TestSessionToolsSignature:
     
     def test_list_sessions_has_required_parameters(self):
         """Verify list_sessions has all required parameters."""
-        from agent_vault.mcp.tools.session import list_sessions
+        from agentic_inquiry.mcp.tools.session import list_sessions
         
         sig = inspect.signature(list_sessions)
         params = list(sig.parameters.keys())
@@ -735,7 +735,7 @@ class TestSessionToolsSignature:
     
     def test_resume_session_has_required_parameters(self):
         """Verify resume_session has all required parameters."""
-        from agent_vault.mcp.tools.session import resume_session
+        from agentic_inquiry.mcp.tools.session import resume_session
         
         sig = inspect.signature(resume_session)
         params = list(sig.parameters.keys())
@@ -751,7 +751,7 @@ class TestKnowledgeToolsSignature:
     
     def test_add_knowledge_has_required_parameters(self):
         """Verify add_knowledge has all required parameters."""
-        from agent_vault.mcp.tools.knowledge import add_knowledge
+        from agentic_inquiry.mcp.tools.knowledge import add_knowledge
         
         sig = inspect.signature(add_knowledge)
         params = list(sig.parameters.keys())
@@ -767,7 +767,7 @@ class TestInfoToolsSignature:
     
     def test_get_events_has_required_parameters(self):
         """Verify get_events has all required parameters."""
-        from agent_vault.mcp.tools.info import get_events
+        from agentic_inquiry.mcp.tools.info import get_events
         
         sig = inspect.signature(get_events)
         params = list(sig.parameters.keys())
@@ -779,7 +779,7 @@ class TestInfoToolsSignature:
     
     def test_get_project_info_has_required_parameters(self):
         """Verify get_project_info has all required parameters."""
-        from agent_vault.mcp.tools.info import get_project_info
+        from agentic_inquiry.mcp.tools.info import get_project_info
         
         sig = inspect.signature(get_project_info)
         params = list(sig.parameters.keys())
@@ -791,7 +791,7 @@ class TestInfoToolsSignature:
     
     def test_get_server_info_has_required_parameters(self):
         """Verify get_server_info has all required parameters."""
-        from agent_vault.mcp.tools.info import get_server_info
+        from agentic_inquiry.mcp.tools.info import get_server_info
         
         sig = inspect.signature(get_server_info)
         params = list(sig.parameters.keys())
@@ -811,7 +811,7 @@ class TestAutomatedToolValidation:
     
     def test_all_tools_have_services_parameter(self):
         """Verify all MCP tools have 'services' parameter."""
-        from agent_vault.mcp.tools import (
+        from agentic_inquiry.mcp.tools import (
             analysis, context, session, memory, search, knowledge, info
         )
         
@@ -850,7 +850,7 @@ class TestAutomatedToolValidation:
     
     def test_all_tools_except_create_and_list_have_session_id(self):
         """Verify all MCP tools (except create_session, list_sessions, get_server_info) have 'session_id' parameter."""
-        from agent_vault.mcp.tools import (
+        from agentic_inquiry.mcp.tools import (
             analysis, context, session, memory, search, knowledge, info
         )
         
@@ -879,7 +879,7 @@ class TestAutomatedToolValidation:
     
     def test_no_tools_have_unexpected_parameters(self):
         """Verify tools don't have project_id parameter (except where needed)."""
-        from agent_vault.mcp.tools import (
+        from agentic_inquiry.mcp.tools import (
             analysis, context, session, memory, search, knowledge, info
         )
         
@@ -917,7 +917,7 @@ class TestAutomatedToolValidation:
     
     def test_search_knowledge_has_filters_parameter(self):
         """Verify search_knowledge has filters parameter (it IS implemented)."""
-        from agent_vault.mcp.tools.search import search_knowledge
+        from agentic_inquiry.mcp.tools.search import search_knowledge
         
         sig = inspect.signature(search_knowledge)
         params = list(sig.parameters.keys())
@@ -928,7 +928,7 @@ class TestAutomatedToolValidation:
     
     def test_create_session_has_project_id_parameter(self):
         """Verify create_session has project_id parameter (it's required to create a session)."""
-        from agent_vault.mcp.tools.session import create_session
+        from agentic_inquiry.mcp.tools.session import create_session
         
         sig = inspect.signature(create_session)
         params = list(sig.parameters.keys())
@@ -939,7 +939,7 @@ class TestAutomatedToolValidation:
     
     def test_all_tool_parameters_have_type_hints(self):
         """Verify all tool parameters have type hints."""
-        from agent_vault.mcp.tools import (
+        from agentic_inquiry.mcp.tools import (
             analysis, context, session, memory, search, knowledge, info
         )
         
@@ -971,7 +971,7 @@ class TestAutomatedToolValidation:
     
     def test_all_tools_have_return_type_hints(self):
         """Verify all tools have return type hints."""
-        from agent_vault.mcp.tools import (
+        from agentic_inquiry.mcp.tools import (
             analysis, context, session, memory, search, knowledge, info
         )
         

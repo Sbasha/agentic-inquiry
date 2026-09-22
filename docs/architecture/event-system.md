@@ -9,7 +9,7 @@ last_updated: 2025-10-31
 
 # Event System Architecture
 
-This document provides a detailed architectural overview of the Event Tracking System in Agent-Vault, explaining design decisions, implementation patterns, and integration points.
+This document provides a detailed architectural overview of the Event Tracking System in Agentic Inquiry, explaining design decisions, implementation patterns, and integration points.
 
 ## System Components
 
@@ -52,7 +52,7 @@ Event tracking failures must never break system operations:
 Simple API with minimal integration effort:
 
 - **Context Managers**: `track_operation()` for automatic lifecycle tracking
-- **Correlation Integration**: Auto-use correlation IDs from `agent_vault.correlation`
+- **Correlation Integration**: Auto-use correlation IDs from `agentic_inquiry.correlation`
 - **Type Safety**: Constants for event types via `EventTypes`
 - **Rich Metadata**: Flexible metadata dictionary
 - **Dual Interface**: EventSystem for persistence + EventBus for in-memory handlers
@@ -271,7 +271,7 @@ class EventStore:
 - Project isolation via `project_id`
 
 **Storage Provider:**
-EventStore uses `SQLiteEventStorage` which implements `EventStorageProtocol` from `agent_vault.storage.protocols.events`. This allows future backend swappability (PostgreSQL, AlloyDB).
+EventStore uses `SQLiteEventStorage` which implements `EventStorageProtocol` from `agentic_inquiry.storage.protocols.events`. This allows future backend swappability (PostgreSQL, AlloyDB).
 
 #### EventBus
 
@@ -304,7 +304,7 @@ class EventBus:
 
 **Responsibilities:**
 - Simplify operation tracking with automatic lifecycle events
-- Integration with correlation context (`agent_vault.correlation`)
+- Integration with correlation context (`agentic_inquiry.correlation`)
 - Progress tracking support
 - Error handling with automatic failed event emission
 
@@ -519,7 +519,7 @@ async def hybrid_search(self, query: str, limit: int = 10):
 Custom components can add event tracking:
 
 ```python
-from agent_vault.events import EventSystem, track_operation
+from agentic_inquiry.events import EventSystem, track_operation
 
 class MyCustomProcessor:
     def __init__(self, project_id: str):
@@ -554,8 +554,8 @@ class MyCustomProcessor:
 Use correlation context for automatic operation grouping:
 
 ```python
-from agent_vault.correlation import correlation_context
-from agent_vault.events import EventSystem
+from agentic_inquiry.correlation import correlation_context
+from agentic_inquiry.events import EventSystem
 
 async def multi_step_operation():
     # Create and start event system
@@ -580,7 +580,7 @@ async def multi_step_operation():
 Use EventBus for real-time notifications without persistence:
 
 ```python
-from agent_vault.events import EventSystem
+from agentic_inquiry.events import EventSystem
 
 async def setup_file_watcher():
     async with EventSystem.from_config(project_id="my_project") as events:
@@ -811,11 +811,11 @@ class Config:
 ### Environment Variables
 
 ```bash
-export AGV_EVENTS_ENABLED=true
-export AGV_EVENTS_QUEUE_MAX_SIZE=2000
-export AGV_EVENTS_BATCH_SIZE=200
-export AGV_EVENTS_FLUSH_INTERVAL_SECONDS=0.5
-export AGV_EVENTS_RETENTION_DAYS=60
+export AI_EVENTS_ENABLED=true
+export AI_EVENTS_QUEUE_MAX_SIZE=2000
+export AI_EVENTS_BATCH_SIZE=200
+export AI_EVENTS_FLUSH_INTERVAL_SECONDS=0.5
+export AI_EVENTS_RETENTION_DAYS=60
 ```
 
 ## Testing Strategy
@@ -1011,15 +1011,15 @@ export AGV_EVENTS_RETENTION_DAYS=60
 ## References
 
 **Code:**
-- **EventSystem**: `agent_vault/events/system.py` - Queue-based batching
-- **EventBus**: `agent_vault/events/bus.py` - In-memory pub/sub
-- **EventStore**: `agent_vault/events/store.py` - SQLite persistence
-- **EventStorageProtocol**: `agent_vault/storage/protocols/events.py` - Backend abstraction
-- **SQLiteEventStorage**: `agent_vault/events/storage/sqlite.py` - Protocol implementation
-- **Context Managers**: `agent_vault/events/context_managers.py` - track_operation()
-- **Event Types**: `agent_vault/events/types.py` - EventTypes constants
-- **Event Models**: `agent_vault/events/models.py` - Event, EventStatus
-- **Correlation**: `agent_vault/correlation.py` - Request tracing
+- **EventSystem**: `agentic_inquiry/events/system.py` - Queue-based batching
+- **EventBus**: `agentic_inquiry/events/bus.py` - In-memory pub/sub
+- **EventStore**: `agentic_inquiry/events/store.py` - SQLite persistence
+- **EventStorageProtocol**: `agentic_inquiry/storage/protocols/events.py` - Backend abstraction
+- **SQLiteEventStorage**: `agentic_inquiry/events/storage/sqlite.py` - Protocol implementation
+- **Context Managers**: `agentic_inquiry/events/context_managers.py` - track_operation()
+- **Event Types**: `agentic_inquiry/events/types.py` - EventTypes constants
+- **Event Models**: `agentic_inquiry/events/models.py` - Event, EventStatus
+- **Correlation**: `agentic_inquiry/correlation.py` - Request tracing
 
 **External:**
 - **SQLite WAL**: https://www.sqlite.org/wal.html

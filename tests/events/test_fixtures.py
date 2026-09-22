@@ -8,9 +8,9 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.events.store import EventStore
-from agent_vault.events.system import EventSystem
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.events.store import EventStore
+from agentic_inquiry.events.system import EventSystem
 from tests.events.test_utils import (
     create_operation_events,
     create_test_event,

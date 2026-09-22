@@ -46,10 +46,10 @@ async def run(
     run_id: str,
     output_dir: Path,
 ) -> Dict[str, Any]:
-    from agent_vault.mcp.tools.search import search_knowledge
-    from agent_vault.mcp.tools.info import get_project_info, list_entities
-    from agent_vault.mcp.tools.context import build_context
-    from agent_vault.mcp.tools.analysis import understand_entity
+    from agentic_inquiry.mcp.tools.search import search_knowledge
+    from agentic_inquiry.mcp.tools.info import get_project_info, list_entities
+    from agentic_inquiry.mcp.tools.context import build_context
+    from agentic_inquiry.mcp.tools.analysis import understand_entity
 
     results: Dict[str, Any] = {}
     issues: list = []
@@ -461,7 +461,7 @@ async def run(
     # ── Honest assessment: doc generation limitations ────────────────────
     note_adoption(journal,
         "semantic search finds related code snippets but cannot generate coherent documentation on its own "
-        "— the agent still needs an LLM to synthesize snippets into readable docs, so agv is a research tool not a doc generator",
+        "— the agent still needs an LLM to synthesize snippets into readable docs, so ai is a research tool not a doc generator",
         "neutral")
 
     # ── Final Summary ────────────────────────────────────────────────────

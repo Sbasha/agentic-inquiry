@@ -1,7 +1,7 @@
 """Unit tests for index state detection utilities.
 
 Tests the IndexState enum, IndexStateInfo dataclass, estimate_indexing_eta(),
-and detect_index_state() functions from agent_vault/mcp/utils/index_state.py.
+and detect_index_state() functions from agentic_inquiry/mcp/utils/index_state.py.
 """
 
 import pytest
@@ -10,7 +10,7 @@ pytestmark = pytest.mark.unit
 from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.mcp.utils.index_state import (
+from agentic_inquiry.mcp.utils.index_state import (
     IndexState,
     IndexStateInfo,
     estimate_indexing_eta,

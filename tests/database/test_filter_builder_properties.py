@@ -15,7 +15,7 @@ from hypothesis import given, settings, strategies as st
 
 # FilterBuilder from consolidated filters package
 try:
-    from agent_vault.database.filters import FilterBuilder
+    from agentic_inquiry.database.filters import FilterBuilder
 except ImportError:
     FilterBuilder: Any = None
 

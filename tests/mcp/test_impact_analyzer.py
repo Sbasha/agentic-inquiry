@@ -6,10 +6,10 @@ pytestmark = pytest.mark.unit
 
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.mcp.services.impact_analyzer import (
+from agentic_inquiry.mcp.services.impact_analyzer import (
     ImpactAnalyzer
 )
-from agent_vault.mcp.services.entity_resolver import (
+from agentic_inquiry.mcp.services.entity_resolver import (
     EntityDefinition,
     EntityNotFoundError
 )
@@ -81,7 +81,7 @@ async def test_direct_dependencies_depth_1(impact_analyzer, mock_entity_resolver
         entity_id="entity-1",
         name="SearchService",
         entity_type="class",
-        file_path="agent_vault/search/service.py",
+        file_path="agentic_inquiry/search/service.py",
         line_start=10,
         line_end=100,
         content="class SearchService: ...",
@@ -97,9 +97,9 @@ async def test_direct_dependencies_depth_1(impact_analyzer, mock_entity_resolver
 
     # Setup mock entity queries - use a function to handle multiple calls
     entity_map = {
-        "entity-1": [{"id": "entity-1", "name": "SearchService", "type": "class", "file_path": "agent_vault/search/service.py"}],
-        "entity-2": [{"id": "entity-2", "name": "IndexingPipeline", "type": "class", "file_path": "agent_vault/indexing/pipeline.py"}],
-        "entity-3": [{"id": "entity-3", "name": "ContextBuilder", "type": "class", "file_path": "agent_vault/mcp/services/context_builder.py"}]
+        "entity-1": [{"id": "entity-1", "name": "SearchService", "type": "class", "file_path": "agentic_inquiry/search/service.py"}],
+        "entity-2": [{"id": "entity-2", "name": "IndexingPipeline", "type": "class", "file_path": "agentic_inquiry/indexing/pipeline.py"}],
+        "entity-3": [{"id": "entity-3", "name": "ContextBuilder", "type": "class", "file_path": "agentic_inquiry/mcp/services/context_builder.py"}]
     }
 
     async def mock_query_entities(project_id, filters=None, limit=None):
@@ -145,7 +145,7 @@ async def test_transitive_dependencies_depth_3(impact_analyzer, mock_entity_reso
         entity_id="entity-1",
         name="SearchService",
         entity_type="class",
-        file_path="agent_vault/search/service.py",
+        file_path="agentic_inquiry/search/service.py",
         line_start=10,
         line_end=100,
         content="class SearchService: ...",
@@ -179,7 +179,7 @@ async def test_circular_dependency_handling(impact_analyzer, mock_entity_resolve
         entity_id="entity-1",
         name="ServiceA",
         entity_type="class",
-        file_path="agent_vault/services/a.py",
+        file_path="agentic_inquiry/services/a.py",
         line_start=10,
         line_end=100,
         content="class ServiceA: ...",
@@ -209,8 +209,8 @@ async def test_circular_dependency_handling(impact_analyzer, mock_entity_resolve
 
     # Setup mock entity queries - use a function to handle multiple calls
     entity_map = {
-        "entity-1": [{"id": "entity-1", "name": "ServiceA", "type": "class", "file_path": "agent_vault/services/a.py"}],
-        "entity-2": [{"id": "entity-2", "name": "ServiceB", "type": "class", "file_path": "agent_vault/services/b.py"}]
+        "entity-1": [{"id": "entity-1", "name": "ServiceA", "type": "class", "file_path": "agentic_inquiry/services/a.py"}],
+        "entity-2": [{"id": "entity-2", "name": "ServiceB", "type": "class", "file_path": "agentic_inquiry/services/b.py"}]
     }
 
     async def mock_query_entities(project_id, filters=None, limit=None):
@@ -253,7 +253,7 @@ async def test_incoming_relationships_only(impact_analyzer, mock_entity_resolver
         entity_id="entity-1",
         name="SearchService",
         entity_type="class",
-        file_path="agent_vault/search/service.py",
+        file_path="agentic_inquiry/search/service.py",
         line_start=10,
         line_end=100,
         content="class SearchService: ...",
@@ -275,9 +275,9 @@ async def test_incoming_relationships_only(impact_analyzer, mock_entity_resolver
 
     # Setup mock entity queries - use a function to handle multiple calls
     entity_map = {
-        "entity-1": [{"id": "entity-1", "name": "SearchService", "type": "class", "file_path": "agent_vault/search/service.py"}],
-        "entity-2": [{"id": "entity-2", "name": "IndexingPipeline", "type": "class", "file_path": "agent_vault/indexing/pipeline.py"}],
-        "entity-3": [{"id": "entity-3", "name": "ContextBuilder", "type": "class", "file_path": "agent_vault/mcp/services/context_builder.py"}]
+        "entity-1": [{"id": "entity-1", "name": "SearchService", "type": "class", "file_path": "agentic_inquiry/search/service.py"}],
+        "entity-2": [{"id": "entity-2", "name": "IndexingPipeline", "type": "class", "file_path": "agentic_inquiry/indexing/pipeline.py"}],
+        "entity-3": [{"id": "entity-3", "name": "ContextBuilder", "type": "class", "file_path": "agentic_inquiry/mcp/services/context_builder.py"}]
     }
 
     async def mock_query_entities(project_id, filters=None, limit=None):
@@ -320,7 +320,7 @@ async def test_outgoing_relationships_only(impact_analyzer, mock_entity_resolver
         entity_id="entity-1",
         name="SearchService",
         entity_type="class",
-        file_path="agent_vault/search/service.py",
+        file_path="agentic_inquiry/search/service.py",
         line_start=10,
         line_end=100,
         content="class SearchService: ...",
@@ -342,9 +342,9 @@ async def test_outgoing_relationships_only(impact_analyzer, mock_entity_resolver
 
     # Setup mock entity queries - use a function to handle multiple calls
     entity_map = {
-        "entity-1": [{"id": "entity-1", "name": "SearchService", "type": "class", "file_path": "agent_vault/search/service.py"}],
-        "entity-2": [{"id": "entity-2", "name": "LanceDBManager", "type": "class", "file_path": "agent_vault/database/lancedb_manager.py"}],
-        "entity-3": [{"id": "entity-3", "name": "EmbeddingService", "type": "class", "file_path": "agent_vault/embeddings/service.py"}]
+        "entity-1": [{"id": "entity-1", "name": "SearchService", "type": "class", "file_path": "agentic_inquiry/search/service.py"}],
+        "entity-2": [{"id": "entity-2", "name": "LanceDBManager", "type": "class", "file_path": "agentic_inquiry/database/lancedb_manager.py"}],
+        "entity-3": [{"id": "entity-3", "name": "EmbeddingService", "type": "class", "file_path": "agentic_inquiry/embeddings/service.py"}]
     }
 
     async def mock_query_entities(project_id, filters=None, limit=None):
@@ -387,7 +387,7 @@ async def test_max_depth_enforcement(impact_analyzer, mock_entity_resolver, mock
         entity_id="entity-1",
         name="SearchService",
         entity_type="class",
-        file_path="agent_vault/search/service.py",
+        file_path="agentic_inquiry/search/service.py",
         line_start=10,
         line_end=100,
         content="class SearchService: ...",
@@ -434,7 +434,7 @@ async def test_affected_files_grouping(impact_analyzer, mock_entity_resolver, mo
         entity_id="entity-1",
         name="SearchService",
         entity_type="class",
-        file_path="agent_vault/search/service.py",
+        file_path="agentic_inquiry/search/service.py",
         line_start=10,
         line_end=100,
         content="class SearchService: ...",
@@ -456,9 +456,9 @@ async def test_affected_files_grouping(impact_analyzer, mock_entity_resolver, mo
 
     # Setup mock entity queries - both in same file - use function to handle multiple calls
     entity_map = {
-        "entity-1": [{"id": "entity-1", "name": "SearchService", "type": "class", "file_path": "agent_vault/search/service.py"}],
-        "entity-2": [{"id": "entity-2", "name": "IndexingPipeline", "type": "class", "file_path": "agent_vault/indexing/pipeline.py"}],
-        "entity-3": [{"id": "entity-3", "name": "index_directory", "type": "function", "file_path": "agent_vault/indexing/pipeline.py"}]
+        "entity-1": [{"id": "entity-1", "name": "SearchService", "type": "class", "file_path": "agentic_inquiry/search/service.py"}],
+        "entity-2": [{"id": "entity-2", "name": "IndexingPipeline", "type": "class", "file_path": "agentic_inquiry/indexing/pipeline.py"}],
+        "entity-3": [{"id": "entity-3", "name": "index_directory", "type": "function", "file_path": "agentic_inquiry/indexing/pipeline.py"}]
     }
 
     async def mock_query_entities(project_id, filters=None, limit=None):
@@ -489,8 +489,8 @@ async def test_affected_files_grouping(impact_analyzer, mock_entity_resolver, mo
     )
     
     # Verify files are grouped correctly
-    assert "agent_vault/indexing/pipeline.py" in impact.affected_files
-    assert impact.affected_files["agent_vault/indexing/pipeline.py"] == 2  # Two entities in same file
+    assert "agentic_inquiry/indexing/pipeline.py" in impact.affected_files
+    assert impact.affected_files["agentic_inquiry/indexing/pipeline.py"] == 2  # Two entities in same file
 
 
 @pytest.mark.asyncio
@@ -501,7 +501,7 @@ async def test_relationship_types_counting(impact_analyzer, mock_entity_resolver
         entity_id="entity-1",
         name="SearchService",
         entity_type="class",
-        file_path="agent_vault/search/service.py",
+        file_path="agentic_inquiry/search/service.py",
         line_start=10,
         line_end=100,
         content="class SearchService: ...",
@@ -527,10 +527,10 @@ async def test_relationship_types_counting(impact_analyzer, mock_entity_resolver
 
     # Setup mock entity queries - use function to handle multiple calls
     entity_map = {
-        "entity-1": [{"id": "entity-1", "name": "SearchService", "type": "class", "file_path": "agent_vault/search/service.py"}],
-        "entity-2": [{"id": "entity-2", "name": "IndexingPipeline", "type": "class", "file_path": "agent_vault/indexing/pipeline.py"}],
-        "entity-3": [{"id": "entity-3", "name": "ContextBuilder", "type": "class", "file_path": "agent_vault/mcp/services/context_builder.py"}],
-        "entity-4": [{"id": "entity-4", "name": "LanceDBManager", "type": "class", "file_path": "agent_vault/database/lancedb_manager.py"}]
+        "entity-1": [{"id": "entity-1", "name": "SearchService", "type": "class", "file_path": "agentic_inquiry/search/service.py"}],
+        "entity-2": [{"id": "entity-2", "name": "IndexingPipeline", "type": "class", "file_path": "agentic_inquiry/indexing/pipeline.py"}],
+        "entity-3": [{"id": "entity-3", "name": "ContextBuilder", "type": "class", "file_path": "agentic_inquiry/mcp/services/context_builder.py"}],
+        "entity-4": [{"id": "entity-4", "name": "LanceDBManager", "type": "class", "file_path": "agentic_inquiry/database/lancedb_manager.py"}]
     }
 
     async def mock_query_entities(project_id, filters=None, limit=None):
@@ -581,7 +581,7 @@ async def test_exact_depth_traversal_chain(impact_analyzer, mock_entity_resolver
         entity_id="entity-A",
         name="RootClass",
         entity_type="class",
-        file_path="agent_vault/root.py",
+        file_path="agentic_inquiry/root.py",
         line_start=10,
         line_end=100,
         content="class RootClass: ...",
@@ -610,10 +610,10 @@ async def test_exact_depth_traversal_chain(impact_analyzer, mock_entity_resolver
 
     # Setup mock entity queries for chain A→B→C→D
     entity_map = {
-        "entity-A": [{"id": "entity-A", "name": "RootClass", "type": "class", "file_path": "agent_vault/root.py"}],
-        "entity-B": [{"id": "entity-B", "name": "LevelOneClass", "type": "class", "file_path": "agent_vault/level1.py"}],
-        "entity-C": [{"id": "entity-C", "name": "LevelTwoClass", "type": "class", "file_path": "agent_vault/level2.py"}],
-        "entity-D": [{"id": "entity-D", "name": "LevelThreeClass", "type": "class", "file_path": "agent_vault/level3.py"}]
+        "entity-A": [{"id": "entity-A", "name": "RootClass", "type": "class", "file_path": "agentic_inquiry/root.py"}],
+        "entity-B": [{"id": "entity-B", "name": "LevelOneClass", "type": "class", "file_path": "agentic_inquiry/level1.py"}],
+        "entity-C": [{"id": "entity-C", "name": "LevelTwoClass", "type": "class", "file_path": "agentic_inquiry/level2.py"}],
+        "entity-D": [{"id": "entity-D", "name": "LevelThreeClass", "type": "class", "file_path": "agentic_inquiry/level3.py"}]
     }
 
     async def mock_query_entities(project_id, filters=None, limit=None):
@@ -717,7 +717,7 @@ async def test_analyze_impact_batch_lookup(impact_analyzer, mock_entity_resolver
         entity_id="entity-1",
         name="ServiceA",
         entity_type="class",
-        file_path="agent_vault/services/a.py",
+        file_path="agentic_inquiry/services/a.py",
         line_start=10,
         line_end=100,
         content="class ServiceA: ...",
@@ -747,7 +747,7 @@ async def test_analyze_impact_batch_lookup(impact_analyzer, mock_entity_resolver
                 # Batch lookup with IN clause
                 entity_ids = filter_value[1]
                 return [
-                    {"id": eid, "name": f"Entity{eid[-1]}", "type": "class", "file_path": f"agent_vault/entity{eid[-1]}.py"}
+                    {"id": eid, "name": f"Entity{eid[-1]}", "type": "class", "file_path": f"agentic_inquiry/entity{eid[-1]}.py"}
                     for eid in entity_ids
                 ]
         return []
@@ -782,14 +782,14 @@ async def test_analyze_impact_partial_results(impact_analyzer, mock_entity_resol
     Verifies AC-2.3: Partial results on timeout
     """
     import time
-    from agent_vault.mcp.services.impact_analyzer import PartialResultsException
+    from agentic_inquiry.mcp.services.impact_analyzer import PartialResultsException
 
     # Setup mock entity resolution
     mock_entity_resolver.resolve_entity = AsyncMock(return_value=EntityDefinition(
         entity_id="entity-1",
         name="ServiceA",
         entity_type="class",
-        file_path="agent_vault/services/a.py",
+        file_path="agentic_inquiry/services/a.py",
         line_start=10,
         line_end=100,
         content="class ServiceA: ...",
@@ -803,7 +803,7 @@ async def test_analyze_impact_partial_results(impact_analyzer, mock_entity_resol
     ])
 
     mock_storage_facade.query_entities = AsyncMock(return_value=[
-        {"id": "entity-2", "name": "Entity2", "type": "class", "file_path": "agent_vault/entity2.py"}
+        {"id": "entity-2", "name": "Entity2", "type": "class", "file_path": "agentic_inquiry/entity2.py"}
     ])
 
     # Set deadline in the past to force immediate timeout
@@ -832,14 +832,14 @@ async def test_partial_results_exception(impact_analyzer, mock_entity_resolver, 
     Verifies AC-2.4: Exception contains partial data
     """
     import time
-    from agent_vault.mcp.services.impact_analyzer import PartialResultsException
+    from agentic_inquiry.mcp.services.impact_analyzer import PartialResultsException
 
     # Setup mock entity resolution
     mock_entity_resolver.resolve_entity = AsyncMock(return_value=EntityDefinition(
         entity_id="entity-1",
         name="ServiceA",
         entity_type="class",
-        file_path="agent_vault/services/a.py",
+        file_path="agentic_inquiry/services/a.py",
         line_start=10,
         line_end=100,
         content="class ServiceA: ...",
@@ -901,7 +901,7 @@ async def test_batch_chunking_uses_config(impact_analyzer, mock_entity_resolver,
         entity_id="entity-1",
         name="ServiceA",
         entity_type="class",
-        file_path="agent_vault/services/a.py",
+        file_path="agentic_inquiry/services/a.py",
         line_start=10,
         line_end=100,
         content="class ServiceA: ...",
@@ -926,7 +926,7 @@ async def test_batch_chunking_uses_config(impact_analyzer, mock_entity_resolver,
                 entity_ids = filter_value[1]
                 batch_sizes.append(len(entity_ids))
                 return [
-                    {"id": eid, "name": f"Entity{eid[-1]}", "type": "class", "file_path": f"agent_vault/entity{eid[-1]}.py"}
+                    {"id": eid, "name": f"Entity{eid[-1]}", "type": "class", "file_path": f"agentic_inquiry/entity{eid[-1]}.py"}
                     for eid in entity_ids
                 ]
         return []
@@ -954,8 +954,8 @@ async def test_batch_size_validation():
 
     Verifies AC-4.2: Batch size range validation (10-500)
     """
-    from agent_vault.config import MCPQueryConfig
-    from agent_vault.exceptions import ConfigurationError
+    from agentic_inquiry.config import MCPQueryConfig
+    from agentic_inquiry.exceptions import ConfigurationError
 
     # Valid batch sizes should work
     valid_config = MCPQueryConfig(batch_size=100)
@@ -993,7 +993,7 @@ async def test_traversal_limit_affects_analyze_impact(impact_analyzer, mock_enti
         entity_id="entity-1",
         name="ServiceA",
         entity_type="class",
-        file_path="agent_vault/services/a.py",
+        file_path="agentic_inquiry/services/a.py",
         line_start=10,
         line_end=100,
         content="class ServiceA: ...",
@@ -1022,7 +1022,7 @@ async def test_traversal_limit_affects_analyze_impact(impact_analyzer, mock_enti
             if isinstance(filter_value, tuple) and filter_value[0] == "IN":
                 entity_ids = filter_value[1]
                 return [
-                    {"id": eid, "name": f"Entity{eid[-1]}", "type": "class", "file_path": f"agent_vault/entity{eid[-1]}.py"}
+                    {"id": eid, "name": f"Entity{eid[-1]}", "type": "class", "file_path": f"agentic_inquiry/entity{eid[-1]}.py"}
                     for eid in entity_ids
                 ]
         return []

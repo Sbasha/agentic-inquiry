@@ -4,19 +4,19 @@ from __future__ import annotations
 
 import pytest
 
-from agent_vault.storage.config import BackendConfig
-from agent_vault.storage.providers.postgresql.index_config import (
+from agentic_inquiry.storage.config import BackendConfig
+from agentic_inquiry.storage.providers.postgresql.index_config import (
     HNSWParams,
     IndexConfig,
     IndexType,
     IVFFlatParams,
 )
-from agent_vault.storage.providers.postgresql.schemas import (
+from agentic_inquiry.storage.providers.postgresql.schemas import (
     CHUNKS_TABLE,
     ENTITIES_TABLE,
     SchemaGenerator,
 )
-from agent_vault.storage.similarity import (
+from agentic_inquiry.storage.similarity import (
     DEFAULT_SIMILARITY_METRIC,
     distance_to_similarity,
     lancedb_metric,
@@ -289,7 +289,7 @@ class TestMaintenanceServiceHonoursMetric:
     ) -> None:
         from unittest.mock import AsyncMock, MagicMock
 
-        from agent_vault.storage.providers.postgresql.maintenance import (
+        from agentic_inquiry.storage.providers.postgresql.maintenance import (
             PostgresMaintenanceService,
         )
 

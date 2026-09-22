@@ -30,7 +30,7 @@ async def test_entity_resolution_comprehensive(mock_db_manager, mock_storage_fac
     """Test entity resolution with mocked indexed code."""
     project_id = "entity_resolution_test"
 
-    from agent_vault.mcp.services.entity_resolver import EntityResolver
+    from agentic_inquiry.mcp.services.entity_resolver import EntityResolver
 
     # Create entity resolver
     entity_resolver = EntityResolver(
@@ -44,7 +44,7 @@ async def test_entity_resolution_comprehensive(mock_db_manager, mock_storage_fac
             "id": "test_entity_1",
             "name": "SearchService",
             "type": "class",
-            "file_path": "agent_vault/search/service.py",
+            "file_path": "agentic_inquiry/search/service.py",
             "line_start": 10,
             "line_end": 100
         },
@@ -52,7 +52,7 @@ async def test_entity_resolution_comprehensive(mock_db_manager, mock_storage_fac
             "id": "test_entity_2",
             "name": "SearchDeduplicator",
             "type": "class",
-            "file_path": "agent_vault/search/deduplicator.py",
+            "file_path": "agentic_inquiry/search/deduplicator.py",
             "line_start": 5,
             "line_end": 50
         },
@@ -60,7 +60,7 @@ async def test_entity_resolution_comprehensive(mock_db_manager, mock_storage_fac
             "id": "test_entity_3",
             "name": "HybridSearcher",
             "type": "class",
-            "file_path": "agent_vault/search/hybrid.py",
+            "file_path": "agentic_inquiry/search/hybrid.py",
             "line_start": 15,
             "line_end": 80
         }
@@ -117,7 +117,7 @@ async def test_entity_resolution_with_dependencies(mock_db_manager, mock_storage
     """Test that entity resolution works and dependencies can be queried."""
     project_id = "entity_deps_test"
 
-    from agent_vault.mcp.services.entity_resolver import EntityResolver
+    from agentic_inquiry.mcp.services.entity_resolver import EntityResolver
 
     resolver = EntityResolver(
         db_manager=mock_storage_facade,
@@ -129,7 +129,7 @@ async def test_entity_resolution_with_dependencies(mock_db_manager, mock_storage
         "id": "entity_resolver",
         "name": "EntityResolver",
         "type": "class",
-        "file_path": "agent_vault/mcp/services/entity_resolver.py",
+        "file_path": "agentic_inquiry/mcp/services/entity_resolver.py",
         "line_start": 50,
         "line_end": 300
     }
@@ -138,7 +138,7 @@ async def test_entity_resolution_with_dependencies(mock_db_manager, mock_storage
         "id": "storage_facade",
         "name": "StorageFacade",
         "type": "class",
-        "file_path": "agent_vault/storage/facade.py",
+        "file_path": "agentic_inquiry/storage/facade.py",
         "line_start": 20,
         "line_end": 200
     }
@@ -195,7 +195,7 @@ async def test_entity_resolution_case_insensitive(mock_db_manager, mock_storage_
     """Test case-insensitive entity matching."""
     project_id = "case_test"
 
-    from agent_vault.mcp.services.entity_resolver import EntityResolver
+    from agentic_inquiry.mcp.services.entity_resolver import EntityResolver
 
     entity_resolver = EntityResolver(
         db_manager=mock_storage_facade,
@@ -207,7 +207,7 @@ async def test_entity_resolution_case_insensitive(mock_db_manager, mock_storage_
         "id": "test_case_entity",
         "name": "SearchService",
         "type": "class",
-        "file_path": "agent_vault/search/service.py",
+        "file_path": "agentic_inquiry/search/service.py",
         "line_start": 10,
         "line_end": 100
     }
@@ -246,7 +246,7 @@ async def test_entity_not_found_with_suggestions(mock_db_manager, mock_storage_f
     """Test that entity not found raises error with suggestions."""
     project_id = "suggestions_test"
 
-    from agent_vault.mcp.services.entity_resolver import EntityResolver, EntityNotFoundError
+    from agentic_inquiry.mcp.services.entity_resolver import EntityResolver, EntityNotFoundError
 
     entity_resolver = EntityResolver(
         db_manager=mock_storage_facade,
@@ -258,7 +258,7 @@ async def test_entity_not_found_with_suggestions(mock_db_manager, mock_storage_f
         "id": "test_entity",
         "name": "SearchService",
         "type": "class",
-        "file_path": "agent_vault/search/service.py",
+        "file_path": "agentic_inquiry/search/service.py",
         "line_start": 10,
         "line_end": 100
     }

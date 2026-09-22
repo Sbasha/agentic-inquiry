@@ -7,8 +7,8 @@ FilterBuilder instead of direct string formatting.
 import pytest
 
 pytestmark = pytest.mark.unit
-from agent_vault.database.filters import FilterBuilder
-from agent_vault.database.query_builder import LanceDBQueryBuilder
+from agentic_inquiry.database.filters import FilterBuilder
+from agentic_inquiry.database.query_builder import LanceDBQueryBuilder
 
 
 class TestFilterBuilderUsage:

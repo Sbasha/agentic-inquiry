@@ -31,11 +31,11 @@ async def run(
     run_id: str,
     output_dir: Path,
 ) -> Dict[str, Any]:
-    from agent_vault.mcp.tools.session import create_session, list_sessions
-    from agent_vault.mcp.tools.search import search_knowledge
-    from agent_vault.mcp.tools.memory import save_memory, recall_memories
-    from agent_vault.mcp.tools.info import get_project_info, get_events
-    from agent_vault.mcp.tools.context import build_context
+    from agentic_inquiry.mcp.tools.session import create_session, list_sessions
+    from agentic_inquiry.mcp.tools.search import search_knowledge
+    from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
+    from agentic_inquiry.mcp.tools.info import get_project_info, get_events
+    from agentic_inquiry.mcp.tools.context import build_context
 
     results: Dict[str, Any] = {}
     issues: list = []
@@ -260,7 +260,7 @@ async def run(
         recall_memories,
         services=services,
         session_id=session_id,
-        query="Agent-Vault codebase",
+        query="Agentic Inquiry codebase",
         limit=20,
     )
     all_memories = r.get("memories", [])
@@ -279,7 +279,7 @@ async def run(
             "neutral")
     note_adoption(journal,
         f"stored {total_stored} knowledge items across patterns/decisions/gotchas — but all must be manually "
-        f"curated and stored; agv doesn't auto-extract insights from code, it only stores what you tell it",
+        f"curated and stored; ai doesn't auto-extract insights from code, it only stores what you tell it",
         "neutral")
 
     # ── T5: Search + Memory Integration ─────────────────────────

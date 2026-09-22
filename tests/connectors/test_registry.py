@@ -7,7 +7,7 @@ import pytest
 pytestmark = pytest.mark.unit
 from typing import AsyncIterator
 
-from agent_vault.connectors.registry import (
+from agentic_inquiry.connectors.registry import (
     ConnectorRegistry,
     get_connector,
     list_connectors,
@@ -15,7 +15,7 @@ from agent_vault.connectors.registry import (
     unregister_connector,
     clear_registry,
 )
-from agent_vault.connectors.types import SourceItem, SourceContent
+from agentic_inquiry.connectors.types import SourceItem, SourceContent
 
 # Snapshot of the built-in registrations, captured at import time — before any
 # test body runs, when the registry holds exactly the package built-ins

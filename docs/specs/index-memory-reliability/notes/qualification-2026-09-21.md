@@ -3,12 +3,12 @@
 Evidence for AC 15-17 of [`../spec.md`](../spec.md). Full receipts
 (command, exit code, wall-clock, stdout/stderr SHA-256, reported summary,
 error-class tallies) live under
-`~/.agv/qualification/index-durability-20260921/receipts/`; the corpus,
+`~/.agentic-inquiry/qualification/index-durability-20260921/receipts/`; the corpus,
 the indexes, and the logs stay there too. This page carries only counts
 and hashes.
 
 Setup: branch code installed into an isolated venv with lancedb 0.38.0
-(the version `uv tool install .` resolves), `AGV_EMBEDDING_DEVICE=cpu`,
+(the version `uv tool install .` resolves), `AI_EMBEDDING_DEVICE=cpu`,
 `--skip-onboard-check`, one 1,443-file repository as corpus (1,437 files
 indexable), project id fixed across runs.
 
@@ -20,8 +20,8 @@ indexable), project id fixed across runs.
 | `01-repro-head-f936def-lancedb038` | branch HEAD `f936def` (per-write `optimize()`), corpus into a clone of that index | 0 | 6,235 s | 1,437 processed, 0 failed, 122 `Retryable commit conflict` retries (CreateIndex vs CreateIndex 91, CreateIndex vs Rewrite 15, Rewrite vs Rewrite 13, Rewrite vs Update 2, Rewrite vs CreateIndex 1); 13.8 files/min |
 | `05-tests-database-lancedb038` | `tests/database` under lancedb 0.38.0 | 0 | - | 536 passed, 0 failed |
 | `30-fresh-index-fixed-lancedb038` | fixed code, corpus into an empty environment | 0 | 321 s | 1,437 processed, 0 failed, 0 retries, error.log empty; 268 files/min; 34,327 chunk rows / 34,784 entity rows / 59,536 relationship rows, 0 duplicate keys in every table; FTS index on `fts_text` present |
-| `11-fresh-process-status-fresh30` | fresh process `agv index status` on that index | 0 | 2.6 s | 34,327 / 34,784 / 59,536, equal to the on-disk row counts |
-| `12-fresh-process-search-fresh30` | fresh process `agv search --json` (hybrid) | 0 | 6.8 s | 3 results, every `file_path` exists in the corpus |
+| `11-fresh-process-status-fresh30` | fresh process `ai index status` on that index | 0 | 2.6 s | 34,327 / 34,784 / 59,536, equal to the on-disk row counts |
+| `12-fresh-process-search-fresh30` | fresh process `ai search --json` (hybrid) | 0 | 6.8 s | 3 results, every `file_path` exists in the corpus |
 | `40-search-to-source-journey` | provenance check on those 3 results | - | - | CODE result: `line_start`/`line_end` 1381-1475 contain the returned element and first content line; file SHA-256 recorded. PROSE results: `line_start=-1`, file-level provenance plus whitespace-normalized text match (one full match, one first-12-words match) |
 | `10-recover-real-partial-index-fixed` | fixed code, corpus into a second clone of the failed run's index (20,684 / 20,880 / 7,099 rows before) | 0 | 477 s | 1,437 processed, 0 failed, 0 retries, error.log empty; native FTS index created on the existing table; after: chunks 34,328 distinct (0 dup), entities 34,789 (0 dup), relationships 59,548 distinct with the 198 legacy duplicate rows unchanged |
 | `20-second-run-same-index` | fixed code again over the recovered index | 0 | 373 s | 1,437 processed, 0 failed, 0 retries; chunks 34,328 and entities 34,789 distinct keys unchanged; duplicate rows 0 / 0 / 198 unchanged; relationships grew 59,548 to 66,813 distinct keys (unresolved targets 296 to 4,016; graph-builder behavior, see backlog) |

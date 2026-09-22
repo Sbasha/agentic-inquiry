@@ -9,8 +9,8 @@ from typing import List
 
 import pytest
 
-from agent_vault.parsers.implementations.unified_code import UnifiedCodeParser
-from agent_vault.parsers.models import ParserRelationship
+from agentic_inquiry.parsers.implementations.unified_code import UnifiedCodeParser
+from agentic_inquiry.parsers.models import ParserRelationship
 
 pytestmark = pytest.mark.integration
 

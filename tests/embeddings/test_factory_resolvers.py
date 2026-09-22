@@ -1,5 +1,5 @@
 """Unit tests for the per-backend resolver helpers in
-``agent_vault.embeddings.factory``.
+``agentic_inquiry.embeddings.factory``.
 
 The resolvers honor per-backend ``BackendConfig`` overrides ahead of
 the capability-profile defaults. Tests pin the precedence rules so a
@@ -15,12 +15,12 @@ from types import SimpleNamespace
 
 import pytest
 
-from agent_vault.embeddings.factory import (
+from agentic_inquiry.embeddings.factory import (
     resolve_embedding_dimensions,
     resolve_embedding_model,
     resolve_embedding_strategy,
 )
-from agent_vault.storage.capabilities import EmbeddingStrategy
+from agentic_inquiry.storage.capabilities import EmbeddingStrategy
 
 pytestmark = pytest.mark.unit
 

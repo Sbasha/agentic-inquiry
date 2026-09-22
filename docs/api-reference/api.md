@@ -9,28 +9,28 @@ last_updated: 2025-10-28
 
 # API Reference
 
-This document provides comprehensive API documentation for all major components in Agent-Vault.
+This document provides comprehensive API documentation for all major components in Agentic Inquiry.
 
 ## Recommended Patterns
 
 Most applications should use these factory methods for automatic dependency injection:
 
 ```python
-from agent_vault.config import Config
+from agentic_inquiry.config import Config
 
 # 1. Load configuration
 config = Config.load()
 
 # 2. Create storage facade
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.storage.facade import StorageFacade
 storage = await StorageFacade.from_config(config, project_id="my-project")
 
 # 3. Create search service
-from agent_vault.search.service import SearchService
+from agentic_inquiry.search.service import SearchService
 search = await SearchService.from_config(config, project_id="my-project")
 
 # 4. Create indexing pipeline
-from agent_vault.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
 pipeline = await IndexingPipeline.from_config(config, project_id="my-project")
 
 # 5. Use async context managers
@@ -47,7 +47,7 @@ results = await search.hybrid_search(
 
 **Key Points:**
 - All I/O operations are async
-- Use `Config.load()` to load configuration from `agent-vault.yaml` or defaults
+- Use `Config.load()` to load configuration from `agentic-inquiry.yaml` or defaults
 - Use factory methods (`from_config()`) instead of direct constructors
 - EventSystem is managed automatically by factory methods
 - StorageFacade is the primary interface for database operations
@@ -64,17 +64,17 @@ results = await search.hybrid_search(
 
 ## Database Layer
 
-Agent-Vault uses concrete classes for database operations with clear interfaces.
+Agentic Inquiry uses concrete classes for database operations with clear interfaces.
 
-**Location:** `agent_vault.storage`
+**Location:** `agentic_inquiry.storage`
 
 ### StorageFacade
 
 Provides unified storage operations across all backends (LanceDB, PostgreSQL, AlloyDB).
 
 ```python
-from agent_vault.config import Config
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.config import Config
+from agentic_inquiry.storage.facade import StorageFacade
 
 # Create storage facade from config (recommended)
 config = Config.load()
@@ -108,10 +108,10 @@ Protocol definitions provide interface contracts for custom implementations. Mos
 
 ### CacheProtocol
 
-Defines the interface for caching operations (defined in `agent_vault.cache`).
+Defines the interface for caching operations (defined in `agentic_inquiry.cache`).
 
 ```python
-from agent_vault.cache import CacheProtocol, get_cache
+from agentic_inquiry.cache import CacheProtocol, get_cache
 
 async def example(file_path: str, document: object) -> None:
     cache = get_cache()                          # sync — returns the registered cache
@@ -124,7 +124,7 @@ async def example(file_path: str, document: object) -> None:
 
 **Usage:**
 ```python
-from agent_vault.cache import CacheProtocol
+from agentic_inquiry.cache import CacheProtocol
 
 async def use_cache(cache: CacheProtocol, file_path: str):
     # Works with any CacheProtocol implementation
@@ -152,7 +152,7 @@ class EmbeddingProtocol(Protocol):
 
 **Usage:**
 ```python
-from agent_vault.protocols import EmbeddingProtocol
+from agentic_inquiry.protocols import EmbeddingProtocol
 
 def generate_embeddings(embedder: EmbeddingProtocol, texts: List[str]):
     # Works with any embedding provider
@@ -176,7 +176,7 @@ class ParserProtocol(Protocol):
 
 **Usage:**
 ```python
-from agent_vault.protocols import ParserProtocol
+from agentic_inquiry.protocols import ParserProtocol
 
 def parse_with_any_parser(parser: ParserProtocol, file_path: str):
     # Works with any parser implementation
@@ -201,7 +201,7 @@ class SymbolRegistryProtocol(Protocol):
 
 **Usage:**
 ```python
-from agent_vault.protocols import SymbolRegistryProtocol
+from agentic_inquiry.protocols import SymbolRegistryProtocol
 
 def resolve_symbols(registry: SymbolRegistryProtocol, symbol_name: str):
     # Works with any symbol registry implementation
@@ -218,7 +218,7 @@ def resolve_symbols(registry: SymbolRegistryProtocol, symbol_name: str):
 
 **Example with Testing:**
 ```python
-from agent_vault.protocols import DatabaseProtocol
+from agentic_inquiry.protocols import DatabaseProtocol
 
 class MockDatabase:
     """Mock database for testing - no inheritance needed"""
@@ -249,7 +249,7 @@ The parser system converts files into structured `ParsedDocument` objects contai
 
 The main entry point for parsing files. Manages a collection of parsers and executes them in priority order.
 
-**Location:** `agent_vault.parsers.chain`
+**Location:** `agentic_inquiry.parsers.chain`
 
 ##### Constructor
 
@@ -268,9 +268,9 @@ ParserChain(
 
 **Example:**
 ```python
-from agent_vault.config import Config
-from agent_vault.parsers import ParserChain
-from agent_vault.events import EventSystem
+from agentic_inquiry.config import Config
+from agentic_inquiry.parsers import ParserChain
+from agentic_inquiry.events import EventSystem
 
 # Simple usage without event tracking
 chain = ParserChain()
@@ -349,7 +349,7 @@ chain = ParserChain.from_config(config)
 
 Represents a parsed document with all extracted information.
 
-**Location:** `agent_vault.parsers.models`
+**Location:** `agentic_inquiry.parsers.models`
 
 ##### Attributes
 
@@ -376,7 +376,7 @@ for chunk in doc.chunks:
 
 Represents a single chunk of content from a parsed document.
 
-**Location:** `agent_vault.parsers.models`
+**Location:** `agentic_inquiry.parsers.models`
 
 ##### Attributes
 
@@ -412,7 +412,7 @@ for chunk in doc.chunks:
 
 Represents a relationship between symbols (imports, calls, references, etc.).
 
-**Location:** `agent_vault.parsers.models`
+**Location:** `agentic_inquiry.parsers.models`
 
 ##### Attributes
 
@@ -434,7 +434,7 @@ for chunk in doc.chunks:
 
 Parses code files using tree-sitter for multiple programming languages.
 
-**Location:** `agent_vault.parsers.implementations.unified_code`
+**Location:** `agentic_inquiry.parsers.implementations.unified_code`
 
 **Supported Languages:**
 - Python (.py)
@@ -456,7 +456,7 @@ Parses code files using tree-sitter for multiple programming languages.
 
 **Example:**
 ```python
-from agent_vault.parsers.implementations import UnifiedCodeParser
+from agentic_inquiry.parsers.implementations import UnifiedCodeParser
 
 parser = UnifiedCodeParser()
 doc = parser.parse("/path/to/code.py")
@@ -473,7 +473,7 @@ for chunk in doc.chunks:
 
 Parses document files (PDF, DOCX, PPTX, Markdown, etc.) using the unstructured library.
 
-**Location:** `agent_vault.parsers.implementations.document`
+**Location:** `agentic_inquiry.parsers.implementations.document`
 
 **Supported Formats:**
 - Markdown (.md)
@@ -492,7 +492,7 @@ Parses document files (PDF, DOCX, PPTX, Markdown, etc.) using the unstructured l
 
 **Example:**
 ```python
-from agent_vault.parsers.implementations import DocumentParser
+from agentic_inquiry.parsers.implementations import DocumentParser
 
 parser = DocumentParser()
 doc = parser.parse("/path/to/document.pdf")
@@ -509,7 +509,7 @@ for chunk in doc.chunks:
 
 Fallback parser for plain text files and unsupported formats.
 
-**Location:** `agent_vault.parsers.implementations.fallback_text`
+**Location:** `agentic_inquiry.parsers.implementations.fallback_text`
 
 **Features:**
 - Semantic chunking with overlap
@@ -519,7 +519,7 @@ Fallback parser for plain text files and unsupported formats.
 
 **Example:**
 ```python
-from agent_vault.parsers.implementations import FallbackTextParser
+from agentic_inquiry.parsers.implementations import FallbackTextParser
 
 parser = FallbackTextParser()
 doc = parser.parse("/path/to/file.txt")
@@ -545,7 +545,7 @@ def create_parser_chain() -> ParserChain
 
 **Example:**
 ```python
-from agent_vault.parsers import create_parser_chain
+from agentic_inquiry.parsers import create_parser_chain
 
 chain = create_parser_chain()
 doc = chain.parse("file.py")
@@ -564,7 +564,7 @@ def available_parsers() -> list[str]
 
 **Example:**
 ```python
-from agent_vault.parsers.executor import available_parsers
+from agentic_inquiry.parsers.executor import available_parsers
 
 parsers = available_parsers()
 print(f"Available parsers: {', '.join(parsers)}")
@@ -587,7 +587,7 @@ def execute_parser(parser: BaseParser, file_path: str) -> ParsedDocument
 
 **Example:**
 ```python
-from agent_vault.parsers.executor import get_parser_instance, execute_parser
+from agentic_inquiry.parsers.executor import get_parser_instance, execute_parser
 
 parser = get_parser_instance("unified_code")
 doc = execute_parser(parser, "file.py")
@@ -600,8 +600,8 @@ Parsers are automatically registered using the `@register_parser` decorator.
 #### Custom Parser Example
 
 ```python
-from agent_vault.parsers.models import BaseParser, ParsedDocument, ParserChunk
-from agent_vault.parsers.executor import register_parser
+from agentic_inquiry.parsers.models import BaseParser, ParsedDocument, ParserChunk
+from agentic_inquiry.parsers.executor import register_parser
 
 @register_parser(name="custom", priority=75)
 class CustomParser(BaseParser):
@@ -679,7 +679,7 @@ The indexing system processes parsed documents and stores them in the vector dat
 
 The main class for indexing documents into the database.
 
-**Location:** `agent_vault.indexing.pipeline`
+**Location:** `agentic_inquiry.indexing.pipeline`
 
 ##### Factory Method (Recommended)
 
@@ -700,8 +700,8 @@ async def from_config(
 
 **Example:**
 ```python
-from agent_vault.config import Config
-from agent_vault.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.config import Config
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
 
 # Recommended: Use factory method
 config = Config.load()
@@ -736,10 +736,10 @@ Direct construction requires all dependencies. Use `from_config()` instead for a
 
 **Manual Construction Example:**
 ```python
-from agent_vault.config import Config
-from agent_vault.storage.facade import StorageFacade
-from agent_vault.events import EventSystem
-from agent_vault.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.config import Config
+from agentic_inquiry.storage.facade import StorageFacade
+from agentic_inquiry.events import EventSystem
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
 
 config = Config.load()
 
@@ -784,7 +784,7 @@ async def process_document(self, parsed_doc: ParsedDocument) -> None
 
 **Example:**
 ```python
-from agent_vault.parsers import create_parser_chain
+from agentic_inquiry.parsers import create_parser_chain
 
 # Parse a file
 chain = create_parser_chain()
@@ -967,7 +967,7 @@ pipeline.stop_watching()
 
 The symbol registry tracks all symbols in the codebase for efficient lookup and resolution.
 
-**Location:** `agent_vault.indexing.symbol_registry`
+**Location:** `agentic_inquiry.indexing.symbol_registry`
 
 #### SymbolRegistry
 
@@ -997,7 +997,7 @@ def register_symbol(
 
 **Example:**
 ```python
-from agent_vault.indexing.symbol_registry import SymbolRegistry
+from agentic_inquiry.indexing.symbol_registry import SymbolRegistry
 
 registry = SymbolRegistry()
 registry.register_symbol(
@@ -1052,9 +1052,9 @@ registry.remove_file_symbols("/path/to/file.py")
 ```python
 import asyncio
 from pathlib import Path
-from agent_vault.config import Config
-from agent_vault.mcp.factories import create_mcp_services
-from agent_vault.parsers import create_parser_chain
+from agentic_inquiry.config import Config
+from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.parsers import create_parser_chain
 
 async def index_files(files: list[Path]):
     # Setup
@@ -1126,8 +1126,8 @@ async def index_with_watching():
 The indexing pipeline uses the embedding registry to generate vectors for chunks.
 
 ```python
-from agent_vault.embeddings.registry import embedding_registry
-from agent_vault.embeddings.sentence_transformer import SentenceTransformerEmbedder
+from agentic_inquiry.embeddings.registry import embedding_registry
+from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
 
 # Configure embedder before indexing
 embedder = SentenceTransformerEmbedder(model_name="all-MiniLM-L6-v2")
@@ -1206,7 +1206,7 @@ The search system provides multiple search strategies: vector search (semantic s
 
 The main class for performing searches across indexed documents.
 
-**Location:** `agent_vault.search.service`
+**Location:** `agentic_inquiry.search.service`
 
 ##### Factory Method (Recommended)
 
@@ -1225,8 +1225,8 @@ async def from_config(
 
 **Example:**
 ```python
-from agent_vault.config import Config
-from agent_vault.search.service import SearchService
+from agentic_inquiry.config import Config
+from agentic_inquiry.search.service import SearchService
 
 # Recommended: Use factory method
 config = Config.load()
@@ -1257,10 +1257,10 @@ Direct construction requires all dependencies. Use `from_config()` instead for a
 
 **Manual Construction Example:**
 ```python
-from agent_vault.config import Config
-from agent_vault.storage.facade import StorageFacade
-from agent_vault.search.service import SearchService
-from agent_vault.events import EventSystem
+from agentic_inquiry.config import Config
+from agentic_inquiry.storage.facade import StorageFacade
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.events import EventSystem
 
 config = Config.load()
 
@@ -1311,7 +1311,7 @@ async def vector_search(
 
 **Example:**
 ```python
-from agent_vault.embeddings.registry import embedding_registry
+from agentic_inquiry.embeddings.registry import embedding_registry
 
 # Generate query vector
 embedder = embedding_registry.get_default_embedder()
@@ -1619,7 +1619,7 @@ search_service = SearchService.from_config(db_manager, config)
 #### Basic Semantic Search
 
 ```python
-from agent_vault.embeddings.registry import embedding_registry
+from agentic_inquiry.embeddings.registry import embedding_registry
 
 async def semantic_search(query: str, limit: int = 5):
     # Generate query vector
@@ -1898,7 +1898,7 @@ The database system supports multiple backends (LanceDB, PostgreSQL, AlloyDB) th
 
 The main class for storage operations across all backends.
 
-**Location:** `agent_vault.storage.facade`
+**Location:** `agentic_inquiry.storage.facade`
 
 ##### Factory Method
 
@@ -1919,8 +1919,8 @@ async def from_config(
 
 **Example:**
 ```python
-from agent_vault.storage.facade import StorageFacade
-from agent_vault.config import Config
+from agentic_inquiry.storage.facade import StorageFacade
+from agentic_inquiry.config import Config
 
 # From configuration (recommended)
 config = Config.load()
@@ -2529,12 +2529,12 @@ await db_manager.create_tables_and_indexes()
 
 Context manager for ACID transactions.
 
-**Location:** `agent_vault.database.transaction`
+**Location:** `agentic_inquiry.database.transaction`
 
 ##### Usage
 
 ```python
-from agent_vault.database.transaction import DatabaseTransaction
+from agentic_inquiry.database.transaction import DatabaseTransaction
 
 async with DatabaseTransaction(db_manager) as txn:
     # All operations within this block are transactional
@@ -2630,7 +2630,7 @@ except Exception as e:
 #### Initialization
 
 ```python
-from agent_vault.database import LanceDBManager
+from agentic_inquiry.database import LanceDBManager
 
 # Create and initialize database
 db_manager = LanceDBManager("./vector_db")
@@ -2746,7 +2746,7 @@ await db_manager.add_document_chunks(chunks3)
 ### Error Handling
 
 ```python
-from agent_vault.database.transaction import DatabaseTransaction
+from agentic_inquiry.database.transaction import DatabaseTransaction
 
 try:
     async with DatabaseTransaction(db_manager) as txn:
@@ -2781,7 +2781,7 @@ except Exception as e:
 
 The FileTracker tracks file content hashes to detect changes and avoid unnecessary re-parsing.
 
-**Location:** `agent_vault.watching.file_tracker`
+**Location:** `agentic_inquiry.watching.file_tracker`
 
 #### Constructor
 
@@ -2798,8 +2798,8 @@ FileTracker(
 
 **Example:**
 ```python
-from agent_vault.watching import FileTracker
-from agent_vault.config import Config
+from agentic_inquiry.watching import FileTracker
+from agentic_inquiry.config import Config
 
 # From configuration (recommended)
 config = Config.load()
@@ -2901,7 +2901,7 @@ tracker.update_file_state("/path/to/file.py")
 
 The DocumentCache provides LRU caching for parsed documents with optional disk persistence.
 
-**Location:** `agent_vault.cache.document_cache`
+**Location:** `agentic_inquiry.cache.document_cache`
 
 #### Constructor
 
@@ -2918,8 +2918,8 @@ DocumentCache(
 
 **Example:**
 ```python
-from agent_vault.cache import DocumentCache
-from agent_vault.config import Config
+from agentic_inquiry.cache import DocumentCache
+from agentic_inquiry.config import Config
 
 # Memory-only cache (default)
 cache = DocumentCache(max_size=1000)
@@ -2969,7 +2969,7 @@ def put(self, file_path: str, document: ParsedDocument) -> None
 
 **Example:**
 ```python
-from agent_vault.parsers import create_parser_chain
+from agentic_inquiry.parsers import create_parser_chain
 
 chain = create_parser_chain()
 doc = chain.parse("/path/to/file.py")
@@ -3028,7 +3028,7 @@ storage:
 
 **Example:**
 ```python
-from agent_vault.config import Config
+from agentic_inquiry.config import Config
 
 # Load config with disk persistence enabled
 config = Config.load()

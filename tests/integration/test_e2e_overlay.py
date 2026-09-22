@@ -20,7 +20,7 @@ from httpx import ASGITransport, AsyncClient
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config, StorageConfig
+from agentic_inquiry.config import Config, StorageConfig
 
 
 # ---------------------------------------------------------------------------
@@ -97,7 +97,7 @@ async def test_search_with_local_diff_annotates_modified_file(tmp_path):
 
     config = _make_config(str(tmp_path / "storage"))
 
-    from agent_vault.server.app import create_app
+    from agentic_inquiry.server.app import create_app
 
     app = await create_app(config=config, project_id="test_e2e_annotation")
 
@@ -170,7 +170,7 @@ async def test_branch_scoped_search_routes_to_correct_content(tmp_path):
     """
     config = _make_config(str(tmp_path / "storage"), project_id="test_e2e_branch")
 
-    from agent_vault.server.app import create_app
+    from agentic_inquiry.server.app import create_app
 
     app = await create_app(config=config, project_id="test_e2e_branch")
 
@@ -244,7 +244,7 @@ async def test_large_local_diff_is_truncated_before_annotation(tmp_path):
     """
     config = _make_config(str(tmp_path / "storage"), project_id="test_e2e_trunc")
 
-    from agent_vault.server.app import create_app
+    from agentic_inquiry.server.app import create_app
 
     app = await create_app(config=config, project_id="test_e2e_trunc")
 

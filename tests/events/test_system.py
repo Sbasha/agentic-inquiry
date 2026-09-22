@@ -9,10 +9,10 @@ import pytest_asyncio
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config, EventsConfig, EventStoreConfig, StorageConfig
-from agent_vault.correlation import correlation_context
-from agent_vault.events.models import EventStatus
-from agent_vault.events.system import EventSystem
+from agentic_inquiry.config import Config, EventsConfig, EventStoreConfig, StorageConfig
+from agentic_inquiry.correlation import correlation_context
+from agentic_inquiry.events.models import EventStatus
+from agentic_inquiry.events.system import EventSystem
 from tests.helpers.async_utils import AsyncTestHelper
 
 

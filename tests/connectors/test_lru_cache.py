@@ -15,7 +15,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.connectors.lru_cache import (
+from agentic_inquiry.connectors.lru_cache import (
     CacheStats,
     FileCacheTracker,
     LRUCache,

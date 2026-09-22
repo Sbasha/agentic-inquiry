@@ -17,7 +17,7 @@ from `tests/golden/queries.json`, and exits non-zero on regression.
 
 ## Motivation
 
-The audit (`~/Documents/agent-vault-audit/PLAN.md`) plans 11 clusters of
+The audit (`~/Documents/agentic-inquiry-audit/PLAN.md`) plans 11 clusters of
 deletion across ~25K LOC. The README's "10/10 across keyword, conceptual,
 structural queries" claim isn't a measurement — it's marketing copy.
 Without a numerical floor, every cluster ships on faith that nobody
@@ -49,7 +49,7 @@ CORPUS_SUBDIRS = [
 ```
 
 Mirrored (via copy, not symlink) into a single staging directory at
-`$TMPDIR/agv-golden-bench/corpus/` so the pipeline runs once. The
+`$TMPDIR/ai-golden-bench/corpus/` so the pipeline runs once. The
 implementation discovered that symlinking each subdir made the indexer
 treat the symlink as a single unparseable file; copying is the
 correct shape. Stable across clones; re-pin baseline whenever the
@@ -98,7 +98,7 @@ tests/golden/
 └── conftest.py                 # legacy fixtures, kept for now
 Makefile                        # bench / bench-pin / bench-clean
 scripts/bench/repro_happy_paths.sh   # task 0.3
-$TMPDIR/agv-golden-bench/       # bench artifacts (corpus, index, results)
+$TMPDIR/ai-golden-bench/       # bench artifacts (corpus, index, results)
 ```
 
 ### Modes
@@ -106,18 +106,18 @@ $TMPDIR/agv-golden-bench/       # bench artifacts (corpus, index, results)
 ```
 make bench         # diff against baseline.json, exit 1 on regression
 make bench-pin     # regenerate baseline.json (deliberate, never auto)
-make bench-clean   # rm -rf $TMPDIR/agv-golden-bench
+make bench-clean   # rm -rf $TMPDIR/ai-golden-bench
 ```
 
 `bench.py --json` for CI integration.
 
 ### Isolation
 
-Bench overrides `AGV_STORAGE_ROOT`, `AGV_STORAGE_DEFAULT_PROJECT_ID`,
-`AGV_STORAGE_BACKEND` via env vars so the run can't read or write the
-user's `.agv/` or any project-root `agent-vault.yaml`. All bench
+Bench overrides `AI_STORAGE_ROOT`, `AI_STORAGE_DEFAULT_PROJECT_ID`,
+`AI_STORAGE_BACKEND` via env vars so the run can't read or write the
+user's `.agentic-inquiry/` or any project-root `agentic-inquiry.yaml`. All bench
 artifacts (staged corpus, LanceDB index, last results) live under
-`$TMPDIR/agv-golden-bench/` — outside the repo because the indexer
+`$TMPDIR/ai-golden-bench/` — outside the repo because the indexer
 applies the project's `.gitignore`, and a repo-local `.benchmarks/`
 path matches the gitignore rule and gets silently excluded.
 
@@ -126,7 +126,7 @@ path matches the gitignore rule and gets silently excluded.
 - **Use a checked-in micro-corpus.** Rejected: another fixture to
   maintain, drifts from real query patterns. Indexing the repo
   dogfoods and stays representative.
-- **Use the CLI (`agv search ...`) and parse stdout.** Rejected: harder
+- **Use the CLI (`ai search ...`) and parse stdout.** Rejected: harder
   to extract numbers reliably, slower (process-spawn per query),
   couples the bench to CLI output formatting.
 - **Run on every backend (LanceDB + Postgres + AlloyDB).** Rejected for

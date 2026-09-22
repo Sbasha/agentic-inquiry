@@ -12,14 +12,14 @@ pytestmark = pytest.mark.unit
 from datetime import datetime
 from unittest.mock import MagicMock
 
-from agent_vault.database.schemas import (
+from agentic_inquiry.database.schemas import (
     DOCUMENT_CHUNKS_SCHEMA,
     FieldType,
     LogicalSchema,
     SchemaField,
 )
-from agent_vault.indexing.schema_processor import SchemaProcessor, ValidationError
-from agent_vault.parsers.models import ParserChunk, ParsedDocument
+from agentic_inquiry.indexing.schema_processor import SchemaProcessor, ValidationError
+from agentic_inquiry.parsers.models import ParserChunk, ParsedDocument
 
 
 class TestSchemaProcessorInitialization:

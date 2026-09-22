@@ -6,8 +6,8 @@ pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, patch
 from datetime import datetime
 
-from agent_vault.mcp.tools.search import search_knowledge
-from agent_vault.mcp.models.session import Session
+from agentic_inquiry.mcp.tools.search import search_knowledge
+from agentic_inquiry.mcp.models.session import Session
 
 
 @pytest.fixture
@@ -76,7 +76,7 @@ def mock_fallback_search_empty():
         "source_note": "Results from basic file search (semantic index still building)",
     }
     with patch(
-        "agent_vault.mcp.tools.search.execute_fallback_search",
+        "agentic_inquiry.mcp.tools.search.execute_fallback_search",
         new_callable=AsyncMock,
         return_value=empty_fallback_response
     ):
@@ -96,7 +96,7 @@ def mock_structural_search_empty():
         "source_note": "Results from pattern-based search (ast-grep not available)",
     }
     with patch(
-        "agent_vault.mcp.tools.search.structural_search",
+        "agentic_inquiry.mcp.tools.search.structural_search",
         new_callable=AsyncMock,
         return_value=empty_structural_response
     ):
@@ -590,7 +590,7 @@ def mock_fallback_with_results():
     that returns actual results, allowing us to verify the fallback
     integration path works correctly.
     """
-    from agent_vault.mcp.utils.fallback_search import FallbackResult
+    from agentic_inquiry.mcp.utils.fallback_search import FallbackResult
 
     # Create mock fallback results
     fallback_results = [
@@ -623,7 +623,7 @@ def mock_fallback_with_results():
     }
 
     with patch(
-        "agent_vault.mcp.tools.search.execute_fallback_search",
+        "agentic_inquiry.mcp.tools.search.execute_fallback_search",
         new_callable=AsyncMock,
         return_value=fallback_response
     ):
@@ -692,7 +692,7 @@ async def test_fallback_not_triggered_when_index_ready(mcp_services):
 
     # Mock execute_fallback_search to verify it's NOT called
     with patch(
-        "agent_vault.mcp.tools.search.execute_fallback_search",
+        "agentic_inquiry.mcp.tools.search.execute_fallback_search",
         new_callable=AsyncMock
     ) as mock_fallback:
         result = await search_knowledge(
@@ -751,7 +751,7 @@ def mock_structural_fallback_with_results():
     This fixture provides a configured mock for structural_search
     that returns results for structural queries (containing 'class', 'def', etc).
     """
-    from agent_vault.mcp.utils.fallback_search import FallbackResult
+    from agentic_inquiry.mcp.utils.fallback_search import FallbackResult
 
     structural_results = [
         FallbackResult(
@@ -772,7 +772,7 @@ def mock_structural_fallback_with_results():
     }
 
     with patch(
-        "agent_vault.mcp.tools.search.structural_search",
+        "agentic_inquiry.mcp.tools.search.structural_search",
         new_callable=AsyncMock,
         return_value=structural_response
     ):
@@ -823,7 +823,7 @@ async def test_fallback_verify_was_called_with_correct_params(mcp_services):
     mcp_services["storage"].count_records.return_value = 10
 
     with patch(
-        "agent_vault.mcp.tools.search.execute_fallback_search",
+        "agentic_inquiry.mcp.tools.search.execute_fallback_search",
         new_callable=AsyncMock,
         return_value={"results": [], "source": "python_glob", "source_note": "test"}
     ) as mock_fallback:

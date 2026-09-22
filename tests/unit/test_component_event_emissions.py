@@ -13,13 +13,13 @@ import pytest_asyncio
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config
-from agent_vault.events.system import EventSystem
-from agent_vault.events.models import EventStatus
-from agent_vault.mcp.services.session_manager import SessionManager
-from agent_vault.memory.system import MemorySystem
-from agent_vault.memory.models import MemoryContext
-from agent_vault.mcp.services.context_builder import ContextBuilder
+from agentic_inquiry.config import Config
+from agentic_inquiry.events.system import EventSystem
+from agentic_inquiry.events.models import EventStatus
+from agentic_inquiry.mcp.services.session_manager import SessionManager
+from agentic_inquiry.memory.system import MemorySystem
+from agentic_inquiry.memory.models import MemoryContext
+from agentic_inquiry.mcp.services.context_builder import ContextBuilder
 
 
 @pytest_asyncio.fixture

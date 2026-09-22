@@ -4,14 +4,14 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.embeddings.hashing import HashingEmbedder
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.embeddings.sentence_transformer import SentenceTransformerEmbedder
+from agentic_inquiry.embeddings.hashing import HashingEmbedder
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
 
 
 class TestEmbeddingRegistry(unittest.TestCase):
     def test_default_must_be_explicit(self):
-        from agent_vault.exceptions import StorageError
+        from agentic_inquiry.exceptions import StorageError
         
         registry = EmbeddingRegistry()
 
@@ -49,7 +49,7 @@ class TestEmbeddingRegistry(unittest.TestCase):
 
         # Second configuration should succeed with warning (idempotent behavior)
         # This is expected in test environments
-        with self.assertLogs('agent_vault.embeddings.registry', level=logging.WARNING) as cm:
+        with self.assertLogs('agentic_inquiry.embeddings.registry', level=logging.WARNING) as cm:
             registry.configure_default_embedder(HashingEmbedder())
 
         # Verify warning was logged
@@ -92,7 +92,7 @@ class TestHybridEmbeddings(unittest.TestCase):
 
     def test_configure_hybrid_embeddings_without_default_raises_error(self):
         """Test that configure_hybrid_embeddings raises error without default or explicit dims."""
-        from agent_vault.exceptions import StorageError
+        from agentic_inquiry.exceptions import StorageError
 
         registry = EmbeddingRegistry()
         # No default embedder configured and no explicit ndims

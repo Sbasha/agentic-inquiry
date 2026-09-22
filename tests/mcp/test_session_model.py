@@ -4,7 +4,7 @@ import pytest
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from agent_vault.mcp.models.session import Session, SessionState
+from agentic_inquiry.mcp.models.session import Session, SessionState
 
 pytestmark = pytest.mark.unit
 

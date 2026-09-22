@@ -2,7 +2,7 @@
 
 ## Assumption trio
 
-- **Files touched:** `agent_vault/parsers/implementations/unified_code.py`
+- **Files touched:** `agentic_inquiry/parsers/implementations/unified_code.py`
   (`_extract_call_info`, `_find_containing_definition_key`,
   `_find_containing_definition`, new module-level `_DEFINITION_NODE_TYPES`);
   new test file `tests/parsers/test_calls_extraction_multilang.py`.
@@ -56,5 +56,5 @@ to node types captured as processable `.def` elements (excludes
 
 ## Verification mode
 
-TDD for all three. Gates: `ruff check`, `mypy agent_vault/`,
+TDD for all three. Gates: `ruff check`, `mypy agentic_inquiry/`,
 `pytest tests/parsers/`.

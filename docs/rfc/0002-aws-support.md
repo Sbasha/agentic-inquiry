@@ -11,7 +11,7 @@ related: ["#159", "#168", "#172"]
 
 ## Summary
 
-Make AWS a peer of GCP for Agent-Vault deployments. Split the existing
+Make AWS a peer of GCP for Agentic Inquiry deployments. Split the existing
 single `rds` backend into two distinct backends — `rds` (RDS for
 PostgreSQL, client-side embeddings) and `aurora` (Aurora PostgreSQL,
 server-side embeddings via `aws_ml`) — because the two have materially
@@ -26,10 +26,10 @@ Three things are simultaneously true today:
 
 1. **AWS scaffolding is more complete than the README admits.** The
    unified PostgreSQL provider already routes `type: rds` through
-   `RDSAdapter` (`agent_vault/storage/providers/postgresql/adapter.py:127`).
-   `BackendType` includes `"rds"` (`agent_vault/storage/config.py:33`).
+   `RDSAdapter` (`agentic_inquiry/storage/providers/postgresql/adapter.py:127`).
+   `BackendType` includes `"rds"` (`agentic_inquiry/storage/config.py:33`).
    `BackendPoolManager._build_rds_dsn` handles IAM token auth via boto3
-   (`agent_vault/storage/pool.py:217`). `AWSSetup` (`cli/setup/aws_setup.py`)
+   (`agentic_inquiry/storage/pool.py:217`). `AWSSetup` (`cli/setup/aws_setup.py`)
    walks an interactive wizard. `cli/deploy/aws.py` + `scripts/deploy/aws-deploy.sh`
    bring up RDS + ECR + App Runner. There is even a unit test file:
    `tests/storage/providers/test_rds_vector_provider.py`.
@@ -49,7 +49,7 @@ Three things are simultaneously true today:
    know about.
 
 What gets better if this lands: a customer asking "can we run
-Agent-Vault on AWS?" gets the same on-paper answer as the GCP customer.
+Agentic Inquiry on AWS?" gets the same on-paper answer as the GCP customer.
 Server-side embedding throughput parity — Aurora + Bedrock matches
 AlloyDB + Vertex AI as a sustained-throughput option, and we stop
 shipping a backend whose default config is impossible.
@@ -64,7 +64,7 @@ they cannot actually install.
 
 ### Backends added
 
-Two backend types, declared in `agent_vault/storage/capabilities.py`,
+Two backend types, declared in `agentic_inquiry/storage/capabilities.py`,
 parallel to the existing `cloudsql` and `alloydb`:
 
 | backend | wraps | embedding strategy | mirrors |
@@ -112,7 +112,7 @@ declaration that the *server-side* path is `aurora`, not `rds`.
 |---|---|---|
 | RDS for PostgreSQL + client-side embedding | `rds` | `SentenceTransformerEmbedder` on the indexer, write 384/768-dim vector to `chunk_embeddings.embedding` |
 | RDS for PostgreSQL + Bedrock client-side | `rds` + `BedrockEmbedder` (new) | `boto3.client("bedrock-runtime").invoke_model("amazon.titan-embed-text-v2:0", ...)` from the indexer, write 1024-dim vector |
-| Aurora PostgreSQL + server-side Bedrock | `aurora` | Insert `embedding IS NULL`; pipeline calls `generate_embeddings()`; the helper SQL function (`agv_embed`, already drafted in `RDSAdapter.create_helper_function`) wraps `aws_bedrock.invoke_model_get_embeddings` |
+| Aurora PostgreSQL + server-side Bedrock | `aurora` | Insert `embedding IS NULL`; pipeline calls `generate_embeddings()`; the helper SQL function (`ai_embed`, already drafted in `RDSAdapter.create_helper_function`) wraps `aws_bedrock.invoke_model_get_embeddings` |
 
 The Aurora server-side path uses `aws_bedrock.invoke_model_get_embeddings`,
 not the generic `invoke_model` the current adapter draft uses
@@ -138,7 +138,7 @@ clearly in the docs; don't promise parity we can't keep.
 
 ### Backend types in BackendType literal
 
-`agent_vault/storage/config.py` BackendType literal adds `"aurora"`:
+`agentic_inquiry/storage/config.py` BackendType literal adds `"aurora"`:
 
 ```python
 BackendType = Literal[
@@ -164,9 +164,9 @@ auth, region-format regex — and additionally:
 ### Connection layer
 
 A new `AuroraConnectionManager` lives at
-`agent_vault/storage/providers/aurora/connection.py`, alongside a
+`agentic_inquiry/storage/providers/aurora/connection.py`, alongside a
 slimmed-down `RDSConnectionManager` at
-`agent_vault/storage/providers/rds/connection.py`. Both extract
+`agentic_inquiry/storage/providers/rds/connection.py`. Both extract
 the AWS-specific bits (IAM token generation, SSL configuration, the
 `aws_ml` extension bootstrap on Aurora) from `BackendPoolManager._build_rds_dsn`.
 The connection managers parallel `CloudSQLConnectionManager` and
@@ -212,7 +212,7 @@ This is consistent with #131 (share pool across same-backend roles).
 
 ### Adapter split
 
-`agent_vault/storage/providers/postgresql/adapter.py` today has one
+`agentic_inquiry/storage/providers/postgresql/adapter.py` today has one
 `RDSAdapter` that does Bedrock-via-`aws_ml`. Split into two:
 
 - `RDSAdapter` (renamed in spirit, kept under the same class name to
@@ -220,7 +220,7 @@ This is consistent with #131 (share pool across same-backend roles).
   `get_embedding_sql` raises `NotImplementedError` like
   `DefaultPostgresAdapter`).
 - `AuroraAdapter` (new) — `required_extensions = ["vector", "aws_ml"]`,
-  `get_embedding_sql` returns `agv_embed(...)::vector` over
+  `get_embedding_sql` returns `ai_embed(...)::vector` over
   `aws_bedrock.invoke_model_get_embeddings`, and `create_helper_function`
   installs the SQL helper.
 
@@ -233,7 +233,7 @@ That is a one-line SQL change inside `AuroraAdapter.create_helper_function`.
 
 ### Embedder for the RDS-with-Bedrock path
 
-A new `BedrockEmbedder` in `agent_vault/embeddings/bedrock.py`,
+A new `BedrockEmbedder` in `agentic_inquiry/embeddings/bedrock.py`,
 parallel to `SentenceTransformerEmbedder` and `FastEmbedEmbedder`.
 Wraps `boto3.client("bedrock-runtime").invoke_model` against
 `amazon.titan-embed-text-v2:0`. Honours the existing `Embedder`
@@ -241,13 +241,13 @@ protocol (`embeddings/base.py`).
 
 Wired into the existing config surface (no new keys invented):
 
-- `agent_vault/config.py` — extend `EmbeddingsConfig.default_provider`
+- `agentic_inquiry/config.py` — extend `EmbeddingsConfig.default_provider`
   literal/validator to accept `"bedrock"` alongside the current
   `"sentence_transformer" | "fastembed" | "local" | "none"`.
   Add a sibling `BedrockConfig` dataclass (model_id, region,
   output_dim ∈ {256, 512, 1024}) on `EmbeddingsConfig`,
   paralleling `FastEmbedConfig` / `LocalModelConfig`.
-- `agent_vault/embeddings/factory.py` —
+- `agentic_inquiry/embeddings/factory.py` —
   `configure_embedder_for_backend()` already dispatches on
   `config.embeddings.default_provider` for the `LOCAL` path and
   short-circuits to `NoOpEmbedder` for `SERVER_SIDE`. Add a
@@ -255,7 +255,7 @@ Wired into the existing config surface (no new keys invented):
   `BedrockEmbedder` from `config.embeddings.bedrock`. No call-site
   changes elsewhere; CLI/index/search/serve all flow through the
   factory and pick up the new provider transparently.
-- `agent_vault/storage/capabilities.py` — `RDS_CAPABILITIES`
+- `agentic_inquiry/storage/capabilities.py` — `RDS_CAPABILITIES`
   declares `EmbeddingStrategy.LOCAL` (this RFC), so the factory's
   existing capability-driven branch chooses the configured
   `default_provider`. Aurora declares `SERVER_SIDE` and bypasses
@@ -303,7 +303,7 @@ The unified PostgreSQL provider is the workhorse — most files go
 through untouched, with surgical adapter/dispatch updates called
 out earlier in the RFC:
 
-- `agent_vault/storage/providers/postgresql/` — vector, graph,
+- `agentic_inquiry/storage/providers/postgresql/` — vector, graph,
   events, file_tracker, transaction, schemas, index_config,
   migration, schema_tracker, consistency, maintenance,
   backup_cleanup all unchanged. The exceptions are explicit and
@@ -317,24 +317,24 @@ out earlier in the RFC:
       branches; routing is mechanical.
     - `pool.py` — one `elif config.type == "aurora"` arm that
       delegates to the existing `_create_postgres_pool`.
-- `agent_vault/search/` — hybrid search, RRF reranker,
+- `agentic_inquiry/search/` — hybrid search, RRF reranker,
   normalization, deduplication, IDF-weighted boost. Truly
   unchanged; wire-compatible with any pgvector + tsvector backend.
-- `agent_vault/indexing/pipeline.py` — orchestration. Already
+- `agentic_inquiry/indexing/pipeline.py` — orchestration. Already
   polls `generate_embeddings()` when `caps.needs_embedding_polling`
   is true; the Aurora capability declares `SERVER_SIDE` so the
   same code path runs.
-- `agent_vault/onboard/providers/postgresql/` — onboarding
+- `agentic_inquiry/onboard/providers/postgresql/` — onboarding
   metadata. Aurora and RDS are wire-compatible Postgres; the
   `azure` and `rds` registry entries already prove the pattern.
 
 ### What does *not* change
 
-The MCP server / Claude API path. Agent-Vault's MCP server does not
+The MCP server / Claude API path. Agentic Inquiry's MCP server does not
 itself call Anthropic models — it ships a Claude Code plugin and an
 MCP tool surface. The actual LLM calls happen in the *client* (Claude
 Code, the Anthropic SDK, or whatever else mounts the MCP server). So
-"does agent-vault need a Bedrock LLM client?" is a no in the runtime;
+"does agentic-inquiry need a Bedrock LLM client?" is a no in the runtime;
 it's only relevant for downstream customers who want their Claude Code
 or app-side calls to go through Bedrock. That's outside this RFC's
 scope, but for completeness:
@@ -345,7 +345,7 @@ scope, but for completeness:
   with one Bedrock-specific simplification (automatic prefix matching
   across ~20 content blocks).
 - Customers running Claude Code through Bedrock get prompt caching
-  natively; agent-vault doesn't need to coordinate.
+  natively; agentic-inquiry doesn't need to coordinate.
 
 ### Documentation deliverables
 
@@ -402,13 +402,13 @@ ditching pgvector / Postgres on the AWS path. Rejected because:
   Postgres semantics. Reimplementing them on OpenSearch is a quarter
   of work with no clear win.
 - OpenSearch Serverless does have native vector + BM25 hybrid search.
-  But agent-vault's hybrid search has been *tuned* for the pgvector
+  But agentic-inquiry's hybrid search has been *tuned* for the pgvector
   + tsvector combination (score-aware RRF with k=30, `MIN_VECTOR_SCORE
   = 0.15`, etc — see `AGENTS.md` Search Pipeline section). Throwing
   that away to chase OpenSearch's defaults is a regression on day one.
 - Cost: OpenSearch Serverless prices in OCUs, and small workloads end
   up paying for 2 OCU minimum (~$700/month) vs an `db.t3.medium`
-  Aurora at ~$70/month. Wrong shape for the typical agent-vault
+  Aurora at ~$70/month. Wrong shape for the typical agentic-inquiry
   install.
 - Future: OpenSearch could become a fifth role (`search` alongside
   `vector`/`graph`/`events`/`file_tracker`) for customers who already
@@ -422,7 +422,7 @@ entities. Rejected:
 - DocumentDB has no pgvector and no native vector index. Its vector
   support is via Atlas-style $vectorSearch which is a different query
   shape entirely.
-- Mongo-compatibility is irrelevant — agent-vault's data model is
+- Mongo-compatibility is irrelevant — agentic-inquiry's data model is
   relational + graph, not document.
 - Stated for completeness; this was never a real candidate.
 
@@ -453,19 +453,19 @@ Serverless v2 for read-heavy search instances. Not enforced in code.
 
 A reviewer can call this RFC "implemented" when:
 
-- `agent_vault/storage/capabilities.py` exposes both `RDS_CAPABILITIES`
+- `agentic_inquiry/storage/capabilities.py` exposes both `RDS_CAPABILITIES`
   (LOCAL) and `AURORA_CAPABILITIES` (SERVER_SIDE);
   `get_capabilities_for_backend("aurora")` returns the latter.
-- `agent_vault/storage/config.py` `BackendType` literal includes
+- `agentic_inquiry/storage/config.py` `BackendType` literal includes
   `"aurora"`; `validate_aurora_config` rejects `embedding_strategy:
   local` and defaults the Bedrock model + dim correctly.
-- `agent_vault/storage/providers/postgresql/adapter.py` exposes
+- `agentic_inquiry/storage/providers/postgresql/adapter.py` exposes
   `AuroraAdapter` distinct from `RDSAdapter`; `RDSAdapter` no longer
   declares `aws_ml` as required and no longer emits Bedrock SQL.
-- `agent_vault/storage/providers/aurora/connection.py` and
-  `agent_vault/storage/providers/rds/connection.py` exist, paralleling
+- `agentic_inquiry/storage/providers/aurora/connection.py` and
+  `agentic_inquiry/storage/providers/rds/connection.py` exist, paralleling
   `cloudsql/connection.py` and `alloydb/connection.py`.
-- `agent_vault/embeddings/bedrock.py` exists; selectable via
+- `agentic_inquiry/embeddings/bedrock.py` exists; selectable via
   `embedder.provider: bedrock`.
 - `cli/setup/aws_setup.py` walks RDS *or* Aurora; `aws-deploy.sh` and a
   new `aurora-deploy.sh` cover both targets.
@@ -481,12 +481,12 @@ A reviewer can call this RFC "implemented" when:
 - `docs/backends/rds.md` and `docs/backends/aurora.md` exist; both
   follow the shape of `docs/backends/cloudsql.md`.
 - `pyproject.toml` declares `boto3` as an optional `aws` extra.
-- `grep -rn "aws_ml" agent_vault/storage/providers/postgresql/adapter.py`
+- `grep -rn "aws_ml" agentic_inquiry/storage/providers/postgresql/adapter.py`
   shows `aws_ml` only inside `AuroraAdapter`, never `RDSAdapter`.
 
 ## What we are *not* doing
 
-- Adding a Bedrock LLM client to agent-vault. The MCP server doesn't
+- Adding a Bedrock LLM client to agentic-inquiry. The MCP server doesn't
   call Anthropic models directly; the client (Claude Code, customer
   app) does. Bedrock-based clients work without changes here.
 - OpenSearch backend. See alternative C.
@@ -519,14 +519,14 @@ A reviewer can call this RFC "implemented" when:
 
 ### Repo references
 
-- `agent_vault/storage/capabilities.py` — `EmbeddingStrategy`,
+- `agentic_inquiry/storage/capabilities.py` — `EmbeddingStrategy`,
   `RDS_CAPABILITIES`.
-- `agent_vault/storage/providers/postgresql/adapter.py` — current
+- `agentic_inquiry/storage/providers/postgresql/adapter.py` — current
   `RDSAdapter`.
-- `agent_vault/storage/providers/postgresql/AGENTS.md` — per-variant
+- `agentic_inquiry/storage/providers/postgresql/AGENTS.md` — per-variant
   matrix that this RFC cleans up.
-- `agent_vault/storage/pool.py:217` — current `_build_rds_dsn`.
-- `agent_vault/cli/setup/aws_setup.py`, `aws_utils.py`,
+- `agentic_inquiry/storage/pool.py:217` — current `_build_rds_dsn`.
+- `agentic_inquiry/cli/setup/aws_setup.py`, `aws_utils.py`,
   `cli/deploy/aws.py`, `scripts/deploy/aws-deploy.sh` — current
   scaffolding.
 - Issue #159 (audit cluster — make AWS/Azure first-class).

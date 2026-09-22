@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from agent_vault.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
-from agent_vault.parsers.recognizers.lwc_salesforce import LwcSalesforceRecognizer
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.recognizers.lwc_salesforce import LwcSalesforceRecognizer
 
 pytestmark = pytest.mark.unit
 

@@ -81,13 +81,13 @@ echo ""
 
 # Get list of test instances
 echo -e "${YELLOW}Scanning for test instances...${NC}"
-INSTANCES=$(gcloud sql instances list --project="$PROJECT" --format="csv[no-heading](name,createTime,state)" 2>/dev/null | grep "^agv-test-" || echo "")
+INSTANCES=$(gcloud sql instances list --project="$PROJECT" --format="csv[no-heading](name,createTime,state)" 2>/dev/null | grep "^ai-test-" || echo "")
 
 if [[ -z "$INSTANCES" ]]; then
     echo -e "${GREEN}No test instances found.${NC}"
 
     # Also check for orphaned env files
-    ENV_DIR=".agv/test"
+    ENV_DIR=".agentic-inquiry/test"
     ENV_FILES=$(ls -1 "${ENV_DIR}"/gcp-test-*.env .gcp-test-*.env 2>/dev/null || echo "")
     if [[ -n "$ENV_FILES" ]]; then
         echo ""
@@ -130,7 +130,7 @@ parse_date() {
 
 while IFS=',' read -r name created state; do
     # Extract test ID from instance name
-    test_id="${name#agv-test-}"
+    test_id="${name#ai-test-}"
 
     # Calculate age in hours
     created_ts=$(parse_date "$created")
@@ -161,7 +161,7 @@ echo "----------------------------------------"
 # Also list local env files
 echo ""
 echo -e "${CYAN}Local Environment Files:${NC}"
-ENV_DIR=".agv/test"
+ENV_DIR=".agentic-inquiry/test"
 if ls "${ENV_DIR}"/gcp-test-*.env .gcp-test-*.env 1>/dev/null 2>&1; then
     ls -la "${ENV_DIR}"/gcp-test-*.env .gcp-test-*.env 2>/dev/null
 else
@@ -206,14 +206,14 @@ fi
 # Perform deletion
 for instance in "${INSTANCES_TO_DELETE[@]}"; do
     echo -e "${YELLOW}Deleting ${instance}...${NC}"
-    test_id="${instance#agv-test-}"
+    test_id="${instance#ai-test-}"
 
     # Delete instance
     gcloud sql instances delete "$instance" --project="$PROJECT" --quiet
     echo -e "${GREEN}  ✓ Instance deleted${NC}"
 
     # Delete env file if exists
-    env_file=".agv/test/gcp-test-${test_id}.env"
+    env_file=".agentic-inquiry/test/gcp-test-${test_id}.env"
     legacy_env_file=".gcp-test-${test_id}.env"
     if [[ -f "$env_file" ]]; then
         rm -f "$env_file"

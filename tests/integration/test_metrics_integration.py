@@ -3,7 +3,7 @@
 Verifies that metrics are correctly tracked and reported across the system.
 """
 
-from agent_vault.metrics import (
+from agentic_inquiry.metrics import (
     get_metrics_tracker,
     reset_metrics,
 )
@@ -46,7 +46,7 @@ class TestMetricsDocumentation:
     
     def test_search_service_has_metrics_method(self):
         """Verify SearchService has get_metrics method."""
-        from agent_vault.search.service import SearchService
+        from agentic_inquiry.search.service import SearchService
         
         # Verify the method exists
         assert hasattr(SearchService, 'get_metrics')
@@ -54,7 +54,7 @@ class TestMetricsDocumentation:
     
     def test_lancedb_manager_has_metrics_method(self):
         """Verify LanceDBManager has get_metrics method."""
-        from agent_vault.database.lancedb_manager import LanceDBManager
+        from agentic_inquiry.database.lancedb_manager import LanceDBManager
         
         # Verify the method exists
         assert hasattr(LanceDBManager, 'get_metrics')
@@ -62,7 +62,7 @@ class TestMetricsDocumentation:
     
     def test_relationship_resolver_has_metrics(self):
         """Verify RelationshipResolver has metrics tracking."""
-        from agent_vault.indexing.relationship_resolver import RelationshipResolver
+        from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
         
         # Verify the methods exist
         assert hasattr(RelationshipResolver, 'cache_hit_rate')
@@ -70,7 +70,7 @@ class TestMetricsDocumentation:
     
     def test_document_cache_has_metrics(self):
         """Verify DocumentCache has metrics tracking."""
-        from agent_vault.cache.document_cache import DocumentCache
+        from agentic_inquiry.cache.document_cache import DocumentCache
         
         # Verify the method exists
         assert hasattr(DocumentCache, 'stats')
@@ -81,7 +81,7 @@ class TestMetricsDocumentation:
 # more complex async fixture setup. The core metrics functionality is
 # thoroughly tested in test_metrics.py, and this file documents the integration
 # points. For actual usage verification, see:
-# - agent_vault/search/service.py (SearchService methods use track_latency)
-# - agent_vault/database/lancedb_manager.py (LanceDBManager methods use track_latency)
-# - agent_vault/indexing/relationship_resolver.py (tracks resolution stats)
-# - agent_vault/cache/document_cache.py (tracks cache hits/misses)
+# - agentic_inquiry/search/service.py (SearchService methods use track_latency)
+# - agentic_inquiry/database/lancedb_manager.py (LanceDBManager methods use track_latency)
+# - agentic_inquiry/indexing/relationship_resolver.py (tracks resolution stats)
+# - agentic_inquiry/cache/document_cache.py (tracks cache hits/misses)

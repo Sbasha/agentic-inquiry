@@ -61,7 +61,7 @@ def mock_config():
 @pytest.fixture
 def search_service(mock_storage_facade, mock_config):
     """Create a SearchService instance for testing."""
-    from agent_vault.search.service import SearchService
+    from agentic_inquiry.search.service import SearchService
 
     return SearchService(
         storage=mock_storage_facade,
@@ -307,7 +307,7 @@ class TestConcurrentReadWriteScenarios:
         """Test that concurrent cache access doesn't cause corruption."""
         # Note: SearchService doesn't have public cache access,
         # but we test the deduplicator which uses internal state
-        from agent_vault.search.deduplicator import SearchDeduplicator
+        from agentic_inquiry.search.deduplicator import SearchDeduplicator
 
         deduplicator = SearchDeduplicator(max_results_per_file=3, min_diversity_ratio=0.3)
 

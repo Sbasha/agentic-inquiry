@@ -8,8 +8,8 @@ from pathlib import Path
 from unittest.mock import AsyncMock, patch
 
 
-from agent_vault.onboard.models import OnboardRun
-from agent_vault.onboard.staleness import (
+from agentic_inquiry.onboard.models import OnboardRun
+from agentic_inquiry.onboard.staleness import (
     check_onboard_staleness,
     _count_changed_files,
     _count_commits_since,
@@ -51,8 +51,8 @@ class TestStalenessCheck:
         assert result.is_stale is True
         assert result.reason == "no_onboard"
 
-    @patch("agent_vault.onboard.staleness._count_changed_files", return_value=0)
-    @patch("agent_vault.onboard.staleness._count_commits_since", return_value=0)
+    @patch("agentic_inquiry.onboard.staleness._count_changed_files", return_value=0)
+    @patch("agentic_inquiry.onboard.staleness._count_commits_since", return_value=0)
     async def test_fresh_onboard_not_stale(
         self, mock_commits: AsyncMock, mock_files: AsyncMock
     ) -> None:
@@ -66,8 +66,8 @@ class TestStalenessCheck:
         assert result.is_stale is False
         assert result.days_since_onboard == 1
 
-    @patch("agent_vault.onboard.staleness._count_changed_files", return_value=0)
-    @patch("agent_vault.onboard.staleness._count_commits_since", return_value=0)
+    @patch("agentic_inquiry.onboard.staleness._count_changed_files", return_value=0)
+    @patch("agentic_inquiry.onboard.staleness._count_commits_since", return_value=0)
     async def test_old_onboard_is_stale(
         self, mock_commits: AsyncMock, mock_files: AsyncMock
     ) -> None:
@@ -81,8 +81,8 @@ class TestStalenessCheck:
         assert result.is_stale is True
         assert result.reason == "days_elapsed"
 
-    @patch("agent_vault.onboard.staleness._count_changed_files", return_value=50)
-    @patch("agent_vault.onboard.staleness._count_commits_since", return_value=2)
+    @patch("agentic_inquiry.onboard.staleness._count_changed_files", return_value=50)
+    @patch("agentic_inquiry.onboard.staleness._count_commits_since", return_value=2)
     async def test_many_file_changes_is_stale(
         self, mock_commits: AsyncMock, mock_files: AsyncMock
     ) -> None:
@@ -97,8 +97,8 @@ class TestStalenessCheck:
         assert result.reason == "file_changes"
         assert result.files_changed == 50
 
-    @patch("agent_vault.onboard.staleness._count_changed_files", return_value=0)
-    @patch("agent_vault.onboard.staleness._count_commits_since", return_value=20)
+    @patch("agentic_inquiry.onboard.staleness._count_changed_files", return_value=0)
+    @patch("agentic_inquiry.onboard.staleness._count_commits_since", return_value=20)
     async def test_many_commits_is_stale(
         self, mock_commits: AsyncMock, mock_files: AsyncMock
     ) -> None:
@@ -112,8 +112,8 @@ class TestStalenessCheck:
         assert result.is_stale is True
         assert result.reason == "commits"
 
-    @patch("agent_vault.onboard.staleness._count_changed_files", return_value=0)
-    @patch("agent_vault.onboard.staleness._count_commits_since", return_value=0)
+    @patch("agentic_inquiry.onboard.staleness._count_changed_files", return_value=0)
+    @patch("agentic_inquiry.onboard.staleness._count_commits_since", return_value=0)
     async def test_no_commit_sha_skips_git_checks(
         self, mock_commits: AsyncMock, mock_files: AsyncMock
     ) -> None:
@@ -139,7 +139,7 @@ class TestStalenessCheck:
         )
 
         assert "No onboard documentation" in result.message
-        assert "/agv:onboard" in result.message
+        assert "/ai:onboard" in result.message
 
 
 class TestGitHelpers:

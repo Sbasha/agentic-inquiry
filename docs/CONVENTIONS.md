@@ -1,6 +1,6 @@
 # Repository Conventions
 
-This document is the single source of truth for **how we work in Agent-Vault**.
+This document is the single source of truth for **how we work in Agentic Inquiry**.
 It exists so that contributors — human and agent — can answer "where does this
 information go?" and "how do I propose a change?" without guessing.
 
@@ -82,7 +82,7 @@ never reused.
 **Template:** [`docs/_templates/adr.md`](_templates/adr.md). Run the
 [`new-adr`](../.claude/skills/new-adr/SKILL.md) skill to scaffold one.
 
-Agent-Vault's existing ADRs live in [`docs/adr/`](adr/) under the
+Agentic Inquiry's existing ADRs live in [`docs/adr/`](adr/) under the
 4-digit form (`0001-protocol-based-storage.md`,
 `0002-storage-facade-pattern.md`,
 `0003-filter-ast-consolidation.md`). New ADRs continue in the same
@@ -169,7 +169,7 @@ separate commits when the change is non-trivial.
 
 The typical mix follows the test pyramid — roughly 80% fast unit /
 construction tests, 15% integration, 5% end-to-end — a target shape,
-not a quota. For Agent-Vault, storage-layer changes must be verified
+not a quota. For Agentic Inquiry, storage-layer changes must be verified
 against a real database (LanceDB on disk, PostgreSQL via the harness
 the suite already uses); do not mock the database.
 
@@ -182,7 +182,7 @@ The *living* layer. Each directory serves a different audience.
 ### 5a. `docs/architecture/` — for contributors
 
 How the code is *currently* organized. Not why (ADRs); not what we want
-(RFCs); what is. Agent-Vault already has `architecture/overview.md`
+(RFCs); what is. Agentic Inquiry already has `architecture/overview.md`
 plus per-subsystem files (`search.md`, `indexing.md`,
 `storage-adapters.md`, etc.). One file per non-trivial subsystem; link
 to the ADR or RFC that explains *why*.
@@ -207,7 +207,7 @@ subdirectory:
 
 Each piece belongs in exactly one bucket. When a tutorial wants to
 explain *why*, link out to an explanation page; when a how-to wants
-every option, link out to reference. Agent-Vault's current backend,
+every option, link out to reference. Agentic Inquiry's current backend,
 storage-ops, MCP, and customization docs live under sibling
 directories of `docs/` (`backends/`, `storage/`, `mcp/`,
 `customization/`); migration into `guides/` is incremental — when a

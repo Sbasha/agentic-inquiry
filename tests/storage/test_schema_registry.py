@@ -17,7 +17,7 @@ import pytest
 from hypothesis import assume, given, settings, HealthCheck
 from hypothesis import strategies as st
 
-from agent_vault.storage.schema_registry import (
+from agentic_inquiry.storage.schema_registry import (
     SCHEMA_REGISTRY,
     SCHEMAS_DIR,
     clear_cache,
@@ -239,7 +239,7 @@ class TestSchemaValidation:
 
         config = {
             "storage": {
-                "root": "./.agv",
+                "root": "./.agentic-inquiry",
                 "lancedb": {"path": "lancedb"},
                 "file_tracker": {"path": "file_tracker.db"},
                 "document_cache": {"enabled": False, "path": "cache"},

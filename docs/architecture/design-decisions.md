@@ -9,7 +9,7 @@ last_updated: 2025-10-28
 
 # Design Decisions
 
-This document explains the key architectural decisions made in Agent-Vault, the rationale behind them, and the trade-offs considered.
+This document explains the key architectural decisions made in Agentic Inquiry, the rationale behind them, and the trade-offs considered.
 
 ## Parser System
 
@@ -774,4 +774,4 @@ If you're considering architectural changes:
 
 ## Conclusion
 
-Agent-Vault's architecture reflects careful consideration of trade-offs between flexibility, performance, and usability. The modular design enables extension and customization while maintaining a clean, understandable structure. As the project evolves, these decisions will be revisited and refined based on user feedback and changing requirements.
+Agentic Inquiry's architecture reflects careful consideration of trade-offs between flexibility, performance, and usability. The modular design enables extension and customization while maintaining a clean, understandable structure. As the project evolves, these decisions will be revisited and refined based on user feedback and changing requirements.

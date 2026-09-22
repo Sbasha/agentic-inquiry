@@ -32,11 +32,11 @@ async def run(
     run_id: str,
     output_dir: Path,
 ) -> Dict[str, Any]:
-    from agent_vault.mcp.tools.session import get_session
-    from agent_vault.mcp.tools.search import search_knowledge
-    from agent_vault.mcp.tools.memory import save_memory, recall_memories
-    from agent_vault.mcp.tools.info import get_server_info, get_project_info
-    from agent_vault.mcp.tools.context import build_context
+    from agentic_inquiry.mcp.tools.session import get_session
+    from agentic_inquiry.mcp.tools.search import search_knowledge
+    from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
+    from agentic_inquiry.mcp.tools.info import get_server_info, get_project_info
+    from agentic_inquiry.mcp.tools.context import build_context
 
     results: Dict[str, Any] = {}
     issues: list = []

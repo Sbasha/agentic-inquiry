@@ -12,13 +12,13 @@ pytestmark = pytest.mark.unit
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.mcp.models.session import Session
-from agent_vault.mcp.services.persistence import (
+from agentic_inquiry.mcp.models.session import Session
+from agentic_inquiry.mcp.services.persistence import (
     SessionStorageProtocol,
     InMemorySessionStorage,
     LanceDBSessionStorage,
 )
-from agent_vault.mcp.services.persistence.protocol import StorageError
+from agentic_inquiry.mcp.services.persistence.protocol import StorageError
 
 
 # =============================================================================
@@ -545,8 +545,8 @@ class TestSessionManagerIntegration:
     @pytest.mark.asyncio
     async def test_session_manager_with_memory_storage(self, tmp_path):
         """SessionManager works with InMemorySessionStorage."""
-        from agent_vault.config import Config, StorageConfig
-        from agent_vault.mcp.services.session_manager import SessionManager
+        from agentic_inquiry.config import Config, StorageConfig
+        from agentic_inquiry.mcp.services.session_manager import SessionManager
         from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
         config = Config()
@@ -585,8 +585,8 @@ class TestSessionManagerIntegration:
     @pytest.mark.asyncio
     async def test_session_manager_uses_default_storage(self, tmp_path):
         """SessionManager creates LanceDBSessionStorage by default."""
-        from agent_vault.config import Config, StorageConfig
-        from agent_vault.mcp.services.session_manager import SessionManager
+        from agentic_inquiry.config import Config, StorageConfig
+        from agentic_inquiry.mcp.services.session_manager import SessionManager
         from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
         config = Config()

@@ -7,8 +7,8 @@ This module tests the three critical bug fixes:
 """
 import pytest
 
-from agent_vault.indexing.relationship_resolver import RelationshipResolver
-from agent_vault.indexing.symbol_registry import SymbolRegistry
+from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
+from agentic_inquiry.indexing.symbol_registry import SymbolRegistry
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -192,13 +192,13 @@ async def test_lancedb_manager_async_table_creation_with_data():
 
 def test_env_var_validation_valid_variables(monkeypatch, tmp_path):
     """Test that valid environment variables are accepted and applied."""
-    from agent_vault.config import Config
+    from agentic_inquiry.config import Config
     
     # Create a temporary config file with all required sections
     config_file = tmp_path / "mock_config.yaml"
     config_file.write_text("""
 storage:
-  root: ./.agv
+  root: ./.agentic-inquiry
   default_project_id: test_project
   lancedb:
     path: lancedb
@@ -225,10 +225,10 @@ parsers:
 """)
     
     # Set valid environment variables
-    monkeypatch.setenv("AGV_STORAGE_ROOT", "./custom_data")
-    monkeypatch.setenv("AGV_STORAGE_DEFAULT_PROJECT_ID", "custom_project")
-    monkeypatch.setenv("AGV_CACHE_DOCUMENT_CACHE_MAX_SIZE", "5000")
-    monkeypatch.setenv("AGV_SEARCH_DEFAULT_LIMIT", "25")
+    monkeypatch.setenv("AI_STORAGE_ROOT", "./custom_data")
+    monkeypatch.setenv("AI_STORAGE_DEFAULT_PROJECT_ID", "custom_project")
+    monkeypatch.setenv("AI_CACHE_DOCUMENT_CACHE_MAX_SIZE", "5000")
+    monkeypatch.setenv("AI_SEARCH_DEFAULT_LIMIT", "25")
     
     # Load config
     config = Config.load(str(config_file))
@@ -248,13 +248,13 @@ def test_env_var_validation_typo_detection(monkeypatch, tmp_path, caplog):
     This could be enhanced in the future with fuzzy matching.
     """
     import logging
-    from agent_vault.config import Config
+    from agentic_inquiry.config import Config
 
     # Create a temporary config file with all required sections
     config_file = tmp_path / "mock_config.yaml"
     config_file.write_text("""
 storage:
-  root: ./.agv
+  root: ./.agentic-inquiry
   lancedb:
     path: lancedb
   file_tracker:
@@ -282,8 +282,8 @@ parsers:
     # Set environment variables with typos
     # NOTE: Option-level typos (DEFAUT_PROJECT_ID) are silently ignored
     # Only section-level typos (STORAG, DOCUMNT) are detected
-    monkeypatch.setenv("AGV_STORAG_ROOT", "./typo_data")  # typo: STORAG instead of STORAGE
-    monkeypatch.setenv("AGV_DATABSE_PATH", "./db")  # typo: DATABSE instead of DATABASE (not valid anyway)
+    monkeypatch.setenv("AI_STORAG_ROOT", "./typo_data")  # typo: STORAG instead of STORAGE
+    monkeypatch.setenv("AI_DATABSE_PATH", "./db")  # typo: DATABSE instead of DATABASE (not valid anyway)
 
     # Load config with logging
     with caplog.at_level(logging.WARNING):
@@ -293,7 +293,7 @@ parsers:
     warning_messages = [record.message for record in caplog.records if record.levelname == "WARNING"]
 
     # Should have warnings about invalid section names
-    assert any("AGV_STORAG_ROOT" in msg for msg in warning_messages)
+    assert any("AI_STORAG_ROOT" in msg for msg in warning_messages)
 
     # Warning should list valid sections
     assert any("storage" in msg and "cache" in msg for msg in warning_messages)
@@ -302,13 +302,13 @@ parsers:
 def test_env_var_validation_invalid_section(monkeypatch, tmp_path, caplog):
     """Test that invalid top-level sections are detected."""
     import logging
-    from agent_vault.config import Config
+    from agentic_inquiry.config import Config
     
     # Create a temporary config file with all required sections
     config_file = tmp_path / "mock_config.yaml"
     config_file.write_text("""
 storage:
-  root: ./.agv
+  root: ./.agentic-inquiry
   lancedb:
     path: lancedb
   file_tracker:
@@ -334,8 +334,8 @@ parsers:
 """)
     
     # Set environment variables with invalid sections
-    monkeypatch.setenv("AGV_INVALID_SECTION_KEY", "value")
-    monkeypatch.setenv("AGV_DATABASE_PATH", "./db")  # DATABASE is not a valid section
+    monkeypatch.setenv("AI_INVALID_SECTION_KEY", "value")
+    monkeypatch.setenv("AI_DATABASE_PATH", "./db")  # DATABASE is not a valid section
     
     # Load config with logging
     with caplog.at_level(logging.WARNING):
@@ -359,13 +359,13 @@ def test_env_var_validation_warning_messages(monkeypatch, tmp_path, caplog):
     Option-level typos are silently ignored.
     """
     import logging
-    from agent_vault.config import Config
+    from agentic_inquiry.config import Config
 
     # Create a temporary config file with all required sections
     config_file = tmp_path / "mock_config.yaml"
     config_file.write_text("""
 storage:
-  root: ./.agv
+  root: ./.agentic-inquiry
   lancedb:
     path: lancedb
   file_tracker:
@@ -391,7 +391,7 @@ parsers:
 """)
 
     # Set an environment variable with a section-level typo
-    monkeypatch.setenv("AGV_STORAG_ROOT", "./test")  # typo: STORAG instead of STORAGE
+    monkeypatch.setenv("AI_STORAG_ROOT", "./test")  # typo: STORAG instead of STORAGE
 
     # Load config with logging
     with caplog.at_level(logging.WARNING):
@@ -401,8 +401,8 @@ parsers:
     warning_messages = [record.message for record in caplog.records if record.levelname == "WARNING"]
 
     # Should have a clear warning about the section typo
-    typo_warnings = [msg for msg in warning_messages if "AGV_STORAG_ROOT" in msg]
-    assert len(typo_warnings) > 0, f"Expected warning about AGV_STORAG_ROOT, got: {warning_messages}"
+    typo_warnings = [msg for msg in warning_messages if "AI_STORAG_ROOT" in msg]
+    assert len(typo_warnings) > 0, f"Expected warning about AI_STORAG_ROOT, got: {warning_messages}"
 
     # Warning should list valid sections as suggestions
     assert any("storage" in msg for msg in typo_warnings), "Warning should list 'storage' as valid section"

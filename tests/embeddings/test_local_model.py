@@ -14,7 +14,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 import pytest_asyncio
 
-from agent_vault.embeddings.local_model import (
+from agentic_inquiry.embeddings.local_model import (
     LocalModelEmbedder,
     ModelLoader,
     ModelMetadata,
@@ -288,7 +288,7 @@ class TestModelLoader:
     @pytest.fixture
     def model_loader(self, workspace_root) -> "ModelLoader":
         """Provide ModelLoader instance for testing."""
-        from agent_vault.embeddings.local_model import ModelLoader
+        from agentic_inquiry.embeddings.local_model import ModelLoader
         workspace_root.mkdir(parents=True, exist_ok=True)
         return ModelLoader(workspace_root)
     
@@ -346,7 +346,7 @@ class TestModelLoader:
     
     def test_model_loader_initialization(self, workspace_root):
         """Test ModelLoader initialization."""
-        from agent_vault.embeddings.local_model import ModelLoader
+        from agentic_inquiry.embeddings.local_model import ModelLoader
         
         loader = ModelLoader(workspace_root)
         
@@ -471,7 +471,7 @@ class TestModelLoader:
             pass
         
         # Now manually add to cache to test cache retrieval
-        from agent_vault.embeddings.local_model import ModelMetadata
+        from agentic_inquiry.embeddings.local_model import ModelMetadata
         fake_model = "fake_model"
         fake_tokenizer = "fake_tokenizer"
         fake_metadata = ModelMetadata(
@@ -900,7 +900,7 @@ class TestLocalModelEmbedderIntegration:
     
     def test_embedder_with_registry(self, embedder_with_mocks):
         """Test LocalModelEmbedder registration with EmbeddingRegistry."""
-        from agent_vault.embeddings.registry import EmbeddingRegistry
+        from agentic_inquiry.embeddings.registry import EmbeddingRegistry
         
         registry = EmbeddingRegistry()
         registry.configure_default_embedder(embedder_with_mocks)
@@ -913,8 +913,8 @@ class TestLocalModelEmbedderIntegration:
     
     def test_embedder_with_per_table_configuration(self, embedder_with_mocks, tmp_path):
         """Test per-table embedder configuration."""
-        from agent_vault.embeddings.registry import EmbeddingRegistry
-        from agent_vault.embeddings.hashing import HashingEmbedder
+        from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+        from agentic_inquiry.embeddings.hashing import HashingEmbedder
         
         registry = EmbeddingRegistry()
         

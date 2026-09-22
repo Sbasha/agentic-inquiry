@@ -17,7 +17,7 @@ import pytest
 
 pytestmark = pytest.mark.asyncio
 
-from agent_vault.database.filters import and_, eq, ilike, is_in, not_in, or_
+from agentic_inquiry.database.filters import and_, eq, ilike, is_in, not_in, or_
 
 
 @pytest.fixture

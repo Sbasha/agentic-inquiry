@@ -8,7 +8,7 @@ pytestmark = pytest.mark.unit
 
 import asyncio
 
-from agent_vault.memory.context import ContextManager
+from agentic_inquiry.memory.context import ContextManager
 from tests.helpers.async_utils import AsyncTestHelper
 
 

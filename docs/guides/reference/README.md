@@ -12,8 +12,8 @@ query semantics, result contract, schema reference).
 
 **First-fill target.** Move [`../../api-reference/api.md`](../../api-reference/api.md)
 to `reference/api.md` the next time it is substantively updated, and
-add a `reference/cli.md` for the `agv` CLI (currently undocumented
-outside `agent_vault/cli/`).
+add a `reference/cli.md` for the `ai` CLI (currently undocumented
+outside `agentic_inquiry/cli/`).
 
 See [`../../CONVENTIONS.md § 5c`](../../CONVENTIONS.md#5c-docsguides--for-users).
 

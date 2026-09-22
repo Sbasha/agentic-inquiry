@@ -1,19 +1,19 @@
-# Agent-Vault
+# Agentic Inquiry
 
 **Semantic code search and codebase intelligence for Claude Code.**
 
-Agent-Vault gives AI coding assistants deep understanding of your codebase. It parses source code and documentation, builds a searchable knowledge graph of entities and relationships, and exposes everything through slash commands in Claude Code. Instead of relying on grep and file reads, your AI assistant can semantically search across hundreds of thousands of code chunks, trace data lineage, assess change impact, and recall project context across sessions.
+Agentic Inquiry gives AI coding assistants deep understanding of your codebase. It parses source code and documentation, builds a searchable knowledge graph of entities and relationships, and exposes everything through slash commands in Claude Code. Instead of relying on grep and file reads, your AI assistant can semantically search across hundreds of thousands of code chunks, trace data lineage, assess change impact, and recall project context across sessions.
 
 ```
-/agv:search "how does authentication work"    # Semantic search across code + docs
-/agv:onboard /path/to/project                 # AI-powered codebase onboarding
-/agv:entity UserService                       # Understand any code entity
-/agv:impact handleLogin                       # What breaks if I change this?
+/ai:search "how does authentication work"    # Semantic search across code + docs
+/ai:onboard /path/to/project                 # AI-powered codebase onboarding
+/ai:entity UserService                       # Understand any code entity
+/ai:impact handleLogin                       # What breaks if I change this?
 ```
 
 ---
 
-## Why Agent-Vault?
+## Why Agentic Inquiry?
 
 Standard AI code assistants search your codebase by pattern matching — grep, file globs, reading files one at a time. This breaks down on large codebases:
 
@@ -21,7 +21,7 @@ Standard AI code assistants search your codebase by pattern matching — grep, f
 - **Context windows overflow.** Reading every file isn't feasible at 16K+ files.
 - **No memory between sessions.** Every conversation starts from scratch.
 
-Agent-Vault solves this by building a persistent, searchable index of your codebase:
+Agentic Inquiry solves this by building a persistent, searchable index of your codebase:
 
 | Capability | What You Get |
 |------------|-------------|
@@ -46,41 +46,41 @@ Agent-Vault solves this by building a persistent, searchable index of your codeb
 ### 1. Clone and Install
 
 ```bash
-git clone https://github.com/sbasha/agent-vault.git
-cd agent-vault
+git clone https://github.com/sbasha/agentic-inquiry.git
+cd agentic-inquiry
 uv sync                 # set up the project environment
-uv tool install .       # install the `agv` command globally, on your PATH
+uv tool install .       # install the `ai` command globally, on your PATH
 ```
 
-`uv tool install .` puts a single `agv` command on your PATH so the plugin
-skills can run it from any project. If you already installed `agv` earlier,
+`uv tool install .` puts a single `ai` command on your PATH so the plugin
+skills can run it from any project. If you already installed `ai` earlier,
 run `uv tool install . --reinstall` so PATH picks up the current env-file
 loader. If uv reports that its tool directory isn't on your PATH, run
 `uv tool update-shell` once and restart your shell. Installing the command
-does **not** turn Agent-Vault on anywhere — the `/agv:*` skills and hooks
+does **not** turn Agentic Inquiry on anywhere — the `/ai:*` skills and hooks
 only activate in projects where you enable the plugin (next step).
 
 On macOS, two embedding processes using Metal/MPS at once can abort. If
-that happens, uncomment `AGV_EMBEDDING_DEVICE=cpu` in
-`.agv/envs/<name>/.env`.
+that happens, uncomment `AI_EMBEDDING_DEVICE=cpu` in
+`.agentic-inquiry/envs/<name>/.env`.
 
 ### 2. Enable the Plugins
 
-Add Agent-Vault to `.claude/settings.json` **in the project you want to analyze** (not in the Agent-Vault repo itself). The `path` should point to where you cloned the repo:
+Add Agentic Inquiry to `.claude/settings.json` **in the project you want to analyze** (not in the Agentic Inquiry repo itself). The `path` should point to where you cloned the repo:
 
 ```json
 {
   "extraKnownMarketplaces": {
-    "agent-vault": {
+    "agentic-inquiry": {
       "source": {
         "source": "directory",
-        "path": "/path/to/agent-vault/extensions/claude"
+        "path": "/path/to/agentic-inquiry/extensions/claude"
       }
     }
   },
   "enabledPlugins": {
-    "agv@agent-vault": true,
-    "agv-dev@agent-vault": true
+    "ai@agentic-inquiry": true,
+    "ai-dev@agentic-inquiry": true
   }
 }
 ```
@@ -94,14 +94,14 @@ point back to the same `.claude/` skill and agent tree.
 Start Claude Code in your target project and run:
 
 ```
-/agv:setup
+/ai:setup
 ```
 
 This walks you through choosing a storage backend. For most users, **LanceDB** (the default) works out of the box with zero configuration. For teams or large codebases, PostgreSQL or AlloyDB provide better scalability.
 
 | Backend | Best For | Setup |
 |---------|----------|-------|
-| **LanceDB** | Local development, solo use | Zero config — files stored in `.agv/` |
+| **LanceDB** | Local development, solo use | Zero config — files stored in `.agentic-inquiry/` |
 | **PostgreSQL** | Self-hosted or GCP production | Any PostgreSQL-compatible database with pgvector. AlloyDB adds server-side embedding at ~400/sec |
 
 See [Storage Backends](#storage-backends) below for full details on all four backends.
@@ -109,7 +109,7 @@ See [Storage Backends](#storage-backends) below for full details on all four bac
 ### 4. Index Your Codebase
 
 ```
-/agv:index /path/to/your/project
+/ai:index /path/to/your/project
 ```
 
 This parses all source files (10+ languages via [tree-sitter](https://tree-sitter.github.io/tree-sitter/) AST parsing) and documents (DOCX, PDF, DOC), extracts entities and relationships, generates embeddings, and stores everything in your chosen backend. Indexing speed depends on backend — LanceDB runs locally, AlloyDB can index 16K files in ~17 minutes with server-side embedding.
@@ -117,9 +117,9 @@ This parses all source files (10+ languages via [tree-sitter](https://tree-sitte
 ### 5. Start Searching
 
 ```
-/agv:search "database connection pooling"
-/agv:entity ConnectionPool
-/agv:status
+/ai:search "database connection pooling"
+/ai:entity ConnectionPool
+/ai:status
 ```
 
 You're set. Everything below is reference and advanced usage.
@@ -133,9 +133,9 @@ You're set. Everything below is reference and advanced usage.
 Semantic search finds code by meaning, not just keywords:
 
 ```
-/agv:search "how are users authenticated"     # Conceptual query
-/agv:search "Spring @Transactional usage"      # Framework-specific
-/agv:search "error handling in payment flow"   # Cross-cutting concern
+/ai:search "how are users authenticated"     # Conceptual query
+/ai:search "Spring @Transactional usage"      # Framework-specific
+/ai:search "error handling in payment flow"   # Cross-cutting concern
 ```
 
 Search combines vector similarity (understands meaning) with full-text search (catches exact terms), then applies IDF-weighted reranking to ensure rare, distinctive terms in your query dominate the results.
@@ -145,8 +145,8 @@ Search combines vector similarity (understands meaning) with full-text search (c
 Understand any code entity — its purpose, who calls it, what it depends on:
 
 ```
-/agv:entity UserService              # What does this class do?
-/agv:entity handleLogin              # Function analysis with callers
+/ai:entity UserService              # What does this class do?
+/ai:entity handleLogin              # Function analysis with callers
 ```
 
 ### Impact Analysis
@@ -154,8 +154,8 @@ Understand any code entity — its purpose, who calls it, what it depends on:
 Before changing code, understand the blast radius:
 
 ```
-/agv:impact handleLogin              # What files/entities are affected?
-/agv:impact DatabaseConfig           # Config change ripple effects
+/ai:impact handleLogin              # What files/entities are affected?
+/ai:impact DatabaseConfig           # Config change ripple effects
 ```
 
 ### Data Lineage
@@ -163,8 +163,8 @@ Before changing code, understand the blast radius:
 Trace how data flows through the system:
 
 ```
-/agv:lineage userId                  # Follow userId from UI to database
-/agv:lineage paymentAmount           # Track payment data through services
+/ai:lineage userId                  # Follow userId from UI to database
+/ai:lineage paymentAmount           # Track payment data through services
 ```
 
 ### Architecture Discovery
@@ -172,8 +172,8 @@ Trace how data flows through the system:
 Map the structure of an unfamiliar codebase:
 
 ```
-/agv:patterns                        # Discover architectural patterns
-/agv:services                        # Detect and map service boundaries
+/ai:patterns                        # Discover architectural patterns
+/ai:services                        # Detect and map service boundaries
 ```
 
 ### Memory
@@ -181,8 +181,8 @@ Map the structure of an unfamiliar codebase:
 Save and recall project insights across Claude Code sessions:
 
 ```
-/agv:memory save "Auth uses JWT with refresh tokens, issued by AuthService"
-/agv:memory recall "authentication"
+/ai:memory save "Auth uses JWT with refresh tokens, issued by AuthService"
+/ai:memory recall "authentication"
 ```
 
 Memory has three tiers: working (current session), episodic (weeks), and semantic (permanent). Important insights are automatically promoted to longer-lived tiers through a consolidation engine that runs in the background.
@@ -192,7 +192,7 @@ Memory has three tiers: working (current session), episodic (weeks), and semanti
 Generate a comprehensive architecture report for a new codebase:
 
 ```
-/agv:onboard /path/to/project
+/ai:onboard /path/to/project
 ```
 
 This runs indexing, exploration, and validation in parallel, producing reports on architecture layers, key entities, data flows, and potential issues.
@@ -206,33 +206,33 @@ This runs indexing, exploration, and validation in parallel, producing reports o
 Isolate different projects or backends with named environments:
 
 ```
-/agv:env create production --profile gcp
-/agv:env create local-test --profile local
-/agv:env list
+/ai:env create production --profile gcp
+/ai:env create local-test --profile local
+/ai:env list
 ```
 
-Switch between environments with `agv_ENV`:
+Switch between environments with `AI_ENV`:
 
 ```bash
-agv_ENV=production agv search "query"
+AI_ENV=production ai search "query"
 ```
 
-### agv Server
+### ai Server
 
-Agent-Vault includes a REST + MCP server for integrations beyond Claude Code — other AI assistants, IDEs, or custom tooling:
+Agentic Inquiry includes a REST + MCP server for integrations beyond Claude Code — other AI assistants, IDEs, or custom tooling:
 
 ```
-/agv-dev:server start               # Start on default port 8765
-/agv-dev:server status               # Check running servers
-/agv-dev:server stop                 # Stop
+/ai-dev:server start               # Start on default port 8765
+/ai-dev:server status               # Check running servers
+/ai-dev:server stop                 # Stop
 ```
 
 Or via CLI:
 
 ```bash
-agv server start --port 8765
-agv server status
-agv server stop
+ai server start --port 8765
+ai server status
+ai server stop
 ```
 
 The server exposes:
@@ -245,16 +245,16 @@ The server exposes:
 All plugin commands have CLI equivalents:
 
 ```bash
-agv index /path/to/project
-agv search "database connection"
-agv entity UserService
-agv serve                # MCP-only server (STDIO)
-agv serve --port 8000    # MCP-only server (HTTP)
+ai index /path/to/project
+ai search "database connection"
+ai entity UserService
+ai serve                # MCP-only server (STDIO)
+ai serve --port 8000    # MCP-only server (HTTP)
 ```
 
 ### Document Indexing
 
-Agent-Vault indexes documentation alongside code. Supported formats: DOCX, PDF, DOC, XLSX, and Markdown. Enable in your config:
+Agentic Inquiry indexes documentation alongside code. Supported formats: DOCX, PDF, DOC, XLSX, and Markdown. Enable in your config:
 
 ```yaml
 parsers:
@@ -262,17 +262,17 @@ parsers:
     enabled: true
 ```
 
-Documents and code share the same search index, so queries like `/agv:search "deployment process"` return results from both source code and documentation.
+Documents and code share the same search index, so queries like `/ai:search "deployment process"` return results from both source code and documentation.
 
 ### Configuration
 
 Configuration loads with precedence: **env vars > YAML > defaults**.
 
-Create `agent-vault.yaml` in your project root to override defaults:
+Create `agentic-inquiry.yaml` in your project root to override defaults:
 
 ```yaml
 storage:
-  root: "./.agv"
+  root: "./.agentic-inquiry"
   backend: lancedb
 
 search:
@@ -290,9 +290,9 @@ search:
 For per-environment config (e.g., different backends for dev vs production), use overlays:
 
 ```bash
-# Create overlay at ~/.agv/envs/production/config.yaml
+# Create overlay at ~/.agentic-inquiry/envs/production/config.yaml
 # Activate with:
-export agv_ENV=production
+export AI_ENV=production
 ```
 
 ### Storage Backends
@@ -308,7 +308,7 @@ export agv_ENV=production
 
 PostgreSQL, AlloyDB, CloudSQL, RDS, and Azure all use the **unified PostgreSQL provider** (`storage/providers/postgresql/`). The `embedding_strategy` config (`"local"` or `"server_side"`) controls where embeddings are generated; AlloyDB and Azure auto-configure to server-side, plain PostgreSQL / CloudSQL / RDS default to local.
 
-AlloyDB example overlay (`~/.agv/envs/alloydb/config.yaml`):
+AlloyDB example overlay (`~/.agentic-inquiry/envs/alloydb/config.yaml`):
 
 ```yaml
 storage:
@@ -331,8 +331,8 @@ installed as optional extras:
 | Source | Install | URI scheme | Notes |
 |--------|---------|------------|-------|
 | **Filesystem** | built in | absolute local path | Default; used when no connector is configured |
-| **Amazon S3** | `pip install agent-vault[s3]` | `s3://bucket/key` | Via `s3fs`; AWS env / IAM / `~/.aws` credentials, or explicit `storage_options`. S3-compatible endpoints (MinIO, LocalStack) supported via `endpoint_url` |
-| **Google Cloud Storage** | `pip install agent-vault[gcs]` | `gcs://bucket/object` | Via `gcsfs`; `GOOGLE_APPLICATION_CREDENTIALS`, service account, or ambient GCP credentials |
+| **Amazon S3** | `pip install agentic-inquiry[s3]` | `s3://bucket/key` | Via `s3fs`; AWS env / IAM / `~/.aws` credentials, or explicit `storage_options`. S3-compatible endpoints (MinIO, LocalStack) supported via `endpoint_url` |
+| **Google Cloud Storage** | `pip install agentic-inquiry[gcs]` | `gcs://bucket/object` | Via `gcsfs`; `GOOGLE_APPLICATION_CREDENTIALS`, service account, or ambient GCP credentials |
 
 See [docs/development/connector-guide.md](docs/development/connector-guide.md)
 for the connector protocol and how to add a new source.
@@ -341,15 +341,15 @@ for the connector protocol and how to add a new source.
 
 | Path | Purpose |
 |------|---------|
-| `~/.agv/` | Global data (environments, registry, events, logs) |
-| `.agv/` | Project-local data (index, cache — gitignored) |
-| `agv_HOME` env var | Override global data path |
+| `~/.agentic-inquiry/` | Global data (environments, registry, events, logs) |
+| `.agentic-inquiry/` | Project-local data (index, cache — gitignored) |
+| `AI_HOME` env var | Override global data path |
 
 ---
 
 ## Plugin Reference
 
-### agv (v1.5.0)
+### ai (v1.5.0)
 
 User-facing plugin — 14 commands, 3 agents, 8 hook types. All commands shown in the [Usage](#usage) section above.
 
@@ -359,13 +359,13 @@ User-facing plugin — 14 commands, 3 agents, 8 hook types. All commands shown i
 
 **Hooks**: SessionStart, UserPromptSubmit, PreToolUse[Grep], PostToolUse[Write|Edit, Bash, TaskUpdate], PreCompact, Stop — Python scripts for signal analysis, memory capture, and context injection.
 
-### agv-dev (v1.5.0)
+### ai-dev (v1.5.0)
 
 Developer plugin — 6 commands, 15 skills, 3 agents.
 
-**Commands**: `dev` (toggle dev mode), `test` (test workflow), `review` (code review), `functional-tests` (UAT suite), `server` (manage agv server), `sync-agents` (sync AGENTS.md with skills)
+**Commands**: `dev` (toggle dev mode), `test` (test workflow), `review` (code review), `functional-tests` (UAT suite), `server` (manage ai server), `sync-agents` (sync AGENTS.md with skills)
 
-**Skills**: `coding-guidelines`, `testing`, `quality`, `extending`, `plugins`, `commit`, `code-review`, `test-quality`, `doc-quality`, `rca`, `cleanup`, `agv-dev`, `agv-test`, `agv-functional-tester`, `agv-execute-tests`
+**Skills**: `coding-guidelines`, `testing`, `quality`, `extending`, `plugins`, `commit`, `code-review`, `test-quality`, `doc-quality`, `rca`, `cleanup`, `ai-dev`, `ai-test`, `ai-functional-tester`, `ai-execute-tests`
 
 **Agents**: `code-reviewer` (multi-phase review), `functional-tester` (UAT execution), `test-reviewer` (test result analysis)
 
@@ -374,9 +374,9 @@ Developer plugin — 6 commands, 15 skills, 3 agents.
 ## Architecture
 
 ```
-agent_vault/
+agentic_inquiry/
 ├── config.py      # Configuration (env vars → yaml → defaults)
-├── cli/           # Command-line interface (agv index, agv search, ...)
+├── cli/           # Command-line interface (ai index, ai search, ...)
 ├── server/        # REST + MCP server (FastAPI, dual-surface)
 ├── storage/       # Unified storage abstraction
 │   ├── facade.py  #   StorageFacade: vector + graph + events + file tracking
@@ -408,13 +408,13 @@ agent_vault/
 └── events/        # Observability and audit trails
 
 extensions/claude/
-├── agv/           # User-facing Claude Code plugin (v1.5.0)
+├── ai/           # User-facing Claude Code plugin (v1.5.0)
 │   ├── commands/  #   14 slash commands
 │   ├── agents/    #   codebase-explorer, command-helper, env-manager
 │   ├── hooks/     #   Python lifecycle hooks (8 event types)
 │   ├── scripts/   #   Shared utilities (socket client)
 │   └── servers/   #   Background daemon (cache, context, memory, version managers)
-└── agv-dev/       # Developer Claude Code plugin (v1.5.0)
+└── ai-dev/       # Developer Claude Code plugin (v1.5.0)
     ├── commands/  #   6 dev commands
     ├── skills/    #   15 development guidance skills
     └── agents/    #   code-reviewer, functional-tester, test-reviewer
@@ -453,7 +453,7 @@ Query → [Vector Search] + [Full-Text Search]
          Top-K results
 ```
 
-Naive vector search scores ~6-7/10 on large codebases due to embedding drift, result dilution, and keyword blindness. Agent-Vault scores **10.0/10** across keyword, conceptual, and structural queries on a 572K-chunk enterprise corpus.
+Naive vector search scores ~6-7/10 on large codebases due to embedding drift, result dilution, and keyword blindness. Agentic Inquiry scores **10.0/10** across keyword, conceptual, and structural queries on a 572K-chunk enterprise corpus.
 
 Key innovations:
 - **IDF-weighted content boost**: Rare query terms get up to 20x weight. Rescues results that vector search misses entirely.
@@ -485,12 +485,12 @@ Benchmarked on a Java EE monolith (16,706 source files + 98 documents):
 uv sync                                    # Install dependencies
 uv run --env-file .env pytest -x           # Run tests (stop on first failure)
 uv run --env-file .env pytest              # Run all tests
-uv run --env-file .env mypy agent_vault/  # Type checking
+uv run --env-file .env mypy agentic_inquiry/  # Type checking
 uv run --env-file .env ruff format .       # Format code
 uv run --env-file .env ruff check . --fix  # Lint
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and contribution workflows, or invoke `/agv-dev:coding-guidelines` in Claude Code.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and contribution workflows, or invoke `/ai-dev:coding-guidelines` in Claude Code.
 
 ---
 

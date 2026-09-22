@@ -29,8 +29,8 @@ async def run(
     output_dir: Path,
 ) -> Dict[str, Any]:
     """Run a generic smoke test with shared services."""
-    from agent_vault.mcp.tools.search import search_knowledge
-    from agent_vault.mcp.tools.memory import save_memory, recall_memories
+    from agentic_inquiry.mcp.tools.search import search_knowledge
+    from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
 
     results: Dict[str, Any] = {}
     issues: list = []

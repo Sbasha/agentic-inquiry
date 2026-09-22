@@ -1,7 +1,7 @@
 """Unit tests for info.py tools.
 
 Tests the get_project_info, get_events, and other info retrieval functions
-from agent_vault/mcp/tools/info.py.
+from agentic_inquiry/mcp/tools/info.py.
 """
 
 import pytest
@@ -9,7 +9,7 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agent_vault.mcp.tools.info import get_project_info
+from agentic_inquiry.mcp.tools.info import get_project_info
 
 
 class TestRelationshipVisibility:
@@ -56,7 +56,7 @@ class TestRelationshipVisibility:
         This ensures we don't hit the 100-item limit bug that affects advanced_filter.
         """
         # Mock check_project_state to avoid dependency
-        with patch("agent_vault.mcp.utils.project_state.check_project_state") as mock_check:
+        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state") as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
@@ -99,7 +99,7 @@ class TestRelationshipVisibility:
         Using count_relationships_by_type() ensures we get the actual count regardless of size.
         """
         # Mock check_project_state
-        with patch("agent_vault.mcp.utils.project_state.check_project_state") as mock_check:
+        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state") as mock_check:
             mock_check.return_value = {
                 "chunk_count": 1000,
                 "entity_count": 200,
@@ -137,7 +137,7 @@ class TestRelationshipVisibility:
         Related to INV-6.4: StorageFacade routing fix for graph tables.
         """
         # Mock check_project_state
-        with patch("agent_vault.mcp.utils.project_state.check_project_state") as mock_check:
+        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state") as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
@@ -213,7 +213,7 @@ class TestProjectInfoCaching:
         to avoid performance impact on frequent get_project_info calls.
         """
         # Mock check_project_state
-        with patch("agent_vault.mcp.utils.project_state.check_project_state") as mock_check:
+        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state") as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,

@@ -15,7 +15,7 @@ pytestmark = pytest.mark.integration
 from pathlib import Path
 from typing import Any
 
-from agent_vault.parsers.implementations.unified_code import UnifiedCodeParser
+from agentic_inquiry.parsers.implementations.unified_code import UnifiedCodeParser
 
 
 # Sample code files directory

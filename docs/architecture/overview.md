@@ -9,7 +9,7 @@ last_updated: 2025-11-30
 
 # Architecture Overview
 
-This document provides a comprehensive overview of the Agent-Vault system architecture, explaining how components interact to provide intelligent document and code parsing, indexing, and search capabilities.
+This document provides a comprehensive overview of the Agentic Inquiry system architecture, explaining how components interact to provide intelligent document and code parsing, indexing, and search capabilities.
 
 ## Quick Navigation
 
@@ -47,12 +47,12 @@ Learn how to build custom components:
 
 ## Introduction
 
-Agent-Vault is an async-first Python library for semantic code search and codebase intelligence. It combines tree-sitter parsing, vector embeddings, and knowledge graphs using a pluggable storage architecture.
+Agentic Inquiry is an async-first Python library for semantic code search and codebase intelligence. It combines tree-sitter parsing, vector embeddings, and knowledge graphs using a pluggable storage architecture.
 
 **Core Flow:** `File → Parser → Embeddings → Storage → Search`
 
 **Key Features:**
-- **Plugin System**: Claude Code plugins (agv, agv-dev) as primary interface — 14 user commands, 15 developer skills
+- **Plugin System**: Claude Code plugins (ai, ai-dev) as primary interface — 14 user commands, 15 developer skills
 - **Async-First**: 5-10x faster indexing through true concurrent execution
 - **Multi-Format Support**: Code (Python, JS, TS, Java, etc.) and documents (MD, PDF, DOCX, DOC, etc.)
 - **Pluggable Storage**: LanceDB (dev), PostgreSQL (self-hosted), CloudSQL (GCP managed), AlloyDB (GCP production)
@@ -65,17 +65,17 @@ Agent-Vault is an async-first Python library for semantic code search and codeba
 
 ## Plugin System
 
-Agent-Vault is primarily accessed through **Claude Code plugins** located in `extensions/claude/`. These provide the main user interface for search, indexing, and codebase intelligence. The repo also exposes `.github/` and `.codex/` mirrors that point back to the same canonical `.claude/` skills and agents for Copilot and Codex.
+Agentic Inquiry is primarily accessed through **Claude Code plugins** located in `extensions/claude/`. These provide the main user interface for search, indexing, and codebase intelligence. The repo also exposes `.github/` and `.codex/` mirrors that point back to the same canonical `.claude/` skills and agents for Copilot and Codex.
 
 ### Plugin Architecture
 
-**agv Plugin (v1.5.0)** - User-facing interface:
-- **14 Commands**: `/agv:search`, `/agv:index`, `/agv:onboard`, `/agv:entity`, `/agv:impact`, `/agv:lineage`, `/agv:memory`, `/agv:setup`, `/agv:env`, `/agv:status`, and more
+**ai Plugin (v1.5.0)** - User-facing interface:
+- **14 Commands**: `/ai:search`, `/ai:index`, `/ai:onboard`, `/ai:entity`, `/ai:impact`, `/ai:lineage`, `/ai:memory`, `/ai:setup`, `/ai:env`, `/ai:status`, and more
 - **3 Agents**: Technical writer, onboarding specialist, code navigator
 - **Hooks**: Pre/post indexing, search result enhancement
 
-**agv-dev Plugin (v1.5.0)** - Developer interface:
-- **15 Skills**: `/agv-dev:coding-guidelines`, `/agv-dev:testing`, `/agv-dev:quality`, `/agv-dev:review`, `/agv-dev:commit`, and more
+**ai-dev Plugin (v1.5.0)** - Developer interface:
+- **15 Skills**: `/ai-dev:coding-guidelines`, `/ai-dev:testing`, `/ai-dev:quality`, `/ai-dev:review`, `/ai-dev:commit`, and more
 - **3 Agents**: Code reviewer, test generator, documentation writer
 - **6 Commands**: Development workflow automation
 
@@ -95,13 +95,13 @@ Python API (Direct)
 ```json
 {
   "extraKnownMarketplaces": {
-    "agent-vault": {
+    "agentic-inquiry": {
       "source": { "source": "directory", "path": "./extensions/claude" }
     }
   },
   "enabledPlugins": {
-    "agv@agent-vault": true,
-    "agv-dev@agent-vault": true
+    "ai@agentic-inquiry": true,
+    "ai-dev@agentic-inquiry": true
   }
 }
 ```
@@ -110,12 +110,12 @@ Python API (Direct)
 
 | Command | Purpose | Example |
 |---------|---------|---------|
-| `/agv:search <query>` | Semantic code/doc search | `/agv:search authentication middleware` |
-| `/agv:index <path>` | Index codebase | `/agv:index ./src` |
-| `/agv:onboard <path>` | AI-powered onboarding | `/agv:onboard .` |
-| `/agv:entity <name>` | Entity lookup | `/agv:entity User.authenticate` |
-| `/agv:impact <symbol>` | Change impact analysis | `/agv:impact payment_service` |
-| `/agv:setup` | Configure storage backend | `/agv:setup` |
+| `/ai:search <query>` | Semantic code/doc search | `/ai:search authentication middleware` |
+| `/ai:index <path>` | Index codebase | `/ai:index ./src` |
+| `/ai:onboard <path>` | AI-powered onboarding | `/ai:onboard .` |
+| `/ai:entity <name>` | Entity lookup | `/ai:entity User.authenticate` |
+| `/ai:impact <symbol>` | Change impact analysis | `/ai:impact payment_service` |
+| `/ai:setup` | Configure storage backend | `/ai:setup` |
 
 **Learn More:**
 - [Plugin Documentation](../plugins/overview.md) - Complete plugin guide
@@ -125,7 +125,7 @@ Python API (Direct)
 
 ## Async-First Design Philosophy
 
-Agent-Vault is built from the ground up as an **async-first** library. Every I/O operation—file reading, database queries, network requests—uses Python's `async/await` patterns to enable true concurrent execution.
+Agentic Inquiry is built from the ground up as an **async-first** library. Every I/O operation—file reading, database queries, network requests—uses Python's `async/await` patterns to enable true concurrent execution.
 
 ### Why Async-First?
 
@@ -154,13 +154,13 @@ async with self._semaphore:  # Limits concurrent operations
     await self.process_document(parsed_doc)
 ```
 
-This document provides a high-level overview of the Agent-Vault system architecture, explaining how components interact to provide intelligent document and code parsing, indexing, and search capabilities.
+This document provides a high-level overview of the Agentic Inquiry system architecture, explaining how components interact to provide intelligent document and code parsing, indexing, and search capabilities.
 
 ## System Architecture
 
 ### Component Relationship Diagram
 
-This diagram shows all major components and their interactions within the Agent-Vault system:
+This diagram shows all major components and their interactions within the Agentic Inquiry system:
 
 ```mermaid
 graph TB
@@ -276,7 +276,7 @@ This diagram illustrates the clear separation between presentation, business log
 ```mermaid
 graph TB
     subgraph "Presentation Layer"
-        PLUGINS[Plugin Skills<br/>agv + agv-dev]
+        PLUGINS[Plugin Skills<br/>ai + ai-dev]
         CLI[CLI Commands]
         MCP[MCP Server<br/>Advanced]
         API[Python API]
@@ -1122,7 +1122,7 @@ Provides simple, low-overhead tracking of operations with **direct EventStore pe
 
 **Async Implementation:**
 ```python
-from agent_vault.events.store import EventStore
+from agentic_inquiry.events.store import EventStore
 
 # Direct event recording
 await event_store.record_event(
@@ -1168,7 +1168,7 @@ Operation → EventStore.record_event() → SQLite (async)
 
 ### Storage Layer
 
-Agent-Vault uses a **Pluggable Storage Architecture** managed by the `StorageFacade`. This allows seamless switching between backends like LanceDB (embedded), PostgreSQL (production), and SQLite (local metadata), all accessed through a unified **fully async interface**.
+Agentic Inquiry uses a **Pluggable Storage Architecture** managed by the `StorageFacade`. This allows seamless switching between backends like LanceDB (embedded), PostgreSQL (production), and SQLite (local metadata), all accessed through a unified **fully async interface**.
 
 #### Storage Layer Structure
 
@@ -1368,8 +1368,8 @@ Main entry point for all storage operations:
 
 **Example:**
 ```python
-from agent_vault.storage.facade import StorageFacade
-from agent_vault.config import Config
+from agentic_inquiry.storage.facade import StorageFacade
+from agentic_inquiry.config import Config
 
 config = Config()
 storage = await StorageFacade.from_config(config, project_id="my_project")
@@ -1431,7 +1431,7 @@ Constructs safe filter expressions preventing injection:
 
 **Example:**
 ```python
-from agent_vault.database.filter_builder import FilterBuilder
+from agentic_inquiry.database.filter_builder import FilterBuilder
 
 builder = FilterBuilder()
 builder.add_doc_id_filter(["doc1", "doc2"])
@@ -2323,8 +2323,8 @@ await event_store.record_event(
 Configuration controls system behavior through YAML files and environment variables.
 
 **Configuration Sources (priority order):**
-1. Environment variables (`AGV_*`)
-2. Project configuration (`agent-vault.yaml`)
+1. Environment variables (`AI_*`)
+2. Project configuration (`agentic-inquiry.yaml`)
 3. Default configuration (`config/default.yaml`)
 
 **Key Configuration Areas:**
@@ -2355,7 +2355,7 @@ search:
 
 ### Direct Instantiation Design
 
-Agent-Vault uses concrete classes with clear interfaces. This enables:
+Agentic Inquiry uses concrete classes with clear interfaces. This enables:
 - **Simplicity**: Direct instantiation without factory wrappers
 - **Testability**: Easy to create mock implementations
 - **Type Safety**: Static type checking with mypy using concrete types
@@ -2375,8 +2375,8 @@ Agent-Vault uses concrete classes with clear interfaces. This enables:
 Components are instantiated directly with their dependencies:
 
 ```python
-from agent_vault.storage.facade import StorageFacade
-from agent_vault.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.storage.facade import StorageFacade
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
 
 # Direct instantiation with from_config()
 storage = await StorageFacade.from_config(config, project_id="my_project")
@@ -2406,16 +2406,16 @@ pipeline = IndexingPipeline(
 
 ## Extension Points
 
-Agent-Vault is designed to be extensible at multiple points.
+Agentic Inquiry is designed to be extensible at multiple points.
 
 ### Custom Parsers
 
 Add support for new file formats by implementing `ParserProtocol`:
 
 ```python
-from agent_vault.protocols import ParserProtocol
-from agent_vault.parsers.models import ParsedDocument, register_parser
-from agent_vault.events import get_event_system
+from agentic_inquiry.protocols import ParserProtocol
+from agentic_inquiry.parsers.models import ParsedDocument, register_parser
+from agentic_inquiry.events import get_event_system
 
 @register_parser("my_parser")
 class MyCustomParser:
@@ -2457,14 +2457,14 @@ class MyCustomParser:
 
 ### Custom Embeddings
 
-Agent-Vault supports multiple embedding providers out of the box:
+Agentic Inquiry supports multiple embedding providers out of the box:
 
 #### Built-in Embedders
 
 **LocalModelEmbedder** - Uses locally-stored ONNX models:
 ```python
-from agent_vault.embeddings.local_model import LocalModelEmbedder
-from agent_vault.embeddings.registry import embedding_registry
+from agentic_inquiry.embeddings.local_model import LocalModelEmbedder
+from agentic_inquiry.embeddings.registry import embedding_registry
 
 # Create local model embedder
 embedder = LocalModelEmbedder(
@@ -2485,14 +2485,14 @@ embedding_registry.configure_default_embedder(embedder, ndims=384)
 
 **SentenceTransformerEmbedder** - Uses HuggingFace models:
 ```python
-from agent_vault.embeddings.sentence_transformer import SentenceTransformerEmbedder
+from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
 
 embedder = SentenceTransformerEmbedder(model_name="all-MiniLM-L6-v2")
 ```
 
 **HashingEmbedder** - Fast deterministic hashing:
 ```python
-from agent_vault.embeddings.hashing import HashingEmbedder
+from agentic_inquiry.embeddings.hashing import HashingEmbedder
 
 embedder = HashingEmbedder(ndims=128)
 ```
@@ -2502,7 +2502,7 @@ embedder = HashingEmbedder(ndims=128)
 Implement `EmbeddingProtocol` for custom providers:
 
 ```python
-from agent_vault.protocols import EmbeddingProtocol
+from agentic_inquiry.protocols import EmbeddingProtocol
 from typing import List
 
 class MyEmbeddingProvider:
@@ -2522,8 +2522,8 @@ class MyEmbeddingProvider:
 Add event tracking to custom components for observability:
 
 ```python
-from agent_vault.events import EventSystem, track_operation
-from agent_vault.events.types import EventTypes
+from agentic_inquiry.events import EventSystem, track_operation
+from agentic_inquiry.events.types import EventTypes
 
 class MyCustomComponent:
     def __init__(self, project_id: str):
@@ -2622,7 +2622,7 @@ graph TB
     end
     
     subgraph "Model Storage"
-        ModelDir[.agv/models/]
+        ModelDir[.agentic-inquiry/models/]
         Model1[all-MiniLM-L6-v2/<br/>├── model.onnx<br/>├── tokenizer.json<br/>└── metadata.json]
         Model2[all-mpnet-base-v2/<br/>└── ...]
     end
@@ -2707,7 +2707,7 @@ graph TB
 HuggingFace Hub → [convert_model.py] → ONNX + Tokenizer + Metadata
                          │
                          ▼
-              .agv/models/
+              .agentic-inquiry/models/
                          │
                          ▼
               LocalModelEmbedder loads model
@@ -2721,7 +2721,7 @@ HuggingFace Hub → [convert_model.py] → ONNX + Tokenizer + Metadata
 Create a custom storage backend by implementing the storage provider protocols:
 
 ```python
-from agent_vault.storage.protocols import VectorStoreProtocol, GraphStoreProtocol
+from agentic_inquiry.storage.protocols import VectorStoreProtocol, GraphStoreProtocol
 
 class MyVectorProvider(VectorStoreProtocol):
     """Custom vector storage provider."""
@@ -2738,7 +2738,7 @@ class MyVectorProvider(VectorStoreProtocol):
     # Implement other methods as needed
 ```
 
-**Learn More:** [Extending Agent-Vault](../customization/extending.md)
+**Learn More:** [Extending Agentic Inquiry](../customization/extending.md)
 
 ## Design Principles
 
@@ -2766,7 +2766,7 @@ Optimizations throughout the system:
 
 ## Performance Characteristics
 
-Understanding the performance profile of Agent-Vault helps you optimize your usage:
+Understanding the performance profile of Agentic Inquiry helps you optimize your usage:
 
 ### Indexing Performance
 
@@ -2843,7 +2843,7 @@ Understanding the performance profile of Agent-Vault helps you optimize your usa
 - [Event System Architecture](event-system.md) - How to track operations
 
 **Extension & Customization:**
-- [Extending Agent-Vault](../customization/extending.md) - Custom components
+- [Extending Agentic Inquiry](../customization/extending.md) - Custom components
 - [Development Guide](../development/README.md) - Contributing and development
 - [Security Best Practices](../development/security.md) - Security guidelines
 
@@ -2861,7 +2861,7 @@ Understanding the performance profile of Agent-Vault helps you optimize your usa
 
 **Integration Engineers:**
 1. [Extension Points](#extension-points) (this document)
-2. [Extending Agent-Vault](../customization/extending.md)
+2. [Extending Agentic Inquiry](../customization/extending.md)
 
 **Performance Engineers:**
 1. [Async-First Design](#async-first-design-philosophy) (this document)
@@ -2872,7 +2872,7 @@ Understanding the performance profile of Agent-Vault helps you optimize your usa
 **Extension Developers:**
 1. [Extension Points](#extension-points) (this document)
 2. [Custom Parsers](#custom-parsers) (this document)
-3. [Extending Agent-Vault](../customization/extending.md)
+3. [Extending Agentic Inquiry](../customization/extending.md)
 4. [Development Guide](../development/README.md)
 
 ---

@@ -6,8 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from agent_vault.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
-from agent_vault.parsers.recognizers.apex_salesforce import ApexSalesforceRecognizer
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.recognizers.apex_salesforce import ApexSalesforceRecognizer
 
 pytestmark = pytest.mark.unit
 

@@ -3,7 +3,7 @@ requires = ["hatchling>=1.21.1"]
 build-backend = "hatchling.build"
 
 [project]
-name = "agent-vault"
+name = "agentic-inquiry"
 version = "1.5.0"
 description = "Cognitive brain for agents (e.g. engine for consuming and optimizing context)"
 readme = "README.md"
@@ -51,7 +51,7 @@ dependencies = [
 ]
 
 [project.scripts]
-agv = "agent_vault.cli.__main__:main"
+ai = "agentic_inquiry.cli.__main__:main"
 
 [project.optional-dependencies]
 test = [
@@ -82,18 +82,18 @@ cloudsql = [
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["agent_vault"]
+packages = ["agentic_inquiry"]
 
 # Ship the runtime config defaults inside the package namespace so a global
 # install (`uv tool install .`) can resolve them via importlib.resources. The
 # source tree keeps these files in the top-level config/ dir; this maps them
-# into agent_vault/config_defaults/ in the built wheel only.
+# into agentic_inquiry/config_defaults/ in the built wheel only.
 [tool.hatch.build.targets.wheel.force-include]
-"config/default.yaml" = "agent_vault/config_defaults/default.yaml"
-"config/config.schema.json" = "agent_vault/config_defaults/config.schema.json"
+"config/default.yaml" = "agentic_inquiry/config_defaults/default.yaml"
+"config/config.schema.json" = "agentic_inquiry/config_defaults/config.schema.json"
 
 [tool.hatch.build.targets.sdist]
-include = ["agent_vault", "tests", "README.md", "config"]
+include = ["agentic_inquiry", "tests", "README.md", "config"]
 
 [dependency-groups]
 dev = [

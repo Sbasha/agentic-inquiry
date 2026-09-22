@@ -32,10 +32,10 @@ async def run(
     run_id: str,
     output_dir: Path,
 ) -> Dict[str, Any]:
-    from agent_vault.mcp.tools.info import get_project_info, list_entities
-    from agent_vault.mcp.tools.analysis import understand_entity, analyze_impact
-    from agent_vault.mcp.tools.search import find_similar
-    from agent_vault.mcp.tools.direct_access import graph_traverse
+    from agentic_inquiry.mcp.tools.info import get_project_info, list_entities
+    from agentic_inquiry.mcp.tools.analysis import understand_entity, analyze_impact
+    from agentic_inquiry.mcp.tools.search import find_similar
+    from agentic_inquiry.mcp.tools.direct_access import graph_traverse
 
     results: Dict[str, Any] = {}
     issues: list = []

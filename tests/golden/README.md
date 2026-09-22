@@ -1,7 +1,7 @@
 # Golden Bench
 
 Pre-flight safety net for the audit's deletion clusters
-(see [#156](https://github.com/sbasha/agent-vault/issues/156)
+(see [#156](https://github.com/sbasha/agentic-inquiry/issues/156)
 and [docs/rfc/0001-golden-bench.md](../../docs/rfc/0001-golden-bench.md)).
 
 `make bench` indexes a fixed slice of this repo into a temp LanceDB
@@ -25,7 +25,7 @@ make bench-clean   # drop the cached corpus + index
 - `test_search_quality.py` — thin pytest wrapper (slow, marked `golden`).
 
 Bench artifacts (corpus mirror + LanceDB index + last results) live at
-`$TMPDIR/agv-golden-bench/` — outside the repo so the indexer's
+`$TMPDIR/ai-golden-bench/` — outside the repo so the indexer's
 `.gitignore` walk doesn't exclude them. `make bench-clean` wipes that path.
 
 ## When to re-pin

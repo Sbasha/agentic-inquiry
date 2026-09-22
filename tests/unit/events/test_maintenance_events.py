@@ -11,9 +11,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.events.types import EventTypes
-from agent_vault.events.models import EventStatus
-from agent_vault.events.context_managers import track_operation, OperationTracker
+from agentic_inquiry.events.types import EventTypes
+from agentic_inquiry.events.models import EventStatus
+from agentic_inquiry.events.context_managers import track_operation, OperationTracker
 
 
 class TestMaintenanceEvents:
@@ -187,8 +187,8 @@ class TestMaintenanceManagerEvents:
         - When project.closed is emitted, maintenance is scheduled
         - maintenance.started event is emitted
         """
-        from agent_vault.mcp.services.maintenance_manager import MaintenanceManager
-        from agent_vault.events.system import EventSystem
+        from agentic_inquiry.mcp.services.maintenance_manager import MaintenanceManager
+        from agentic_inquiry.events.system import EventSystem
 
         # Create event system
         event_system = AsyncMock(spec=EventSystem)
@@ -234,8 +234,8 @@ class TestMaintenanceManagerEvents:
         - MaintenanceManager subscribes to indexing.completed
         - When indexing.completed is emitted, maintenance is scheduled
         """
-        from agent_vault.mcp.services.maintenance_manager import MaintenanceManager
-        from agent_vault.events.system import EventSystem
+        from agentic_inquiry.mcp.services.maintenance_manager import MaintenanceManager
+        from agentic_inquiry.events.system import EventSystem
 
         # Create event system
         event_system = AsyncMock(spec=EventSystem)

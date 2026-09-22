@@ -14,19 +14,19 @@ from unittest.mock import AsyncMock, MagicMock
 import numpy as np
 import pytest
 
-from agent_vault.config import Config, RetrievalConfig
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
-from agent_vault.memory.layers.episodic import EpisodicMemory
-from agent_vault.memory.layers.semantic import SemanticMemory
-from agent_vault.memory.layers.working import WorkingMemory
-from agent_vault.memory.models import (
+from agentic_inquiry.config import Config, RetrievalConfig
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
+from agentic_inquiry.memory.layers.episodic import EpisodicMemory
+from agentic_inquiry.memory.layers.semantic import SemanticMemory
+from agentic_inquiry.memory.layers.working import WorkingMemory
+from agentic_inquiry.memory.models import (
     MemoryContext,
     MemoryItem,
     MemoryTier,
     RetrievalResult,
 )
-from agent_vault.memory.retrieval import RetrievalEngine
+from agentic_inquiry.memory.retrieval import RetrievalEngine
 
 
 @pytest.fixture
@@ -114,7 +114,7 @@ def retrieval_engine(
     """Create a retrieval engine."""
     # Create a mock Config with proper structure
     from unittest.mock import MagicMock
-    from agent_vault.config import Config, MemoryConfig
+    from agentic_inquiry.config import Config, MemoryConfig
     
     config = MagicMock(spec=Config)
     config.memory = MagicMock(spec=MemoryConfig)
@@ -581,7 +581,7 @@ async def test_retrieve_with_disabled_cache(
 ) -> None:
     """Test retrieval with caching disabled."""
     # Create engine with caching disabled
-    from agent_vault.config import Config, MemoryConfig
+    from agentic_inquiry.config import Config, MemoryConfig
     
     retrieval_config = RetrievalConfig(
         default_strategy="adaptive",

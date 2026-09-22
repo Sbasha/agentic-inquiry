@@ -18,8 +18,8 @@ pytestmark = pytest.mark.asyncio
 
 
 async def test_count_compiles_predicate_once_per_call():
-    from agent_vault.storage.providers.memory import InMemoryProvider
-    from agent_vault.models.document_chunk import DocumentChunk
+    from agentic_inquiry.storage.providers.memory import InMemoryProvider
+    from agentic_inquiry.models.document_chunk import DocumentChunk
 
     provider = InMemoryProvider(project_id="p")
     await provider.initialize()
@@ -44,10 +44,10 @@ async def test_count_compiles_predicate_once_per_call():
     await provider.upsert_chunks(chunks, "p")
 
     with patch(
-        "agent_vault.database.filters.MemoryFilterAdapter"
+        "agentic_inquiry.database.filters.MemoryFilterAdapter"
     ) as mock_adapter:
         # Make the real predicate still work so we count a realistic 25.
-        from agent_vault.database.filters.memory_adapter import (
+        from agentic_inquiry.database.filters.memory_adapter import (
             MemoryFilterAdapter as _Real,
         )
         real_instance = _Real()

@@ -25,7 +25,7 @@
 
 The issue was that `process_document()` was called with default `flush_relationships=True` during directory indexing. This caused relationships to be flushed after each file, before symbols from later files were registered in the symbol registry.
 
-**Root Cause:** In `agent_vault/mcp/tools/knowledge.py:_index_directory_async`:
+**Root Cause:** In `agentic_inquiry/mcp/tools/knowledge.py:_index_directory_async`:
 - Each file's relationships were flushed immediately after processing
 - Cross-file symbols weren't in the registry yet when early files were flushed
 - The final `flush_pending_relationships()` found an empty queue
@@ -78,7 +78,7 @@ Before running this test, execute `get_project_info` and verify:
 ### Key Feature: Cross-File Resolution
 
 The code graph resolves references across files:
-- `from agent_vault.database import LanceDBManager` → links to actual class
+- `from agentic_inquiry.database import LanceDBManager` → links to actual class
 - `self.db_manager.query()` → links to method definition
 - `class SearchService(BaseService)` → links to parent class
 
@@ -102,7 +102,7 @@ The code graph resolves references across files:
 - TypeScript files (`.ts`, `.tsx`) - if available
 - Other tree-sitter supported languages
 
-**Recommended test directory:** `agent_vault/` or equivalent codebase
+**Recommended test directory:** `agentic_inquiry/` or equivalent codebase
 
 **DO NOT test with:**
 - Markdown files
@@ -125,7 +125,7 @@ This section MUST complete successfully before running any tests. The graph test
 ### Step 1: Create Session with Unique Project ID
 
 ```python
-project_id = "agv_test12_codegraph_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test12_codegraph_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Code graph test")
 ```
 
@@ -140,7 +140,7 @@ add_knowledge(session_id=session_id, source=".", content_type="code", wait_for_c
 
 **IMPORTANT:**
 - Use `source="."` to index the full codebase from project root
-- Do NOT use a subdirectory like `agent_vault/` - this won't build cross-file relationships
+- Do NOT use a subdirectory like `agentic_inquiry/` - this won't build cross-file relationships
 - The `content_type="code"` ensures AST parsing for graph extraction
 
 ### Step 3: Wait for Indexing Completion
@@ -180,7 +180,7 @@ info = get_project_info(session_id=session_id)
 | `index_health` | "healthy" | Investigate indexing errors |
 
 **If thresholds NOT met:**
-1. Check `.agv-server.log` for indexing errors
+1. Check `.agentic-inquiry-server.log` for indexing errors
 2. Verify source path is correct (should be `.` not a subdirectory)
 3. Ensure Python files exist in the codebase
 4. Re-run indexing with `add_knowledge(session_id, source=".", content_type="code")`
@@ -244,7 +244,7 @@ Session ID: [id]
 Project ID: [id]
 
 Code Content:
-Path: [e.g., agent_vault/]
+Path: [e.g., agentic_inquiry/]
 Files Indexed: [count]
 Languages: [Python, TypeScript, etc.]
 
@@ -408,7 +408,7 @@ Import Chain Analysis:
 
 Target Entity: LanceDBManager
 Entity Type: class
-File: agent_vault/database/lancedb_manager.py
+File: agentic_inquiry/database/lancedb_manager.py
 
 What LanceDBManager Imports:
 1. [module/class] from [file]
@@ -558,7 +558,7 @@ understand_entity(session_id, entity="IndexingPipeline", include_dependencies=Tr
 Internal Method Calls:
 
 Class: IndexingPipeline
-File: agent_vault/indexing/pipeline.py
+File: agentic_inquiry/indexing/pipeline.py
 
 Method Call Map:
 - process_document() calls:
@@ -605,11 +605,11 @@ Direct Impact (Level 1):
 Components: [count]
 Files: [count]
 
-1. SearchService - agent_vault/search/service.py
+1. SearchService - agentic_inquiry/search/service.py
    - Relationship: imports
    - Impact: Would need import update
 
-2. IndexingPipeline - agent_vault/indexing/pipeline.py
+2. IndexingPipeline - agentic_inquiry/indexing/pipeline.py
    - Relationship: imports
    - Impact: Would need import update
 
@@ -701,14 +701,14 @@ Ambiguous Name Resolution:
 
 Query: "Config"
 Results:
-1. Config (class) - agent_vault/config.py
+1. Config (class) - agentic_inquiry/config.py
    - Relevance: [score]
 2. [other Config references]
 
 Query: "process" (type=function)
 Results:
-1. process_document - agent_vault/indexing/pipeline.py
-2. process_chunk - agent_vault/parsers/...
+1. process_document - agentic_inquiry/indexing/pipeline.py
+2. process_chunk - agentic_inquiry/parsers/...
 3. [other matches]
 
 Disambiguation:

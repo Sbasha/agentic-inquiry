@@ -38,10 +38,10 @@ REQUIRED_SECTIONS = [
 
 # Deprecated API patterns to check for
 DEPRECATED_PATTERNS = [
-    (r"from agent_vault\.parsers\.base import", "Use 'from agent_vault.parsers.models import' instead"),
+    (r"from agentic_inquiry\.parsers\.base import", "Use 'from agentic_inquiry.parsers.models import' instead"),
     (r"\.code_symbols", "Use '.symbols' field instead of '.code_symbols'"),
     (r"DatabaseManager\(", "Use 'LanceDBManager' instead of 'DatabaseManager'"),
-    (r"from agent_vault\.database\.manager import", "Use 'from agent_vault.database import LanceDBManager' instead"),
+    (r"from agentic_inquiry\.database\.manager import", "Use 'from agentic_inquiry.database import LanceDBManager' instead"),
     (r"Config\(\)", "Use 'Config.load()' instead of 'Config()'"),
 ]
 

@@ -13,8 +13,8 @@ from typing import List
 
 import pytest
 
-from agent_vault.embeddings.base import Embedder
-from agent_vault.embeddings.caching import CachingEmbedder
+from agentic_inquiry.embeddings.base import Embedder
+from agentic_inquiry.embeddings.caching import CachingEmbedder
 
 pytestmark = pytest.mark.unit
 
@@ -212,8 +212,8 @@ class TestDisabledCache:
         ``skip_schema_validation=True``), so dataclass ``__post_init__``
         is the load-time guarantee.
         """
-        from agent_vault.config import EmbeddingsCacheConfig
-        from agent_vault.exceptions import ConfigurationError
+        from agentic_inquiry.config import EmbeddingsCacheConfig
+        from agentic_inquiry.exceptions import ConfigurationError
 
         with pytest.raises(ConfigurationError, match="max_entries must be >= 0"):
             EmbeddingsCacheConfig(max_entries=-1)

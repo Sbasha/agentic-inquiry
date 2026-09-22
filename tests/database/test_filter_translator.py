@@ -12,7 +12,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.database.filters import (
+from agentic_inquiry.database.filters import (
     and_,
     eq,
     gt,
@@ -26,7 +26,7 @@ from agent_vault.database.filters import (
     not_in,
     or_,
 )
-from agent_vault.database.filters import (
+from agentic_inquiry.database.filters import (
     LanceDBFilterTranslator,
     translate_filter,
 )

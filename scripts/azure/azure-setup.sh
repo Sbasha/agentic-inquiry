@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Azure Database for PostgreSQL setup for Agent-Vault
+# Azure Database for PostgreSQL setup for Agentic Inquiry
 #
 # Prerequisites:
 #   - Azure CLI installed and authenticated (az login)
@@ -14,7 +14,7 @@ set -euo pipefail
 RG=""
 SERVER=""
 LOCATION="eastus"
-DATABASE="agent-vault"
+DATABASE="agentic-inquiry"
 ADMIN_USER="agvadmin"
 ADMIN_PASSWORD=""
 OPENAI_NAME=""
@@ -38,7 +38,7 @@ if [[ -z "${RG}" || -z "${SERVER}" ]]; then
     exit 1
 fi
 
-echo "=== Azure PostgreSQL Setup for Agent-Vault ==="
+echo "=== Azure PostgreSQL Setup for Agentic Inquiry ==="
 echo "Resource Group: ${RG}"
 echo "Server Name:    ${SERVER}"
 echo "Location:       ${LOCATION}"
@@ -102,5 +102,5 @@ echo "  2. Enable the extensions inside the database:"
 echo "     CREATE EXTENSION IF NOT EXISTS vector;"
 echo "     CREATE EXTENSION IF NOT EXISTS azure_ai;"
 echo ""
-echo "  3. Configure Agent-Vault:"
-echo "     agv setup azure"
+echo "  3. Configure Agentic Inquiry:"
+echo "     ai setup azure"

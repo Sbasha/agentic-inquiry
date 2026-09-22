@@ -11,7 +11,7 @@ import warnings
 from unittest.mock import AsyncMock, MagicMock, patch
 from typing import Optional, Dict, Any, List
 
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.storage.facade import StorageFacade
 
 
 class MockVectorProvider:
@@ -583,11 +583,11 @@ class TestStorageFacadeFromConfig:
     @pytest.mark.asyncio
     async def test_from_config_raises_when_backends_not_configured(self) -> None:
         """Missing ``backends`` dict must raise ``ConfigurationError`` with
-        a pointer to ``agv setup``, not fall back to a legacy code path."""
-        from agent_vault.exceptions import ConfigurationError
+        a pointer to ``ai setup``, not fall back to a legacy code path."""
+        from agentic_inquiry.exceptions import ConfigurationError
 
         config = MockConfig(with_backends=False)
-        with pytest.raises(ConfigurationError, match="agv setup"):
+        with pytest.raises(ConfigurationError, match="ai setup"):
             await StorageFacade.from_config(
                 config=config,
                 project_id="test-project",
@@ -598,11 +598,11 @@ class TestStorageFacadeFromConfig:
         """Empty ``backends`` is the same misconfiguration as missing — must
         hit the same actionable ``ConfigurationError`` instead of falling
         through to a less-useful ``BackendResolutionError`` later."""
-        from agent_vault.exceptions import ConfigurationError
+        from agentic_inquiry.exceptions import ConfigurationError
 
         config = MockConfig(with_backends=True)
         config.storage.backends = {}  # explicit empty dict
-        with pytest.raises(ConfigurationError, match="agv setup"):
+        with pytest.raises(ConfigurationError, match="ai setup"):
             await StorageFacade.from_config(
                 config=config,
                 project_id="test-project",
@@ -612,7 +612,7 @@ class TestStorageFacadeFromConfig:
     async def test_from_config_builds_facade_via_registry(self) -> None:
         """Happy path: with a populated ``backends`` dict, ``from_config``
         calls the registry for each role and returns an initialized facade."""
-        from agent_vault.storage.registry import BackendResolutionError
+        from agentic_inquiry.storage.registry import BackendResolutionError
 
         config = MockConfig(with_backends=True)
         mock_vector = MockVectorProvider()
@@ -628,10 +628,10 @@ class TestStorageFacadeFromConfig:
             raise BackendResolutionError(f"no {role} backend")
 
         with patch(
-            "agent_vault.storage.registry.create_provider",
+            "agentic_inquiry.storage.registry.create_provider",
             side_effect=_fake_create_provider,
         ), patch(
-            "agent_vault.storage.registry.resolve_backend",
+            "agentic_inquiry.storage.registry.resolve_backend",
             return_value=("default", {"type": "lancedb"}),
         ):
             facade = await StorageFacade.from_config(
@@ -659,7 +659,7 @@ class TestStorageFacadeFromConfig:
         an earlier version of ``from_config`` omitted it and would have
         left AlloyDB deployments without a pool manager for cleanup.
         """
-        from agent_vault.storage.registry import BackendResolutionError
+        from agentic_inquiry.storage.registry import BackendResolutionError
 
         config = MockConfig(with_backends=True)
         mock_vector = MockVectorProvider()
@@ -673,10 +673,10 @@ class TestStorageFacadeFromConfig:
             raise BackendResolutionError(f"no {role} backend")
 
         with patch(
-            "agent_vault.storage.registry.create_provider",
+            "agentic_inquiry.storage.registry.create_provider",
             side_effect=_fake_create_provider,
         ), patch(
-            "agent_vault.storage.registry.resolve_backend",
+            "agentic_inquiry.storage.registry.resolve_backend",
             return_value=("primary", {"type": backend_type}),
         ):
             facade = await StorageFacade.from_config(
@@ -695,7 +695,7 @@ class TestStorageFacadeFromConfig:
         """File-based backends (lancedb / sqlite / memory) should NOT
         allocate a ``BackendPoolManager`` — they have no pool to manage.
         """
-        from agent_vault.storage.registry import BackendResolutionError
+        from agentic_inquiry.storage.registry import BackendResolutionError
 
         config = MockConfig(with_backends=True)
         mock_vector = MockVectorProvider()
@@ -709,10 +709,10 @@ class TestStorageFacadeFromConfig:
             raise BackendResolutionError(f"no {role} backend")
 
         with patch(
-            "agent_vault.storage.registry.create_provider",
+            "agentic_inquiry.storage.registry.create_provider",
             side_effect=_fake_create_provider,
         ), patch(
-            "agent_vault.storage.registry.resolve_backend",
+            "agentic_inquiry.storage.registry.resolve_backend",
             return_value=("default", {"type": "lancedb"}),
         ):
             facade = await StorageFacade.from_config(
@@ -741,7 +741,7 @@ class TestStorageFacadeFromConfig:
         """
         import logging
 
-        from agent_vault.storage.registry import BackendResolutionError
+        from agentic_inquiry.storage.registry import BackendResolutionError
 
         config = MockConfig(with_backends=True)
         mock_vector = MockVectorProvider()
@@ -754,12 +754,12 @@ class TestStorageFacadeFromConfig:
                 return mock_graph
             raise BackendResolutionError(f"no {role} backend")
 
-        caplog.set_level(logging.WARNING, logger="agent_vault.storage.facade")
+        caplog.set_level(logging.WARNING, logger="agentic_inquiry.storage.facade")
         with patch(
-            "agent_vault.storage.registry.create_provider",
+            "agentic_inquiry.storage.registry.create_provider",
             side_effect=_fake_create_provider,
         ), patch(
-            "agent_vault.storage.registry.resolve_backend",
+            "agentic_inquiry.storage.registry.resolve_backend",
             return_value=("default", {"type": "lancedb"}),
         ), pytest.warns(DeprecationWarning, match="provider_name"):
             facade = await StorageFacade.from_config(
@@ -792,12 +792,12 @@ class TestStorageFacadeFromConfig:
         or provider constructor signatures surfaces here rather than in a
         downstream integration run.
         """
-        from agent_vault.config import Config, StorageConfig
-        from agent_vault.storage.providers.memory import InMemoryProvider
+        from agentic_inquiry.config import Config, StorageConfig
+        from agentic_inquiry.storage.providers.memory import InMemoryProvider
 
         config = Config(
             storage=StorageConfig(
-                root="/tmp/agv-test-e2e",
+                root="/tmp/ai-test-e2e",
                 backends={"mem": {"type": "memory"}},
                 vector_backend="mem",
                 graph_backend="mem",
@@ -831,12 +831,12 @@ class TestStorageFacadeFromConfig:
         in-facade single-provider dispatch — the registry path is what
         actually constructs the provider.
         """
-        from agent_vault.config import Config, StorageConfig
-        from agent_vault.storage.providers.memory import InMemoryProvider
+        from agentic_inquiry.config import Config, StorageConfig
+        from agentic_inquiry.storage.providers.memory import InMemoryProvider
 
         config = Config(
             storage=StorageConfig(
-                root="/tmp/agv-test-legacy",
+                root="/tmp/ai-test-legacy",
                 backend="memory",  # legacy field, no ``backends`` dict
             ),
         )
@@ -1099,7 +1099,7 @@ class TestCloudSQLFacadeIntegration:
 
         # Verify table naming works
         table_name = manager.get_table_name("chunks", "vector")
-        assert table_name == "agv_v_chunks"
+        assert table_name == "ai_v_chunks"
 
         await manager.close()
 
@@ -1109,7 +1109,7 @@ class TestStorageFacadeTransaction:
 
     def test_transaction_raises_error_for_non_postgres_vector_provider(self) -> None:
         """Test that transaction() raises TransactionError for non-PostgreSQL vector provider."""
-        from agent_vault.storage.exceptions import TransactionError
+        from agentic_inquiry.storage.exceptions import TransactionError
 
         config = MockConfig()
         # Add backend_timeouts mock to prevent AttributeError
@@ -1134,8 +1134,8 @@ class TestStorageFacadeTransaction:
 
     def test_transaction_raises_error_for_non_postgres_graph_provider(self) -> None:
         """Test that transaction() raises TransactionError for non-PostgreSQL graph provider."""
-        from agent_vault.storage.exceptions import TransactionError
-        from agent_vault.storage.providers.postgresql.vector import PostgresVectorProvider
+        from agentic_inquiry.storage.exceptions import TransactionError
+        from agentic_inquiry.storage.providers.postgresql.vector import PostgresVectorProvider
 
         config = MockConfig()
         config.storage.backend_timeouts = MagicMock()
@@ -1160,7 +1160,7 @@ class TestStorageFacadeTransaction:
 
     def test_transaction_uses_default_timeout_from_config(self) -> None:
         """Test that transaction() uses timeout from config when not specified."""
-        from agent_vault.storage.exceptions import TransactionError
+        from agentic_inquiry.storage.exceptions import TransactionError
 
         config = MockConfig()
         config.storage.backend_timeouts = MagicMock()
@@ -1186,7 +1186,7 @@ class TestStorageFacadeTransaction:
 
     def test_transaction_uses_custom_timeout(self) -> None:
         """Test that transaction() accepts custom timeout parameter."""
-        from agent_vault.storage.exceptions import TransactionError
+        from agentic_inquiry.storage.exceptions import TransactionError
 
         config = MockConfig()
         config.storage.backend_timeouts = MagicMock()

@@ -7,8 +7,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock
-from agent_vault.indexing.file_watch_manager import FileWatchManager
-from agent_vault.watching import register_watcher
+from agentic_inquiry.indexing.file_watch_manager import FileWatchManager
+from agentic_inquiry.watching import register_watcher
 from tests.helpers.async_utils import AsyncTestHelper
 
 
@@ -81,7 +81,7 @@ def mock_watcher(request):
     watcher._test_watcher_name = watcher_name
     yield watcher
     # Cleanup
-    from agent_vault.watching import _watcher_registry
+    from agentic_inquiry.watching import _watcher_registry
     try:
         _watcher_registry.unregister(watcher_name)
     except (KeyError, AttributeError):

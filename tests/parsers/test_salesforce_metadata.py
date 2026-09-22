@@ -6,13 +6,13 @@ from pathlib import Path
 
 import pytest
 
-from agent_vault.config import Config, ParsersConfig
-from agent_vault.parsers.chain import ParserChain
-from agent_vault.parsers.executor import available_parsers
-from agent_vault.parsers.implementations.salesforce_metadata import (
+from agentic_inquiry.config import Config, ParsersConfig
+from agentic_inquiry.parsers.chain import ParserChain
+from agentic_inquiry.parsers.executor import available_parsers
+from agentic_inquiry.parsers.implementations.salesforce_metadata import (
     SalesforceMetadataParser,
 )
-from agent_vault.parsers.models import ParserRelationship
+from agentic_inquiry.parsers.models import ParserRelationship
 
 pytestmark = pytest.mark.unit
 
@@ -267,7 +267,7 @@ async def test_oversized_file_is_skipped(
     path = tmp_path / "Account.object-meta.xml"
     path.write_text(_OBJECT)
     monkeypatch.setattr(
-        "agent_vault.parsers.implementations.salesforce_metadata._MAX_FILE_SIZE",
+        "agentic_inquiry.parsers.implementations.salesforce_metadata._MAX_FILE_SIZE",
         1,
     )
     result = await parser.parse(str(path))

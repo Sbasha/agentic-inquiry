@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agent_vault.mcp.tools.context import build_context, _generate_empty_context_suggestions
+from agentic_inquiry.mcp.tools.context import build_context, _generate_empty_context_suggestions
 
 
 @pytest.fixture
@@ -218,7 +218,7 @@ async def test_build_context_invalid_session(mcp_services):
     mcp_services["session_manager"].validate_session = AsyncMock(return_value=False)
     
     # Call build_context - MCPErrorHandler is imported inside the function
-    with patch("agent_vault.mcp.utils.errors.MCPErrorHandler") as mock_error_handler:
+    with patch("agentic_inquiry.mcp.utils.errors.MCPErrorHandler") as mock_error_handler:
         mock_error_handler.handle = AsyncMock(return_value={"error": "Session not found"})
         
         result = await build_context(
@@ -244,7 +244,7 @@ async def test_build_context_exception_handling(mcp_services):
     )
     
     # Call build_context - MCPErrorHandler is imported inside the function
-    with patch("agent_vault.mcp.utils.errors.MCPErrorHandler") as mock_error_handler:
+    with patch("agentic_inquiry.mcp.utils.errors.MCPErrorHandler") as mock_error_handler:
         mock_error_handler.handle = AsyncMock(return_value={"error": "Test error"})
         
         result = await build_context(

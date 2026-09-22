@@ -5,10 +5,10 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
-from agent_vault.database.results import SearchResult
-from agent_vault.search.hybrid_search import HybridSearchService
-from agent_vault.search.rerankers import RRFReranker, RerankerProtocol
+from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+from agentic_inquiry.database.results import SearchResult
+from agentic_inquiry.search.hybrid_search import HybridSearchService
+from agentic_inquiry.search.rerankers import RRFReranker, RerankerProtocol
 
 
 def _make_search_results(dicts: list, source: str = "test") -> list[SearchResult]:
@@ -297,7 +297,7 @@ class TestRRFScoringFormula:
     @pytest.mark.unit
     def test_rrf_score_calculation(self):
         """Test that RRF scores are calculated correctly per the formula."""
-        from agent_vault.database.results import SearchResult
+        from agentic_inquiry.database.results import SearchResult
 
         # Create test results
         vector_results = [
@@ -342,7 +342,7 @@ class TestRRFScoringFormula:
     @pytest.mark.unit
     def test_rrf_respects_weight_configuration(self):
         """Test that RRF respects different weight configurations."""
-        from agent_vault.database.results import SearchResult
+        from agentic_inquiry.database.results import SearchResult
 
         # Same results but appearing at rank 0 in each list
         vector_results = [
@@ -379,7 +379,7 @@ class TestRRFScoringFormula:
     @pytest.mark.unit
     def test_rrf_scores_are_normalized(self):
         """Test that final RRF scores are normalized to 0.0-1.0 range."""
-        from agent_vault.database.results import SearchResult
+        from agentic_inquiry.database.results import SearchResult
 
         vector_results = [
             SearchResult(id="doc1", data={"content": "a"}, score=0.9, source="vector"),
@@ -407,7 +407,7 @@ class TestRRFScoringFormula:
     @pytest.mark.unit
     def test_rrf_empty_inputs(self):
         """Test RRF handles empty inputs gracefully."""
-        from agent_vault.database.results import SearchResult
+        from agentic_inquiry.database.results import SearchResult
 
         reranker = RRFReranker(k=60)
 

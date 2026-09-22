@@ -14,10 +14,10 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from agent_vault.exceptions import ParsingError
-from agent_vault.parsers.chain import ParserChain
-from agent_vault.parsers.executor import register_parser, unregister_parser
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.exceptions import ParsingError
+from agentic_inquiry.parsers.chain import ParserChain
+from agentic_inquiry.parsers.executor import register_parser, unregister_parser
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
 
 
 def _create_mock_event_system():
@@ -147,7 +147,7 @@ async def test_document_parser_logs_failure_at_warning(caplog, tmp_path):
     it logs at WARNING level since ParserChain will handle the error
     and provide appropriate ERROR-level logging if all parsers fail.
     """
-    from agent_vault.parsers.implementations.document import DocumentParser
+    from agentic_inquiry.parsers.implementations.document import DocumentParser
     
     # Create a test file
     test_file = tmp_path / "test.pdf"
@@ -156,7 +156,7 @@ async def test_document_parser_logs_failure_at_warning(caplog, tmp_path):
     parser = DocumentParser()
     
     # Mock the partition function to raise an exception
-    with patch('agent_vault.parsers.implementations.document.partition') as mock_partition:
+    with patch('agentic_inquiry.parsers.implementations.document.partition') as mock_partition:
         mock_partition.side_effect = Exception("Mocked parsing failure")
         
         with caplog.at_level(logging.DEBUG):
@@ -183,7 +183,7 @@ async def test_unified_code_parser_logs_failure_at_warning(caplog, tmp_path):
     UnifiedCodeParser already correctly logs at WARNING level when tree-sitter
     parsing fails and it falls back to simple chunking.
     """
-    from agent_vault.parsers.implementations.unified_code import UnifiedCodeParser
+    from agentic_inquiry.parsers.implementations.unified_code import UnifiedCodeParser
     
     # Create a test file with content that might trigger fallback
     test_file = tmp_path / "test.py"

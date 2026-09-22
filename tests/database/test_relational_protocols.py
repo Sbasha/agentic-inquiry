@@ -11,13 +11,13 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.database.relational_protocols import (
+from agentic_inquiry.database.relational_protocols import (
     EventStoreProtocol,
     FileTrackerProtocol,
 )
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.events.store import EventStore
-from agent_vault.watching.file_tracker import FileTracker
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.events.store import EventStore
+from agentic_inquiry.watching.file_tracker import FileTracker
 
 
 # --- Fixtures ---

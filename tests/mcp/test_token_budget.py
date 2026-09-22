@@ -4,8 +4,8 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config
-from agent_vault.mcp.services.token_budget import (
+from agentic_inquiry.config import Config
+from agentic_inquiry.mcp.services.token_budget import (
     BudgetAllocation,
     TokenBudgetManager,
 )

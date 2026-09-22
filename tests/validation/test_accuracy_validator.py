@@ -4,8 +4,8 @@ from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.validation.accuracy_validator import AccuracyValidator
-from agent_vault.validation.models import ValidationResult, ValidationReport
+from agentic_inquiry.validation.accuracy_validator import AccuracyValidator
+from agentic_inquiry.validation.models import ValidationResult, ValidationReport
 
 
 class TestValidationResult:

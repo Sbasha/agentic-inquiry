@@ -9,7 +9,7 @@ last_updated: 2025-10-29
 
 # Embeddings API Reference
 
-This document provides detailed API documentation for Agent-Vault's embedding system, including the LocalModelEmbedder, ModelLoader, and ModelMetadata classes.
+This document provides detailed API documentation for Agentic Inquiry's embedding system, including the LocalModelEmbedder, ModelLoader, and ModelMetadata classes.
 
 ## Overview
 
@@ -50,12 +50,12 @@ embeddings:
 Install the optional extra:
 
 ```bash
-pip install 'agent-vault[aws]'
+pip install 'agentic-inquiry[aws]'
 ```
 
 AWS credentials use the standard boto3 provider chain (env vars,
 `AWS_PROFILE`, EC2 / ECS / Lambda role). The embedder doesn't shadow
-those — set them outside the agent-vault config.
+those — set them outside the agentic-inquiry config.
 
 ### `BedrockConfig` fields
 
@@ -72,18 +72,18 @@ those — set them outside the agent-vault config.
 
 ### Env-var overrides
 
-Per the `AGV_<SECTION>_<SUBSECTION>_<FIELD>` convention:
+Per the `AI_<SECTION>_<SUBSECTION>_<FIELD>` convention:
 
 | Variable | Maps to |
 |---|---|
-| `AGV_EMBEDDINGS_BEDROCK_MODEL_ID` | `embeddings.bedrock.model_id` |
-| `AGV_EMBEDDINGS_BEDROCK_REGION` | `embeddings.bedrock.region` |
-| `AGV_EMBEDDINGS_BEDROCK_OUTPUT_DIM` | `embeddings.bedrock.output_dim` |
-| `AGV_EMBEDDINGS_BEDROCK_NORMALIZE` | `embeddings.bedrock.normalize` |
-| `AGV_EMBEDDINGS_BEDROCK_BATCH_SIZE` | `embeddings.bedrock.batch_size` |
-| `AGV_EMBEDDINGS_BEDROCK_MAX_RETRIES` | `embeddings.bedrock.max_retries` |
-| `AGV_EMBEDDINGS_BEDROCK_TIMEOUT_SECONDS` | `embeddings.bedrock.timeout_seconds` |
-| `AGV_EMBEDDINGS_BEDROCK_REQUEST_CONCURRENCY` | `embeddings.bedrock.request_concurrency` |
+| `AI_EMBEDDINGS_BEDROCK_MODEL_ID` | `embeddings.bedrock.model_id` |
+| `AI_EMBEDDINGS_BEDROCK_REGION` | `embeddings.bedrock.region` |
+| `AI_EMBEDDINGS_BEDROCK_OUTPUT_DIM` | `embeddings.bedrock.output_dim` |
+| `AI_EMBEDDINGS_BEDROCK_NORMALIZE` | `embeddings.bedrock.normalize` |
+| `AI_EMBEDDINGS_BEDROCK_BATCH_SIZE` | `embeddings.bedrock.batch_size` |
+| `AI_EMBEDDINGS_BEDROCK_MAX_RETRIES` | `embeddings.bedrock.max_retries` |
+| `AI_EMBEDDINGS_BEDROCK_TIMEOUT_SECONDS` | `embeddings.bedrock.timeout_seconds` |
+| `AI_EMBEDDINGS_BEDROCK_REQUEST_CONCURRENCY` | `embeddings.bedrock.request_concurrency` |
 
 ### Adding the next remote embedder
 
@@ -111,7 +111,7 @@ The `LocalModelEmbedder` class loads and uses locally-stored ONNX models for gen
 ### Class Definition
 
 ```python
-from agent_vault.embeddings.local_model import LocalModelEmbedder
+from agentic_inquiry.embeddings.local_model import LocalModelEmbedder
 
 class LocalModelEmbedder(Embedder):
     """Embedder that uses locally-stored ONNX models."""
@@ -225,8 +225,8 @@ def ndims(self) -> int:
 #### Basic Usage
 
 ```python
-from agent_vault.embeddings.local_model import LocalModelEmbedder
-from agent_vault.config import Config
+from agentic_inquiry.embeddings.local_model import LocalModelEmbedder
+from agentic_inquiry.config import Config
 
 # Create embedder
 config = Config.load()
@@ -246,7 +246,7 @@ print(f"Dimensions: {embedder.ndims()}")
 #### With Custom Settings
 
 ```python
-from agent_vault.embeddings.local_model import LocalModelEmbedder
+from agentic_inquiry.embeddings.local_model import LocalModelEmbedder
 
 # Custom configuration
 embedder = LocalModelEmbedder(
@@ -263,7 +263,7 @@ embeddings = embedder.generate(["sample text"])
 #### Async Usage
 
 ```python
-from agent_vault.embeddings.local_model import LocalModelEmbedder
+from agentic_inquiry.embeddings.local_model import LocalModelEmbedder
 
 embedder = LocalModelEmbedder("models/all-MiniLM-L6-v2")
 
@@ -280,17 +280,17 @@ embeddings = await embed_texts()
 #### With EmbeddingRegistry
 
 ```python
-from agent_vault.embeddings.local_model import LocalModelEmbedder
-from agent_vault.embeddings.registry import embedding_registry
+from agentic_inquiry.embeddings.local_model import LocalModelEmbedder
+from agentic_inquiry.embeddings.registry import embedding_registry
 
 # Create and register embedder
 embedder = LocalModelEmbedder("models/all-MiniLM-L6-v2")
 embedding_registry.configure_default_embedder(embedder, ndims=384)
 
 # Now used automatically by all components
-from agent_vault.config import Config
-from agent_vault.storage.facade import StorageFacade
-from agent_vault.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.config import Config
+from agentic_inquiry.storage.facade import StorageFacade
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
 config = Config.load()
 storage = await StorageFacade.from_config(config, project_id="my-project")
 pipeline = IndexingPipeline(db_manager=storage, config=config, project_id="my-project")
@@ -303,7 +303,7 @@ The `ModelLoader` class handles loading ONNX models, tokenizers, and metadata.
 ### Class Definition
 
 ```python
-from agent_vault.embeddings.local_model import ModelLoader
+from agentic_inquiry.embeddings.local_model import ModelLoader
 
 class ModelLoader:
     """Loads and caches ONNX models and tokenizers."""
@@ -343,7 +343,7 @@ def load_model(
         UnsupportedModelFormatError: If model format is not supported.
     
     Example:
-        >>> loader = ModelLoader(Path(".agv"))
+        >>> loader = ModelLoader(Path(".agentic-inquiry"))
         >>> session, tokenizer, metadata = loader.load_model(
         ...     Path("models/all-MiniLM-L6-v2")
         ... )
@@ -367,7 +367,7 @@ def detect_format(self, model_path: Path) -> str:
         UnsupportedModelFormatError: If format cannot be determined.
     
     Example:
-        >>> loader = ModelLoader(Path(".agv"))
+        >>> loader = ModelLoader(Path(".agentic-inquiry"))
         >>> format = loader.detect_format(Path("models/my-model"))
         >>> print(format)
         'onnx'
@@ -380,10 +380,10 @@ def detect_format(self, model_path: Path) -> str:
 
 ```python
 from pathlib import Path
-from agent_vault.embeddings.local_model import ModelLoader
+from agentic_inquiry.embeddings.local_model import ModelLoader
 
 # Create loader
-loader = ModelLoader(workspace_root=Path(".agv"))
+loader = ModelLoader(workspace_root=Path(".agentic-inquiry"))
 
 # Load model
 model_path = Path("models/all-MiniLM-L6-v2")
@@ -398,9 +398,9 @@ print(f"Max sequence length: {metadata.max_sequence_length}")
 
 ```python
 from pathlib import Path
-from agent_vault.embeddings.local_model import ModelLoader
+from agentic_inquiry.embeddings.local_model import ModelLoader
 
-loader = ModelLoader(workspace_root=Path(".agv"))
+loader = ModelLoader(workspace_root=Path(".agentic-inquiry"))
 
 # Detect format
 format = loader.detect_format(Path("models/my-model"))
@@ -414,7 +414,7 @@ The `ModelMetadata` class stores metadata about converted models.
 ### Class Definition
 
 ```python
-from agent_vault.embeddings.local_model import ModelMetadata
+from agentic_inquiry.embeddings.local_model import ModelMetadata
 from dataclasses import dataclass
 
 @dataclass
@@ -491,7 +491,7 @@ def load(cls, path: Path) -> "ModelMetadata":
 ```python
 from pathlib import Path
 from datetime import datetime
-from agent_vault.embeddings.local_model import ModelMetadata
+from agentic_inquiry.embeddings.local_model import ModelMetadata
 
 # Create metadata
 metadata = ModelMetadata(
@@ -514,7 +514,7 @@ metadata.save(Path("models/all-MiniLM-L6-v2/metadata.json"))
 
 ```python
 from pathlib import Path
-from agent_vault.embeddings.local_model import ModelMetadata
+from agentic_inquiry.embeddings.local_model import ModelMetadata
 
 # Load metadata
 metadata = ModelMetadata.load(
@@ -592,17 +592,17 @@ Override configuration with environment variables:
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `AGV_EMBEDDINGS_PROVIDER` | string | Embedding provider type |
-| `AGV_EMBEDDINGS_LOCAL_MODEL_PATH` | string | Path to model directory |
-| `AGV_EMBEDDINGS_LOCAL_NORMALIZE` | boolean | Enable normalization |
-| `AGV_EMBEDDINGS_LOCAL_BATCH_SIZE` | integer | Batch size for inference |
+| `AI_EMBEDDINGS_PROVIDER` | string | Embedding provider type |
+| `AI_EMBEDDINGS_LOCAL_MODEL_PATH` | string | Path to model directory |
+| `AI_EMBEDDINGS_LOCAL_NORMALIZE` | boolean | Enable normalization |
+| `AI_EMBEDDINGS_LOCAL_BATCH_SIZE` | integer | Batch size for inference |
 
 **Example:**
 ```bash
-export AGV_EMBEDDINGS_PROVIDER=local
-export AGV_EMBEDDINGS_LOCAL_MODEL_PATH=models/all-MiniLM-L6-v2
-export AGV_EMBEDDINGS_LOCAL_NORMALIZE=true
-export AGV_EMBEDDINGS_LOCAL_BATCH_SIZE=64
+export AI_EMBEDDINGS_PROVIDER=local
+export AI_EMBEDDINGS_LOCAL_MODEL_PATH=models/all-MiniLM-L6-v2
+export AI_EMBEDDINGS_LOCAL_NORMALIZE=true
+export AI_EMBEDDINGS_LOCAL_BATCH_SIZE=64
 ```
 
 ## Exceptions
@@ -612,7 +612,7 @@ export AGV_EMBEDDINGS_LOCAL_BATCH_SIZE=64
 Raised when model directory or required files don't exist.
 
 ```python
-from agent_vault.embeddings.local_model import ModelNotFoundError
+from agentic_inquiry.embeddings.local_model import ModelNotFoundError
 
 try:
     embedder = LocalModelEmbedder("models/nonexistent")
@@ -625,7 +625,7 @@ except ModelNotFoundError as e:
 Raised when model fails to load.
 
 ```python
-from agent_vault.embeddings.local_model import ModelLoadError
+from agentic_inquiry.embeddings.local_model import ModelLoadError
 
 try:
     embedder = LocalModelEmbedder("models/corrupted")
@@ -638,10 +638,10 @@ except ModelLoadError as e:
 Raised when model format is not supported.
 
 ```python
-from agent_vault.embeddings.local_model import UnsupportedModelFormatError
+from agentic_inquiry.embeddings.local_model import UnsupportedModelFormatError
 
 try:
-    loader = ModelLoader(Path(".agv"))
+    loader = ModelLoader(Path(".agentic-inquiry"))
     loader.detect_format(Path("models/unsupported"))
 except UnsupportedModelFormatError as e:
     print(f"Unsupported format: {e}")
@@ -652,7 +652,7 @@ except UnsupportedModelFormatError as e:
 Raised when embedding generation fails.
 
 ```python
-from agent_vault.embeddings.local_model import InferenceError
+from agentic_inquiry.embeddings.local_model import InferenceError
 
 try:
     embeddings = embedder.generate(["text"])
@@ -687,7 +687,7 @@ ModelLoadResult = Tuple[InferenceSession, Tokenizer, ModelMetadata]
 Always handle potential errors:
 
 ```python
-from agent_vault.embeddings.local_model import (
+from agentic_inquiry.embeddings.local_model import (
     LocalModelEmbedder,
     ModelNotFoundError,
     InferenceError
@@ -750,7 +750,7 @@ The `NoOpEmbedder` class is used for server-side embedding strategies where the 
 ### Class Definition
 
 ```python
-from agent_vault.embeddings.noop import NoOpEmbedder
+from agentic_inquiry.embeddings.noop import NoOpEmbedder
 
 class NoOpEmbedder(Embedder):
     """Embedder that returns empty vectors for server-side embedding."""
@@ -796,10 +796,10 @@ def generate(self, texts: List[str]) -> List[List[float]]:
 ### Usage Example
 
 ```python
-from agent_vault.embeddings.noop import NoOpEmbedder
-from agent_vault.embeddings.registry import embedding_registry
-from agent_vault.storage.config import BackendConfig
-from agent_vault.config import Config
+from agentic_inquiry.embeddings.noop import NoOpEmbedder
+from agentic_inquiry.embeddings.registry import embedding_registry
+from agentic_inquiry.storage.config import BackendConfig
+from agentic_inquiry.config import Config
 
 # Configure for AlloyDB server-side embedding
 embedder = NoOpEmbedder(ndims=768)
@@ -813,7 +813,7 @@ config.storage.embedding_model = "text-embedding-005"
 config.storage.embedding_dim = 768
 
 # Storage facade will automatically use server-side embedding
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.storage.facade import StorageFacade
 storage = await StorageFacade.from_config(config, project_id="my-project")
 ```
 
@@ -849,7 +849,7 @@ storage:
 For AlloyDB backends with server-side embedding, the pipeline automatically triggers embedding generation after indexing completes:
 
 ```python
-from agent_vault.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
 
 # Pipeline automatically calls generate_embeddings() after indexing
 pipeline = IndexingPipeline(db_manager=storage, config=config, project_id="my-project")
@@ -876,7 +876,7 @@ The `generate_embeddings()` method uses AlloyDB's `ai.initialize_embeddings()` p
 When using server-side embedding, pass raw query text (not vectors) to search:
 
 ```python
-from agent_vault.search.service import SearchService
+from agentic_inquiry.search.service import SearchService
 
 search = SearchService(storage=storage, config=config)
 
@@ -894,25 +894,25 @@ Override configuration with environment variables:
 
 | Variable | Type | Description |
 |----------|------|-------------|
-| `AGV_EMBEDDINGS_PROVIDER` | string | Embedding provider type |
-| `AGV_EMBEDDINGS_LOCAL_MODEL_PATH` | string | Path to model directory |
-| `AGV_EMBEDDINGS_LOCAL_NORMALIZE` | boolean | Enable normalization |
-| `AGV_EMBEDDINGS_LOCAL_BATCH_SIZE` | integer | Batch size for inference |
-| `AGV_STORAGE_EMBEDDING_STRATEGY` | string | "local" or "server_side" |
-| `AGV_STORAGE_EMBEDDING_MODEL` | string | Model name for server-side |
-| `AGV_STORAGE_EMBEDDING_DIM` | integer | Embedding dimensions |
+| `AI_EMBEDDINGS_PROVIDER` | string | Embedding provider type |
+| `AI_EMBEDDINGS_LOCAL_MODEL_PATH` | string | Path to model directory |
+| `AI_EMBEDDINGS_LOCAL_NORMALIZE` | boolean | Enable normalization |
+| `AI_EMBEDDINGS_LOCAL_BATCH_SIZE` | integer | Batch size for inference |
+| `AI_STORAGE_EMBEDDING_STRATEGY` | string | "local" or "server_side" |
+| `AI_STORAGE_EMBEDDING_MODEL` | string | Model name for server-side |
+| `AI_STORAGE_EMBEDDING_DIM` | integer | Embedding dimensions |
 
 **Example:**
 ```bash
 # Local embedding
-export AGV_EMBEDDINGS_PROVIDER=local
-export AGV_EMBEDDINGS_LOCAL_MODEL_PATH=models/all-MiniLM-L6-v2
+export AI_EMBEDDINGS_PROVIDER=local
+export AI_EMBEDDINGS_LOCAL_MODEL_PATH=models/all-MiniLM-L6-v2
 
 # Server-side embedding (AlloyDB)
-export AGV_STORAGE_BACKEND=alloydb
-export AGV_STORAGE_EMBEDDING_STRATEGY=server_side
-export AGV_STORAGE_EMBEDDING_MODEL=text-embedding-005
-export AGV_STORAGE_EMBEDDING_DIM=768
+export AI_STORAGE_BACKEND=alloydb
+export AI_STORAGE_EMBEDDING_STRATEGY=server_side
+export AI_STORAGE_EMBEDDING_MODEL=text-embedding-005
+export AI_STORAGE_EMBEDDING_DIM=768
 ```
 
 ## See Also

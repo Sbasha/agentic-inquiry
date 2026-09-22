@@ -8,7 +8,7 @@
 Four independent seams on the same first-run path, implemented in order
 so each is testable alone: soften the onboard gate and add a thin record
 CLI, map index results to exit codes, retry retryable LanceDB writes,
-then bootstrap and auto-load `.agv/envs/<name>/.env`. No new libraries.
+then bootstrap and auto-load `.agentic-inquiry/envs/<name>/.env`. No new libraries.
 Retry uses existing `RetryPolicy`. Path confinement uses existing
 `validate_file_path`.
 
@@ -26,8 +26,8 @@ directory, and retry must not swallow schema errors.
 **Integration tests:** none beyond per-task tests. The four seams do not
 share a single new integration surface.
 
-**Manual verification:** `agv onboard start` / `complete` on a temp
-workspace; `agv index` summary still prints when exit code is 1.
+**Manual verification:** `ai onboard start` / `complete` on a temp
+workspace; `ai index` summary still prints when exit code is 1.
 
 ## Design (LLD)
 
@@ -44,16 +44,16 @@ workspace; `agv index` summary still prints when exit code is 1.
 
 ### Interfaces & contracts
 
-Public CLI: `agv onboard start [--project ID] [--artifact-path PATH]`
-prints `ONBOARD_RUN_ID=<uuid>`. `agv onboard complete --run-id ID`
+Public CLI: `ai onboard start [--project ID] [--artifact-path PATH]`
+prints `ONBOARD_RUN_ID=<uuid>`. `ai onboard complete --run-id ID`
 marks completed. Traces to AC 2. No OpenAPI contract.
 
 `exit_code_for_index_result(result: Mapping[str, Any]) -> int` in
-`agent_vault/cli/index.py`. Traces to AC 3.
+`agentic_inquiry/cli/index.py`. Traces to AC 3.
 
 ### Component / module decomposition
 
-- `agent_vault/cli/onboard.py` - new sibling CLI module, same shape as
+- `agentic_inquiry/cli/onboard.py` - new sibling CLI module, same shape as
   `memory.py`.
 - `load_environment_dotenv` in `env_resolver.py`.
 - Retry helper next to `_upsert_rows` in `lancedb_manager.py`.
@@ -76,38 +76,38 @@ marks completed. Traces to AC 2. No OpenAPI contract.
 
 ## Tasks
 
-### T1: Missing onboard is a warning; `agv onboard start|complete` records runs
+### T1: Missing onboard is a warning; `ai onboard start|complete` records runs
 
 **Depends on:** none
 
-**Touches:** agent_vault/onboard/gate.py, tests/onboard/test_gate.py, agent_vault/cli/onboard.py, agent_vault/cli/__main__.py, extensions/claude/agv/skills/onboard/SKILL.md
+**Touches:** agentic_inquiry/onboard/gate.py, tests/onboard/test_gate.py, agentic_inquiry/cli/onboard.py, agentic_inquiry/cli/__main__.py, extensions/claude/ai/skills/onboard/SKILL.md
 
 **Tests:**
 - `test_gate_warns_when_no_onboard` (replaces
   `test_gate_blocks_when_no_onboard`): `check_onboard_gate` returns a
   result with `reason == "no_onboard"` and does not raise.
 - `test_gate_allows_skip` still passes.
-- Goal-based: `agv --help` text includes `onboard`. Skill file contains
-  `agv onboard start` and `agv onboard complete` and does not contain
+- Goal-based: `ai --help` text includes `onboard`. Skill file contains
+  `ai onboard start` and `ai onboard complete` and does not contain
   `cat .env`.
 
 **Approach:**
 - In `check_onboard_gate`, log a warning for `no_onboard` and return
   `staleness` (same control flow as stale).
-- Add `agent_vault/cli/onboard.py` wrapping
+- Add `agentic_inquiry/cli/onboard.py` wrapping
   `OnboardMetadataService.create_onboard_run` /
   `complete_onboard_run`. Wire `onboard` in `__main__.py` like `memory`.
 - Update onboard skill: start before background index, complete at end;
   drop the project-root `.env` probe.
 
-**Done when:** gate tests green; skill grep checks pass; `agv onboard
+**Done when:** gate tests green; skill grep checks pass; `ai onboard
 start --help` exits 0.
 
-### T2: `agv index` exits 1 unless indexing produced chunks
+### T2: `ai index` exits 1 unless indexing produced chunks
 
 **Depends on:** none
 
-**Touches:** agent_vault/cli/index.py, tests/cli/test_index_exit_code.py
+**Touches:** agentic_inquiry/cli/index.py, tests/cli/test_index_exit_code.py
 
 **Tests:**
 - Parametrized `exit_code_for_index_result`: `completed` + chunks 10 ->
@@ -126,7 +126,7 @@ start --help` exits 0.
 
 **Depends on:** none
 
-**Touches:** agent_vault/database/lancedb_manager.py, tests/database/test_lancedb_retry.py
+**Touches:** agentic_inquiry/database/lancedb_manager.py, tests/database/test_lancedb_retry.py
 
 **Tests:**
 - `_is_retryable_lancedb_error`: `commit conflict` and `Retryable`
@@ -142,11 +142,11 @@ start --help` exits 0.
 
 **Done when:** `tests/database/test_lancedb_retry.py` is green.
 
-### T4: Bootstrap and auto-load `.agv/envs/<name>/.env`
+### T4: Bootstrap and auto-load `.agentic-inquiry/envs/<name>/.env`
 
 **Depends on:** none
 
-**Touches:** agent_vault/cli/env_resolver.py, agent_vault/cli/setup/local_setup.py, tests/cli/test_env_resolver.py, tests/cli/setup/test_local_setup.py, extensions/claude/agv/skills/onboard/SKILL.md
+**Touches:** agentic_inquiry/cli/env_resolver.py, agentic_inquiry/cli/setup/local_setup.py, tests/cli/test_env_resolver.py, tests/cli/setup/test_local_setup.py, extensions/claude/ai/skills/onboard/SKILL.md
 
 **Tests:**
 - Missing file: `load_environment_dotenv` is a no-op.
@@ -155,7 +155,7 @@ start --help` exits 0.
 - Comments and blank lines ignored; values never appear in log messages.
 - Path outside env dir (symlink escape) is not loaded.
 - `LocalSetup.run` creates `.env` containing commented
-  `AGV_EMBEDDING_DEVICE=cpu`.
+  `AI_EMBEDDING_DEVICE=cpu`.
 
 **Approach:**
 - `load_environment_dotenv(env_dir)` parses KEY=VALUE, called from
@@ -166,7 +166,7 @@ start --help` exits 0.
   be done in T1).
 
 **Done when:** env-resolver and local-setup tests green;
-`rg 'cat \\.env' extensions/claude/agv/skills/` is empty.
+`rg 'cat \\.env' extensions/claude/ai/skills/` is empty.
 
 ## Rollout
 

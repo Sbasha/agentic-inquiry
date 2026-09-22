@@ -5,7 +5,7 @@ from unittest.mock import MagicMock
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.database.query_builder import LanceDBQueryBuilder
+from agentic_inquiry.database.query_builder import LanceDBQueryBuilder
 
 
 @pytest.fixture
@@ -143,7 +143,7 @@ class TestFilterConstruction:
 
     def test_filter_builder_string(self):
         """Test filter with string value."""
-        from agent_vault.database.filters import FilterBuilder
+        from agentic_inquiry.database.filters import FilterBuilder
         builder = FilterBuilder()
         builder.add_field_filter("name", "test")
         expr = builder.build()
@@ -151,7 +151,7 @@ class TestFilterConstruction:
 
     def test_filter_builder_int(self):
         """Test filter with integer value."""
-        from agent_vault.database.filters import FilterBuilder
+        from agentic_inquiry.database.filters import FilterBuilder
         builder = FilterBuilder()
         builder.add_field_filter("count", 42)
         expr = builder.build()
@@ -159,7 +159,7 @@ class TestFilterConstruction:
 
     def test_filter_builder_bool(self):
         """Test filter with boolean value."""
-        from agent_vault.database.filters import FilterBuilder
+        from agentic_inquiry.database.filters import FilterBuilder
         builder = FilterBuilder()
         builder.add_field_filter("active", True)
         expr = builder.build()
@@ -167,7 +167,7 @@ class TestFilterConstruction:
 
     def test_filter_builder_null(self):
         """Test filter with null value."""
-        from agent_vault.database.filters import FilterBuilder
+        from agentic_inquiry.database.filters import FilterBuilder
         builder = FilterBuilder()
         builder.add_field_filter("value", None)
         expr = builder.build()
@@ -175,7 +175,7 @@ class TestFilterConstruction:
 
     def test_filter_builder_list(self):
         """Test filter with list value."""
-        from agent_vault.database.filters import FilterBuilder
+        from agentic_inquiry.database.filters import FilterBuilder
         builder = FilterBuilder()
         builder.add_field_filter("type", ["a", "b", "c"])
         expr = builder.build()
@@ -226,7 +226,7 @@ class TestFilterConstruction:
 
     def test_filter_builder_escapes_quotes(self):
         """Test that single quotes are escaped."""
-        from agent_vault.database.filters import FilterBuilder
+        from agentic_inquiry.database.filters import FilterBuilder
         builder = FilterBuilder()
         builder.add_field_filter("name", "test'value")
         expr = builder.build()

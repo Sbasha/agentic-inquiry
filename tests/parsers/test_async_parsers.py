@@ -5,11 +5,11 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 pytestmark = pytest.mark.unit
-from agent_vault.parsers.implementations.fallback_text import FallbackTextParser
-from agent_vault.parsers.implementations.unified_code import UnifiedCodeParser
-from agent_vault.parsers.implementations.document import DocumentParser
-from agent_vault.parsers.chain import ParserChain
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.parsers.implementations.fallback_text import FallbackTextParser
+from agentic_inquiry.parsers.implementations.unified_code import UnifiedCodeParser
+from agentic_inquiry.parsers.implementations.document import DocumentParser
+from agentic_inquiry.parsers.chain import ParserChain
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
 
 
 def _create_mock_event_system():

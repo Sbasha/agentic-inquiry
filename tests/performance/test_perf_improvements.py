@@ -21,18 +21,18 @@ import pytest_asyncio
 
 pytestmark = [pytest.mark.integration, pytest.mark.slow]
 
-from agent_vault.config import Config, StorageConfig
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.mcp.services.entity_resolver import EntityResolver
-from agent_vault.mcp.services.impact_analyzer import ImpactAnalyzer
-from agent_vault.mcp.services.session_manager import SessionManager
-from agent_vault.mcp.tools.analysis import analyze_impact
-from agent_vault.models.graph_entity import GraphEntity
-from agent_vault.models.graph_relationship import GraphRelationship
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.mcp.services.entity_resolver import EntityResolver
+from agentic_inquiry.mcp.services.impact_analyzer import ImpactAnalyzer
+from agentic_inquiry.mcp.services.session_manager import SessionManager
+from agentic_inquiry.mcp.tools.analysis import analyze_impact
+from agentic_inquiry.models.graph_entity import GraphEntity
+from agentic_inquiry.models.graph_relationship import GraphRelationship
+from agentic_inquiry.storage.facade import StorageFacade
 
 # Trigger parser auto-registration
-import agent_vault.parsers.implementations  # noqa: F401
+import agentic_inquiry.parsers.implementations  # noqa: F401
 
 
 def _create_mock_event_system():
@@ -97,7 +97,7 @@ async def test_storage_facade(test_config):
 @pytest_asyncio.fixture
 async def test_embedding_registry():
     """Create embedding registry with dummy embedder."""
-    from agent_vault.embeddings.registry import EmbeddingRegistry
+    from agentic_inquiry.embeddings.registry import EmbeddingRegistry
     return EmbeddingRegistry(default_embedder=_DummyEmbedder())
 
 

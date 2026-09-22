@@ -4,10 +4,10 @@ import pytest
 
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
-from agent_vault.search.service import SearchService
-from agent_vault.config import Config
-from agent_vault.database.results import SearchResult
-from agent_vault.exceptions import ConfigurationError
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.config import Config
+from agentic_inquiry.database.results import SearchResult
+from agentic_inquiry.exceptions import ConfigurationError
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def mock_db_manager():
     SearchService checks isinstance(provider, LanceDBAdapter) and if True,
     uses the provider directly as self._adapter.
     """
-    from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
+    from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
 
     # Create a mock that looks like a LanceDBAdapter
     mock_adapter = MagicMock(spec=LanceDBAdapter)

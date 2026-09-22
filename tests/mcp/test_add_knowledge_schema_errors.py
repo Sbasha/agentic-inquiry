@@ -5,12 +5,12 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agent_vault.mcp.tools.knowledge import add_knowledge
-from agent_vault.exceptions import SchemaValidationError
+from agentic_inquiry.mcp.tools.knowledge import add_knowledge
+from agentic_inquiry.exceptions import SchemaValidationError
 
 # Patch path for IndexingPipeline class (patched at the actual module where it's defined)
-PIPELINE_PATCH_PATH = "agent_vault.indexing.pipeline.IndexingPipeline"
-PARSER_CHAIN_PATCH_PATH = "agent_vault.mcp.tools.knowledge.create_parser_chain"
+PIPELINE_PATCH_PATH = "agentic_inquiry.indexing.pipeline.IndexingPipeline"
+PARSER_CHAIN_PATCH_PATH = "agentic_inquiry.mcp.tools.knowledge.create_parser_chain"
 
 
 @pytest.fixture
@@ -81,7 +81,7 @@ async def test_add_knowledge_file_schema_validation_error(mcp_services, tmp_path
         
         # Mock parser chain
         with patch(PARSER_CHAIN_PATCH_PATH) as mock_create_chain:
-            from agent_vault.parsers.models import ParsedDocument, ParserChunk
+            from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
             
             mock_chain = MagicMock()
             mock_chain.parse = AsyncMock(return_value=ParsedDocument(
@@ -151,7 +151,7 @@ async def test_add_knowledge_directory_schema_validation_error(mcp_services, tmp
         
         # Mock parser chain
         with patch(PARSER_CHAIN_PATCH_PATH) as mock_create_chain:
-            from agent_vault.parsers.models import ParsedDocument, ParserChunk
+            from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
             
             mock_chain = MagicMock()
             mock_chain.parse = AsyncMock(return_value=ParsedDocument(
@@ -169,7 +169,7 @@ async def test_add_knowledge_directory_schema_validation_error(mcp_services, tmp
             mock_create_chain.return_value = mock_chain
             
             # Mock ignore handler
-            with patch("agent_vault.mcp.tools.knowledge.get_ignore_handler") as mock_ignore:
+            with patch("agentic_inquiry.mcp.tools.knowledge.get_ignore_handler") as mock_ignore:
                 mock_handler = MagicMock()
                 mock_handler.is_ignored.return_value = False
                 mock_ignore.return_value = mock_handler
@@ -279,7 +279,7 @@ async def test_add_knowledge_schema_error_includes_hints(mcp_services, tmp_path,
         
         # Mock parser chain
         with patch(PARSER_CHAIN_PATCH_PATH) as mock_create_chain:
-            from agent_vault.parsers.models import ParsedDocument, ParserChunk
+            from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
             
             mock_chain = MagicMock()
             mock_chain.parse = AsyncMock(return_value=ParsedDocument(

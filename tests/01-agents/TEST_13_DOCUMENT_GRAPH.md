@@ -116,7 +116,7 @@ This section MUST complete successfully before running any tests. The document g
 ### Step 1: Create Session with Unique Project ID
 
 ```python
-project_id = "agv_test13_docgraph_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test13_docgraph_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Document graph test")
 ```
 
@@ -174,7 +174,7 @@ info = get_project_info(session_id=session_id)
 | `index_health` | "healthy" | Investigate indexing errors |
 
 **If thresholds NOT met:**
-1. Check `.agv-server.log` for parsing errors
+1. Check `.agentic-inquiry-server.log` for parsing errors
 2. Verify documents have headers (# ## ###) not just plain text
 3. Ensure Markdown/PDF/DOCX files exist in the indexed path
 4. Re-run indexing with correct source path

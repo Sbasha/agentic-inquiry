@@ -4,11 +4,11 @@ This guide explains how to implement a filter translator that converts the canon
 
 ## Overview
 
-The `Filter` AST is the canonical filter language used throughout Agent-Vault. Every database adapter must translate this AST to its backend's native format (SQL, DSL, structured queries).
+The `Filter` AST is the canonical filter language used throughout Agentic Inquiry. Every database adapter must translate this AST to its backend's native format (SQL, DSL, structured queries).
 
 **Key files:**
-- `agent_vault/database/filters.py` - Filter AST definition
-- `agent_vault/database/adapters/filter_translator.py` - LanceDB reference implementation
+- `agentic_inquiry/database/filters.py` - Filter AST definition
+- `agentic_inquiry/database/adapters/filter_translator.py` - LanceDB reference implementation
 - `docs/design/filter-ast.md` - Canonical specification
 
 ---
@@ -58,7 +58,7 @@ class Filter:
 Use these instead of constructing Filter directly:
 
 ```python
-from agent_vault.database.filters import (
+from agentic_inquiry.database.filters import (
     eq, ne, gt, gte, lt, lte,
     is_in, not_in,
     is_null, is_not_null,
@@ -202,7 +202,7 @@ Here's the recommended structure for a filter translator:
 """Filter translator for [Backend Name]."""
 from typing import Any, Optional
 
-from agent_vault.database.filters import Filter, FilterOperator
+from agentic_inquiry.database.filters import Filter, FilterOperator
 
 
 class FilterTranslationError(Exception):
@@ -506,5 +506,5 @@ This allows callers to understand:
 
 - `docs/design/filter-ast.md` - Canonical specification
 - `docs/development/adapter-implementation-guide.md` - Full adapter guide
-- `agent_vault/database/adapters/filter_translator.py` - LanceDB reference
+- `agentic_inquiry/database/adapters/filter_translator.py` - LanceDB reference
 - `tests/database/test_filter_translator.py` - Test patterns

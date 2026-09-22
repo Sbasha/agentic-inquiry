@@ -1,12 +1,12 @@
-# Agent-Vault Documentation
+# Agentic Inquiry Documentation
 
-Complete documentation index for Agent-Vault. Start with the [main README](../README.md) for setup and usage, or [AGENTS.md](../AGENTS.md) for the developer quick-reference.
+Complete documentation index for Agentic Inquiry. Start with the [main README](../README.md) for setup and usage, or [AGENTS.md](../AGENTS.md) for the developer quick-reference.
 
 ---
 
 ## Architecture
 
-How Agent-Vault is built — components, data flows, and design rationale.
+How Agentic Inquiry is built — components, data flows, and design rationale.
 
 | Document | Description |
 |----------|-------------|
@@ -75,7 +75,7 @@ Day-to-day storage management — indexing config, maintenance, migrations.
 
 ## API Reference
 
-Programmatic interfaces for embedding Agent-Vault in your own code.
+Programmatic interfaces for embedding Agentic Inquiry in your own code.
 
 | Document | Description |
 |----------|-------------|
@@ -101,7 +101,7 @@ Model Context Protocol server for integration beyond Claude Code plugins.
 
 ## Development
 
-Guides for contributors building on Agent-Vault.
+Guides for contributors building on Agentic Inquiry.
 
 | Document | Description |
 |----------|-------------|
@@ -131,7 +131,7 @@ Observability and event system internals.
 
 ## Customization
 
-Extending Agent-Vault with new backends, parsers, and features.
+Extending Agentic Inquiry with new backends, parsers, and features.
 
 | Document | Description |
 |----------|-------------|

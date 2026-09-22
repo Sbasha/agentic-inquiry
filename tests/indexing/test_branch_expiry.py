@@ -29,7 +29,7 @@ from unittest.mock import AsyncMock, MagicMock
 def _make_pg_provider(rows: list[dict], execute_error: Exception | None = None):
     """Create a mock vector_provider that looks like a PostgreSQL provider."""
     vp = MagicMock()
-    vp._chunks_table = "agv_chunks"
+    vp._chunks_table = "ai_chunks"
 
     # _fetch returns the supplied rows
     vp._fetch = AsyncMock(return_value=rows)
@@ -68,7 +68,7 @@ class TestExpireStalesBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_stale_branch_gets_expired(self):
         """A branch absent from active_branches must be soft-deleted."""
-        from agent_vault.indexing.branch_expiry import expire_stale_branches
+        from agentic_inquiry.indexing.branch_expiry import expire_stale_branches
 
         rows = [{"branch": "feature/old"}]
         storage = _make_pg_storage(rows)
@@ -85,7 +85,7 @@ class TestExpireStalesBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_default_branch_not_expired(self):
         """The default branch must never be soft-deleted."""
-        from agent_vault.indexing.branch_expiry import expire_stale_branches
+        from agentic_inquiry.indexing.branch_expiry import expire_stale_branches
 
         # main is in DB but not in active_branches — still must not be expired
         rows = [{"branch": "main"}]
@@ -105,7 +105,7 @@ class TestExpireStalesBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_active_branch_not_expired(self):
         """A branch in active_branches must not be soft-deleted."""
-        from agent_vault.indexing.branch_expiry import expire_stale_branches
+        from agentic_inquiry.indexing.branch_expiry import expire_stale_branches
 
         rows = [{"branch": "feature/active"}]
         storage = _make_pg_storage(rows)
@@ -123,7 +123,7 @@ class TestExpireStalesBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_execute_called_with_correct_branch(self):
         """_execute must be called once per expired branch with the correct branch name."""
-        from agent_vault.indexing.branch_expiry import expire_stale_branches
+        from agentic_inquiry.indexing.branch_expiry import expire_stale_branches
 
         rows = [{"branch": "feature/gone"}]
         storage = _make_pg_storage(rows)
@@ -143,7 +143,7 @@ class TestExpireStalesBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_returns_empty_when_no_stale_branches(self):
         """When all branches are active, the result must be an empty list."""
-        from agent_vault.indexing.branch_expiry import expire_stale_branches
+        from agentic_inquiry.indexing.branch_expiry import expire_stale_branches
 
         rows = [{"branch": "feature/active"}]
         storage = _make_pg_storage(rows)
@@ -160,7 +160,7 @@ class TestExpireStalesBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_returns_empty_when_fetch_raises(self):
         """Schema pre-migration (no is_active column): must return [] not raise."""
-        from agent_vault.indexing.branch_expiry import expire_stale_branches
+        from agentic_inquiry.indexing.branch_expiry import expire_stale_branches
 
         storage = _make_pg_storage([], execute_error=None)
         # Simulate _fetch raising (pre-migration schema)
@@ -180,7 +180,7 @@ class TestExpireStalesBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_multiple_stale_branches_all_expired(self):
         """Multiple stale branches must all be returned."""
-        from agent_vault.indexing.branch_expiry import expire_stale_branches
+        from agentic_inquiry.indexing.branch_expiry import expire_stale_branches
 
         rows = [{"branch": "feature/a"}, {"branch": "feature/b"}]
         storage = _make_pg_storage(rows)
@@ -198,7 +198,7 @@ class TestExpireStalesBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_mixed_active_and_stale(self):
         """Only stale branches are expired; active ones are skipped."""
-        from agent_vault.indexing.branch_expiry import expire_stale_branches
+        from agentic_inquiry.indexing.branch_expiry import expire_stale_branches
 
         rows = [
             {"branch": "feature/active"},
@@ -226,7 +226,7 @@ class TestExpireStalesBranchesUnsupported:
 
     @pytest.mark.asyncio
     async def test_returns_empty_list_for_unsupported_backend(self):
-        from agent_vault.indexing.branch_expiry import expire_stale_branches
+        from agentic_inquiry.indexing.branch_expiry import expire_stale_branches
 
         storage = _make_unsupported_storage()
 
@@ -247,7 +247,7 @@ class TestExpireStalesBranchesUnsupported:
 def _make_pg_prune_storage(deleted_count: int, fetch_error: Exception | None = None):
     """Create a mock StorageFacade for prune testing (PostgreSQL path)."""
     vp = MagicMock()
-    vp._chunks_table = "agv_chunks"
+    vp._chunks_table = "ai_chunks"
 
     if fetch_error:
         vp._fetch = AsyncMock(side_effect=fetch_error)
@@ -264,7 +264,7 @@ class TestPruneExpiredBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_returns_deleted_count(self):
         """Must return the number of permanently deleted chunks."""
-        from agent_vault.indexing.branch_expiry import prune_expired_branches
+        from agentic_inquiry.indexing.branch_expiry import prune_expired_branches
 
         storage = _make_pg_prune_storage(deleted_count=5)
 
@@ -275,7 +275,7 @@ class TestPruneExpiredBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_returns_zero_when_nothing_prunable(self):
         """When no chunks qualify, must return 0."""
-        from agent_vault.indexing.branch_expiry import prune_expired_branches
+        from agentic_inquiry.indexing.branch_expiry import prune_expired_branches
 
         storage = _make_pg_prune_storage(deleted_count=0)
 
@@ -286,7 +286,7 @@ class TestPruneExpiredBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_returns_zero_on_fetch_error(self):
         """Database error during prune must return 0, not raise."""
-        from agent_vault.indexing.branch_expiry import prune_expired_branches
+        from agentic_inquiry.indexing.branch_expiry import prune_expired_branches
 
         storage = _make_pg_prune_storage(
             deleted_count=0,
@@ -300,7 +300,7 @@ class TestPruneExpiredBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_fetch_called_with_project_id(self):
         """_fetch must receive the project_id as a parameter."""
-        from agent_vault.indexing.branch_expiry import prune_expired_branches
+        from agentic_inquiry.indexing.branch_expiry import prune_expired_branches
 
         storage = _make_pg_prune_storage(deleted_count=0)
 
@@ -313,7 +313,7 @@ class TestPruneExpiredBranchesPostgreSQL:
     @pytest.mark.asyncio
     async def test_custom_retention_days_respected(self):
         """The cutoff datetime passed to _fetch must reflect retention_days."""
-        from agent_vault.indexing.branch_expiry import prune_expired_branches
+        from agentic_inquiry.indexing.branch_expiry import prune_expired_branches
 
         storage = _make_pg_prune_storage(deleted_count=0)
         now_before = datetime.now(timezone.utc)
@@ -347,7 +347,7 @@ class TestPruneExpiredBranchesUnsupported:
 
     @pytest.mark.asyncio
     async def test_returns_zero_for_unsupported_backend(self):
-        from agent_vault.indexing.branch_expiry import prune_expired_branches
+        from agentic_inquiry.indexing.branch_expiry import prune_expired_branches
 
         storage = _make_unsupported_storage()
 
@@ -364,11 +364,11 @@ class TestRetentionConstants:
     """Verify the module-level constant is sane."""
 
     def test_hard_delete_retention_days_is_positive(self):
-        from agent_vault.indexing.branch_expiry import HARD_DELETE_RETENTION_DAYS
+        from agentic_inquiry.indexing.branch_expiry import HARD_DELETE_RETENTION_DAYS
 
         assert HARD_DELETE_RETENTION_DAYS > 0
 
     def test_hard_delete_retention_days_default_30(self):
-        from agent_vault.indexing.branch_expiry import HARD_DELETE_RETENTION_DAYS
+        from agentic_inquiry.indexing.branch_expiry import HARD_DELETE_RETENTION_DAYS
 
         assert HARD_DELETE_RETENTION_DAYS == 30

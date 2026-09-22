@@ -6,12 +6,12 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.database.results import (
+from agentic_inquiry.database.results import (
     SearchResult,
     normalize_distance_to_score,
     normalize_similarity_to_score,
 )
-from agent_vault.database.filters import (
+from agentic_inquiry.database.filters import (
     Filter,
     FilterOperator,
     validate_field_name,
@@ -29,7 +29,7 @@ from agent_vault.database.filters import (
     and_,
     or_,
 )
-from agent_vault.database.query_spec import QuerySpec
+from agentic_inquiry.database.query_spec import QuerySpec
 
 
 class TestSearchResult:

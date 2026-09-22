@@ -8,10 +8,10 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agent_vault.database.filters import Filter, FilterOperator
-from agent_vault.mcp.services.session_manager import SessionManager, SessionCleanupManager
-from agent_vault.mcp.models.session import Session, SessionState
-from agent_vault.config import Config
+from agentic_inquiry.database.filters import Filter, FilterOperator
+from agentic_inquiry.mcp.services.session_manager import SessionManager, SessionCleanupManager
+from agentic_inquiry.mcp.models.session import Session, SessionState
+from agentic_inquiry.config import Config
 
 
 def _filter_matches(filter_obj, field: str, value) -> bool:
@@ -526,7 +526,7 @@ class TestSessionPersistence:
     @pytest.mark.asyncio
     async def test_from_db_record_state_conversion(self):
         """Test from_db_record converts string to SessionState enum."""
-        from agent_vault.mcp.models.session import SessionState
+        from agentic_inquiry.mcp.models.session import SessionState
         from datetime import datetime
         
         for state_str in ["active", "expired", "archived"]:
@@ -720,7 +720,7 @@ class TestSessionPersistence:
         
         Requirements: Req 8.7
         """
-        from agent_vault.mcp.models.session import SessionState
+        from agentic_inquiry.mcp.models.session import SessionState
         from datetime import datetime
         from pathlib import Path
         

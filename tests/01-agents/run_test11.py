@@ -20,20 +20,20 @@ sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROTOCOLS_DIR))
 
 RUN_ID = "20260320_213916"
-OUTPUT_DIR = PROJECT_ROOT / "test_results" / "agv" / RUN_ID / "api_design"
-ENV_PATH = str(PROJECT_ROOT / ".agv" / "envs" / "agv-prod" / "config.yaml")
+OUTPUT_DIR = PROJECT_ROOT / "test_results" / "ai" / RUN_ID / "api_design"
+ENV_PATH = str(PROJECT_ROOT / ".agentic-inquiry" / "envs" / "ai-prod" / "config.yaml")
 
 
 async def main():
-    from agent_vault.config import Config
-    from agent_vault.mcp.factories import create_mcp_services
+    from agentic_inquiry.config import Config
+    from agentic_inquiry.mcp.factories import create_mcp_services
     from protocols import test_11_api_design as mod
 
     print(f"Loading config from: {ENV_PATH}")
     config = Config.load(ENV_PATH)
 
     print("Creating MCP services...")
-    services = await create_mcp_services(config, f"agv_test11_api_{RUN_ID}")
+    services = await create_mcp_services(config, f"ai_test11_api_{RUN_ID}")
 
     print(f"Running TEST_11 API design, output: {OUTPUT_DIR}")
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

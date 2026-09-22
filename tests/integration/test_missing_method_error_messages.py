@@ -9,8 +9,8 @@ messages suggesting the correct method name.
 import pytest
 
 pytestmark = pytest.mark.integration
-from agent_vault.config import Config
-from agent_vault.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.config import Config
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
 
 
 class TestMissingMethodErrorMessages:

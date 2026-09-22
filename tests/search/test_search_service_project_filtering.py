@@ -9,13 +9,13 @@ import json
 from unittest.mock import AsyncMock, MagicMock
 import pytest_asyncio
 
-from agent_vault.config import Config, StorageConfig
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.models.document_chunk import DocumentChunk
-from agent_vault.models.graph_entity import GraphEntity
-from agent_vault.models.graph_relationship import GraphRelationship
-from agent_vault.search.service import SearchService
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.models.document_chunk import DocumentChunk
+from agentic_inquiry.models.graph_entity import GraphEntity
+from agentic_inquiry.models.graph_relationship import GraphRelationship
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.storage.facade import StorageFacade
 
 
 @pytest.fixture
@@ -201,8 +201,8 @@ async def db_manager_with_multi_project_data(test_config_proj1):
 @pytest_asyncio.fixture
 async def search_service(db_manager_with_multi_project_data, test_config_proj1, mock_event_system):
     """Create a search service with multi-project data."""
-    from agent_vault.storage.providers.lancedb import LanceDBVectorProvider, LanceDBGraphProvider
-    from agent_vault.storage.providers.lancedb.connection import LanceDBConnectionManager
+    from agentic_inquiry.storage.providers.lancedb import LanceDBVectorProvider, LanceDBGraphProvider
+    from agentic_inquiry.storage.providers.lancedb.connection import LanceDBConnectionManager
 
     # Create connection manager with the test db_manager
     connection_manager = LanceDBConnectionManager(

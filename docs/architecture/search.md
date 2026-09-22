@@ -141,7 +141,7 @@ similarity(query, doc) = cosine(embed(query), embed(doc))
 
 **Example:**
 ```python
-from agent_vault.search.service import SearchService
+from agentic_inquiry.search.service import SearchService
 
 search = SearchService(db_manager)
 
@@ -709,7 +709,7 @@ async def test_hybrid_search():
 - [Async Architecture](async-architecture.md) - Async search implementation
 
 ### Extension & Customization
-- [Extending Agent-Vault](../customization/extending.md) - Custom search strategies
+- [Extending Agentic Inquiry](../customization/extending.md) - Custom search strategies
 
 ### Reference
 - [API Reference](../api-reference/api.md#search) - Search API documentation
@@ -742,7 +742,7 @@ async def test_hybrid_search():
 
 ## Search Relevance Enhancements
 
-Agent-Vault achieved **10.0/10 search relevance** through systematic improvements to the hybrid search pipeline. Starting from a baseline of 3.8/10 with default configuration, four phases of enhancements brought search to perfect relevance across keyword, conceptual, and structural queries.
+Agentic Inquiry achieved **10.0/10 search relevance** through systematic improvements to the hybrid search pipeline. Starting from a baseline of 3.8/10 with default configuration, four phases of enhancements brought search to perfect relevance across keyword, conceptual, and structural queries.
 
 **What changed:** The hybrid search pipeline now uses score-aware RRF (not rank-only), IDF-weighted content boosting (rare terms weighted 20× more than common terms), two-tier AND+OR FTS queries, pre-filtering of noisy candidates, proportional normalization, CamelCase/snake_case splitting, file path indexing, and wider candidate fetching. These changes address result dilution at scale, embedding drift, and the "import chunk" problem.
 
@@ -797,7 +797,7 @@ The search enhancements are organized into four phases, each addressing specific
 
 **1.1. CamelCase/snake_case Splitting**
 
-Location: `agent_vault/parsers/implementations/unified_code.py` (`_split_compound_identifier()`)
+Location: `agentic_inquiry/parsers/implementations/unified_code.py` (`_split_compound_identifier()`)
 
 Code identifiers use compound naming. Splitting enables better token matching.
 
@@ -812,7 +812,7 @@ BPMWorkflow → ["BPM", "Workflow"]
 
 **1.2. File Path in FTS Index**
 
-Location: `agent_vault/storage/providers/postgresql/vector.py`
+Location: `agentic_inquiry/storage/providers/postgresql/vector.py`
 
 File paths contain valuable search context (package names, module structure).
 
@@ -825,7 +825,7 @@ setweight(to_tsvector('simple', coalesce($4, '')), 'C')  -- file_path with weigh
 
 **1.3. Proportional Normalization**
 
-Location: `agent_vault/search/normalization.py` (default changed to "proportional")
+Location: `agentic_inquiry/search/normalization.py` (default changed to "proportional")
 
 Min-max normalization destroys absolute quality signal. Proportional normalization (divide by max) preserves relative differences.
 
@@ -841,7 +841,7 @@ min_max_score = (score - min) / (max - min)
 
 **1.4. Deduplication: max_results_per_file=2**
 
-Location: `agent_vault/search/deduplicator.py`
+Location: `agentic_inquiry/search/deduplicator.py`
 
 Changed from 1 to 2 results per file to show more context per file while maintaining diversity.
 
@@ -849,7 +849,7 @@ Changed from 1 to 2 results per file to show more context per file while maintai
 
 **1.5. Stemmer Selection by Content Type**
 
-Location: `agent_vault/storage/providers/postgresql/vector.py`
+Location: `agentic_inquiry/storage/providers/postgresql/vector.py`
 
 Code uses exact terms; documentation uses natural language.
 
@@ -864,7 +864,7 @@ Code uses exact terms; documentation uses natural language.
 
 **2.1. Score-Aware RRF Reranking**
 
-Location: `agent_vault/search/rerankers/rrf.py`
+Location: `agentic_inquiry/search/rerankers/rrf.py`
 
 Traditional RRF ignores score quality, treating rank 1 from vector search (score 0.95) the same as rank 1 from FTS (score 0.05). The enhanced RRF multiplies rank-based scores by actual relevance scores.
 
@@ -878,7 +878,7 @@ Traditional RRF ignores score quality, treating rank 1 from vector search (score
 
 **2.2. Pre-Filtering Noisy Candidates**
 
-Location: `agent_vault/search/hybrid_search.py`
+Location: `agentic_inquiry/search/hybrid_search.py`
 
 Low-quality candidates dilute RRF effectiveness. Pre-filtering removes noise before ranking.
 
@@ -890,7 +890,7 @@ Low-quality candidates dilute RRF effectiveness. Pre-filtering removes noise bef
 
 **2.3. OR-Based FTS Queries**
 
-Location: `agent_vault/storage/providers/postgresql/vector.py`
+Location: `agentic_inquiry/storage/providers/postgresql/vector.py`
 
 AND-only FTS misses partial matches. Two-tier query strategy captures both exact and partial matches.
 
@@ -916,7 +916,7 @@ plainto_tsquery('simple', 'Kafka | consumer | service')
 
 **3.1. Query-Term Content Boost**
 
-Location: `agent_vault/search/hybrid_search.py` (`_apply_query_content_boost()`)
+Location: `agentic_inquiry/search/hybrid_search.py` (`_apply_query_content_boost()`)
 
 Import-only chunks rank above actual implementations. Content boost prioritizes chunks containing actual query terms in code/documentation.
 
@@ -944,7 +944,7 @@ Match ratio: 5/5 = 1.0 → boost 1.5×
 
 **3.2. Wider Candidate Fetch**
 
-Location: `agent_vault/search/hybrid_search.py`
+Location: `agentic_inquiry/search/hybrid_search.py`
 
 Fetching only `limit × 2` candidates leaves insufficient headroom for content boost re-ranking.
 
@@ -956,7 +956,7 @@ Fetching only `limit × 2` candidates leaves insufficient headroom for content b
 
 **4.1. IDF-Weighted Content Boost**
 
-Location: `agent_vault/search/hybrid_search.py` (`_apply_query_content_boost()`)
+Location: `agentic_inquiry/search/hybrid_search.py` (`_apply_query_content_boost()`)
 
 Vector embeddings can drift from query intent (e.g., "Oracle BPM" → OPA adapter files). IDF weighting rescues correct results by identifying chunks containing distinctive query terms.
 
@@ -1033,12 +1033,12 @@ Each query specifies expected files and scoring criteria. Results scored 0-10 ba
 ### Implementation Reference
 
 **Key files for search enhancements:**
-- `agent_vault/search/hybrid_search.py` - Orchestration, IDF-weighted content boost, pre-filtering, candidate fetching
-- `agent_vault/search/rerankers/rrf.py` - Score-aware RRF with dual-source bonus
-- `agent_vault/search/normalization.py` - Proportional normalization
-- `agent_vault/search/deduplicator.py` - File-level deduplication (max 2 per file)
-- `agent_vault/storage/providers/postgresql/vector.py` - Two-tier AND+OR FTS, file path indexing, stemmer selection
-- `agent_vault/parsers/implementations/unified_code.py` - CamelCase/snake_case splitting
+- `agentic_inquiry/search/hybrid_search.py` - Orchestration, IDF-weighted content boost, pre-filtering, candidate fetching
+- `agentic_inquiry/search/rerankers/rrf.py` - Score-aware RRF with dual-source bonus
+- `agentic_inquiry/search/normalization.py` - Proportional normalization
+- `agentic_inquiry/search/deduplicator.py` - File-level deduplication (max 2 per file)
+- `agentic_inquiry/storage/providers/postgresql/vector.py` - Two-tier AND+OR FTS, file path indexing, stemmer selection
+- `agentic_inquiry/parsers/implementations/unified_code.py` - CamelCase/snake_case splitting
 
 **Configuration options** (`config.yaml`):
 ```yaml

@@ -8,7 +8,7 @@
 
 ## Test Suite Overview
 
-This test evaluates how effectively an agent can plan major refactoring using Agent-Vault to:
+This test evaluates how effectively an agent can plan major refactoring using Agentic Inquiry to:
 - Find all code that needs to change
 - Understand current architecture deeply
 - Map complete dependency chains
@@ -41,7 +41,7 @@ Refactoring is successful if the agent can:
 **Step 1: Create Session with Unique Project ID**
 ```python
 # Use the naming convention from USE_CASES.md
-project_id = "agv_test05_refactor_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test05_refactor_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Major refactoring test")
 ```
 

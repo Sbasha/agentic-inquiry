@@ -19,11 +19,11 @@ import shutil
 from pathlib import Path
 from unittest.mock import AsyncMock
 
-from agent_vault.config import Config
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.mcp.tools.context import build_context
-from agent_vault.mcp.tools.memory import save_memory
-from agent_vault.mcp.factories import create_mcp_services
+from agentic_inquiry.config import Config
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.mcp.tools.context import build_context
+from agentic_inquiry.mcp.tools.memory import save_memory
+from agentic_inquiry.mcp.factories import create_mcp_services
 
 
 @pytest_asyncio.fixture
@@ -122,9 +122,9 @@ async def indexed_services(test_project_dir):
 
     project_id = "test_project"
 
-    from agent_vault.parsers.chain import create_parser_chain
-    from agent_vault.embeddings.registry import embedding_registry
-    from agent_vault.embeddings.hashing import HashingEmbedder
+    from agentic_inquiry.parsers.chain import create_parser_chain
+    from agentic_inquiry.embeddings.registry import embedding_registry
+    from agentic_inquiry.embeddings.hashing import HashingEmbedder
 
     # Configure embedder
     embedder = HashingEmbedder(ndims=128)

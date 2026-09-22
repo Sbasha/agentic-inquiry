@@ -66,7 +66,7 @@ def _reimport_module(monkeypatch):
     modules. ``monkeypatch.delitem`` restores the original module at
     teardown, so this is leak-safe.
     """
-    module_name = "agent_vault.embeddings.sentence_transformer"
+    module_name = "agentic_inquiry.embeddings.sentence_transformer"
     if module_name in sys.modules:
         monkeypatch.delitem(sys.modules, module_name)
 
@@ -103,7 +103,7 @@ class TestSelectDevice:
             monkeypatch, cuda_available=True, mps_built=True, mps_available=True
         )
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import _select_device
+        from agentic_inquiry.embeddings.sentence_transformer import _select_device
 
         assert _select_device() == "cuda"
 
@@ -112,7 +112,7 @@ class TestSelectDevice:
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import _select_device
+        from agentic_inquiry.embeddings.sentence_transformer import _select_device
 
         assert _select_device() == "mps"
 
@@ -123,7 +123,7 @@ class TestSelectDevice:
             monkeypatch, cuda_available=False, mps_built=True, mps_available=False
         )
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import _select_device
+        from agentic_inquiry.embeddings.sentence_transformer import _select_device
 
         assert _select_device() == "cpu"
 
@@ -131,7 +131,7 @@ class TestSelectDevice:
         """Older torch without an MPS backend at all — defensive guard."""
         _install_fake_torch(monkeypatch, cuda_available=False, mps_backend_exists=False)
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import _select_device
+        from agentic_inquiry.embeddings.sentence_transformer import _select_device
 
         assert _select_device() == "cpu"
 
@@ -140,7 +140,7 @@ class TestSelectDevice:
             monkeypatch, cuda_available=False, mps_built=False, mps_available=False
         )
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import _select_device
+        from agentic_inquiry.embeddings.sentence_transformer import _select_device
 
         assert _select_device() == "cpu"
 
@@ -148,7 +148,7 @@ class TestSelectDevice:
         """Explicit preferred device (the escape hatch) bypasses detection."""
         _install_fake_torch(monkeypatch, cuda_available=True)
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import _select_device
+        from agentic_inquiry.embeddings.sentence_transformer import _select_device
 
         assert _select_device(preferred="cpu") == "cpu"
 
@@ -156,7 +156,7 @@ class TestSelectDevice:
         """Case / whitespace variants of known devices are accepted."""
         _install_fake_torch(monkeypatch, cuda_available=True)
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import _select_device
+        from agentic_inquiry.embeddings.sentence_transformer import _select_device
 
         assert _select_device(preferred="CPU") == "cpu"
         assert _select_device(preferred=" Mps ") == "mps"
@@ -173,7 +173,7 @@ class TestSelectDevice:
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import _select_device
+        from agentic_inquiry.embeddings.sentence_transformer import _select_device
 
         with caplog.at_level("WARNING"):
             result = _select_device(preferred="gpu")  # not a torch device name
@@ -188,7 +188,7 @@ class TestSelectDevice:
         actual model load, but device selection itself is safe."""
         monkeypatch.setitem(sys.modules, "torch", None)
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import _select_device
+        from agentic_inquiry.embeddings.sentence_transformer import _select_device
 
         assert _select_device() == "cpu"
 
@@ -209,7 +209,7 @@ class TestModelLoadFallback:
         )
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=True)
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import (
+        from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,
         )
 
@@ -241,7 +241,7 @@ class TestModelLoadFallback:
         fake_st_module.SentenceTransformer = mock_class
         monkeypatch.setitem(sys.modules, "sentence_transformers", fake_st_module)
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import (
+        from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,
         )
 
@@ -256,7 +256,7 @@ class TestModelLoadFallback:
         )
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=False)
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import (
+        from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,
         )
 
@@ -268,7 +268,7 @@ class TestModelLoadFallback:
 
 
 class TestDeviceEnvVar:
-    """``AGV_EMBEDDING_DEVICE`` escape hatch — lets operators pin the
+    """``AI_EMBEDDING_DEVICE`` escape hatch — lets operators pin the
     device when autodetect picks something that misbehaves (e.g. MPS
     loads but hangs at inference time)."""
 
@@ -278,9 +278,9 @@ class TestDeviceEnvVar:
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=False)
-        monkeypatch.setenv("AGV_EMBEDDING_DEVICE", "cpu")
+        monkeypatch.setenv("AI_EMBEDDING_DEVICE", "cpu")
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import (
+        from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,
         )
 
@@ -296,9 +296,9 @@ class TestDeviceEnvVar:
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=False)
-        monkeypatch.setenv("AGV_EMBEDDING_DEVICE", "")
+        monkeypatch.setenv("AI_EMBEDDING_DEVICE", "")
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import (
+        from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,
         )
 
@@ -320,9 +320,9 @@ class TestDeviceEnvVar:
             monkeypatch, cuda_available=False, mps_built=True, mps_available=True
         )
         mock_st = _install_fake_sentence_transformers(monkeypatch, mps_raises=False)
-        monkeypatch.setenv("AGV_EMBEDDING_DEVICE", "gpu")  # not a torch name
+        monkeypatch.setenv("AI_EMBEDDING_DEVICE", "gpu")  # not a torch name
         _reimport_module(monkeypatch)
-        from agent_vault.embeddings.sentence_transformer import (
+        from agentic_inquiry.embeddings.sentence_transformer import (
             SentenceTransformerEmbedder,
         )
 

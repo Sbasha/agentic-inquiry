@@ -9,8 +9,8 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.mcp.tools.session import create_session, get_session
-from agent_vault.mcp.models.session import Session
+from agentic_inquiry.mcp.tools.session import create_session, get_session
+from agentic_inquiry.mcp.models.session import Session
 
 
 @pytest.fixture
@@ -24,7 +24,7 @@ def mcp_services():
     # Mock server configuration
     server_config = {
         "default_project_id": "test_project",
-        "server_name": "Agent-Vault MCP Server",
+        "server_name": "Agentic Inquiry MCP Server",
         "server_version": "1.0.0",
     }
     

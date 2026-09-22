@@ -6,7 +6,7 @@ lessons that take a beginner from nothing to a small complete success.
 This directory is **empty pending the first migration.** The current
 top-of-funnel content for new users lives in the root
 [`../../README.md`](../../README.md) (the "Getting Started" walkthrough
-through `/agv:setup` → `/agv:index` → `/agv:search`).
+through `/ai:setup` → `/ai:index` → `/ai:search`).
 
 **First-fill target.** Lift the README's "Getting Started" walkthrough
 into `tutorials/quickstart.md` so the root README can shrink to a pitch

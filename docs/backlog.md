@@ -43,7 +43,7 @@ a defect found while qualifying and left for its own change.
   neither FTS nor vector search. Decide whether `fts_text` should keep
   those tokens or whether a second FTS index on `content` (which makes
   every FTS and hybrid query name its columns) is worth it.
-- **Unchanged-file skip on re-run:** `agv index` passes no connector, so
+- **Unchanged-file skip on re-run:** `ai index` passes no connector, so
   `file_states` stays empty and every run re-parses every file; re-runs
   are idempotent but not incremental. Unblocked by wiring
   `FileSystemConnector` with the metadata-store file tracker into
@@ -55,7 +55,7 @@ a defect found while qualifying and left for its own change.
   updates every copy; nothing removes the extras. A maintenance step
   that deletes all but one copy per key needs `_rowid` deletes and a
   decision on which copy wins.
-- **Relationship growth on re-index:** a second `agv index` over a
+- **Relationship growth on re-index:** a second `ai index` over a
   complete index adds `calls` and `imports` edges whose `target_id`
   matches no stored entity (59,548 to 66,813 distinct keys on the
   2026-09-21 qualification index; unresolved targets 296 to 4,016).
@@ -65,7 +65,7 @@ a defect found while qualifying and left for its own change.
   entities produces ids that the entity writer never stores, and make
   re-index converge.
 - **`branch_expiry` chunk prune bypasses the manager:**
-  `agent_vault/indexing/branch_expiry.py` calls a `get_or_create_table`
+  `agentic_inquiry/indexing/branch_expiry.py` calls a `get_or_create_table`
   that `LanceDBManager` does not expose and deletes rows on the table
   directly, outside the per-table lock. Route it through
   `LanceDBManager.delete_by_ids`.

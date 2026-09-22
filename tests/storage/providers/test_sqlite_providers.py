@@ -9,10 +9,10 @@ These tests verify that the SQLite providers:
 import pytest
 from datetime import datetime
 
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.storage.protocols.events import EventStorageProtocol
-from agent_vault.storage.protocols.file_tracker import FileTrackerProtocol
-from agent_vault.storage.providers.sqlite import (
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.storage.protocols.events import EventStorageProtocol
+from agentic_inquiry.storage.protocols.file_tracker import FileTrackerProtocol
+from agentic_inquiry.storage.providers.sqlite import (
     SQLiteEventProvider,
     SQLiteFileTrackerProvider,
 )
@@ -209,7 +209,7 @@ class TestSQLiteProviderRegistry:
 
     def test_registry_returns_correct_classes(self):
         """Test that registry returns SQLite provider classes."""
-        from agent_vault.storage.registry import get_provider_class
+        from agentic_inquiry.storage.registry import get_provider_class
 
         event_class = get_provider_class("sqlite", "events")
         assert event_class is SQLiteEventProvider
@@ -219,7 +219,7 @@ class TestSQLiteProviderRegistry:
 
     def test_registry_unsupported_roles(self):
         """Test that registry raises for unsupported SQLite roles."""
-        from agent_vault.storage.registry import (
+        from agentic_inquiry.storage.registry import (
             get_provider_class,
             UnsupportedRoleError,
         )

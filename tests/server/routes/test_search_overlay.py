@@ -23,7 +23,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from agent_vault.server.routes.search import LocalDiff, LocalDiffFile, SearchRequest, router
+from agentic_inquiry.server.routes.search import LocalDiff, LocalDiffFile, SearchRequest, router
 
 
 # ---------------------------------------------------------------------------
@@ -347,7 +347,7 @@ class TestZeroStorageWrites:
     @pytest.mark.asyncio
     async def test_overlay_search_does_not_write_to_storage(self):
         """No upsert/delete methods must be called on storage during overlay search."""
-        from agent_vault.server.routes.search import search
+        from agentic_inquiry.server.routes.search import search
 
         # Build mock search_service
         mock_search_service = MagicMock()

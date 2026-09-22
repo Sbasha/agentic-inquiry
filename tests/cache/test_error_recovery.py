@@ -18,9 +18,9 @@ import asyncio
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.cache.document_cache import DocumentCache, RestrictedUnpickler, safe_pickle_loads
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
-from agent_vault.config import Config, StorageConfig, DocumentCacheStorageConfig, CacheConfig, DocumentCacheConfig
+from agentic_inquiry.cache.document_cache import DocumentCache, RestrictedUnpickler, safe_pickle_loads
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.config import Config, StorageConfig, DocumentCacheStorageConfig, CacheConfig, DocumentCacheConfig
 
 
 @pytest.fixture

@@ -1,10 +1,10 @@
-"""Tests for agv index process exit codes."""
+"""Tests for ai index process exit codes."""
 
 from __future__ import annotations
 
 import pytest
 
-from agent_vault.cli.index import exit_code_for_index_result
+from agentic_inquiry.cli.index import exit_code_for_index_result
 
 
 @pytest.mark.parametrize(

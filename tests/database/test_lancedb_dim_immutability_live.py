@@ -17,9 +17,9 @@ pytestmark = pytest.mark.integration
 pa = pytest.importorskip("pyarrow")
 lancedb = pytest.importorskip("lancedb")
 
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.database.lancedb_schemas import TABLE_CONFIGS
-from agent_vault.storage.errors import SchemaMismatchError
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.database.lancedb_schemas import TABLE_CONFIGS
+from agentic_inquiry.storage.errors import SchemaMismatchError
 
 
 def _seed_document_chunks(uri: str, dim: int) -> None:
@@ -108,7 +108,7 @@ class TestResolveEmbeddingDimFromConfig:
         return SimpleNamespace(embeddings=embeddings, storage=storage)
 
     def test_returns_none_when_no_config_fields_set(self):
-        from agent_vault.database.lancedb_manager import (
+        from agentic_inquiry.database.lancedb_manager import (
             _resolve_embedding_dim_from_config,
         )
 
@@ -116,7 +116,7 @@ class TestResolveEmbeddingDimFromConfig:
         assert _resolve_embedding_dim_from_config(cfg) is None
 
     def test_uses_embeddings_default_dimensions_as_fallback(self):
-        from agent_vault.database.lancedb_manager import (
+        from agentic_inquiry.database.lancedb_manager import (
             _resolve_embedding_dim_from_config,
         )
 
@@ -126,7 +126,7 @@ class TestResolveEmbeddingDimFromConfig:
     def test_per_backend_override_wins_over_embeddings_default(self):
         """#4 from the review — per-backend override must win so the
         validation actually fires on configs that set it."""
-        from agent_vault.database.lancedb_manager import (
+        from agentic_inquiry.database.lancedb_manager import (
             _resolve_embedding_dim_from_config,
         )
 
@@ -138,7 +138,7 @@ class TestResolveEmbeddingDimFromConfig:
         assert _resolve_embedding_dim_from_config(cfg) == 1536
 
     def test_ignores_non_positive_dims(self):
-        from agent_vault.database.lancedb_manager import (
+        from agentic_inquiry.database.lancedb_manager import (
             _resolve_embedding_dim_from_config,
         )
 

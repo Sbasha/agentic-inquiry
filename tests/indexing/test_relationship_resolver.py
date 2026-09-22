@@ -11,9 +11,9 @@ pytestmark = pytest.mark.integration
 import tempfile
 from pathlib import Path
 
-from agent_vault.indexing.relationship_resolver import RelationshipResolver
-from agent_vault.indexing.symbol_registry import SymbolRegistry
-from agent_vault.parsers.executor import get_parser_instance
+from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
+from agentic_inquiry.indexing.symbol_registry import SymbolRegistry
+from agentic_inquiry.parsers.executor import get_parser_instance
 
 
 # Sample Python files with relationships
@@ -180,7 +180,7 @@ class TestResolutionStrategies:
         # Register symbols
         await symbol_registry.register(
             name="IndexingPipeline",
-            file_path="agent_vault/indexing/pipeline.py",
+            file_path="agentic_inquiry/indexing/pipeline.py",
             entity_type="class",
             language="python",
         )
@@ -191,8 +191,8 @@ class TestResolutionStrategies:
         mock_db.query_raw.return_value = [
             {
                 "id": "edge_12345678",
-                "source_id": "module::test_project::agent_vault/search/service.py::SearchService",
-                "target_id": "class::test_project::agent_vault/indexing/pipeline.py::IndexingPipeline",
+                "source_id": "module::test_project::agentic_inquiry/search/service.py::SearchService",
+                "target_id": "class::test_project::agentic_inquiry/indexing/pipeline.py::IndexingPipeline",
                 "type": "imports",
                 "project_id": "test_project",
             }
@@ -202,14 +202,14 @@ class TestResolutionStrategies:
         result = await resolver.resolve_import(
             target_name="IndexingPipeline",
             target_type="class",
-            source_file="agent_vault/search/service.py",
+            source_file="agentic_inquiry/search/service.py",
             source_language="python",
         )
 
         # Should resolve from database with confidence 1.0
         assert result is not None
         target_file, target_type, confidence = result
-        assert target_file == "agent_vault/indexing/pipeline.py"
+        assert target_file == "agentic_inquiry/indexing/pipeline.py"
         assert target_type == "class"
         assert confidence == 1.0
 
@@ -231,7 +231,7 @@ class TestResolutionStrategies:
         # Register symbols for fallback resolution
         await symbol_registry.register(
             name="SomeClass",
-            file_path="agent_vault/models/some_class.py",
+            file_path="agentic_inquiry/models/some_class.py",
             entity_type="class",
             language="python",
         )
@@ -243,14 +243,14 @@ class TestResolutionStrategies:
         result = await resolver.resolve_import(
             target_name="SomeClass",
             target_type="class",
-            source_file="agent_vault/search/service.py",
+            source_file="agentic_inquiry/search/service.py",
             source_language="python",
         )
 
         # Should resolve using fallback strategy (exact match in this case)
         assert result is not None
         target_file, target_type, confidence = result
-        assert target_file == "agent_vault/models/some_class.py"
+        assert target_file == "agentic_inquiry/models/some_class.py"
         assert target_type == "class"
         # Confidence should be 1.0 for exact match fallback
         assert confidence == 1.0

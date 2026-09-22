@@ -9,7 +9,7 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agent_vault.mcp.tools.knowledge import add_knowledge
+from agentic_inquiry.mcp.tools.knowledge import add_knowledge
 
 
 class TestAddKnowledgePathSecurity:
@@ -28,7 +28,7 @@ class TestAddKnowledgePathSecurity:
         logic. The path validation happens early in add_knowledge() and returns
         immediately on security violations, so we don't need full service mocks.
         """
-        from agent_vault.config import Config
+        from agentic_inquiry.config import Config
         
         # Create a minimal config
         config = Config()

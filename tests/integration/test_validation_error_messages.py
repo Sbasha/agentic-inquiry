@@ -8,8 +8,8 @@ invalid values, valid values, and examples.
 
 import pytest
 
-from agent_vault.exceptions import ValidationError
-from agent_vault.mcp.utils.validation import validate_content_type
+from agentic_inquiry.exceptions import ValidationError
+from agentic_inquiry.mcp.utils.validation import validate_content_type
 
 
 class TestValidationErrorMessages:

@@ -1,8 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock
-from agent_vault.storage.providers.lancedb import LanceDBProvider
-from agent_vault.storage.providers.postgresql import PostgreSQLProvider
-from agent_vault.models.document_chunk import DocumentChunk
+from agentic_inquiry.storage.providers.lancedb import LanceDBProvider
+from agentic_inquiry.storage.providers.postgresql import PostgreSQLProvider
+from agentic_inquiry.models.document_chunk import DocumentChunk
 
 @pytest.mark.asyncio
 async def test_provider_symmetry_metadata():

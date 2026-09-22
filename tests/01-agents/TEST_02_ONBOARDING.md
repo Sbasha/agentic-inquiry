@@ -8,7 +8,7 @@
 
 ## Test Suite Overview
 
-This test evaluates how effectively an agent can onboard to a completely unfamiliar codebase using Agent-Vault. It simulates the real-world scenario of being assigned to work on code you've never seen before.
+This test evaluates how effectively an agent can onboard to a completely unfamiliar codebase using Agentic Inquiry. It simulates the real-world scenario of being assigned to work on code you've never seen before.
 
 ### Success Criteria
 
@@ -36,7 +36,7 @@ An agent successfully onboards if they can:
    - Verify empty state: `get_project_info(session_id)` should show `chunks: 0` or minimal
    - Indexing should happen as part of the test workflow (Test 1)
 3. **No Prior Knowledge:** Simulate true cold start - don't read READMEs beforehand
-4. **MCP Server Running:** Agent-Vault MCP server started and accessible
+4. **MCP Server Running:** Agentic Inquiry MCP server started and accessible
 
 **Why Cold Start?**
 This test validates the complete onboarding experience: from zero knowledge to productive understanding. Pre-indexing would skip the critical first step of discovery and skew time measurements.
@@ -698,4 +698,4 @@ Overall Success: [yes/no]
 
 ---
 
-**Remember:** Effective onboarding means you can start contributing within 30 minutes. Be honest about whether Agent-Vault got you there.
+**Remember:** Effective onboarding means you can start contributing within 30 minutes. Be honest about whether Agentic Inquiry got you there.

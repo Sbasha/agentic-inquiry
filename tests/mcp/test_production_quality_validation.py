@@ -13,9 +13,9 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.mcp.utils.keyword_extractor import KeywordExtractor
-from agent_vault.mcp.tools.info import get_project_info
-from agent_vault.mcp.tools.context import build_context
+from agentic_inquiry.mcp.utils.keyword_extractor import KeywordExtractor
+from agentic_inquiry.mcp.tools.info import get_project_info
+from agentic_inquiry.mcp.tools.context import build_context
 
 
 @pytest.fixture
@@ -277,7 +277,7 @@ class TestEnhancedErrorMessages:
     @pytest.mark.asyncio
     async def test_validation_error_provides_clear_feedback(self):
         """Test that validation errors provide clear feedback."""
-        from agent_vault.mcp.utils.validation import validate_limit
+        from agentic_inquiry.mcp.utils.validation import validate_limit
         
         # Test invalid limit
         try:
@@ -291,7 +291,7 @@ class TestEnhancedErrorMessages:
     @pytest.mark.asyncio
     async def test_error_response_includes_suggestions(self):
         """Test that error responses include helpful suggestions."""
-        from agent_vault.mcp.utils.validation import create_validation_error_response
+        from agentic_inquiry.mcp.utils.validation import create_validation_error_response
         
         # Create a validation error response
         error = ValueError("Invalid limit value")

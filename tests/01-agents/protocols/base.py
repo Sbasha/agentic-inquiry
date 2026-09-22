@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 CODEBASE_PATH = str(PROJECT_ROOT)
-TOOLS_PATH = str(PROJECT_ROOT / "agent_vault/mcp/tools")
+TOOLS_PATH = str(PROJECT_ROOT / "agentic_inquiry/mcp/tools")
 
 
 def log(test_id: str, msg: str):
@@ -36,9 +36,9 @@ async def create_test_session(
     description: str = "",
 ) -> tuple[str, str]:
     """Create a session with a unique project_id. Returns (session_id, project_id)."""
-    from agent_vault.mcp.tools.session import create_session
+    from agentic_inquiry.mcp.tools.session import create_session
 
-    project_id = f"agv_test{test_id}_{slug}_{run_id}"
+    project_id = f"ai_test{test_id}_{slug}_{run_id}"
     desc = description or f"UAT {slug} test"
     r = await create_session(services, project_id=project_id, description=desc)
     session_id = r.get("session_id")
@@ -64,8 +64,8 @@ async def index_and_wait(
     Note: with the shared MCPServer, get_project_info may not see per-test data
     due to project scoping, but detect_index_state and search both work correctly.
     """
-    from agent_vault.mcp.tools.knowledge import add_knowledge
-    from agent_vault.mcp.utils.index_state import detect_index_state, IndexState
+    from agentic_inquiry.mcp.tools.knowledge import add_knowledge
+    from agentic_inquiry.mcp.utils.index_state import detect_index_state, IndexState
 
     t0 = time.time()
     r, _ = await call_tool(
@@ -87,7 +87,7 @@ async def index_and_wait(
 
     log(test_id, f"Indexing started (op={operation_id}), polling...")
 
-    from agent_vault.mcp.tools.info import get_events
+    from agentic_inquiry.mcp.tools.info import get_events
 
     prev_chunks = 0
     stable_count = 0  # how many consecutive polls showed same chunk count
@@ -213,7 +213,7 @@ def _build_adoption_evidence(
 ) -> Dict[str, Any]:
     """Build structured evidence for agent-based adoption scoring.
 
-    Adoption question: "Would an AI agent choose Agent-Vault over alternatives
+    Adoption question: "Would an AI agent choose Agentic Inquiry over alternatives
     (grep, manual file reading, GitHub search) for this workflow?"
 
     Evidence captures:
@@ -264,9 +264,9 @@ def _build_adoption_evidence(
         "value_over_alternatives": value_over_alternatives[:10],
         "adoption_question": (
             f"For a '{slug.replace('_', ' ')}' workflow, would an AI agent choose "
-            f"Agent-Vault (which passed {passed}/{total} checks in {elapsed:.0f}s) "
-            f"over grep/manual file reading? Score 1-10 where 10 = always choose agv, "
-            f"1 = never choose agv, 5 = coin flip."
+            f"Agentic Inquiry (which passed {passed}/{total} checks in {elapsed:.0f}s) "
+            f"over grep/manual file reading? Score 1-10 where 10 = always choose ai, "
+            f"1 = never choose ai, 5 = coin flip."
         ),
     }
 
@@ -274,11 +274,11 @@ def _build_adoption_evidence(
 def compute_adoption_score(evidence: Dict[str, Any]) -> int:
     """Heuristic adoption score (fallback when no LLM agent available).
 
-    Answers: "Would an agent choose agv over grep/manual reading?"
+    Answers: "Would an agent choose ai over grep/manual reading?"
 
     Scoring philosophy — start at 7 (neutral), adjust based on evidence:
       10: exceptional — every workflow faster and better than alternatives
-      8-9: strong — clear value, agent would default to agv
+      8-9: strong — clear value, agent would default to ai
       6-7: useful — works for complex queries, grep still wins for simple ones
       4-5: mixed — some value but agent would hedge with fallback tools
       1-3: weak — unreliable, agent would prefer grep most of the time

@@ -5,7 +5,7 @@ import pytest
 import tempfile
 from pathlib import Path
 
-from agent_vault.discovery import (
+from agentic_inquiry.discovery import (
     ServiceMapDetector,
     ServiceMap,
     ServiceNode,

@@ -9,7 +9,7 @@ last_updated: 2025-01-29
 
 # Async Architecture
 
-Agent-Vault is built from the ground up as an **async-first** library. This document explains the async architecture, implementation patterns, and performance benefits.
+Agentic Inquiry is built from the ground up as an **async-first** library. This document explains the async architecture, implementation patterns, and performance benefits.
 
 ## Why Async-First?
 
@@ -253,7 +253,7 @@ parsers:
 
 **Environment variable:**
 ```bash
-export AGV_PARSERS_MAX_CONCURRENT=20
+export AI_PARSERS_MAX_CONCURRENT=20
 ```
 
 ## Component-by-Component Breakdown

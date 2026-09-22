@@ -14,10 +14,10 @@ pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 from typing import Dict, Any
 
-from agent_vault.mcp.tools.memory import save_memory, recall_memories
-from agent_vault.mcp.tools.analysis import understand_entity, analyze_impact, find_patterns
-from agent_vault.mcp.tools.context import build_context
-from agent_vault.mcp.tools.knowledge import add_knowledge
+from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
+from agentic_inquiry.mcp.tools.analysis import understand_entity, analyze_impact, find_patterns
+from agentic_inquiry.mcp.tools.context import build_context
+from agentic_inquiry.mcp.tools.knowledge import add_knowledge
 
 
 @pytest.fixture

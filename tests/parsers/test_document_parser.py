@@ -13,12 +13,12 @@ import pytest
 pytestmark = pytest.mark.integration
 from pathlib import Path
 
-from agent_vault.parsers.implementations.document import (
+from agentic_inquiry.parsers.implementations.document import (
     DocumentParser,
     UNSTRUCTURED_TO_ENTITY_TYPE,
 )
-from agent_vault.parsers.models import ParsedDocument
-from agent_vault.models.graph_entity import EntityType
+from agentic_inquiry.parsers.models import ParsedDocument
+from agentic_inquiry.models.graph_entity import EntityType
 
 
 class TestElementTypeMapping:
@@ -183,7 +183,7 @@ class TestHeadingExtraction:
         
         # Should find some of the main headings
         # Note: Exact text may vary based on how unstructured parses it
-        assert any("Presentation Outline" in name or "Agent-Vault" in name for name in heading_names), \
+        assert any("Presentation Outline" in name or "Agentic Inquiry" in name for name in heading_names), \
             f"Expected to find main title, got: {heading_names[:5]}"
     
     @pytest.mark.asyncio
@@ -755,7 +755,7 @@ class TestPDFElementMapping:
 
     def test_pdf_heading_thresholds_defined(self):
         """Verify PDF heading thresholds are properly configured."""
-        from agent_vault.parsers.implementations.document import PDF_HEADING_THRESHOLDS
+        from agentic_inquiry.parsers.implementations.document import PDF_HEADING_THRESHOLDS
 
         assert 1 in PDF_HEADING_THRESHOLDS, "Missing h1 threshold"
         assert 2 in PDF_HEADING_THRESHOLDS, "Missing h2 threshold"
@@ -769,7 +769,7 @@ class TestPDFElementMapping:
 
     def test_pdf_element_class_interface(self):
         """Verify PDFElement provides the same interface as unstructured Element."""
-        from agent_vault.parsers.implementations.document import PDFElement
+        from agentic_inquiry.parsers.implementations.document import PDFElement
 
         element = PDFElement(
             text="Test heading",

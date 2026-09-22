@@ -10,9 +10,9 @@
 
 ## Objective
 
-A multi-cloud client who installs Agent-Vault with the `gcs` extra and asks for
+A multi-cloud client who installs Agentic Inquiry with the `gcs` extra and asks for
 a `gcs` connector must actually get one. Today the `GCSConnector` class carries
-`@register_connector("gcs")`, but nothing imports `agent_vault.connectors.gcs`
+`@register_connector("gcs")`, but nothing imports `agentic_inquiry.connectors.gcs`
 at runtime, so the decorator never fires — `get_connector("gcs", ...)` raises
 `KeyError` and `"gcs"` never appears in `list_connectors()`. GCS is documented
 as a first-class content source but is unreachable. This spec makes GCS
@@ -20,7 +20,7 @@ genuinely first-class: registered at import time (guarded on `gcsfs`
 availability, like S3), URI-consistent with its registered name and the docs
 (`gcs://` everywhere, not the current `gs://`), covered by the same contract
 tests S3 has, and advertised in the README alongside S3. Success: an operator
-can `pip install agent-vault[gcs]`, call `get_connector("gcs", bucket=...)`,
+can `pip install agentic-inquiry[gcs]`, call `get_connector("gcs", bucket=...)`,
 and round-trip a `gcs://bucket/key` URI — and the README and connector guide
 agree on what's supported. Secondarily, this spec establishes the opt-in
 `cloud_smoke` live-access test pattern for **both** cloud connectors (S3 and
@@ -38,7 +38,7 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
 - Mirror the existing S3 pattern (`s3.py`, `test_s3.py`, the `try/except
   ImportError` registration in `_register_builtin_connectors`) for GCS — same
   shape, same guards, same test structure.
-- Keep optional-dependency guards: importing `agent_vault.connectors` with
+- Keep optional-dependency guards: importing `agentic_inquiry.connectors` with
   neither `s3fs` nor `gcsfs` installed must still succeed (cloud connectors
   degrade to "not registered", never an import-time crash).
 - Keep README and `docs/development/connector-guide.md` agreeing on the
@@ -61,8 +61,8 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
   singleton in this PR — explicitly deferred to a follow-up issue.
 - Do not wire connectors into `indexing/pipeline.py` or change its public
   signature.
-- **Do not touch `gs://` usage outside `agent_vault/connectors/gcs.py`.**
-  `agent_vault/onboard/artifact_storage.py` and `docs/mcp/deployment.md` use
+- **Do not touch `gs://` usage outside `agentic_inquiry/connectors/gcs.py`.**
+  `agentic_inquiry/onboard/artifact_storage.py` and `docs/mcp/deployment.md` use
   `gs://` for unrelated GCS-native artifact / vector-DB URIs and must stay
   as-is. The scheme change is scoped to the connector's own `_build_uri` /
   `_uri_to_path` only — no global `gs://` → `gcs://` rename.
@@ -92,13 +92,13 @@ before proceeding; *Never do* is a hard rule, even under time pressure.
 
 ## Acceptance Criteria
 
-- [ ] After `import agent_vault.connectors`, `"gcs"` and `"s3"` both appear in
+- [ ] After `import agentic_inquiry.connectors`, `"gcs"` and `"s3"` both appear in
       `list_connectors()` **regardless of whether `gcsfs`/`s3fs` are installed**
       (registration is an import-time decorator effect; the cloud-lib check is
       only at construction). With `gcsfs` installed, `get_connector("gcs",
       bucket="b")` returns a `GCSConnector`; without it, that call raises
       `ImportError` from the constructor.
-- [ ] Importing `agent_vault.connectors` with neither extra installed does not
+- [ ] Importing `agentic_inquiry.connectors` with neither extra installed does not
       raise; `GCSConnector` is exported (the class — mirroring `S3Connector`,
       the module imports fine without the cloud lib).
 - [ ] `GCSConnector._build_uri("b/k") == "gcs://b/k"` and

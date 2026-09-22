@@ -19,12 +19,12 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.connectors import (
+from agentic_inquiry.connectors import (
     ContentMaterializer,
     SourceContent,
     SourceItem,
 )
-from agent_vault.connectors.protocols import ConnectorProtocol
+from agentic_inquiry.connectors.protocols import ConnectorProtocol
 
 
 class MockRemoteConnector:
@@ -310,7 +310,7 @@ class TestIntegrationWithParsers:
         self, temp_cache: Path
     ) -> None:
         """FileSystemConnector items don't need materialization."""
-        from agent_vault.connectors import FileSystemConnector
+        from agentic_inquiry.connectors import FileSystemConnector
 
         # Create a temp directory with a test file
         with tempfile.TemporaryDirectory() as project_dir:

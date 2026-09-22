@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 from pathlib import Path
 
-from agent_vault.mcp.utils.validation import (
+from agentic_inquiry.mcp.utils.validation import (
     ColumnNameValidationError,
     EntityNameValidationError,
     PathValidationError,
@@ -1028,7 +1028,7 @@ class TestQuerySpecColumnValidation:
 
     def test_queryspec_validates_table_name(self):
         """Test that QuerySpec validates table names."""
-        from agent_vault.database.query_spec import QuerySpec
+        from agentic_inquiry.database.query_spec import QuerySpec
 
         # Valid table name should work
         spec = QuerySpec(table="document_chunks")
@@ -1036,7 +1036,7 @@ class TestQuerySpecColumnValidation:
 
     def test_queryspec_validates_vector_column(self):
         """Test that QuerySpec validates vector_column."""
-        from agent_vault.database.query_spec import QuerySpec
+        from agentic_inquiry.database.query_spec import QuerySpec
 
         # Valid vector column should work
         spec = QuerySpec(table="document_chunks", vector_column="vector")
@@ -1050,7 +1050,7 @@ class TestQuerySpecColumnValidation:
 
     def test_queryspec_validates_order_by(self):
         """Test that QuerySpec validates order_by column."""
-        from agent_vault.database.query_spec import QuerySpec
+        from agentic_inquiry.database.query_spec import QuerySpec
 
         # Valid order_by should work
         spec = QuerySpec(table="document_chunks", order_by="created_at")
@@ -1064,7 +1064,7 @@ class TestQuerySpecColumnValidation:
 
     def test_queryspec_validates_fts_columns(self):
         """Test that QuerySpec validates fts_columns."""
-        from agent_vault.database.query_spec import QuerySpec
+        from agentic_inquiry.database.query_spec import QuerySpec
 
         # Valid fts_columns should work
         spec = QuerySpec(table="document_chunks", fts_columns=["content", "title"])
@@ -1078,7 +1078,7 @@ class TestQuerySpecColumnValidation:
 
     def test_queryspec_validates_select_columns(self):
         """Test that QuerySpec validates select_columns."""
-        from agent_vault.database.query_spec import QuerySpec
+        from agentic_inquiry.database.query_spec import QuerySpec
 
         # Valid select_columns should work (must include 'id')
         spec = QuerySpec(table="document_chunks", select_columns=["id", "content"])
@@ -1092,7 +1092,7 @@ class TestQuerySpecColumnValidation:
 
     def test_queryspec_allows_nested_in_select(self):
         """Test that QuerySpec allows nested columns in select_columns."""
-        from agent_vault.database.query_spec import QuerySpec
+        from agentic_inquiry.database.query_spec import QuerySpec
 
         # Nested fields should work in select_columns
         spec = QuerySpec(

@@ -13,7 +13,7 @@ pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 import numpy as np
 
-from agent_vault.mcp.tools.search import find_similar
+from agentic_inquiry.mcp.tools.search import find_similar
 
 
 @pytest.fixture

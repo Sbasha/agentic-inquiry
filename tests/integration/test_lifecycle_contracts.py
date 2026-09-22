@@ -11,9 +11,9 @@ pytestmark = pytest.mark.integration
 
 import asyncio
 
-from agent_vault.events.store import EventStore
-from agent_vault.watching.file_tracker import FileTracker
-from agent_vault.watching.watcher import FileWatcher
+from agentic_inquiry.events.store import EventStore
+from agentic_inquiry.watching.file_tracker import FileTracker
+from agentic_inquiry.watching.watcher import FileWatcher
 
 
 class TestEventStoreLifecycle:

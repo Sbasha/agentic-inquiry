@@ -5,7 +5,7 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.mcp.services.entity_resolver import (
+from agentic_inquiry.mcp.services.entity_resolver import (
     EntityResolver,
     EntityNotFoundError
 )
@@ -68,7 +68,7 @@ async def test_exact_match(entity_resolver, mock_storage_facade):
         "id": "entity-1",
         "name": "SearchService",
         "type": "class",
-        "file_path": "agent_vault/search/service.py",
+        "file_path": "agentic_inquiry/search/service.py",
         "line_start": 10,
         "line_end": 100
     }])
@@ -83,7 +83,7 @@ async def test_exact_match(entity_resolver, mock_storage_facade):
     assert entity is not None
     assert entity.name == "SearchService"
     assert entity.entity_type == "class"
-    assert entity.file_path == "agent_vault/search/service.py"
+    assert entity.file_path == "agentic_inquiry/search/service.py"
 
 
 @pytest.mark.asyncio
@@ -96,7 +96,7 @@ async def test_case_insensitive_match(entity_resolver, mock_storage_facade):
             "id": "entity-1",
             "name": "SearchService",
             "type": "class",
-            "file_path": "agent_vault/search/service.py",
+            "file_path": "agentic_inquiry/search/service.py",
             "line_start": 10,
             "line_end": 100
         }]
@@ -112,7 +112,7 @@ async def test_case_insensitive_match(entity_resolver, mock_storage_facade):
     assert entity is not None
     assert entity.name == "SearchService"
     assert entity.entity_type == "class"
-    assert entity.file_path == "agent_vault/search/service.py"
+    assert entity.file_path == "agentic_inquiry/search/service.py"
 
 
 @pytest.mark.asyncio
@@ -129,7 +129,7 @@ async def test_fuzzy_match(entity_resolver, mock_storage_facade):
             "id": "entity-1",
             "name": "SearchService",
             "type": "class",
-            "file_path": "agent_vault/search/service.py",
+            "file_path": "agentic_inquiry/search/service.py",
             "line_start": 10,
             "line_end": 100
         }]
@@ -145,7 +145,7 @@ async def test_fuzzy_match(entity_resolver, mock_storage_facade):
     assert entity is not None
     assert entity.name == "SearchService"
     assert entity.entity_type == "class"
-    assert entity.file_path == "agent_vault/search/service.py"
+    assert entity.file_path == "agentic_inquiry/search/service.py"
 
 
 @pytest.mark.asyncio
@@ -162,7 +162,7 @@ async def test_entity_not_found(entity_resolver, mock_storage_facade):
             "id": "entity-1",
             "name": "SearchService",
             "type": "class",
-            "file_path": "agent_vault/search/service.py",
+            "file_path": "agentic_inquiry/search/service.py",
             "line_start": 10,
             "line_end": 100
         }]
@@ -194,7 +194,7 @@ async def test_get_entity_dependencies(entity_resolver, mock_storage_facade):
         "id": "entity-2",
         "name": "LanceDBManager",
         "type": "class",
-        "file_path": "agent_vault/database/lancedb_manager.py",
+        "file_path": "agentic_inquiry/database/lancedb_manager.py",
         "line_start": 20,
         "line_end": 200
     }])
@@ -226,7 +226,7 @@ async def test_get_entity_usages(entity_resolver, mock_storage_facade):
         "id": "entity-2",
         "name": "IndexingPipeline",
         "type": "class",
-        "file_path": "agent_vault/indexing/pipeline.py",
+        "file_path": "agentic_inquiry/indexing/pipeline.py",
         "line_start": 30,
         "line_end": 300
     }])
@@ -240,7 +240,7 @@ async def test_get_entity_usages(entity_resolver, mock_storage_facade):
     
     # Verify result
     assert len(usages) == 1
-    assert usages[0].file_path == "agent_vault/indexing/pipeline.py"
+    assert usages[0].file_path == "agentic_inquiry/indexing/pipeline.py"
     assert usages[0].usage_type == "calls"
 
 
@@ -252,7 +252,7 @@ async def test_cache_enabled(entity_resolver, mock_storage_facade):
         "id": "entity-1",
         "name": "SearchService",
         "type": "class",
-        "file_path": "agent_vault/search/service.py",
+        "file_path": "agentic_inquiry/search/service.py",
         "line_start": 10,
         "line_end": 100
     }])
@@ -284,7 +284,7 @@ async def test_entity_type_filter(entity_resolver, mock_storage_facade):
         "id": "entity-1",
         "name": "SearchService",
         "type": "class",
-        "file_path": "agent_vault/search/service.py",
+        "file_path": "agentic_inquiry/search/service.py",
         "line_start": 10,
         "line_end": 100
     }])
@@ -300,7 +300,7 @@ async def test_entity_type_filter(entity_resolver, mock_storage_facade):
     assert entity is not None
     assert entity.name == "SearchService"
     assert entity.entity_type == "class"
-    assert entity.file_path == "agent_vault/search/service.py"
+    assert entity.file_path == "agentic_inquiry/search/service.py"
 
     # Verify filter was passed to query
     call_args = mock_storage_facade.query_entities.call_args

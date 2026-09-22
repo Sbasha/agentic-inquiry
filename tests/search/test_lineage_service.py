@@ -4,15 +4,15 @@ from __future__ import annotations
 import pytest
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config
-from agent_vault.models.lineage import (
+from agentic_inquiry.config import Config
+from agentic_inquiry.models.lineage import (
     ArchitecturalLayer,
     Confidence,
     ImpactAnalysis,
     LineagePath,
     LineageStep,
 )
-from agent_vault.search.lineage_service import LineageService
+from agentic_inquiry.search.lineage_service import LineageService
 
 
 @pytest.fixture
@@ -113,7 +113,7 @@ class TestLineageModels:
 
     def test_confidence_ordering(self):
         """Test confidence values have correct ordering."""
-        from agent_vault.models.lineage import CONFIDENCE_RANK
+        from agentic_inquiry.models.lineage import CONFIDENCE_RANK
 
         assert CONFIDENCE_RANK[Confidence.INFERRED] < CONFIDENCE_RANK[Confidence.LOW]
         assert CONFIDENCE_RANK[Confidence.LOW] < CONFIDENCE_RANK[Confidence.MEDIUM]

@@ -16,9 +16,9 @@ pytestmark = pytest.mark.unit
 from hypothesis import given, strategies as st, settings
 from unittest.mock import MagicMock, AsyncMock
 
-from agent_vault.indexing.graph_builder import GraphBuilder, GraphBuilderConfig
-from agent_vault.indexing.external_entity_resolver import ExternalEntityInfo, ExternalCategory
-from agent_vault.parsers.models import ParserRelationship
+from agentic_inquiry.indexing.graph_builder import GraphBuilder, GraphBuilderConfig
+from agentic_inquiry.indexing.external_entity_resolver import ExternalEntityInfo, ExternalCategory
+from agentic_inquiry.parsers.models import ParserRelationship
 
 
 # =============================================================================

@@ -5,8 +5,8 @@ import pytest
 pytestmark = pytest.mark.unit
 from typing import Set
 
-from agent_vault.connectors.hash_cache import BoundedHashCache, HashCacheStats
-from agent_vault.connectors.base import InMemoryFileTracker
+from agentic_inquiry.connectors.hash_cache import BoundedHashCache, HashCacheStats
+from agentic_inquiry.connectors.base import InMemoryFileTracker
 
 
 class TestHashCacheStats:

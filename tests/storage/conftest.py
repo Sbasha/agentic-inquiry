@@ -26,7 +26,7 @@ def _get_postgres_url() -> str:
     port = os.environ.get("POSTGRES_PORT", "5432")
     user = os.environ.get("POSTGRES_USER", "dev")
     password = os.environ.get("POSTGRES_PASSWORD", "dev")
-    database = os.environ.get("POSTGRES_DB", "agent-vault")
+    database = os.environ.get("POSTGRES_DB", "agentic-inquiry")
 
     return f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
@@ -45,13 +45,13 @@ async def postgres_connection_manager(integration_postgres_url: str):
         PostgresConnectionManager: Initialized connection manager
     """
     try:
-        from agent_vault.storage.providers.postgresql import PostgresConnectionManager
+        from agentic_inquiry.storage.providers.postgresql import PostgresConnectionManager
     except ImportError:
         pytest.skip("asyncpg not installed")
 
     manager = PostgresConnectionManager(
         connection_string=integration_postgres_url,
-        table_prefix="agv_test_",
+        table_prefix="ai_test_",
         pool_size=5,
     )
 
@@ -74,12 +74,12 @@ async def clean_postgres_tables(postgres_connection_manager):
     """
     # Tables created by PostgreSQL providers with test prefix
     test_tables = [
-        "agv_test_v_chunks",
-        "agv_test_v_chunks_fts",
-        "agv_test_g_entities",
-        "agv_test_g_relationships",
-        "agv_test_e_events",
-        "agv_test_f_file_hashes",
+        "ai_test_v_chunks",
+        "ai_test_v_chunks_fts",
+        "ai_test_g_entities",
+        "ai_test_g_relationships",
+        "ai_test_e_events",
+        "ai_test_f_file_hashes",
     ]
 
     # Clean up before test using connection manager's acquire context manager
@@ -108,7 +108,7 @@ def generate_project_id() -> str:
 @pytest.fixture
 def test_config(tmp_path):
     """Create test configuration with temporary storage."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
 
     storage_config = StorageConfig(
         root=str(tmp_path / "storage"),
@@ -131,7 +131,7 @@ async def vector_provider(provider_type, test_config, project_id):
     This fixture runs tests against multiple provider implementations.
     PostgreSQL tests will be skipped if the database is not available.
     """
-    from agent_vault.storage.providers import InMemoryProvider, LanceDBProvider
+    from agentic_inquiry.storage.providers import InMemoryProvider, LanceDBProvider
 
     if provider_type == "memory":
         provider = InMemoryProvider(project_id=project_id)
@@ -148,7 +148,7 @@ async def vector_provider(provider_type, test_config, project_id):
     elif provider_type == "postgres":
         # Check if asyncpg is available
         try:
-            from agent_vault.storage.providers.postgresql import (
+            from agentic_inquiry.storage.providers.postgresql import (
                 PostgresConnectionManager,
                 PostgresVectorProvider,
             )
@@ -159,7 +159,7 @@ async def vector_provider(provider_type, test_config, project_id):
         # Create connection manager
         manager = PostgresConnectionManager(
             connection_string=_get_postgres_url(),
-            table_prefix=f"agv_iso_{project_id[:8]}_",  # Unique prefix per test
+            table_prefix=f"ai_iso_{project_id[:8]}_",  # Unique prefix per test
             pool_size=5,
         )
 
@@ -183,7 +183,7 @@ async def vector_provider(provider_type, test_config, project_id):
             try:
                 async with manager.acquire() as conn:
                     # Drop all tables with this test's prefix
-                    prefix = f"agv_iso_{project_id[:8]}_"
+                    prefix = f"ai_iso_{project_id[:8]}_"
                     result = await conn.fetch(
                         """
                         SELECT tablename FROM pg_tables
@@ -211,7 +211,7 @@ def provider_type(request):
 @pytest.fixture
 def chunk_factory():
     """Factory for creating test DocumentChunks."""
-    from agent_vault.models.document_chunk import DocumentChunk
+    from agentic_inquiry.models.document_chunk import DocumentChunk
 
     def _create_chunk(
         chunk_id: str = None,
@@ -246,7 +246,7 @@ def chunk_factory():
 @pytest.fixture
 def entity_factory():
     """Factory for creating test GraphEntities."""
-    from agent_vault.models.graph_entity import EntityType, GraphEntity
+    from agentic_inquiry.models.graph_entity import EntityType, GraphEntity
 
     def _create_entity(
         entity_id: str = None,
@@ -277,7 +277,7 @@ def entity_factory():
 @pytest.fixture
 def relationship_factory():
     """Factory for creating test GraphRelationships."""
-    from agent_vault.models.graph_relationship import (
+    from agentic_inquiry.models.graph_relationship import (
         GraphRelationship,
         RelationshipType,
     )

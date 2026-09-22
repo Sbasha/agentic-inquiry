@@ -11,7 +11,7 @@ Requirements: 6.1, 6.2, 6.3
 import pytest
 
 pytestmark = pytest.mark.unit
-from agent_vault.indexing.symbol_registry import SymbolRegistry
+from agentic_inquiry.indexing.symbol_registry import SymbolRegistry
 
 
 class TestSymbolRegistryPublicAPI:

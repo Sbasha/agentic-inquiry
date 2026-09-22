@@ -1,6 +1,6 @@
 # Async Best Practices
 
-This document outlines best practices for working with async/await patterns in Agent-Vault.
+This document outlines best practices for working with async/await patterns in Agentic Inquiry.
 
 ## Event Loop Management
 
@@ -153,7 +153,7 @@ async def fetch_url(url: str):
         return response.text
 ```
 
-### Async Libraries in Agent-Vault
+### Async Libraries in Agentic Inquiry
 
 - **Files**: `aiofiles` for file I/O
 - **SQLite**: `aiosqlite` for database operations

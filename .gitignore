@@ -167,13 +167,13 @@ docs/specs/**/notes/implementer-*.md
 .ruff_cache/
 
 # Configuration (per-developer customization)
-agent-vault.yaml
-.agv/
+agentic-inquiry.yaml
+.agentic-inquiry/
 logs/
 
 # Local embedding models (downloaded/converted models)
 /models/
-!agent-vault/mcp/models/
+!agentic-inquiry/mcp/models/
 *.onnx
 *.safetensors
 
@@ -218,10 +218,10 @@ conductor/
 .kiro/
 
 # Legacy artifacts
-.agent-vault_*/
-.agv-test-environments/
-.agv-test-env*
-.agv-test-session
+.agentic-inquiry_*/
+.agentic-inquiry-test-environments/
+.agentic-inquiry-test-env*
+.agentic-inquiry-test-session
 .gcp-*.env
 
 # agentbundle / adapt-to-project artefacts (never committed)

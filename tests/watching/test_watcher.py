@@ -43,13 +43,13 @@ def wait_for_condition(condition_fn, timeout=2.0, poll_interval=0.05):
         time.sleep(poll_interval)
     return False
 
-from agent_vault.watching import (
+from agentic_inquiry.watching import (
     get_watcher,
     register_watcher,
     available_watchers,
 )
-from agent_vault.watching.watcher import FileWatcher
-from agent_vault.watching.file_tracker import FileTracker
+from agentic_inquiry.watching.watcher import FileWatcher
+from agentic_inquiry.watching.file_tracker import FileTracker
 
 
 def _create_mock_event_system():
@@ -454,12 +454,12 @@ class TestWatcherRegistry:
             assert retrieved is watcher
         finally:
             # Cleanup
-            from agent_vault.watching import _watcher_registry
+            from agentic_inquiry.watching import _watcher_registry
             _watcher_registry.unregister("test_watcher")
     
     def test_get_default_watcher(self):
         """Test getting the default watcher."""
-        from agent_vault.watching import _watcher_registry
+        from agentic_inquiry.watching import _watcher_registry
 
         # Unregister any existing default watcher from auto-registration
         if "default" in _watcher_registry.available():
@@ -478,7 +478,7 @@ class TestWatcherRegistry:
 
     def test_available_watchers(self):
         """Test listing available watchers."""
-        from agent_vault.watching import _watcher_registry
+        from agentic_inquiry.watching import _watcher_registry
 
         # Unregister any existing default watcher from auto-registration
         if "default" in _watcher_registry.available():

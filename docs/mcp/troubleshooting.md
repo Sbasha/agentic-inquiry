@@ -2,7 +2,7 @@
 
 > **Note:** The MCP server is a secondary/advanced interface. **Most users should use the [Claude Code plugins](../../README.md) as the primary interface.** This troubleshooting guide applies to all usage modes (CLI, plugins, MCP server). MCP-specific issues are clearly marked.
 
-This guide helps you diagnose and resolve common issues with Agent-Vault. Most sections apply to all usage modes (CLI, plugins, MCP server). MCP-specific issues are clearly marked.
+This guide helps you diagnose and resolve common issues with Agentic Inquiry. Most sections apply to all usage modes (CLI, plugins, MCP server). MCP-specific issues are clearly marked.
 
 ## Table of Contents
 
@@ -31,7 +31,7 @@ This guide helps you diagnose and resolve common issues with Agent-Vault. Most s
 
 **Solution:**
 ```yaml
-# agent-vault.yaml
+# agentic-inquiry.yaml
 mcp:
   enabled: true
 ```
@@ -101,7 +101,7 @@ if info['project_summary']['overview']['total_chunks'] == 0:
 **Solution:**
 ```bash
 # Choose a different port
-uv run agv --transport http --port 8001
+uv run ai --transport http --port 8001
 ```
 
 **Note:** This only applies to MCP server HTTP mode. STDIO mode and Claude Code plugins don't use network ports.
@@ -286,7 +286,7 @@ async def search_with_fallback(session_id: str, query: str):
 **Solution:**
 ```bash
 # Bind to 0.0.0.0 instead of 127.0.0.1
-uv run agv --transport http --host 0.0.0.0 --port 8000
+uv run ai --transport http --host 0.0.0.0 --port 8000
 ```
 
 **Note:** This only applies to MCP server HTTP mode. Most users should use Claude Code plugins instead.
@@ -527,7 +527,7 @@ print(f"Deduplication applied: {results['deduplication_applied']}")
 
 2. **Verify Deduplication Configuration**
 
-Check `agent-vault.yaml`:
+Check `agentic-inquiry.yaml`:
 ```yaml
 search:
   deduplication:
@@ -549,7 +549,7 @@ search:
 2. **Configuration Not Loaded**
    - **Solution**: Restart server after configuration changes
    ```bash
-   uv run agv --config agent-vault.yaml
+   uv run ai --config agentic-inquiry.yaml
    ```
 
 3. **Very Similar Content**
@@ -864,7 +864,7 @@ except Exception as e:
 
 2. **Verify Schema Mapping Configuration**
 
-Check `agent-vault.yaml`:
+Check `agentic-inquiry.yaml`:
 ```yaml
 indexing:
   schema_mapping:
@@ -909,14 +909,14 @@ indexing:
 4. **Configuration Not Loaded**
    - **Solution**: Restart server after configuration changes
    ```bash
-   uv run agv --config agent-vault.yaml
+   uv run ai --config agentic-inquiry.yaml
    ```
 
 **Resolution Steps:**
 
 1. **Enable Schema Mapping**:
    ```yaml
-   # agent-vault.yaml
+   # agentic-inquiry.yaml
    indexing:
      schema_mapping:
        enabled: true
@@ -936,7 +936,7 @@ indexing:
 
 3. **Restart Server**:
    ```bash
-   uv run agv
+   uv run ai
    ```
 
 4. **Retry Indexing**:
@@ -1001,7 +1001,7 @@ print(f"Search results: {len(results['results'])}")
 
 3. **Check Context Builder Configuration**
 
-Check `agent-vault.yaml`:
+Check `agentic-inquiry.yaml`:
 ```yaml
 context:
   builder:
@@ -1049,7 +1049,7 @@ context:
 
 1. **Enable Context Builder**:
    ```yaml
-   # agent-vault.yaml
+   # agentic-inquiry.yaml
    context:
      builder:
        enabled: true
@@ -1067,7 +1067,7 @@ context:
 
 3. **Restart Server**:
    ```bash
-   uv run agv
+   uv run ai
    ```
 
 4. **Try with Different Parameters**:
@@ -1131,7 +1131,7 @@ print(f"Remaining: {usage['remaining']}")
 
 2. **Verify Token Budget Configuration**
 
-Check `agent-vault.yaml`:
+Check `agentic-inquiry.yaml`:
 ```yaml
 context:
   token_budget:
@@ -1226,7 +1226,7 @@ except Exception as e:
 
 2. **Check Configuration**
 
-Check `agent-vault.yaml`:
+Check `agentic-inquiry.yaml`:
 ```yaml
 search:
   query_sanitization:
@@ -1256,14 +1256,14 @@ search:
 3. **Configuration Not Loaded**
    - **Solution**: Restart server after configuration changes
    ```bash
-   uv run agv
+   uv run ai
    ```
 
 **Resolution Steps:**
 
 1. **Enable Query Sanitization**:
    ```yaml
-   # agent-vault.yaml
+   # agentic-inquiry.yaml
    search:
      query_sanitization:
        enabled: true
@@ -1273,7 +1273,7 @@ search:
 
 2. **Restart Server**:
    ```bash
-   uv run agv
+   uv run ai
    ```
 
 3. **Test with Special Characters**:
@@ -1504,7 +1504,7 @@ gcloud sql instances describe INSTANCE_NAME
 # Check YAML is valid
 python -c "
 import yaml
-with open('agent-vault.yaml') as f:
+with open('agentic-inquiry.yaml') as f:
     yaml.safe_load(f)
 print('✓ YAML is valid')
 "
@@ -1519,7 +1519,7 @@ storage:
     cloudsql:
       type: cloudsql
       connection_name: "project:region:instance"  # Required
-      database: "agent-vault"  # Required
+      database: "agentic-inquiry"  # Required
       user: "postgres"  # Required
       credentials_path: "/path/to/key.json"  # Required for service account
 ```
@@ -1551,7 +1551,7 @@ async def test_connection():
     try:
         conn = await asyncpg.connect(
             host='/cloudsql/PROJECT:REGION:INSTANCE',
-            database='agent-vault',
+            database='agentic-inquiry',
             user='postgres',
             password='PASSWORD'
         )
@@ -1587,10 +1587,10 @@ asyncio.run(test_connection())
 
 ```bash
 # Check total size of LanceDB data
-du -sh .agv/lancedb/
+du -sh .agentic-inquiry/lancedb/
 
 # Check individual table sizes
-du -sh .agv/lancedb/*.lance | sort -rh
+du -sh .agentic-inquiry/lancedb/*.lance | sort -rh
 ```
 
 2. **Check Version Count**
@@ -1598,7 +1598,7 @@ du -sh .agv/lancedb/*.lance | sort -rh
 ```python
 import lancedb
 
-db = lancedb.connect('.agv/lancedb')
+db = lancedb.connect('.agentic-inquiry/lancedb')
 for table_name in db.table_names():
     table = db.open_table(table_name)
     versions = table.list_versions()
@@ -1620,7 +1620,7 @@ LanceDB uses MVCC (Multi-Version Concurrency Control), creating new versions on 
 import lancedb
 from datetime import timedelta
 
-db = lancedb.connect('.agv/lancedb')
+db = lancedb.connect('.agentic-inquiry/lancedb')
 
 for table_name in db.table_names():
     table = db.open_table(table_name)
@@ -1671,7 +1671,7 @@ def cleanup_lancedb_after_tests():
 
     # Aggressive cleanup after tests complete
     try:
-        db = lancedb.connect('.agv/lancedb')
+        db = lancedb.connect('.agentic-inquiry/lancedb')
         for table_name in db.table_names():
             table = db.open_table(table_name)
             table.optimize(
@@ -1687,7 +1687,7 @@ def cleanup_lancedb_after_tests():
 1. **Run maintenance after bulk operations**: Always run `run_maintenance` after indexing or test runs
 2. **Use appropriate cleanup timing**: Use `cleanup_hours=0.01` for test environments
 3. **Monitor disk usage**: Set up alerts for storage thresholds
-4. **Consider fresh indexes for tests**: Delete `.agv/lancedb/` before test runs if data isn't needed
+4. **Consider fresh indexes for tests**: Delete `.agentic-inquiry/lancedb/` before test runs if data isn't needed
 
 **Common Causes:**
 
@@ -1789,7 +1789,7 @@ print(f"Total entities: {overview['total_entities']}")
 ### Problem: Configuration Not Applied
 
 **Symptoms:**
-- Changes to `agent-vault.yaml` not taking effect
+- Changes to `agentic-inquiry.yaml` not taking effect
 - Default values used instead of configured values
 
 **Diagnostic Steps:**
@@ -1798,12 +1798,12 @@ print(f"Total entities: {overview['total_entities']}")
 
 ```bash
 # Check if file exists
-ls -la agent-vault.yaml
+ls -la agentic-inquiry.yaml
 
 # Check configuration is valid YAML
 uv run python -c "
 import yaml
-with open('agent-vault.yaml') as f:
+with open('agentic-inquiry.yaml') as f:
     config = yaml.safe_load(f)
     print('✓ Configuration is valid YAML')
 "
@@ -1814,7 +1814,7 @@ with open('agent-vault.yaml') as f:
 For MCP server:
 ```bash
 # Start with explicit config file
-uv run agv --config agent-vault.yaml --log-level DEBUG
+uv run ai --config agentic-inquiry.yaml --log-level DEBUG
 ```
 
 For CLI or plugins, configuration is loaded automatically from the project root.
@@ -1830,7 +1830,7 @@ print(f"Server version: {info['server']['version']}")
 **Common Causes:**
 
 1. **Wrong File Location**
-   - **Solution**: Place `agent-vault.yaml` in project root
+   - **Solution**: Place `agentic-inquiry.yaml` in project root
    - Or use `--config` flag to specify path
 
 2. **Invalid YAML Syntax**
@@ -1842,12 +1842,12 @@ print(f"Server version: {info['server']['version']}")
    ```bash
    # Stop server (Ctrl+C)
    # Start again
-   uv run agv
+   uv run ai
    ```
    - **Note:** CLI and plugin users don't need to restart a server; configuration is loaded on each operation.
 
 4. **Environment Variables Override**
-   - **Solution**: Check for `AGV_*` environment variables
+   - **Solution**: Check for `AI_*` environment variables
    - Environment variables take precedence over config file
 
 ## FAQ
@@ -1876,7 +1876,7 @@ print(f"Found: {entity['success']}")
 This indicates deduplication is disabled. Enable it:
 
 ```yaml
-# agent-vault.yaml
+# agentic-inquiry.yaml
 search:
   deduplication:
     enabled: true
@@ -1991,7 +1991,7 @@ Schema validation errors occur when ParserChunk fields don't match database sche
 
 1. **Enable schema mapping**:
    ```yaml
-   # agent-vault.yaml
+   # agentic-inquiry.yaml
    indexing:
      schema_mapping:
        enabled: true
@@ -2008,7 +2008,7 @@ Schema validation errors occur when ParserChunk fields don't match database sche
 
 3. **Restart server**:
    ```bash
-   uv run agv
+   uv run ai
    ```
 
 4. **Retry indexing**:
@@ -2035,7 +2035,7 @@ The tool automatically falls back to search if context builder fails, so you sho
 Enable query sanitization to handle special characters:
 
 ```yaml
-# agent-vault.yaml
+# agentic-inquiry.yaml
 search:
   query_sanitization:
     enabled: true
@@ -2095,8 +2095,8 @@ If you're still experiencing issues:
 
 1. **Check Logs**: Review logs for detailed error information
 2. **Enable Debug Logging**:
-   - MCP server: `uv run agv --log-level DEBUG`
-   - CLI: `agv --log-level DEBUG <command>`
+   - MCP server: `uv run ai --log-level DEBUG`
+   - CLI: `ai --log-level DEBUG <command>`
 3. **Review Documentation**: See [Main Documentation](../../README.md) or [MCP Documentation](./README.md)
 4. **Report Issues**: Include error messages, logs, and reproduction steps
 
@@ -2105,7 +2105,7 @@ If you're still experiencing issues:
 ### Optimize Entity Resolution
 
 ```yaml
-# agent-vault.yaml
+# agentic-inquiry.yaml
 entity_resolution:
   case_insensitive: true
   fuzzy_matching:
@@ -2118,7 +2118,7 @@ entity_resolution:
 ### Optimize Search
 
 ```yaml
-# agent-vault.yaml
+# agentic-inquiry.yaml
 search:
   deduplication:
     enabled: true
@@ -2131,7 +2131,7 @@ search:
 ### Optimize Impact Analysis
 
 ```yaml
-# agent-vault.yaml
+# agentic-inquiry.yaml
 impact_analysis:
   default_depth: 2
   max_depth: 5
@@ -2141,7 +2141,7 @@ impact_analysis:
 ### Optimize Indexing
 
 ```yaml
-# agent-vault.yaml
+# agentic-inquiry.yaml
 indexing:
   concurrent_files: 10
   chunk_size: 1000

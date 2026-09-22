@@ -16,7 +16,7 @@ pytestmark = pytest.mark.integration
 from pathlib import Path
 from typing import Any
 
-from agent_vault.parsers.implementations.document import DocumentParser
+from agentic_inquiry.parsers.implementations.document import DocumentParser
 
 
 # Sample docs directory

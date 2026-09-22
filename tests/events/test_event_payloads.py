@@ -15,8 +15,8 @@ pytestmark = pytest.mark.unit
 
 from pydantic import ValidationError
 
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.events.payloads import (
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.events.payloads import (
     # Indexing payloads
     IndexingStartedPayload,
     IndexingProgressPayload,
@@ -468,8 +468,8 @@ class TestEventSystemTypedEmission:
 
     async def test_emit_typed_basic(self, mock_event_system_typed):
         """Test emit_typed() with valid payload."""
-        from agent_vault.events.system import EventSystem
-        from agent_vault.config import Config
+        from agentic_inquiry.events.system import EventSystem
+        from agentic_inquiry.config import Config
 
         config = Config.load()
         config.storage.default_project_id = "test_project"
@@ -495,8 +495,8 @@ class TestEventSystemTypedEmission:
 
     async def test_emit_typed_validation_error(self):
         """Test that emit_typed() raises ValidationError for invalid payload."""
-        from agent_vault.events.system import EventSystem
-        from agent_vault.config import Config
+        from agentic_inquiry.events.system import EventSystem
+        from agentic_inquiry.config import Config
 
         config = Config.load()
         config.storage.default_project_id = "test_project"

@@ -8,7 +8,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.parsers.implementations.unified_code import UnifiedCodeParser
+from agentic_inquiry.parsers.implementations.unified_code import UnifiedCodeParser
 
 
 # Map directory names to language names

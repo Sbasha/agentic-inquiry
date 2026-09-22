@@ -8,9 +8,9 @@ import pytest
 
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config, IndexingConfig
-from agent_vault.exceptions import ConfigurationError
-from agent_vault.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.config import Config, IndexingConfig
+from agentic_inquiry.exceptions import ConfigurationError
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
 
 
 def _create_mock_event_system():

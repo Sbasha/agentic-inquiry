@@ -1,7 +1,7 @@
 """
 Runner for TEST_03 Feature Implementation UAT.
 
-Feature: Add a new CLI command `agv stats` that shows index statistics,
+Feature: Add a new CLI command `ai stats` that shows index statistics,
 following the pattern of existing CLI commands.
 """
 import asyncio
@@ -24,9 +24,9 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 RUN_ID = "20260320_213916"
-PROJECT_ID = f"agv_test03_feature_{RUN_ID}"
-OUTPUT_DIR = PROJECT_ROOT / "test_results" / "agv" / RUN_ID / "feature_implementation"
-ENV_PATH = str(PROJECT_ROOT / ".agv" / "envs" / "agv-prod" / "config.yaml")
+PROJECT_ID = f"ai_test03_feature_{RUN_ID}"
+OUTPUT_DIR = PROJECT_ROOT / "test_results" / "ai" / RUN_ID / "feature_implementation"
+ENV_PATH = str(PROJECT_ROOT / ".agentic-inquiry" / "envs" / "ai-prod" / "config.yaml")
 CODEBASE_PATH = str(PROJECT_ROOT)
 
 
@@ -39,14 +39,14 @@ def log(msg: str):
 
 
 async def main():
-    from agent_vault.config import Config
-    from agent_vault.mcp.factories import create_mcp_services
-    from agent_vault.mcp.tools.session import create_session
-    from agent_vault.mcp.tools.knowledge import add_knowledge
-    from agent_vault.mcp.tools.info import get_project_info
-    from agent_vault.mcp.tools.search import search_knowledge
-    from agent_vault.mcp.tools.memory import save_memory, recall_memories
-    from agent_vault.mcp.tools.analysis import analyze_impact
+    from agentic_inquiry.config import Config
+    from agentic_inquiry.mcp.factories import create_mcp_services
+    from agentic_inquiry.mcp.tools.session import create_session
+    from agentic_inquiry.mcp.tools.knowledge import add_knowledge
+    from agentic_inquiry.mcp.tools.info import get_project_info
+    from agentic_inquiry.mcp.tools.search import search_knowledge
+    from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
+    from agentic_inquiry.mcp.tools.analysis import analyze_impact
 
     results = {}
     issues = []
@@ -67,7 +67,7 @@ async def main():
         r = await create_session(
             services,
             project_id=PROJECT_ID,
-            description="Feature implementation test - TEST_03 - Add agv stats CLI command",
+            description="Feature implementation test - TEST_03 - Add ai stats CLI command",
         )
         session_id = r.get("session_id")
         if not session_id:
@@ -126,7 +126,7 @@ async def main():
 
     # ══════════════════════════════════════════════════════════════════
     # TEST 1: Find Related Code
-    # Feature: Add `agv stats` CLI command (similar to existing commands)
+    # Feature: Add `ai stats` CLI command (similar to existing commands)
     # ══════════════════════════════════════════════════════════════════
     log("=" * 60)
     log("TEST 1: Find Related Code")
@@ -155,17 +155,17 @@ async def main():
         results["t1_1a_cli_search"] = {"pass": False, "error": str(e)}
         issues.append({"severity": "HIGH", "test": "t1_1a_cli_search", "msg": str(e)})
 
-    # T1.1b: Search for agv index search commands
-    log("T1.1b: Search for agv index, search command handlers")
+    # T1.1b: Search for ai index search commands
+    log("T1.1b: Search for ai index, search command handlers")
     try:
         r_cmds = await search_knowledge(
             services=services,
             session_id=session_id,
-            query="agv index search command handler argparse click typer",
+            query="ai index search command handler argparse click typer",
             limit=10,
         )
         results_count = len(r_cmds.get("results", []))
-        log(f"  Query 'agv command handler': {results_count} results")
+        log(f"  Query 'ai command handler': {results_count} results")
         for item in r_cmds.get("results", [])[:5]:
             log(f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]")
         results["t1_1b_cmd_search"] = {
@@ -183,11 +183,11 @@ async def main():
         r_cli2 = await search_knowledge(
             services=services,
             session_id=session_id,
-            query="agent-vault CLI module commands main",
+            query="agentic-inquiry CLI module commands main",
             limit=10,
         )
         results_count = len(r_cli2.get("results", []))
-        log(f"  Query 'agent-vault CLI module': {results_count} results")
+        log(f"  Query 'agentic-inquiry CLI module': {results_count} results")
         for item in r_cli2.get("results", [])[:5]:
             log(f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]")
         results["t1_1c_module_search"] = {
@@ -256,7 +256,7 @@ async def main():
         r_insert = await search_knowledge(
             services=services,
             session_id=session_id,
-            query="CLI commands directory agent-vault cli commands module files",
+            query="CLI commands directory agentic-inquiry cli commands module files",
             limit=10,
         )
         results_count = len(r_insert.get("results", []))
@@ -410,7 +410,7 @@ async def main():
         r_checklist = await search_knowledge(
             services=services,
             session_id=session_id,
-            query="pyproject.toml scripts entry_points console_scripts agv",
+            query="pyproject.toml scripts entry_points console_scripts ai",
             limit=10,
         )
         results_count = len(r_checklist.get("results", []))
@@ -437,8 +437,8 @@ async def main():
         m1 = await save_memory(
             services=services,
             session_id=session_id,
-            summary="Add agv stats CLI command - implementation approach",
-            content="Implementation approach: Add 'agv stats' CLI command following the pattern of existing CLI commands (index, search). Create stats.py in agent_vault/cli/commands/, implement async run_stats() function, register in main CLI dispatcher.",
+            summary="Add ai stats CLI command - implementation approach",
+            content="Implementation approach: Add 'ai stats' CLI command following the pattern of existing CLI commands (index, search). Create stats.py in agentic_inquiry/cli/commands/, implement async run_stats() function, register in main CLI dispatcher.",
             importance=0.9,
             tags=["feature", "cli", "stats", "implementation"],
         )
@@ -460,7 +460,7 @@ async def main():
             services=services,
             session_id=session_id,
             summary="Stats command integration points - files to create/modify",
-            content="Integration points: (1) agent_vault/cli/__init__.py or main.py - register stats subcommand; (2) agent_vault/cli/commands/ - add stats.py file; (3) pyproject.toml - if new script entry point needed; (4) tests/cli/ - add test_stats.py.",
+            content="Integration points: (1) agentic_inquiry/cli/__init__.py or main.py - register stats subcommand; (2) agentic_inquiry/cli/commands/ - add stats.py file; (3) pyproject.toml - if new script entry point needed; (4) tests/cli/ - add test_stats.py.",
             importance=0.88,
             tags=["feature", "cli", "integration-points", "stats"],
         )

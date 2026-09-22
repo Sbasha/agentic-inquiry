@@ -3,11 +3,11 @@
 These hit real object storage and are skipped by default. Opt in with
 ``-m cloud_smoke`` and the appropriate credentials + bucket env vars:
 
-- S3:  ``agv_SMOKE_S3_BUCKET`` (+ standard AWS credential resolution;
-       optional ``agv_SMOKE_S3_PREFIX``, ``agv_SMOKE_S3_ENDPOINT_URL`` for
+- S3:  ``AI_SMOKE_S3_BUCKET`` (+ standard AWS credential resolution;
+       optional ``AI_SMOKE_S3_PREFIX``, ``AI_SMOKE_S3_ENDPOINT_URL`` for
        MinIO / LocalStack).
-- GCS: ``agv_SMOKE_GCS_BUCKET`` (+ ``GOOGLE_APPLICATION_CREDENTIALS`` or
-       ambient GCP credentials; optional ``agv_SMOKE_GCS_PREFIX``).
+- GCS: ``AI_SMOKE_GCS_BUCKET`` (+ ``GOOGLE_APPLICATION_CREDENTIALS`` or
+       ambient GCP credentials; optional ``AI_SMOKE_GCS_PREFIX``).
 
 Each test enumerates at least one object and round-trips its content,
 exercising ``connector.list()`` and ``connector.open()`` end to end.
@@ -36,16 +36,16 @@ async def _list_first(connector) -> object:
 @pytest.mark.skipif(not HAS_S3FS, reason="s3fs not installed")
 async def test_s3_live_list_and_open() -> None:
     """List and read at least one object from a live S3 bucket."""
-    bucket = os.environ.get("agv_SMOKE_S3_BUCKET")
+    bucket = os.environ.get("AI_SMOKE_S3_BUCKET")
     if not bucket:
-        pytest.skip("agv_SMOKE_S3_BUCKET not set")
+        pytest.skip("AI_SMOKE_S3_BUCKET not set")
 
-    from agent_vault.connectors.s3 import S3Connector
+    from agentic_inquiry.connectors.s3 import S3Connector
 
     connector = S3Connector(
         bucket=bucket,
-        prefix=os.environ.get("agv_SMOKE_S3_PREFIX", ""),
-        endpoint_url=os.environ.get("agv_SMOKE_S3_ENDPOINT_URL"),
+        prefix=os.environ.get("AI_SMOKE_S3_PREFIX", ""),
+        endpoint_url=os.environ.get("AI_SMOKE_S3_ENDPOINT_URL"),
     )
 
     item = await _list_first(connector)
@@ -63,15 +63,15 @@ async def test_s3_live_list_and_open() -> None:
 @pytest.mark.skipif(not HAS_GCSFS, reason="gcsfs not installed")
 async def test_gcs_live_list_and_open() -> None:
     """List and read at least one object from a live GCS bucket."""
-    bucket = os.environ.get("agv_SMOKE_GCS_BUCKET")
+    bucket = os.environ.get("AI_SMOKE_GCS_BUCKET")
     if not bucket:
-        pytest.skip("agv_SMOKE_GCS_BUCKET not set")
+        pytest.skip("AI_SMOKE_GCS_BUCKET not set")
 
-    from agent_vault.connectors.gcs import GCSConnector
+    from agentic_inquiry.connectors.gcs import GCSConnector
 
     connector = GCSConnector(
         bucket=bucket,
-        prefix=os.environ.get("agv_SMOKE_GCS_PREFIX", ""),
+        prefix=os.environ.get("AI_SMOKE_GCS_PREFIX", ""),
     )
 
     item = await _list_first(connector)

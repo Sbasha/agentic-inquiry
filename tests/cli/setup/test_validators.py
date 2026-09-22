@@ -5,7 +5,7 @@ from __future__ import annotations
 import pytest
 from unittest.mock import patch, AsyncMock, MagicMock
 
-from agent_vault.cli.setup.validators import (
+from agentic_inquiry.cli.setup.validators import (
     validate_postgres_connection,
     validate_connection_string_format,
     check_pgvector_extension,

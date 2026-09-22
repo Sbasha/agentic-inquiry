@@ -8,8 +8,8 @@ from pathlib import Path
 
 import aiosqlite
 
-from agent_vault.config import Config, StorageConfig, FileTrackerConfig
-from agent_vault.watching.file_tracker import FileTracker
+from agentic_inquiry.config import Config, StorageConfig, FileTrackerConfig
+from agentic_inquiry.watching.file_tracker import FileTracker
 
 
 @pytest.fixture

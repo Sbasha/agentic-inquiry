@@ -11,9 +11,9 @@ pytestmark = pytest.mark.integration
 from pathlib import Path
 from typing import Any, Dict
 
-from agent_vault.parsers.implementations.unified_code import UnifiedCodeParser
-from agent_vault.parsers.implementations.document import DocumentParser
-from agent_vault.parsers.models import ParserChunk
+from agentic_inquiry.parsers.implementations.unified_code import UnifiedCodeParser
+from agentic_inquiry.parsers.implementations.document import DocumentParser
+from agentic_inquiry.parsers.models import ParserChunk
 
 
 def validate_metadata_primitives(metadata: Dict[str, Any], path: str = "metadata") -> None:
@@ -243,7 +243,7 @@ More content here.
 @pytest.mark.asyncio
 async def test_parser_chunk_normalization_handles_code_symbols(tmp_path: Path) -> None:
     """Test that ParserChunk normalization handles code_symbols -> symbols mapping."""
-    from agent_vault.parsers.models import ParsedDocument
+    from agentic_inquiry.parsers.models import ParsedDocument
     
     # Create a document with chunks using old code_symbols field
     doc = ParsedDocument(

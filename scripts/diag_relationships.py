@@ -8,24 +8,24 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-# Show all agv logs at INFO level
+# Show all ai logs at INFO level
 logging.basicConfig(
     level=logging.INFO,
     format="%(name)s: %(message)s",
     stream=sys.stderr,
 )
 # But only show our diagnostic messages on stdout
-for name in ["agent_vault.indexing", "agent_vault.mcp.tools.knowledge"]:
+for name in ["agentic_inquiry.indexing", "agentic_inquiry.mcp.tools.knowledge"]:
     logging.getLogger(name).setLevel(logging.INFO)
 
 
 async def main():
-    from agent_vault.config import Config
-    from agent_vault.mcp.server import MCPServer
-    from agent_vault.mcp.tools.session import create_session
-    from agent_vault.mcp.tools.knowledge import add_knowledge
+    from agentic_inquiry.config import Config
+    from agentic_inquiry.mcp.server import MCPServer
+    from agentic_inquiry.mcp.tools.session import create_session
+    from agentic_inquiry.mcp.tools.knowledge import add_knowledge
 
-    config_path = str(PROJECT_ROOT / ".agv/envs/agv-prod/config.yaml")
+    config_path = str(PROJECT_ROOT / ".agentic-inquiry/envs/ai-prod/config.yaml")
     config = Config.load_with_overlay(config_path)
 
     server = MCPServer(config=config, project_id="diag_rels_server")
@@ -38,7 +38,7 @@ async def main():
     print(f"Session: {session_id}")
 
     # Index just 5 Python files from mcp/tools (small, fast)
-    source = str(PROJECT_ROOT / "agent_vault/mcp/tools")
+    source = str(PROJECT_ROOT / "agentic_inquiry/mcp/tools")
     print(f"Indexing: {source}")
     t0 = time.time()
     r = await add_knowledge(services, session_id=session_id, content_type="directory", source=source)

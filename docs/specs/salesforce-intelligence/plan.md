@@ -38,9 +38,9 @@
 
 **Mode:** TDD
 
-**Touches:** `agent_vault/parsers/recognizers/apex_salesforce.py`,
-`agent_vault/parsers/recognizers/lwc_salesforce.py`,
-`agent_vault/parsers/recognizers/__init__.py`,
+**Touches:** `agentic_inquiry/parsers/recognizers/apex_salesforce.py`,
+`agentic_inquiry/parsers/recognizers/lwc_salesforce.py`,
+`agentic_inquiry/parsers/recognizers/__init__.py`,
 `tests/parsers/recognizers/test_apex_salesforce.py`,
 `tests/parsers/recognizers/test_lwc_salesforce.py`
 
@@ -66,9 +66,9 @@
 
 **Mode:** TDD
 
-**Touches:** `agent_vault/parsers/implementations/salesforce_metadata.py`,
-`agent_vault/parsers/implementations/__init__.py`,
-`agent_vault/config.py`, `agent_vault/parsers/chain.py`,
+**Touches:** `agentic_inquiry/parsers/implementations/salesforce_metadata.py`,
+`agentic_inquiry/parsers/implementations/__init__.py`,
+`agentic_inquiry/config.py`, `agentic_inquiry/parsers/chain.py`,
 `tests/parsers/test_salesforce_metadata.py`
 
 **Tests:**

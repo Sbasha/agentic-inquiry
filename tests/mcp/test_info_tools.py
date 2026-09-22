@@ -10,8 +10,8 @@ pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 from datetime import datetime
 
-from agent_vault.mcp.tools.info import get_server_info, get_events, get_project_info
-from agent_vault.mcp.models.session import Session, ProjectStatistics
+from agentic_inquiry.mcp.tools.info import get_server_info, get_events, get_project_info
+from agentic_inquiry.mcp.models.session import Session, ProjectStatistics
 
 
 @pytest.fixture
@@ -25,8 +25,8 @@ def mcp_services():
     
     # Mock server configuration
     server_config = {
-        "default_project_id": "agent-vault",
-        "server_name": "Agent-Vault MCP Server",
+        "default_project_id": "agentic-inquiry",
+        "server_name": "Agentic Inquiry MCP Server",
         "server_version": "1.0.0",
         "server_description": "Intelligent search and knowledge management"
     }
@@ -135,7 +135,7 @@ class TestGetServerInfo:
         
         # Verify
         assert "server" in result
-        assert result["server"]["name"] == "Agent-Vault MCP Server"
+        assert result["server"]["name"] == "Agentic Inquiry MCP Server"
         assert result["server"]["version"] == "1.0.0"
         assert result["server"]["description"] == "Intelligent search and knowledge management"
     
@@ -150,7 +150,7 @@ class TestGetServerInfo:
         
         # Verify
         assert "default_project" in result
-        assert result["default_project"]["project_id"] == "agent-vault"
+        assert result["default_project"]["project_id"] == "agentic-inquiry"
         assert "description" in result["default_project"]
     
     @pytest.mark.asyncio
@@ -632,7 +632,7 @@ class TestRunMaintenance:
     @pytest.mark.asyncio
     async def test_run_maintenance_success(self, maintenance_services):
         """Test successful maintenance run."""
-        from agent_vault.mcp.tools.info import run_maintenance
+        from agentic_inquiry.mcp.tools.info import run_maintenance
 
         result = await run_maintenance(
             maintenance_services,
@@ -651,7 +651,7 @@ class TestRunMaintenance:
     @pytest.mark.asyncio
     async def test_run_maintenance_invalid_session(self, maintenance_services):
         """Test maintenance with invalid session."""
-        from agent_vault.mcp.tools.info import run_maintenance
+        from agentic_inquiry.mcp.tools.info import run_maintenance
 
         # Setup - session validation fails
         maintenance_services["session_manager"].validate_session = AsyncMock(return_value=False)
@@ -670,7 +670,7 @@ class TestRunMaintenance:
     async def test_run_maintenance_custom_cleanup_hours(self, maintenance_services):
         """Test maintenance with custom cleanup_hours parameter."""
         from datetime import timedelta
-        from agent_vault.mcp.tools.info import run_maintenance
+        from agentic_inquiry.mcp.tools.info import run_maintenance
 
         result = await run_maintenance(
             maintenance_services,
@@ -689,7 +689,7 @@ class TestRunMaintenance:
     @pytest.mark.asyncio
     async def test_run_maintenance_database_error(self, maintenance_services):
         """Test maintenance handles database errors gracefully."""
-        from agent_vault.mcp.tools.info import run_maintenance
+        from agentic_inquiry.mcp.tools.info import run_maintenance
 
         # Setup - database error
         maintenance_services["storage"].run_maintenance = AsyncMock(
@@ -709,7 +709,7 @@ class TestRunMaintenance:
     @pytest.mark.asyncio
     async def test_run_maintenance_partial_success(self, maintenance_services):
         """Test maintenance with partial success (some tables failed)."""
-        from agent_vault.mcp.tools.info import run_maintenance
+        from agentic_inquiry.mcp.tools.info import run_maintenance
 
         # Setup - partial success
         maintenance_services["storage"].run_maintenance = AsyncMock(return_value={
@@ -741,7 +741,7 @@ class TestRunMaintenance:
     @pytest.mark.asyncio
     async def test_run_maintenance_message_format(self, maintenance_services):
         """Test that message correctly summarizes results."""
-        from agent_vault.mcp.tools.info import run_maintenance
+        from agentic_inquiry.mcp.tools.info import run_maintenance
 
         result = await run_maintenance(
             maintenance_services,
@@ -757,7 +757,7 @@ class TestRunMaintenance:
     async def test_run_maintenance_default_cleanup_hours(self, maintenance_services):
         """Test that cleanup_hours defaults to 1.0."""
         from datetime import timedelta
-        from agent_vault.mcp.tools.info import run_maintenance
+        from agentic_inquiry.mcp.tools.info import run_maintenance
 
         result = await run_maintenance(
             maintenance_services,

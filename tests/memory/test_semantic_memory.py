@@ -13,11 +13,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from agent_vault.config import Config
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
-from agent_vault.memory.layers.semantic import SemanticMemory
-from agent_vault.memory.models import MemoryContext, MemoryItem, MemoryTier
+from agentic_inquiry.config import Config
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
+from agentic_inquiry.memory.layers.semantic import SemanticMemory
+from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier
 
 
 @pytest.fixture

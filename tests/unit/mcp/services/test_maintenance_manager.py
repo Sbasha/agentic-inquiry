@@ -15,8 +15,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.mcp.services.maintenance_manager import MaintenanceManager
-from agent_vault.events.types import EventTypes
+from agentic_inquiry.mcp.services.maintenance_manager import MaintenanceManager
+from agentic_inquiry.events.types import EventTypes
 
 
 @pytest.fixture
@@ -126,7 +126,7 @@ class TestMaintenanceTriggerConfig:
     ):
         """Test project.closed event triggers maintenance when configured (AC-3.1)."""
         # Mock config with project.closed trigger
-        with patch("agent_vault.config.Config.load") as mock_load:
+        with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.maintenance.enabled = True
             mock_config.maintenance.trigger = "project.closed"
@@ -148,7 +148,7 @@ class TestMaintenanceTriggerConfig:
     ):
         """Test indexing.completed event triggers maintenance when configured (AC-3.1b)."""
         # Mock config with indexing.completed trigger
-        with patch("agent_vault.config.Config.load") as mock_load:
+        with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.maintenance.enabled = True
             mock_config.maintenance.trigger = "indexing.completed"
@@ -170,7 +170,7 @@ class TestMaintenanceTriggerConfig:
     ):
         """Test disabled maintenance doesn't trigger (AC-3.1c)."""
         # Mock config with maintenance disabled
-        with patch("agent_vault.config.Config.load") as mock_load:
+        with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.maintenance.enabled = False
             mock_config.maintenance.trigger = "project.closed"
@@ -188,7 +188,7 @@ class TestMaintenanceTriggerConfig:
     ):
         """Test wrong trigger doesn't execute maintenance."""
         # Mock config with indexing.completed trigger
-        with patch("agent_vault.config.Config.load") as mock_load:
+        with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.maintenance.enabled = True
             mock_config.maintenance.trigger = "indexing.completed"
@@ -237,7 +237,7 @@ class TestMaintenanceCapabilityDetection:
         maintenance_manager._storage._graph_provider = pg_provider
 
         # Mock config
-        with patch("agent_vault.config.Config.load") as mock_load:
+        with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.maintenance.enabled = True
             mock_config.maintenance.trigger = "project.closed"
@@ -338,7 +338,7 @@ class TestMaintenanceErrorHandling:
     @pytest.mark.asyncio
     async def test_missing_project_id_in_event(self, maintenance_manager, mock_db_manager):
         """Test event without project_id is handled gracefully."""
-        with patch("agent_vault.config.Config.load") as mock_load:
+        with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.maintenance.enabled = True
             mock_config.maintenance.trigger = "project.closed"
@@ -538,7 +538,7 @@ class TestMaintenanceRetentionMinutes:
     async def test_event_uses_config_retention(self, maintenance_manager, mock_db_manager):
         """Test event handlers use config.maintenance.cleanup_retention_minutes."""
         # Mock config with custom retention
-        with patch("agent_vault.config.Config.load") as mock_load:
+        with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.maintenance.enabled = True
             mock_config.maintenance.trigger = "project.closed"

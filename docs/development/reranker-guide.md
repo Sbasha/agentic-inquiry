@@ -1,16 +1,16 @@
 # Reranker Development Guide
 
-This guide explains how to implement a custom reranker for hybrid search in Agent-Vault.
+This guide explains how to implement a custom reranker for hybrid search in Agentic Inquiry.
 
 ## Overview
 
 Rerankers merge and reorder results from multiple search strategies (vector, FTS, graph) into a single ranked list. They operate post-retrieval—after the adapter has returned raw results.
 
 **Key files:**
-- `agent_vault/search/rerankers/protocol.py` - RerankerProtocol interface
-- `agent_vault/search/rerankers/rrf.py` - RRF reference implementation
-- `agent_vault/search/rerankers/linear.py` - Linear combination reranker
-- `agent_vault/search/rerankers/registry.py` - Reranker registration
+- `agentic_inquiry/search/rerankers/protocol.py` - RerankerProtocol interface
+- `agentic_inquiry/search/rerankers/rrf.py` - RRF reference implementation
+- `agentic_inquiry/search/rerankers/linear.py` - Linear combination reranker
+- `agentic_inquiry/search/rerankers/registry.py` - Reranker registration
 - `docs/design/ownership-and-extension-points.md` - Ownership boundaries
 
 ---
@@ -59,7 +59,7 @@ class RerankerProtocol(Protocol):
 Rerankers work with the canonical `SearchResult`:
 
 ```python
-from agent_vault.database.results import SearchResult
+from agentic_inquiry.database.results import SearchResult
 
 @dataclass(frozen=True)
 class SearchResult:
@@ -167,7 +167,7 @@ Best for: Maximum relevance quality, when latency allows.
 Register rerankers using the decorator:
 
 ```python
-from agent_vault.search.rerankers.registry import register_reranker
+from agentic_inquiry.search.rerankers.registry import register_reranker
 
 @register_reranker("my_reranker")
 class MyReranker(RerankerProtocol):
@@ -177,7 +177,7 @@ class MyReranker(RerankerProtocol):
 Retrieve rerankers:
 
 ```python
-from agent_vault.search.rerankers.registry import get_reranker
+from agentic_inquiry.search.rerankers.registry import get_reranker
 
 reranker = get_reranker("rrf")
 ```
@@ -194,8 +194,8 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from agent_vault.search.rerankers.protocol import RerankerProtocol, SearchResult
-from agent_vault.search.rerankers.registry import register_reranker
+from agentic_inquiry.search.rerankers.protocol import RerankerProtocol, SearchResult
+from agentic_inquiry.search.rerankers.registry import register_reranker
 
 
 @register_reranker("boost_reranker")
@@ -337,7 +337,7 @@ class BoostReranker(RerankerProtocol):
 
 ## Configuration
 
-Configure rerankers in `agent-vault.yaml`:
+Configure rerankers in `agentic-inquiry.yaml`:
 
 ```yaml
 search:
@@ -450,6 +450,6 @@ From `docs/design/ownership-and-extension-points.md`:
 ## See Also
 
 - `docs/design/ownership-and-extension-points.md` - Ownership boundaries
-- `agent_vault/search/rerankers/rrf.py` - RRF reference implementation
-- `agent_vault/search/rerankers/linear.py` - Linear combination example
+- `agentic_inquiry/search/rerankers/rrf.py` - RRF reference implementation
+- `agentic_inquiry/search/rerankers/linear.py` - Linear combination example
 - `tests/search/test_rerankers.py` - Test patterns

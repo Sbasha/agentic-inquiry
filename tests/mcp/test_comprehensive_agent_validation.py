@@ -13,12 +13,12 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.mcp.factories import create_mcp_services
-from agent_vault.mcp.tools.session import create_session
-from agent_vault.mcp.tools.knowledge import add_knowledge
-from agent_vault.mcp.tools.search import search_knowledge
-from agent_vault.mcp.tools.context import build_context
-from agent_vault.mcp.tools.memory import save_memory
+from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.tools.session import create_session
+from agentic_inquiry.mcp.tools.knowledge import add_knowledge
+from agentic_inquiry.mcp.tools.search import search_knowledge
+from agentic_inquiry.mcp.tools.context import build_context
+from agentic_inquiry.mcp.tools.memory import save_memory
 
 
 @pytest.fixture

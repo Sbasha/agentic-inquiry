@@ -11,11 +11,11 @@ pytestmark = pytest.mark.integration
 import tempfile
 from pathlib import Path
 
-from agent_vault.parsers import ParsedDocument, ParserChunk
-from agent_vault.parsers.executor import get_parser_instance
+from agentic_inquiry.parsers import ParsedDocument, ParserChunk
+from agentic_inquiry.parsers.executor import get_parser_instance
 
 # Trigger parser auto-registration
-import agent_vault.parsers.implementations  # noqa: F401
+import agentic_inquiry.parsers.implementations  # noqa: F401
 
 
 @pytest.fixture

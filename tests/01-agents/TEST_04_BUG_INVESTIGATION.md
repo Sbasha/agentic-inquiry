@@ -8,7 +8,7 @@
 
 ## Test Suite Overview
 
-This test evaluates how effectively an agent can investigate and understand bugs using Agent-Vault to:
+This test evaluates how effectively an agent can investigate and understand bugs using Agentic Inquiry to:
 - Locate bug-related code quickly
 - Trace execution paths from symptom to root cause
 - Understand all components involved
@@ -38,7 +38,7 @@ Bug investigation is successful if the agent can:
 
 **Step 1: Create Session with Unique Project ID**
 ```python
-project_id = "agv_test04_bug_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test04_bug_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Bug investigation test")
 ```
 

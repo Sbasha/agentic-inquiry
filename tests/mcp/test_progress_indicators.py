@@ -5,7 +5,7 @@ import pytest
 pytestmark = pytest.mark.unit
 
 from datetime import datetime
-from agent_vault.mcp.utils.progress import ProgressEvent, ProgressHandler
+from agentic_inquiry.mcp.utils.progress import ProgressEvent, ProgressHandler
 
 
 class TestProgressEvent:

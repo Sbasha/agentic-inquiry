@@ -44,7 +44,7 @@ def mock_config():
 @pytest.fixture
 def real_config(integration_config):
     """Real Config object - catches validation issues"""
-    from agent_vault.config import MCPConfig, MCPServerConfig
+    from agentic_inquiry.config import MCPConfig, MCPServerConfig
     integration_config.mcp = MCPConfig(
         server=MCPServerConfig(name="Test", version="1.0.0", ...)
     )
@@ -56,8 +56,8 @@ def real_config(integration_config):
 #### 2. Real Utility Classes
 **Before:**
 ```python
-@patch('agent_vault.mcp.factories.TokenOptimizer')
-@patch('agent_vault.mcp.factories.MCPCacheManager')
+@patch('agentic_inquiry.mcp.factories.TokenOptimizer')
+@patch('agentic_inquiry.mcp.factories.MCPCacheManager')
 def test_creates_all_services(mock_cache, mock_optimizer, ...):
     # Logic never executed
 ```

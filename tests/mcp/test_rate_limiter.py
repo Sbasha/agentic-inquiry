@@ -8,7 +8,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.mcp.utils.rate_limiter import (
+from agentic_inquiry.mcp.utils.rate_limiter import (
     RateLimiter,
     RateLimitConfig,
     RateLimitResult,

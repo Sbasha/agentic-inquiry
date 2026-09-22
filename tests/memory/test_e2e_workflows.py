@@ -7,11 +7,11 @@ pytestmark = pytest.mark.integration
 import asyncio
 from pathlib import Path
 
-from agent_vault.config import Config
-from agent_vault.database import LanceDBManager
-from agent_vault.embeddings import EmbeddingService
-from agent_vault.memory import MemoryContext, MemorySystem, MemoryTier
-from agent_vault.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
+from agentic_inquiry.config import Config
+from agentic_inquiry.database import LanceDBManager
+from agentic_inquiry.embeddings import EmbeddingService
+from agentic_inquiry.memory import MemoryContext, MemorySystem, MemoryTier
+from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 
 
 @pytest.fixture

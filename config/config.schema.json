@@ -1,7 +1,7 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Agent-Vault Configuration",
-    "description": "Configuration schema for Agent-Vault document parsing and knowledge graph system",
+    "title": "Agentic Inquiry Configuration",
+    "description": "Configuration schema for Agentic Inquiry document parsing and knowledge graph system",
     "type": "object",
     "properties": {
         "storage": {
@@ -14,7 +14,7 @@
                 "root": {
                     "type": "string",
                     "description": "Root directory for all persistent data (absolute or relative path)",
-                    "default": "./.agv",
+                    "default": "./.agentic-inquiry",
                     "minLength": 1,
                     "pattern": "^[^\\0]+$"
                 },
@@ -42,7 +42,7 @@
                 },
                 "backend": {
                     "type": "string",
-                    "description": "Vector storage backend selection. Empty string means unconfigured — run 'agv setup' to set.",
+                    "description": "Vector storage backend selection. Empty string means unconfigured — run 'ai setup' to set.",
                     "enum": [
                         "",
                         "lancedb",
@@ -192,7 +192,7 @@
                                 "path": {
                                     "type": "string",
                                     "description": "Path to LanceDB data directory (supports environment variable expansion)",
-                                    "default": "${AGV_STORAGE_ROOT:-./.agv}/lancedb"
+                                    "default": "${AI_STORAGE_ROOT:-./.agentic-inquiry}/lancedb"
                                 }
                             },
                             "additionalProperties": false
@@ -247,7 +247,7 @@
                                 "path": {
                                     "type": "string",
                                     "description": "Path to SQLite database file (supports environment variable expansion)",
-                                    "default": "${AGV_STORAGE_ROOT:-./.agv}/agent-vault.db"
+                                    "default": "${AI_STORAGE_ROOT:-./.agentic-inquiry}/agentic-inquiry.db"
                                 }
                             },
                             "additionalProperties": false
@@ -1731,7 +1731,7 @@
                     "properties": {
                         "name": {
                             "type": "string",
-                            "default": "Agent-Vault"
+                            "default": "Agentic Inquiry"
                         },
                         "version": {
                             "type": "string",

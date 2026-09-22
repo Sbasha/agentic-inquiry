@@ -119,7 +119,7 @@ This section MUST complete successfully before running any tests. The semantic g
 ### Step 1: Create Session with Unique Project ID
 
 ```python
-project_id = "agv_test14_semantic_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test14_semantic_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Semantic graph test")
 ```
 
@@ -180,7 +180,7 @@ results = search_knowledge(session_id=session_id, query="test query", limit=5)
 ```
 
 **If thresholds NOT met:**
-1. Check `.agv-server.log` for embedding errors
+1. Check `.agentic-inquiry-server.log` for embedding errors
 2. Verify embedding model is configured and accessible
 3. Ensure source path is correct (`.` for project root)
 4. Re-run indexing - embeddings cannot be added after the fact

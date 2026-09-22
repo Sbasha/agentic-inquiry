@@ -29,7 +29,7 @@ async def mcp_services(tmp_path):
     """Create MCP services with correct key names matching create_mcp_services().
 
     This fixture provides a standardized services dictionary that matches
-    the keys used by create_mcp_services() in agent_vault/mcp/factories.py.
+    the keys used by create_mcp_services() in agentic_inquiry/mcp/factories.py.
 
     Returns:
         dict: Services dictionary with keys:
@@ -42,17 +42,17 @@ async def mcp_services(tmp_path):
             - session_manager: Session manager
             - test_session_id: Pre-created session ID for tests
     """
-    from agent_vault.config import (
+    from agentic_inquiry.config import (
         Config, StorageConfig, CacheConfig, DocumentCacheConfig,
         SearchConfig, HybridSearchConfig, GraphSearchConfig,
         EmbeddingsConfig, SentenceTransformerConfig,
         ParsersConfig, ParserConfig, ProgressConfig
     )
     from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
-    from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
-    from agent_vault.mcp.services.session_manager import SessionManager
-    from agent_vault.search.service import SearchService
-    from agent_vault.embeddings.registry import EmbeddingRegistry
+    from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+    from agentic_inquiry.mcp.services.session_manager import SessionManager
+    from agentic_inquiry.search.service import SearchService
+    from agentic_inquiry.embeddings.registry import EmbeddingRegistry
     
     # Create config
     config = Config()
@@ -103,7 +103,7 @@ async def mcp_services(tmp_path):
     await db_manager.connect()
     
     # Configure embedder for the database manager
-    from agent_vault.embeddings.registry import embedding_registry
+    from agentic_inquiry.embeddings.registry import embedding_registry
     embedder = _DummyEmbedder()
     
     # Configure default embedder if not already configured
@@ -120,12 +120,12 @@ async def mcp_services(tmp_path):
     event_system.subscribe = MagicMock()
 
     # Create embedding service with the registry
-    from agent_vault.indexing.embedding_service import EmbeddingService
+    from agentic_inquiry.indexing.embedding_service import EmbeddingService
     embedding_service = EmbeddingService(registry=embedding_registry)
 
     # Create protocol-compliant vector and graph providers
-    from agent_vault.storage.providers.lancedb import LanceDBVectorProvider, LanceDBGraphProvider
-    from agent_vault.storage.providers.lancedb.connection import LanceDBConnectionManager
+    from agentic_inquiry.storage.providers.lancedb import LanceDBVectorProvider, LanceDBGraphProvider
+    from agentic_inquiry.storage.providers.lancedb.connection import LanceDBConnectionManager
 
     # Create connection manager with the already-initialized db_manager
     connection_manager = LanceDBConnectionManager(
@@ -143,7 +143,7 @@ async def mcp_services(tmp_path):
     search_adapter = LanceDBAdapter(manager=db_manager, config=config)
 
     # Create StorageFacade for SearchService and SessionManager
-    from agent_vault.storage.facade import StorageFacade
+    from agentic_inquiry.storage.facade import StorageFacade
     storage_facade = StorageFacade(
         config=config,
         project_id="test_integration_project",
@@ -178,7 +178,7 @@ async def mcp_services(tmp_path):
     memory_system.store = AsyncMock()
     
     # Create real indexing pipeline (not mock) for integration tests
-    from agent_vault.indexing.pipeline import IndexingPipeline
+    from agentic_inquiry.indexing.pipeline import IndexingPipeline
     indexing_pipeline = IndexingPipeline(
         db_manager=db_manager,
         config=config,

@@ -1,6 +1,6 @@
 # Embeddings architecture
 
-How Agent-Vault generates and uses vector embeddings during ingestion and
+How Agentic Inquiry generates and uses vector embeddings during ingestion and
 retrieval. Read this before changing the embedding layer or adding a new
 embedding model.
 
@@ -12,16 +12,16 @@ proposal to extend this surface to additional cloud embedding models
 
 ## TL;DR
 
-- One `Embedder` protocol (`agent_vault/embeddings/base.py`): a class with
+- One `Embedder` protocol (`agentic_inquiry/embeddings/base.py`): a class with
   `generate(texts) -> list[list[float]]`, `ndims() -> int`, and an optional
   `ensure_model_loaded()`.
 - Two embedding *strategies*, declared per storage backend in
-  `agent_vault/storage/capabilities.py`:
+  `agentic_inquiry/storage/capabilities.py`:
   - **`LOCAL`** — the indexer / search client computes vectors in-process
     via an `Embedder` instance.
   - **`SERVER_SIDE`** — the database computes vectors in-engine. AlloyDB
     uses `embedding()` directly; the AWS path wraps `aws_bedrock.invoke_model`
-    in a `agv_embed(...)` SQL helper installed by `RDSAdapter`; Azure
+    in a `ai_embed(...)` SQL helper installed by `RDSAdapter`; Azure
     uses `azure_ai.generate_embeddings` via `AzurePostgresAdapter`. The
     client uses `NoOpEmbedder` and the SQL adapter emits the
     backend-specific embedding fragment.
@@ -49,7 +49,7 @@ proposal to extend this surface to additional cloud embedding models
 
 ## The `Embedder` protocol
 
-`agent_vault/embeddings/base.py:8`:
+`agentic_inquiry/embeddings/base.py:8`:
 
 ```python
 class Embedder(ABC):
@@ -89,7 +89,7 @@ embedder) is the only composition point that exists today. There is no
 
 ## The registry: where embedders live at runtime
 
-`agent_vault/embeddings/registry.py`. One global instance:
+`agentic_inquiry/embeddings/registry.py`. One global instance:
 `embedding_registry`. Owns:
 
 - A *default* embedder (set once at startup via
@@ -111,7 +111,7 @@ that someone else built. The factory does the selection.
 
 ## Selection: capability-driven, then config-driven
 
-`agent_vault/embeddings/factory.py:48`:
+`agentic_inquiry/embeddings/factory.py:48`:
 
 ```python
 configure_embedder_for_backend(config)
@@ -123,7 +123,7 @@ indexing pipeline or search service runs. Two-stage decision:
 1. **Resolve backend type** from `config.storage.backend` (or
    `config.storage.backends[vector_backend]`). Look up
    `ProviderCapabilities` via `get_capabilities_for_backend(backend_type)`
-   — registry in `agent_vault/storage/capabilities.py:147`.
+   — registry in `agentic_inquiry/storage/capabilities.py:147`.
 
 2. **Branch on `caps.embedding_strategy`:**
 
@@ -160,7 +160,7 @@ indexing pipeline or search service runs. Two-stage decision:
 The registry's `_default_configured` flag short-circuits repeat calls so
 tests / fixtures that pre-configure the registry win over the factory.
 
-`agent_vault/embeddings/service.py` (`EmbeddingService`) exposes a
+`agentic_inquiry/embeddings/service.py` (`EmbeddingService`) exposes a
 slightly different path used by the `MemorySystem` and search-side query
 embedding: it can also dispatch on `default_provider` directly (including
 `"hashing"` and `"local_model"`), but defers to the registry's default
@@ -175,8 +175,8 @@ This trips people up. Both are real:
 
 | Class | File | Role |
 |---|---|---|
-| `EmbeddingService` | `agent_vault/embeddings/service.py` | High-level async facade: `embed_async(text)`, `embed_batch_async(texts)`, background warmup. Used by search, MCP, memory, server routes. |
-| `EmbeddingService` | `agent_vault/indexing/embedding_service.py` | Indexing-pipeline helper: `get_embedder_configuration(table, column)`, `generate_embeddings_batch(...)` with batch-then-per-item retry. |
+| `EmbeddingService` | `agentic_inquiry/embeddings/service.py` | High-level async facade: `embed_async(text)`, `embed_batch_async(texts)`, background warmup. Used by search, MCP, memory, server routes. |
+| `EmbeddingService` | `agentic_inquiry/indexing/embedding_service.py` | Indexing-pipeline helper: `get_embedder_configuration(table, column)`, `generate_embeddings_batch(...)` with batch-then-per-item retry. |
 
 The indexing one is a thin wrapper around the registry; the
 embeddings/service one is the public-ish entrypoint everything else
@@ -196,7 +196,7 @@ provider literal" rule exists precisely because of this class of bug.
 
 ## Ingestion: how a chunk becomes a vector
 
-The pipeline is in `agent_vault/indexing/pipeline.py`. The relevant
+The pipeline is in `agentic_inquiry/indexing/pipeline.py`. The relevant
 sequence per parsed document
 (`pipeline.py:2107-2330`, abridged):
 
@@ -216,7 +216,7 @@ sequence per parsed document
      tables (~400 chunks/sec), per-row `embedding('text-embedding-005',
      content)` for incremental (~25/sec).
    - `RDSAdapter` (Aurora `aws_ml`, today incorrectly registered for
-     plain RDS — see RFC 0002) — per-row `agv_embed(content, model_id)`
+     plain RDS — see RFC 0002) — per-row `ai_embed(content, model_id)`
      wrapping `aws_bedrock.invoke_model`.
    - `AzurePostgresAdapter` — per-row `azure_ai.generate_embeddings(model,
      content)`.
@@ -256,13 +256,13 @@ system) but they all converge on either:
   backend is `SERVER_SIDE`.
 
 The provider-side switch lives in
-`agent_vault/storage/providers/postgresql/vector.py:872` and `:1404`
+`agentic_inquiry/storage/providers/postgresql/vector.py:872` and `:1404`
 (chunk and entity vector search respectively). It accepts
 `Union[List[float], str]` for `query_vector`; a `str` is only legal when
 `embedding_strategy == "server_side"`. In that path the SQL adapter's
 `get_embedding_sql("$1", model)` produces a fragment like
 `embedding('text-embedding-005', $1)::vector` (AlloyDB) or
-`agv_embed($1, 'amazon.titan-embed-text-v2:0')::vector` (Aurora/aws_ml),
+`ai_embed($1, 'amazon.titan-embed-text-v2:0')::vector` (Aurora/aws_ml),
 inlined into a `WITH query_vec AS (SELECT … AS vec)` CTE.
 
 This means *the same embedding model is used for indexing and querying*
@@ -284,7 +284,7 @@ search-side code knows which embedder produced the vector.
 
 ## Configuration surface
 
-Schema lives in `agent_vault/config.py`:
+Schema lives in `agentic_inquiry/config.py`:
 
 ```python
 @dataclass
@@ -340,29 +340,29 @@ choice.
 Documented overrides:
 
 `Config._apply_env_overrides` (`config.py:1703`) walks
-`AGV_*` keys and resolves each underscore-segment against the actual
+`AI_*` keys and resolves each underscore-segment against the actual
 config dataclass tree via `_set_nested` (`config.py:1864`), trying
 progressively longer joined-key combinations against the keys present
 at each level. Practical implications:
 
 | Variable | Effect |
 |---|---|
-| `AGV_EMBEDDINGS_DEFAULT_PROVIDER` | `embeddings.default_provider` |
-| `AGV_EMBEDDINGS_DEFAULT_DIMENSIONS` | `embeddings.default_dimensions` |
-| `AGV_EMBEDDINGS_LOCAL_MODEL_MODEL_PATH` | `embeddings.local_model.model_path` |
-| `AGV_EMBEDDINGS_LOCAL_MODEL_NORMALIZE` | `embeddings.local_model.normalize` |
-| `AGV_EMBEDDINGS_LOCAL_MODEL_BATCH_SIZE` | `embeddings.local_model.batch_size` |
-| `AGV_EMBEDDINGS_SENTENCE_TRANSFORMER_MODEL_NAME` | `embeddings.sentence_transformer.model_name` |
-| `AGV_EMBEDDINGS_FASTEMBED_MODEL_NAME` | `embeddings.fastembed.model_name` |
-| `AGV_EMBEDDINGS_FASTEMBED_CACHE_DIR` | `embeddings.fastembed.cache_dir` |
-| `AGV_EMBEDDINGS_FASTEMBED_THREADS` | `embeddings.fastembed.threads` |
-| `AGV_EMBEDDINGS_FASTEMBED_BATCH_SIZE` | `embeddings.fastembed.batch_size` |
-| `AGV_EMBEDDINGS_FASTEMBED_PARALLEL` | `embeddings.fastembed.parallel` |
-| `AGV_EMBEDDINGS_CACHE_ENABLED` | `embeddings.cache.enabled` |
-| `AGV_EMBEDDINGS_CACHE_MAX_ENTRIES` | `embeddings.cache.max_entries` |
-| `AGV_EMBEDDING_DEVICE` | sentence-transformer device pin (`cpu`/`cuda`/`mps`) — read directly by `SentenceTransformerEmbedder`, not via the config tree |
+| `AI_EMBEDDINGS_DEFAULT_PROVIDER` | `embeddings.default_provider` |
+| `AI_EMBEDDINGS_DEFAULT_DIMENSIONS` | `embeddings.default_dimensions` |
+| `AI_EMBEDDINGS_LOCAL_MODEL_MODEL_PATH` | `embeddings.local_model.model_path` |
+| `AI_EMBEDDINGS_LOCAL_MODEL_NORMALIZE` | `embeddings.local_model.normalize` |
+| `AI_EMBEDDINGS_LOCAL_MODEL_BATCH_SIZE` | `embeddings.local_model.batch_size` |
+| `AI_EMBEDDINGS_SENTENCE_TRANSFORMER_MODEL_NAME` | `embeddings.sentence_transformer.model_name` |
+| `AI_EMBEDDINGS_FASTEMBED_MODEL_NAME` | `embeddings.fastembed.model_name` |
+| `AI_EMBEDDINGS_FASTEMBED_CACHE_DIR` | `embeddings.fastembed.cache_dir` |
+| `AI_EMBEDDINGS_FASTEMBED_THREADS` | `embeddings.fastembed.threads` |
+| `AI_EMBEDDINGS_FASTEMBED_BATCH_SIZE` | `embeddings.fastembed.batch_size` |
+| `AI_EMBEDDINGS_FASTEMBED_PARALLEL` | `embeddings.fastembed.parallel` |
+| `AI_EMBEDDINGS_CACHE_ENABLED` | `embeddings.cache.enabled` |
+| `AI_EMBEDDINGS_CACHE_MAX_ENTRIES` | `embeddings.cache.max_entries` |
+| `AI_EMBEDDING_DEVICE` | sentence-transformer device pin (`cpu`/`cuda`/`mps`) — read directly by `SentenceTransformerEmbedder`, not via the config tree |
 
-Convention: `AGV_<SECTION>_<SUBSECTION>_<FIELD>` where each segment
+Convention: `AI_<SECTION>_<SUBSECTION>_<FIELD>` where each segment
 matches an actual key in the dataclass tree. The provider-name segment
 must match the full snake_case attribute (`local_model`, not `local`),
 otherwise the lookup fails silently — `_set_nested` returns without
@@ -375,8 +375,8 @@ reach because `<name>` is dynamic. These currently have no env-var
 override; set them in YAML or via a wrapper config layer.
 
 Older docs (e.g. `docs/api-reference/embeddings.md`) list
-`AGV_EMBEDDINGS_PROVIDER`, `AGV_EMBEDDINGS_LOCAL_*`, and
-`AGV_STORAGE_EMBEDDING_*` — those names predate the `_set_nested`
+`AI_EMBEDDINGS_PROVIDER`, `AI_EMBEDDINGS_LOCAL_*`, and
+`AI_STORAGE_EMBEDDING_*` — those names predate the `_set_nested`
 convention and don't reach the documented fields. Use the names in the
 table above.
 
@@ -452,7 +452,7 @@ specialization (e.g. doc-strings vs code chunks).
 
 ## Remote embedders
 
-`RemoteEmbedder` (`agent_vault/embeddings/remote.py`) is the base
+`RemoteEmbedder` (`agentic_inquiry/embeddings/remote.py`) is the base
 class for cloud-API embedders that run client-side. It implements the
 `Embedder` protocol and adds the cross-cutting concerns shared by every
 hosted-embedding provider:
@@ -483,7 +483,7 @@ hosted-embedding provider:
 
 ### Concrete impl: `BedrockEmbedder`
 
-`agent_vault/embeddings/bedrock.py` ships the first concrete remote
+`agentic_inquiry/embeddings/bedrock.py` ships the first concrete remote
 embedder, targeting Amazon Titan Text Embeddings V2
 (`amazon.titan-embed-text-v2:0`). Selected via
 `config.embeddings.default_provider = "bedrock"`. Specifics:
@@ -524,7 +524,7 @@ The convention RFC 0003 establishes:
 1. Subclass `RemoteEmbedder`. Declare `provider_name`,
    `_max_inputs_per_request`, and `_throttle_exceptions`. Implement
    `_invoke(texts) -> list[list[float]]` calling the provider SDK.
-2. Add a `<Provider>Config` dataclass to `agent_vault/config.py` with
+2. Add a `<Provider>Config` dataclass to `agentic_inquiry/config.py` with
    the common knobs (`region`, `model_id`, `output_dim`,
    `timeout_seconds`, `max_retries`, `request_concurrency`,
    `batch_size`) plus any provider-specific ones. Mount on
@@ -535,8 +535,8 @@ The convention RFC 0003 establishes:
    `embeddings/factory.py::configure_embedder_for_backend` and
    `embeddings/service.py::EmbeddingService._create_embedder` (see
    "Two `EmbeddingService`s" above for why both).
-5. Document the `AGV_EMBEDDINGS_<PROVIDER>_*` env vars and add a
-   commented block to `agent-vault.yaml.example`.
+5. Document the `AI_EMBEDDINGS_<PROVIDER>_*` env vars and add a
+   commented block to `agentic-inquiry.yaml.example`.
 6. Add a row to the golden bench (`tests/golden/baseline.json`) — a
    different embedding model = a different recall@10 baseline.
 
@@ -545,41 +545,41 @@ The convention RFC 0003 establishes:
 ## Files touched by this layer
 
 Embedding code:
-- `agent_vault/embeddings/base.py` — `Embedder` protocol
-- `agent_vault/embeddings/factory.py` — `configure_embedder_for_backend`
-- `agent_vault/embeddings/registry.py` — `EmbeddingRegistry`,
+- `agentic_inquiry/embeddings/base.py` — `Embedder` protocol
+- `agentic_inquiry/embeddings/factory.py` — `configure_embedder_for_backend`
+- `agentic_inquiry/embeddings/registry.py` — `EmbeddingRegistry`,
   `embedding_registry` singleton
-- `agent_vault/embeddings/service.py` — `EmbeddingService` (async facade)
-- `agent_vault/embeddings/{sentence_transformer,fastembed,local_model,
+- `agentic_inquiry/embeddings/service.py` — `EmbeddingService` (async facade)
+- `agentic_inquiry/embeddings/{sentence_transformer,fastembed,local_model,
   hashing,noop,caching}.py` — concrete in-process embedders + wrappers
-- `agent_vault/embeddings/remote.py` — `RemoteEmbedder` base for
+- `agentic_inquiry/embeddings/remote.py` — `RemoteEmbedder` base for
   cloud-API embedders
-- `agent_vault/embeddings/bedrock.py` — `BedrockEmbedder` for Amazon
+- `agentic_inquiry/embeddings/bedrock.py` — `BedrockEmbedder` for Amazon
   Titan v2
 
 Storage / capability layer:
-- `agent_vault/storage/capabilities.py` — `EmbeddingStrategy`,
+- `agentic_inquiry/storage/capabilities.py` — `EmbeddingStrategy`,
   `ProviderCapabilities`, the per-backend defaults
-- `agent_vault/storage/providers/postgresql/adapter.py` — server-side
+- `agentic_inquiry/storage/providers/postgresql/adapter.py` — server-side
   SQL adapters (Default / AlloyDB / RDS / Azure)
-- `agent_vault/storage/providers/postgresql/vector.py` — query-side
+- `agentic_inquiry/storage/providers/postgresql/vector.py` — query-side
   `Union[List[float], str]` dispatch
 
 Pipeline / search:
-- `agent_vault/indexing/pipeline.py` — ingestion flow + post-indexing
+- `agentic_inquiry/indexing/pipeline.py` — ingestion flow + post-indexing
   `generate_embeddings()` polling
-- `agent_vault/indexing/embedding_service.py` — pipeline-side helper
-- `agent_vault/search/service.py` — retrieval flow, lazy
+- `agentic_inquiry/indexing/embedding_service.py` — pipeline-side helper
+- `agentic_inquiry/search/service.py` — retrieval flow, lazy
   `embedding_service` property
-- `agent_vault/search/graph_search.py`, `agent_vault/mcp/tools/*.py`,
-  `agent_vault/server/routes/search.py` — query embedding sites
-- `agent_vault/memory/{system,consolidation,retrieval}.py` — memory
+- `agentic_inquiry/search/graph_search.py`, `agentic_inquiry/mcp/tools/*.py`,
+  `agentic_inquiry/server/routes/search.py` — query embedding sites
+- `agentic_inquiry/memory/{system,consolidation,retrieval}.py` — memory
   embedding sites
 
 Configuration:
-- `agent_vault/config.py` — `EmbeddingsConfig` and per-provider
+- `agentic_inquiry/config.py` — `EmbeddingsConfig` and per-provider
   sub-configs
-- `agent-vault.yaml.example` — annotated template
+- `agentic-inquiry.yaml.example` — annotated template
 - `docs/api-reference/embeddings.md` — public API surface
 - `docs/design/hybrid-embedding-strategy.md` — per-table override
   design rationale

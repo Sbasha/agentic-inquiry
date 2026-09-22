@@ -1,8 +1,8 @@
-"""Tests for agent_vault.server.signals.analyzer - Signal analysis engine."""
+"""Tests for agentic_inquiry.server.signals.analyzer - Signal analysis engine."""
 
 import pytest
 
-from agent_vault.server.signals.analyzer import (
+from agentic_inquiry.server.signals.analyzer import (
     TIER_FULL_PACKET,
     TIER_MEMORY_ONLY,
     TIER_NONE,
@@ -73,7 +73,7 @@ class TestSignalAnalysis:
     def test_tier_scoring_thresholds(self, analyzer):
         # Very code-heavy prompt should get FULL_PACKET
         result = analyzer.analyze_signals(
-            "Refactor the IndexingPipeline class in agent_vault/indexing/pipeline.py "
+            "Refactor the IndexingPipeline class in agentic_inquiry/indexing/pipeline.py "
             "to support batch processing of DocumentChunk entities"
         )
         assert result["tier"] == TIER_FULL_PACKET

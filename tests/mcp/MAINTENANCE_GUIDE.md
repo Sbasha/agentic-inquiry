@@ -1,7 +1,7 @@
 # MCP Test Suite Maintenance Guide
 
 **Last Updated**: November 15, 2025  
-**Maintainers**: Agent-Vault Development Team
+**Maintainers**: Agentic Inquiry Development Team
 
 ## Overview
 
@@ -48,7 +48,7 @@ This guide provides comprehensive instructions for maintaining the MCP test suit
 
 1. **Coverage Review**
    ```bash
-   uv run pytest tests/mcp/ --cov=agent_vault.mcp --cov-report=html
+   uv run pytest tests/mcp/ --cov=agentic_inquiry.mcp --cov-report=html
    open htmlcov/index.html
    ```
 
@@ -105,14 +105,14 @@ ValueError: Field 'X' not found in target schema
 **Fix**:
 ```python
 # Option 1: Add field to schema
-# In agent_vault/database/lancedb_manager.py
+# In agentic_inquiry/database/lancedb_manager.py
 schema = {
     "existing_field": "type",
     "missing_field": "type",  # Add missing field
 }
 
 # Option 2: Remove field from model
-# In agent_vault/models/entity.py
+# In agentic_inquiry/models/entity.py
 @dataclass
 class Entity:
     existing_field: str
@@ -180,10 +180,10 @@ ImportError: cannot import name 'Y' from 'X'
 **Fix**:
 ```python
 # ❌ Old import (module moved)
-from agent_vault.mcp.tools.cognitive import SearchTool
+from agentic_inquiry.mcp.tools.cognitive import SearchTool
 
 # ✅ New import
-from agent_vault.mcp.tools.search import search_knowledge
+from agentic_inquiry.mcp.tools.search import search_knowledge
 
 # ❌ Circular import
 # file_a.py imports file_b.py
@@ -431,7 +431,7 @@ async def test_add_data(db_manager):
    uv run pytest tests/mcp/test_new_feature.py::test_new_feature_basic_usage -v
    
    # Run with coverage
-   uv run pytest tests/mcp/test_new_feature.py --cov=agent_vault.mcp.new_feature
+   uv run pytest tests/mcp/test_new_feature.py --cov=agentic_inquiry.mcp.new_feature
    
    # Verify test fails when it should
    # (temporarily break the code to ensure test catches it)
@@ -604,7 +604,7 @@ async def test_corrected():
     assert result.ready
 
 # If code issue: Fix code and verify test passes
-# In agent_vault/mcp/service.py
+# In agentic_inquiry/mcp/service.py
 async def process(data):
     # Fix the bug
     result = await correct_implementation(data)
@@ -785,7 +785,7 @@ uv run pytest tests/mcp/
 uv run pytest tests/mcp/test_file.py::test_function
 
 # Run with coverage
-uv run pytest tests/mcp/ --cov=agent_vault.mcp
+uv run pytest tests/mcp/ --cov=agentic_inquiry.mcp
 
 # Run last failed
 uv run pytest tests/mcp/ --lf

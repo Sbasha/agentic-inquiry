@@ -4,15 +4,15 @@ This document describes the storage adapter system, the BackendLifecycle protoco
 
 ## Overview
 
-agv uses a modular storage system where different backends (LanceDB, PostgreSQL, etc.) implement standardized protocols. This enables:
+ai uses a modular storage system where different backends (LanceDB, PostgreSQL, etc.) implement standardized protocols. This enables:
 
 - **Backend flexibility**: Swap between local (LanceDB) and cloud (PostgreSQL/CloudSQL) storage
 - **Lazy initialization**: Resources created only when `initialize()` is called, not at import time
-- **Inversion of responsibility**: Each backend owns its setup and teardown; agv core provides only configuration context
+- **Inversion of responsibility**: Each backend owns its setup and teardown; ai core provides only configuration context
 
 ## BackendLifecycle Protocol
 
-All storage providers must implement the `BackendLifecycle` protocol defined in `agent_vault/storage/protocols.py`:
+All storage providers must implement the `BackendLifecycle` protocol defined in `agentic_inquiry/storage/protocols.py`:
 
 ```python
 @runtime_checkable
@@ -94,7 +94,7 @@ A provider can support multiple roles. For example, `LanceDBProvider` supports `
 Complex backends should use a module structure (not a single file):
 
 ```
-agent_vault/storage/providers/
+agentic_inquiry/storage/providers/
 ├── lancedb/                    # Backend as package
 │   ├── __init__.py             # Exports, backward-compat aliases
 │   ├── connection.py           # LanceDBConnectionManager
@@ -179,32 +179,32 @@ class LanceDBVectorProvider:
 
 ## Registry Configuration
 
-Providers are registered in `agent_vault/storage/registry.py`:
+Providers are registered in `agentic_inquiry/storage/registry.py`:
 
 ```python
 # Registry: backend_type -> role -> (module_path, class_name)
 PROVIDER_REGISTRY: Dict[str, Dict[str, Tuple[str, str]]] = {
     "lancedb": {
-        "vector": ("agent_vault.storage.providers.lancedb", "LanceDBProvider"),
-        "graph": ("agent_vault.storage.providers.lancedb", "LanceDBProvider"),
+        "vector": ("agentic_inquiry.storage.providers.lancedb", "LanceDBProvider"),
+        "graph": ("agentic_inquiry.storage.providers.lancedb", "LanceDBProvider"),
     },
     "postgresql": {
-        "vector": ("agent_vault.storage.providers.postgresql", "PostgresVectorProvider"),
-        "graph": ("agent_vault.storage.providers.postgresql", "PostgresGraphProvider"),
-        "events": ("agent_vault.storage.providers.postgresql", "PostgresEventProvider"),
-        "file_tracker": ("agent_vault.storage.providers.postgresql", "PostgresFileTrackerProvider"),
+        "vector": ("agentic_inquiry.storage.providers.postgresql", "PostgresVectorProvider"),
+        "graph": ("agentic_inquiry.storage.providers.postgresql", "PostgresGraphProvider"),
+        "events": ("agentic_inquiry.storage.providers.postgresql", "PostgresEventProvider"),
+        "file_tracker": ("agentic_inquiry.storage.providers.postgresql", "PostgresFileTrackerProvider"),
     },
     "alloydb": {
         # AlloyDB maps to unified PostgreSQL providers
         # Behavior differentiated via embedding_strategy config field
-        "vector": ("agent_vault.storage.providers.postgresql", "PostgresVectorProvider"),
-        "graph": ("agent_vault.storage.providers.postgresql", "PostgresGraphProvider"),
-        "events": ("agent_vault.storage.providers.postgresql", "PostgresEventProvider"),
-        "file_tracker": ("agent_vault.storage.providers.postgresql", "PostgresFileTrackerProvider"),
+        "vector": ("agentic_inquiry.storage.providers.postgresql", "PostgresVectorProvider"),
+        "graph": ("agentic_inquiry.storage.providers.postgresql", "PostgresGraphProvider"),
+        "events": ("agentic_inquiry.storage.providers.postgresql", "PostgresEventProvider"),
+        "file_tracker": ("agentic_inquiry.storage.providers.postgresql", "PostgresFileTrackerProvider"),
     },
     "memory": {
-        "vector": ("agent_vault.storage.providers.memory", "InMemoryVectorProvider"),
-        "graph": ("agent_vault.storage.providers.memory", "InMemoryGraphProvider"),
+        "vector": ("agentic_inquiry.storage.providers.memory", "InMemoryVectorProvider"),
+        "graph": ("agentic_inquiry.storage.providers.memory", "InMemoryGraphProvider"),
         # Note: events and file_tracker not supported by InMemoryProvider
     },
 }
@@ -215,10 +215,10 @@ PROVIDER_REGISTRY: Dict[str, Dict[str, Tuple[str, str]]] = {
 ### Step 1: Define the Module Structure
 
 ```bash
-mkdir -p agent_vault/storage/providers/mybackend/
-touch agent_vault/storage/providers/mybackend/__init__.py
-touch agent_vault/storage/providers/mybackend/connection.py
-touch agent_vault/storage/providers/mybackend/vector.py
+mkdir -p agentic_inquiry/storage/providers/mybackend/
+touch agentic_inquiry/storage/providers/mybackend/__init__.py
+touch agentic_inquiry/storage/providers/mybackend/connection.py
+touch agentic_inquiry/storage/providers/mybackend/vector.py
 ```
 
 ### Step 2: Create the Connection Manager
@@ -228,7 +228,7 @@ touch agent_vault/storage/providers/mybackend/vector.py
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
-    from agent_vault.config import Config
+    from agentic_inquiry.config import Config
 
 class MyBackendConnectionManager:
     """Manages MyBackend connection lifecycle."""
@@ -319,10 +319,10 @@ __all__ = [
 ### Step 5: Register in the Registry
 
 ```python
-# In agent_vault/storage/registry.py
+# In agentic_inquiry/storage/registry.py
 
 PROVIDER_REGISTRY["mybackend"] = {
-    "vector": ("agent_vault.storage.providers.mybackend", "MyBackendVectorProvider"),
+    "vector": ("agentic_inquiry.storage.providers.mybackend", "MyBackendVectorProvider"),
 }
 ```
 
@@ -356,7 +356,7 @@ async def initialize(self) -> None:
     storage_path.mkdir(parents=True, exist_ok=True)
 ```
 
-This follows the "inversion of responsibility" principle where agv core provides configuration context, but each backend manages its own resources.
+This follows the "inversion of responsibility" principle where ai core provides configuration context, but each backend manages its own resources.
 
 ## Testing
 
@@ -392,7 +392,7 @@ async def test_provider_lifecycle():
 
 ## Unified PostgreSQL Provider and Adapters
 
-Agent-Vault uses a unified PostgreSQL provider architecture that supports multiple cloud backends (GCP, AWS, Azure) through a pluggable adapter pattern.
+Agentic Inquiry uses a unified PostgreSQL provider architecture that supports multiple cloud backends (GCP, AWS, Azure) through a pluggable adapter pattern.
 
 ### Architecture
 
@@ -430,7 +430,7 @@ embedding_strategy: server_side
 The registry maps all PostgreSQL-compatible backends to the unified provider classes:
 
 ```python
-# In agent_vault/storage/registry.py
+# In agentic_inquiry/storage/registry.py
 PROVIDER_REGISTRY = {
     "postgresql": {
         "vector": ("...postgresql", "PostgresVectorProvider"),
@@ -458,7 +458,7 @@ When `embedding_strategy="server_side"` is enabled, the provider delegates SQL g
 **1. SQL Generation:**
 The adapter provides the specific function call for the platform:
 - AlloyDB: `embedding('model', content)::vector`
-- RDS: `agv_embed(content, 'model')::vector`
+- RDS: `ai_embed(content, 'model')::vector`
 - Azure: `azure_ai.generate_embeddings('model', content)::vector`
 
 **2. Optimized Search:**
@@ -466,7 +466,7 @@ The provider uses a **CTE (Common Table Expression)** to ensure the server-side 
 
 ### Dead Code Note
 
-The original `agent_vault/storage/providers/alloydb/` and `agent_vault/storage/providers/rds/` runtime provider files have been removed. 
+The original `agentic_inquiry/storage/providers/alloydb/` and `agentic_inquiry/storage/providers/rds/` runtime provider files have been removed. 
 - **Active**: `storage/providers/postgresql/` contains all runtime logic.
 - **Active**: `cli/setup/` contains the provisioning wizards for each cloud.
 
@@ -476,13 +476,13 @@ To add support for a new PostgreSQL-compatible cloud provider:
 1. Create a new subclass of `PostgreSQLAdapter` in `adapter.py`.
 2. Implement `get_embedding_sql()` and `required_extensions`.
 3. Register the new type in `PostgresVectorProvider.from_config()` and `PostgresGraphProvider.from_config()`.
-4. Add a new setup wizard in `agent_vault/cli/setup/`.
+4. Add a new setup wizard in `agentic_inquiry/cli/setup/`.
 
 ---
 
 ## Reference Implementations
 
-- **LanceDB**: `agent_vault/storage/providers/lancedb/` - Local embedded database
-- **PostgreSQL**: `agent_vault/storage/providers/postgresql/` - Unified provider for CloudSQL and AlloyDB
-- **Memory**: `agent_vault/storage/providers/memory.py` - Simple in-memory for testing
-- **AlloyDB (deprecated)**: `agent_vault/storage/providers/alloydb/` - Dead code, replaced by unified PostgreSQL provider
+- **LanceDB**: `agentic_inquiry/storage/providers/lancedb/` - Local embedded database
+- **PostgreSQL**: `agentic_inquiry/storage/providers/postgresql/` - Unified provider for CloudSQL and AlloyDB
+- **Memory**: `agentic_inquiry/storage/providers/memory.py` - Simple in-memory for testing
+- **AlloyDB (deprecated)**: `agentic_inquiry/storage/providers/alloydb/` - Dead code, replaced by unified PostgreSQL provider

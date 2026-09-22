@@ -10,7 +10,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.database.schemas import (
+from agentic_inquiry.database.schemas import (
     ALL_SCHEMAS,
     CORE_SCHEMAS,
     DOCUMENT_CHUNKS_SCHEMA,

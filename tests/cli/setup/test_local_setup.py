@@ -5,8 +5,8 @@ from __future__ import annotations
 import json
 from unittest.mock import patch
 
-from agent_vault.cli.setup.local_setup import LocalSetup
-from agent_vault.cli.env_resolver import (
+from agentic_inquiry.cli.setup.local_setup import LocalSetup
+from agentic_inquiry.cli.env_resolver import (
     DATA_DIR_NAME,
     ENVS_DIR_NAME,
     REGISTRY_FILE_NAME,
@@ -57,7 +57,7 @@ class TestLocalSetup:
         env_file = env_dir / ".env"
         assert env_file.exists()
         env_text = env_file.read_text(encoding="utf-8")
-        assert "# AGV_EMBEDDING_DEVICE=cpu" in env_text
+        assert "# AI_EMBEDDING_DEVICE=cpu" in env_text
 
         # Verify config content
         import yaml
@@ -93,7 +93,7 @@ class TestLocalSetup:
     def test_dev_mode_naming(self, tmp_path):
         """Test that dev mode uses test environment naming."""
         # Mock the input function to return a name
-        with patch("agent_vault.cli.setup.base.prompt_input", return_value="agv-test"):
+        with patch("agentic_inquiry.cli.setup.base.prompt_input", return_value="ai-test"):
             setup = LocalSetup(is_dev=True, workspace=tmp_path)
             # Access env_name to trigger the prompt
             name = setup.env_name

@@ -1,4 +1,4 @@
-"""Agent-Vault Cloud Run entrypoint."""
+"""Agentic Inquiry Cloud Run entrypoint."""
 
 import asyncio
 import logging
@@ -10,10 +10,10 @@ logging.basicConfig(level=logging.INFO)
 
 
 async def main() -> None:
-    from agent_vault.server.app import create_app
+    from agentic_inquiry.server.app import create_app
 
     app = await create_app(
-        project_id=os.environ.get("agv_PROJECT_ID", "default"),
+        project_id=os.environ.get("AI_PROJECT_ID", "default"),
     )
     config = uvicorn.Config(
         app,

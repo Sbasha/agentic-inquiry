@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import pytest
 
-from agent_vault.parsers.recognizers._tree_sitter_utils import (
+from agentic_inquiry.parsers.recognizers._tree_sitter_utils import (
     first_child_of_type,
     identifier_text,
     iter_children_of_type,

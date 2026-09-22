@@ -8,7 +8,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.mcp.tools.knowledge import add_knowledge
+from agentic_inquiry.mcp.tools.knowledge import add_knowledge
 
 
 @pytest.mark.asyncio

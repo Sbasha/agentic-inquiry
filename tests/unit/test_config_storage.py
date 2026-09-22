@@ -13,7 +13,7 @@ pytestmark = pytest.mark.unit
 
 from pathlib import Path
 
-from agent_vault.config import (
+from agentic_inquiry.config import (
     Config,
     ConfigurationError,
     DocumentCacheStorageConfig,
@@ -122,9 +122,9 @@ class TestEnvironmentVariableOverrides:
     """Test environment variable overrides for storage options."""
     
     def test_storage_root_override(self, tmp_path, monkeypatch):
-        """Test AGV_STORAGE_ROOT environment variable override."""
+        """Test AI_STORAGE_ROOT environment variable override."""
         override_path = tmp_path / "env_storage"
-        monkeypatch.setenv("AGV_STORAGE_ROOT", str(override_path))
+        monkeypatch.setenv("AI_STORAGE_ROOT", str(override_path))
         
         config_data = {'storage': {'root': './default_storage'}}
         config_data = Config._apply_env_overrides(config_data)
@@ -134,11 +134,11 @@ class TestEnvironmentVariableOverrides:
     @pytest.mark.parametrize(
         ("env_var", "env_value", "config_data", "path", "expected"),
         [
-            ("AGV_STORAGE_DEFAULT_PROJECT_ID", "env_project", {'storage': {'default_project_id': None}}, ("storage", "default_project_id"), "env_project"),
-            ("AGV_STORAGE_LANCEDB_PATH", "custom_lancedb", {'storage': {'lancedb': {'path': 'lancedb'}}}, ("storage", "lancedb", "path"), "custom_lancedb"),
-            ("AGV_STORAGE_FILE_TRACKER_PATH", "custom_tracker.db", {'storage': {'file_tracker': {'path': 'file_tracker.db'}}}, ("storage", "file_tracker", "path"), "custom_tracker.db"),
-            ("AGV_STORAGE_DOCUMENT_CACHE_ENABLED", "true", {'storage': {'document_cache': {'enabled': False}}}, ("storage", "document_cache", "enabled"), True),
-            ("AGV_STORAGE_DOCUMENT_CACHE_PATH", "custom_cache", {'storage': {'document_cache': {'path': 'document_cache'}}}, ("storage", "document_cache", "path"), "custom_cache"),
+            ("AI_STORAGE_DEFAULT_PROJECT_ID", "env_project", {'storage': {'default_project_id': None}}, ("storage", "default_project_id"), "env_project"),
+            ("AI_STORAGE_LANCEDB_PATH", "custom_lancedb", {'storage': {'lancedb': {'path': 'lancedb'}}}, ("storage", "lancedb", "path"), "custom_lancedb"),
+            ("AI_STORAGE_FILE_TRACKER_PATH", "custom_tracker.db", {'storage': {'file_tracker': {'path': 'file_tracker.db'}}}, ("storage", "file_tracker", "path"), "custom_tracker.db"),
+            ("AI_STORAGE_DOCUMENT_CACHE_ENABLED", "true", {'storage': {'document_cache': {'enabled': False}}}, ("storage", "document_cache", "enabled"), True),
+            ("AI_STORAGE_DOCUMENT_CACHE_PATH", "custom_cache", {'storage': {'document_cache': {'path': 'document_cache'}}}, ("storage", "document_cache", "path"), "custom_cache"),
         ],
     )
     def test_storage_env_overrides(self, monkeypatch, env_var, env_value, config_data, path, expected):
@@ -155,10 +155,10 @@ class TestEnvironmentVariableOverrides:
     
     def test_multiple_overrides(self, tmp_path, monkeypatch):
         """Test multiple environment variable overrides simultaneously."""
-        monkeypatch.setenv("AGV_STORAGE_ROOT", str(tmp_path / "env_root"))
-        monkeypatch.setenv("AGV_STORAGE_DEFAULT_PROJECT_ID", "env_proj")
-        monkeypatch.setenv("AGV_STORAGE_LANCEDB_PATH", "env_lancedb")
-        monkeypatch.setenv("AGV_STORAGE_DOCUMENT_CACHE_ENABLED", "true")
+        monkeypatch.setenv("AI_STORAGE_ROOT", str(tmp_path / "env_root"))
+        monkeypatch.setenv("AI_STORAGE_DEFAULT_PROJECT_ID", "env_proj")
+        monkeypatch.setenv("AI_STORAGE_LANCEDB_PATH", "env_lancedb")
+        monkeypatch.setenv("AI_STORAGE_DOCUMENT_CACHE_ENABLED", "true")
         
         config_data = {
             'storage': {
@@ -192,7 +192,7 @@ class TestEnvironmentVariableOverrides:
     )
     def test_boolean_conversion(self, monkeypatch, env_value, expected):
         """Test that boolean environment variables are converted correctly."""
-        monkeypatch.setenv("AGV_STORAGE_DOCUMENT_CACHE_ENABLED", env_value)
+        monkeypatch.setenv("AI_STORAGE_DOCUMENT_CACHE_ENABLED", env_value)
         config_data = {'storage': {'document_cache': {'enabled': False}}}
         config_data = Config._apply_env_overrides(config_data)
         assert config_data['storage']['document_cache']['enabled'] == expected
@@ -202,7 +202,7 @@ class TestEnvironmentVariableOverrides:
         import logging
         
         # Set up a typo in the section name (SERACH instead of SEARCH)
-        monkeypatch.setenv("AGV_SERACH_DEFAULT_LIMIT", "50")
+        monkeypatch.setenv("AI_SERACH_DEFAULT_LIMIT", "50")
         
         with caplog.at_level(logging.WARNING):
             config = Config.load()
@@ -210,9 +210,9 @@ class TestEnvironmentVariableOverrides:
         # Verify the warning was logged (either old format or new format with suggestion)
         assert any(
             "Ignoring" in record.message
-            and "AGV_SERACH_DEFAULT_LIMIT" in record.message
+            and "AI_SERACH_DEFAULT_LIMIT" in record.message
             and ("'serach' is not a valid config section" in record.message
-                 or "Did you mean AGV_SEARCH_DEFAULT_LIMIT?" in record.message)
+                 or "Did you mean AI_SEARCH_DEFAULT_LIMIT?" in record.message)
             for record in caplog.records
         ), "Expected warning about invalid section or typo suggestion not found in logs"
         
@@ -223,7 +223,7 @@ class TestEnvironmentVariableOverrides:
         """Test that valid environment variables are applied correctly."""
         import logging
         
-        monkeypatch.setenv("AGV_SEARCH_DEFAULT_LIMIT", "75")
+        monkeypatch.setenv("AI_SEARCH_DEFAULT_LIMIT", "75")
         
         with caplog.at_level(logging.INFO):
             config = Config.load()
@@ -261,19 +261,19 @@ class TestEnvironmentVariableOverrides:
         }
 
         # Test default_project_id (compound field)
-        monkeypatch.setenv("AGV_STORAGE_DEFAULT_PROJECT_ID", "test_project")
+        monkeypatch.setenv("AI_STORAGE_DEFAULT_PROJECT_ID", "test_project")
         config_data = Config._apply_env_overrides(base_config)
         config = Config._from_dict(config_data)
         assert config.storage.default_project_id == "test_project"
 
         # Test file_tracker path (nested compound field)
-        monkeypatch.setenv("AGV_STORAGE_FILE_TRACKER_PATH", "custom_tracker.db")
+        monkeypatch.setenv("AI_STORAGE_FILE_TRACKER_PATH", "custom_tracker.db")
         config_data = Config._apply_env_overrides(base_config)
         config = Config._from_dict(config_data)
         assert config.storage.file_tracker.path == "custom_tracker.db"
 
         # Test document_cache settings (nested compound fields)
-        monkeypatch.setenv("AGV_CACHE_DOCUMENT_CACHE_MAX_SIZE", "5000")
+        monkeypatch.setenv("AI_CACHE_DOCUMENT_CACHE_MAX_SIZE", "5000")
         config_data = Config._apply_env_overrides(base_config)
         config = Config._from_dict(config_data)
         assert config.cache.document_cache.max_size == 5000
@@ -283,9 +283,9 @@ class TestEnvironmentVariableOverrides:
         import logging
         
         # Set multiple invalid variables
-        monkeypatch.setenv("AGV_SERACH_DEFAULT_LIMIT", "50")  # typo in section
-        monkeypatch.setenv("AGV_STORAG_ROOT", "/tmp/test")     # typo in section
-        monkeypatch.setenv("AGV_INVALID_SECTION_KEY", "value") # completely invalid
+        monkeypatch.setenv("AI_SERACH_DEFAULT_LIMIT", "50")  # typo in section
+        monkeypatch.setenv("AI_STORAG_ROOT", "/tmp/test")     # typo in section
+        monkeypatch.setenv("AI_INVALID_SECTION_KEY", "value") # completely invalid
         
         with caplog.at_level(logging.WARNING):
             Config.load()
@@ -293,9 +293,9 @@ class TestEnvironmentVariableOverrides:
         # Verify all three warnings were logged
         warning_messages = [record.message for record in caplog.records if record.levelname == "WARNING"]
         
-        assert any("AGV_SERACH_DEFAULT_LIMIT" in msg for msg in warning_messages)
-        assert any("AGV_STORAG_ROOT" in msg for msg in warning_messages)
-        assert any("AGV_INVALID_SECTION_KEY" in msg for msg in warning_messages)
+        assert any("AI_SERACH_DEFAULT_LIMIT" in msg for msg in warning_messages)
+        assert any("AI_STORAG_ROOT" in msg for msg in warning_messages)
+        assert any("AI_INVALID_SECTION_KEY" in msg for msg in warning_messages)
         
         # Verify the count of ignored variables
         assert any(
@@ -308,9 +308,9 @@ class TestEnvironmentVariableOverrides:
         import logging
         
         # Mix valid and invalid variables
-        monkeypatch.setenv("AGV_SEARCH_DEFAULT_LIMIT", "100")  # valid
-        monkeypatch.setenv("AGV_SERACH_DEFAULT_LIMIT", "50")   # invalid (typo)
-        monkeypatch.setenv("AGV_CACHE_DOCUMENT_CACHE_MAX_SIZE", "3000")  # valid
+        monkeypatch.setenv("AI_SEARCH_DEFAULT_LIMIT", "100")  # valid
+        monkeypatch.setenv("AI_SERACH_DEFAULT_LIMIT", "50")   # invalid (typo)
+        monkeypatch.setenv("AI_CACHE_DOCUMENT_CACHE_MAX_SIZE", "3000")  # valid
         
         with caplog.at_level(logging.INFO):
             config = Config.load()
@@ -1178,7 +1178,7 @@ parsers: {}
         from concurrent.futures import ThreadPoolExecutor
         
         # Set environment variable
-        monkeypatch.setenv("AGV_STORAGE_ROOT", str(tmp_path / "env_storage"))
+        monkeypatch.setenv("AI_STORAGE_ROOT", str(tmp_path / "env_storage"))
         
         # Create a test config file
         config_file = tmp_path / "mock_config.yaml"
@@ -1317,7 +1317,7 @@ class TestMCPQueryConfigValidation:
 
     def test_default_values(self):
         """Test that default values are correct."""
-        from agent_vault.config import MCPQueryConfig
+        from agentic_inquiry.config import MCPQueryConfig
 
         config = MCPQueryConfig()
         assert config.traversal_limit == 500
@@ -1325,7 +1325,7 @@ class TestMCPQueryConfigValidation:
 
     def test_valid_traversal_limit_values(self):
         """Test that valid traversal_limit values are accepted."""
-        from agent_vault.config import MCPQueryConfig
+        from agentic_inquiry.config import MCPQueryConfig
 
         # Min value
         config = MCPQueryConfig(traversal_limit=100)
@@ -1345,7 +1345,7 @@ class TestMCPQueryConfigValidation:
 
     def test_invalid_traversal_limit_below_range(self):
         """Test that traversal_limit below 100 raises ConfigurationError."""
-        from agent_vault.config import MCPQueryConfig, ConfigurationError
+        from agentic_inquiry.config import MCPQueryConfig, ConfigurationError
 
         with pytest.raises(ConfigurationError) as exc_info:
             MCPQueryConfig(traversal_limit=99)
@@ -1355,7 +1355,7 @@ class TestMCPQueryConfigValidation:
 
     def test_invalid_traversal_limit_above_range(self):
         """Test that traversal_limit above 2000 raises ConfigurationError."""
-        from agent_vault.config import MCPQueryConfig, ConfigurationError
+        from agentic_inquiry.config import MCPQueryConfig, ConfigurationError
 
         with pytest.raises(ConfigurationError) as exc_info:
             MCPQueryConfig(traversal_limit=2001)
@@ -1365,7 +1365,7 @@ class TestMCPQueryConfigValidation:
 
     def test_valid_batch_size_values(self):
         """Test that valid batch_size values are accepted."""
-        from agent_vault.config import MCPQueryConfig
+        from agentic_inquiry.config import MCPQueryConfig
 
         # Min value
         config = MCPQueryConfig(batch_size=10)
@@ -1385,7 +1385,7 @@ class TestMCPQueryConfigValidation:
 
     def test_invalid_batch_size_below_range(self):
         """Test that batch_size below 10 raises ConfigurationError."""
-        from agent_vault.config import MCPQueryConfig, ConfigurationError
+        from agentic_inquiry.config import MCPQueryConfig, ConfigurationError
 
         with pytest.raises(ConfigurationError) as exc_info:
             MCPQueryConfig(batch_size=9)
@@ -1395,7 +1395,7 @@ class TestMCPQueryConfigValidation:
 
     def test_invalid_batch_size_above_range(self):
         """Test that batch_size above 500 raises ConfigurationError."""
-        from agent_vault.config import MCPQueryConfig, ConfigurationError
+        from agentic_inquiry.config import MCPQueryConfig, ConfigurationError
 
         with pytest.raises(ConfigurationError) as exc_info:
             MCPQueryConfig(batch_size=501)
@@ -1405,7 +1405,7 @@ class TestMCPQueryConfigValidation:
 
     def test_both_fields_with_valid_values(self):
         """Test that both fields can be set with valid values."""
-        from agent_vault.config import MCPQueryConfig
+        from agentic_inquiry.config import MCPQueryConfig
 
         config = MCPQueryConfig(traversal_limit=1500, batch_size=200)
         assert config.traversal_limit == 1500
@@ -1413,7 +1413,7 @@ class TestMCPQueryConfigValidation:
 
     def test_one_invalid_field_raises_error(self):
         """Test that having one invalid field raises ConfigurationError."""
-        from agent_vault.config import MCPQueryConfig, ConfigurationError
+        from agentic_inquiry.config import MCPQueryConfig, ConfigurationError
 
         # Valid batch_size, invalid traversal_limit
         with pytest.raises(ConfigurationError) as exc_info:

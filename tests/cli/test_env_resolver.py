@@ -8,7 +8,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import patch
 
-from agent_vault.cli.env_resolver import (
+from agentic_inquiry.cli.env_resolver import (
     resolve_environment,
     is_test_environment,
     should_auto_start_proxy,
@@ -27,10 +27,10 @@ class TestIsTestEnvironment:
     """Tests for is_test_environment function."""
 
     def test_agv_test_prefix(self):
-        """Test environments with agv-test prefix are detected as test."""
-        assert is_test_environment("agv-test") is True
-        assert is_test_environment("agv-test-postgres") is True
-        assert is_test_environment("agv-test-123") is True
+        """Test environments with ai-test prefix are detected as test."""
+        assert is_test_environment("ai-test") is True
+        assert is_test_environment("ai-test-postgres") is True
+        assert is_test_environment("ai-test-123") is True
 
     def test_plain_test(self):
         """Test plain 'test' is detected as test environment."""
@@ -43,8 +43,8 @@ class TestIsTestEnvironment:
 
     def test_production_environments(self):
         """Test production environments are not detected as test."""
-        assert is_test_environment("agv") is False
-        assert is_test_environment("agv-prod") is False
+        assert is_test_environment("ai") is False
+        assert is_test_environment("ai-prod") is False
         assert is_test_environment("gcp-prod") is False
         assert is_test_environment("production") is False
 
@@ -59,55 +59,55 @@ class TestShouldAutoStartProxy:
 
     def test_test_environment_never_starts(self):
         """Test environments should never auto-start."""
-        assert should_auto_start_proxy("agv-test", has_cloudsql_config=True) is False
+        assert should_auto_start_proxy("ai-test", has_cloudsql_config=True) is False
         assert should_auto_start_proxy("test", has_cloudsql_config=True) is False
 
     def test_production_with_cloudsql(self):
         """Production with CloudSQL should auto-start."""
-        assert should_auto_start_proxy("agv", has_cloudsql_config=True) is True
+        assert should_auto_start_proxy("ai", has_cloudsql_config=True) is True
         assert should_auto_start_proxy("gcp-prod", has_cloudsql_config=True) is True
 
     def test_no_cloudsql(self):
         """Without CloudSQL, should not auto-start."""
-        assert should_auto_start_proxy("agv", has_cloudsql_config=False) is False
+        assert should_auto_start_proxy("ai", has_cloudsql_config=False) is False
 
     def test_no_auto_start_env_var(self):
-        """agv_NO_AUTO_START env var should disable."""
-        with patch.dict(os.environ, {"agv_NO_AUTO_START": "1"}):
-            assert should_auto_start_proxy("agv", has_cloudsql_config=True) is False
+        """AI_NO_AUTO_START env var should disable."""
+        with patch.dict(os.environ, {"AI_NO_AUTO_START": "1"}):
+            assert should_auto_start_proxy("ai", has_cloudsql_config=True) is False
 
     def test_test_mode_env_var(self):
-        """agv_TEST_MODE env var should disable."""
-        with patch.dict(os.environ, {"agv_TEST_MODE": "true"}):
-            assert should_auto_start_proxy("agv", has_cloudsql_config=True) is False
+        """AI_TEST_MODE env var should disable."""
+        with patch.dict(os.environ, {"AI_TEST_MODE": "true"}):
+            assert should_auto_start_proxy("ai", has_cloudsql_config=True) is False
 
 
 class TestGetDataDir:
     """Tests for get_data_dir and get_global_dir functions."""
 
     def test_default_returns_global(self):
-        """Default (no workspace) returns global ~/.agv/ directory."""
+        """Default (no workspace) returns global ~/.agentic-inquiry/ directory."""
         data_dir = get_data_dir()
         assert data_dir == Path.home() / GLOBAL_DIR_NAME
 
     def test_custom_workspace(self, tmp_path):
-        """Custom workspace returns workspace/.agv/ for test isolation."""
+        """Custom workspace returns workspace/.agentic-inquiry/ for test isolation."""
         data_dir = get_data_dir(tmp_path)
         assert data_dir == tmp_path / GLOBAL_DIR_NAME
 
     def test_global_dir(self):
-        """get_global_dir returns ~/.agv/."""
+        """get_global_dir returns ~/.agentic-inquiry/."""
         assert get_global_dir() == Path.home() / GLOBAL_DIR_NAME
 
     def test_global_dir_agv_home_override(self, tmp_path):
-        """agv_HOME env var overrides global dir."""
-        custom = tmp_path / "custom-agv"
-        with patch.dict(os.environ, {"agv_HOME": str(custom)}):
+        """AI_HOME env var overrides global dir."""
+        custom = tmp_path / "custom-ai"
+        with patch.dict(os.environ, {"AI_HOME": str(custom)}):
             assert get_global_dir() == custom
 
     def test_local_dir(self, tmp_path):
-        """get_local_dir returns workspace/.agv/."""
-        assert get_local_dir(tmp_path) == tmp_path / ".agv"
+        """get_local_dir returns workspace/.agentic-inquiry/."""
+        assert get_local_dir(tmp_path) == tmp_path / ".agentic-inquiry"
 
 
 class TestGetEnvConfigPath:
@@ -159,26 +159,26 @@ class TestResolveEnvironment:
     """Tests for resolve_environment function."""
 
     def test_agv_config_env_var(self, tmp_path):
-        """agv_CONFIG env var takes priority."""
+        """AI_CONFIG env var takes priority."""
         config_file = tmp_path / "custom.yaml"
         config_file.write_text("storage:\n  root: test")
 
-        with patch.dict(os.environ, {"agv_CONFIG": str(config_file)}):
+        with patch.dict(os.environ, {"AI_CONFIG": str(config_file)}):
             env = resolve_environment(tmp_path)
             assert env.source == "env_var"
             assert env.config_path == config_file
 
     def test_agv_env_env_var(self, tmp_path):
-        """agv_ENV env var selects named environment."""
+        """AI_ENV env var selects named environment."""
         # Create env config
         data_dir = tmp_path / DATA_DIR_NAME
         env_config = data_dir / "envs" / "my-env" / "config.yaml"
         env_config.parent.mkdir(parents=True)
         env_config.write_text("storage:\n  root: test")
 
-        with patch.dict(os.environ, {"agv_ENV": "my-env"}, clear=False):
-            # Clear agv_CONFIG if set
-            os.environ.pop("agv_CONFIG", None)
+        with patch.dict(os.environ, {"AI_ENV": "my-env"}, clear=False):
+            # Clear AI_CONFIG if set
+            os.environ.pop("AI_CONFIG", None)
             env = resolve_environment(tmp_path)
             assert env.name == "my-env"
             assert env.source == "env_var"
@@ -208,7 +208,7 @@ class TestResolveEnvironment:
 
     def test_default_fallback(self, tmp_path):
         """Falls back to default when nothing configured."""
-        with patch.dict(os.environ, {"agv_HOME": str(tmp_path)}, clear=True):
+        with patch.dict(os.environ, {"AI_HOME": str(tmp_path)}, clear=True):
             env = resolve_environment(tmp_path)
             assert env.name == "default"
             assert env.source == "default"
@@ -251,25 +251,25 @@ class TestListEnvironments:
 
 
 class TestEnvironmentDotenv:
-    """Tests for .agv/envs/<name>/.env loading."""
+    """Tests for .agentic-inquiry/envs/<name>/.env loading."""
 
     def test_parse_skips_comments_and_blanks(self) -> None:
-        from agent_vault.cli.env_resolver import parse_dotenv_lines
+        from agentic_inquiry.cli.env_resolver import parse_dotenv_lines
 
         parsed = parse_dotenv_lines(
-            "# comment\n\nFOO=bar\n# AGV_EMBEDDING_DEVICE=cpu\nBAZ='quoted'\n"
+            "# comment\n\nFOO=bar\n# AI_EMBEDDING_DEVICE=cpu\nBAZ='quoted'\n"
         )
         assert parsed == {"FOO": "bar", "BAZ": "quoted"}
 
     def test_missing_file_is_noop(self, tmp_path: Path) -> None:
-        from agent_vault.cli.env_resolver import load_environment_dotenv
+        from agentic_inquiry.cli.env_resolver import load_environment_dotenv
 
         environ: dict[str, str] = {}
         load_environment_dotenv(tmp_path, environ=environ)
         assert environ == {}
 
     def test_sets_unset_keys_only(self, tmp_path: Path) -> None:
-        from agent_vault.cli.env_resolver import load_environment_dotenv
+        from agentic_inquiry.cli.env_resolver import load_environment_dotenv
 
         (tmp_path / ".env").write_text("FOO=fromfile\nBAR=set\n", encoding="utf-8")
         environ = {"FOO": "fromshell"}
@@ -280,7 +280,7 @@ class TestEnvironmentDotenv:
     def test_values_are_not_logged(
         self, tmp_path: Path, caplog: pytest.LogCaptureFixture
     ) -> None:
-        from agent_vault.cli.env_resolver import load_environment_dotenv
+        from agentic_inquiry.cli.env_resolver import load_environment_dotenv
 
         hidden = "must-not-appear-in-logs"
         (tmp_path / ".env").write_text(f"FOO={hidden}\n", encoding="utf-8")
@@ -289,11 +289,11 @@ class TestEnvironmentDotenv:
         assert hidden not in caplog.text
 
     def test_symlink_escape_is_not_loaded(self, tmp_path: Path) -> None:
-        from agent_vault.cli.env_resolver import load_environment_dotenv
+        from agentic_inquiry.cli.env_resolver import load_environment_dotenv
 
         outside = tmp_path / "outside.env"
         outside.write_text("LEAK=1\n", encoding="utf-8")
-        env_dir = tmp_path / "envs" / "agv"
+        env_dir = tmp_path / "envs" / "ai"
         env_dir.mkdir(parents=True)
         (env_dir / ".env").symlink_to(outside)
         environ: dict[str, str] = {}
@@ -310,20 +310,20 @@ class TestEmbeddingDeviceHatchHint:
         capsys: pytest.CaptureFixture[str],
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from agent_vault.cli.env_resolver import warn_embedding_device_hatch
+        from agentic_inquiry.cli.env_resolver import warn_embedding_device_hatch
 
         monkeypatch.setattr(
-            "agent_vault.cli.env_resolver.platform.system", lambda: "Darwin"
+            "agentic_inquiry.cli.env_resolver.platform.system", lambda: "Darwin"
         )
-        monkeypatch.delenv("AGV_EMBEDDING_DEVICE", raising=False)
-        env_dir = tmp_path / ".agv" / "envs" / "agv"
+        monkeypatch.delenv("AI_EMBEDDING_DEVICE", raising=False)
+        env_dir = tmp_path / ".agentic-inquiry" / "envs" / "ai"
         env_dir.mkdir(parents=True)
         warn_embedding_device_hatch(env_dir)
         err = capsys.readouterr().err
         assert err.count("\n") == 1 or err.endswith("\n")
         assert ".env" in err
-        assert "AGV_EMBEDDING_DEVICE=cpu" in err
-        assert str(env_dir / ".env") in err or ".agv/envs/" in err
+        assert "AI_EMBEDDING_DEVICE=cpu" in err
+        assert str(env_dir / ".env") in err or ".agentic-inquiry/envs/" in err
 
     def test_device_set_prints_nothing(
         self,
@@ -331,15 +331,15 @@ class TestEmbeddingDeviceHatchHint:
         capsys: pytest.CaptureFixture[str],
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from agent_vault.cli.env_resolver import warn_embedding_device_hatch
+        from agentic_inquiry.cli.env_resolver import warn_embedding_device_hatch
 
         monkeypatch.setattr(
-            "agent_vault.cli.env_resolver.platform.system", lambda: "Darwin"
+            "agentic_inquiry.cli.env_resolver.platform.system", lambda: "Darwin"
         )
-        env_dir = tmp_path / ".agv" / "envs" / "agv"
+        env_dir = tmp_path / ".agentic-inquiry" / "envs" / "ai"
         env_dir.mkdir(parents=True)
         for value in ("cpu", "mps"):
-            monkeypatch.setenv("AGV_EMBEDDING_DEVICE", value)
+            monkeypatch.setenv("AI_EMBEDDING_DEVICE", value)
             warn_embedding_device_hatch(env_dir)
             assert capsys.readouterr().err == ""
 
@@ -349,11 +349,11 @@ class TestEmbeddingDeviceHatchHint:
         capsys: pytest.CaptureFixture[str],
         monkeypatch: pytest.MonkeyPatch,
     ) -> None:
-        from agent_vault.cli.env_resolver import warn_embedding_device_hatch
+        from agentic_inquiry.cli.env_resolver import warn_embedding_device_hatch
 
         monkeypatch.setattr(
-            "agent_vault.cli.env_resolver.platform.system", lambda: "Linux"
+            "agentic_inquiry.cli.env_resolver.platform.system", lambda: "Linux"
         )
-        monkeypatch.delenv("AGV_EMBEDDING_DEVICE", raising=False)
+        monkeypatch.delenv("AI_EMBEDDING_DEVICE", raising=False)
         warn_embedding_device_hatch(tmp_path)
         assert capsys.readouterr().err == ""

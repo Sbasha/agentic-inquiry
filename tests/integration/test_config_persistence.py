@@ -14,14 +14,14 @@ import yaml
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config, MaintenanceConfig, ConfigurationError
-from agent_vault.mcp.services.maintenance_manager import MaintenanceManager
+from agentic_inquiry.config import Config, MaintenanceConfig, ConfigurationError
+from agentic_inquiry.mcp.services.maintenance_manager import MaintenanceManager
 
 
 @pytest.fixture
 def temp_config_file(tmp_path):
     """Create a temporary config file."""
-    config_file = tmp_path / "agent-vault.yaml"
+    config_file = tmp_path / "agentic-inquiry.yaml"
     yield config_file
     # Cleanup
     if config_file.exists():
@@ -298,7 +298,7 @@ class TestMaintenanceEnabledFlag:
         manager = MaintenanceManager(storage=mock_storage)
 
         # Mock Config.load to return our disabled config
-        with patch("agent_vault.config.Config.load", return_value=config):
+        with patch("agentic_inquiry.config.Config.load", return_value=config):
             # Trigger event
             event_data = {"project_id": "test_project"}
             await manager._on_project_closed(event_data)
@@ -315,39 +315,39 @@ class TestEnvironmentVariableOverrides:
     """Tests for environment variable overrides of maintenance config."""
 
     def test_env_override_retention_minutes(self, temp_config_file, sample_config_data):
-        """Test AGV_MAINTENANCE_RETENTION_MINUTES environment variable."""
+        """Test AI_MAINTENANCE_RETENTION_MINUTES environment variable."""
         # Write base config
         with open(temp_config_file, 'w') as f:
             yaml.dump(sample_config_data, f)
 
         # Set environment variable
-        with patch.dict(os.environ, {"AGV_MAINTENANCE_RETENTION_MINUTES": "300"}):
+        with patch.dict(os.environ, {"AI_MAINTENANCE_RETENTION_MINUTES": "300"}):
             config = Config.load(str(temp_config_file))
 
             # Should use env var value
             assert config.maintenance.cleanup_retention_minutes == 300
 
     def test_env_override_trigger(self, temp_config_file, sample_config_data):
-        """Test AGV_MAINTENANCE_TRIGGER environment variable."""
+        """Test AI_MAINTENANCE_TRIGGER environment variable."""
         # Write base config
         with open(temp_config_file, 'w') as f:
             yaml.dump(sample_config_data, f)
 
         # Set environment variable
-        with patch.dict(os.environ, {"AGV_MAINTENANCE_TRIGGER": "indexing.completed"}):
+        with patch.dict(os.environ, {"AI_MAINTENANCE_TRIGGER": "indexing.completed"}):
             config = Config.load(str(temp_config_file))
 
             # Should use env var value
             assert config.maintenance.trigger == "indexing.completed"
 
     def test_env_override_enabled(self, temp_config_file, sample_config_data):
-        """Test AGV_MAINTENANCE_ENABLED environment variable."""
+        """Test AI_MAINTENANCE_ENABLED environment variable."""
         # Write base config
         with open(temp_config_file, 'w') as f:
             yaml.dump(sample_config_data, f)
 
         # Set environment variable
-        with patch.dict(os.environ, {"AGV_MAINTENANCE_ENABLED": "false"}):
+        with patch.dict(os.environ, {"AI_MAINTENANCE_ENABLED": "false"}):
             config = Config.load(str(temp_config_file))
 
             # Should use env var value

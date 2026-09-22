@@ -20,12 +20,12 @@ from pathlib import Path
 
 import pytest
 
-from agent_vault.parsers.models import (
+from agentic_inquiry.parsers.models import (
     ParsedDocument,
     ParserChunk,
     ParserRelationship,
 )
-from agent_vault.parsers.recognizers.typescript_nestjs import (
+from agentic_inquiry.parsers.recognizers.typescript_nestjs import (
     TypeScriptNestJSRecognizer,
 )
 
@@ -836,7 +836,7 @@ export class UsersController {
 """
         file_path = _write_ts(tmp_path, src, name="users.controller.ts")
 
-        from agent_vault.parsers.chain import ParserChain
+        from agentic_inquiry.parsers.chain import ParserChain
 
         chain = ParserChain.from_config()
         parsed = await chain.parse(str(file_path))

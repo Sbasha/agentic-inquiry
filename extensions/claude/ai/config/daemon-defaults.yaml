@@ -1,0 +1,59 @@
+# ai Daemon Service - Default Configuration
+daemon:
+  socket_dir: "~/.agentic-inquiry"
+  socket_name: "daemon.sock"
+  pid_name: "daemon.pid"
+  host: "localhost"
+
+  # Timing budgets (milliseconds)
+  budgets:
+    context_assembly: 200
+    memory_store: 50
+    memory_recall: 100
+    health: 5
+    turn_increment: 5
+    cache_invalidate: 10
+    pre_compact: 250
+    stop: 180
+
+  # Cache settings
+  cache:
+    context_size: 100        # Per-project LRU size
+    context_ttl: 3600        # 1 hour
+    memory_size: 50          # Per-project LRU size
+    memory_ttl: 600          # 10 minutes
+    prefetch_queue_size: 20
+
+  # Signal analysis
+  signals:
+    entity_weight: 30
+    filepath_weight: 25
+    intent_weight: 20
+    topic_pivot_weight: 15
+    urgency_weight: 10
+    full_packet_threshold: 70
+    related_links_threshold: 40
+    memory_only_threshold: 20
+
+  # Context assembly
+  context:
+    token_budget: 2048
+    dedup_ttl_turns: 10
+    prefetch_count: 3
+    confidence_gate: 0.7
+
+  # Memory versioning
+  versioning:
+    decay_per_commit: 0.05       # 5% per commit touching referenced files
+    decay_bulk_change: 0.50      # 50% for >10 files in one commit
+    stale_threshold: 0.3         # Flag for review below this
+    bulk_change_files: 10        # Files threshold for bulk change
+
+  # Checkpoints
+  checkpoints:
+    interval_turns: 5
+
+  # Security
+  security:
+    socket_permissions: 0o600
+    project_id_length: 16

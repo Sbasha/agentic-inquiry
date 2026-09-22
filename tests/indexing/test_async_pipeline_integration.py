@@ -21,11 +21,11 @@ import uuid
 import pytest
 import pytest_asyncio
 
-from agent_vault.config import Config, StorageConfig
-from agent_vault.embeddings.base import Embedder
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.embeddings.base import Embedder
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -64,7 +64,7 @@ def mock_embedding_registry():
 @pytest_asyncio.fixture
 async def pipeline(mock_db_manager, tmp_path, mock_embedding_registry):
     """Create an IndexingPipeline instance."""
-    from agent_vault.events import EventSystem
+    from agentic_inquiry.events import EventSystem
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -229,14 +229,14 @@ async def test_concurrent_processing_with_cache(pipeline, tmp_path):
     
     Requirement: 12.5 - Async cache operations in pipeline
     """
-    from agent_vault.cache import register_cache, DocumentCache
+    from agentic_inquiry.cache import register_cache, DocumentCache
     
     # Create and register a cache
     cache = DocumentCache(max_size=100)
     register_cache("test_cache", cache)
     
     # Create pipeline with cache
-    from agent_vault.events import EventSystem
+    from agentic_inquiry.events import EventSystem
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))

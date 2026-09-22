@@ -8,7 +8,7 @@
 
 ## Test Suite Overview
 
-This test evaluates how effectively an agent can design APIs using Agent-Vault to:
+This test evaluates how effectively an agent can design APIs using Agentic Inquiry to:
 - Understand existing API patterns
 - Follow established conventions
 - Identify integration requirements
@@ -40,7 +40,7 @@ API design is successful if the agent can:
 
 **Step 1: Create Session with Unique Project ID**
 ```python
-project_id = "agv_test11_api_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test11_api_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="API design test")
 ```
 

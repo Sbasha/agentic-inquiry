@@ -2,7 +2,7 @@
 
 > **Note:** The MCP server is a secondary interface. Most users should use the [Claude Code plugins](../../README.md) instead.
 
-This guide covers deploying the Agent-Vault MCP Server for advanced use cases requiring direct MCP access.
+This guide covers deploying the Agentic Inquiry MCP Server for advanced use cases requiring direct MCP access.
 
 ## Primary Interface: Claude Code Plugins
 
@@ -15,7 +15,7 @@ Add to `.claude/settings.json` in your project:
 ```json
 {
   "extraKnownMarketplaces": {
-    "agent-vault": {
+    "agentic-inquiry": {
       "source": {
         "source": "directory",
         "path": "./extensions/claude"
@@ -23,8 +23,8 @@ Add to `.claude/settings.json` in your project:
     }
   },
   "enabledPlugins": {
-    "agv@agent-vault": true,
-    "agv-dev@agent-vault": true
+    "ai@agentic-inquiry": true,
+    "ai-dev@agentic-inquiry": true
   }
 }
 ```
@@ -33,10 +33,10 @@ Add to `.claude/settings.json` in your project:
 
 Once enabled, use skills directly in Claude Code:
 
-- `/agv:search <query>` - Semantic search
-- `/agv:index <path>` - Index codebase
-- `/agv:onboard <path>` - Codebase onboarding
-- `/agv:status` - Show project state
+- `/ai:search <query>` - Semantic search
+- `/ai:index <path>` - Index codebase
+- `/ai:onboard <path>` - Codebase onboarding
+- `/ai:status` - Show project state
 
 **Full plugin reference:** [AGENTS.md](../../AGENTS.md)
 
@@ -44,10 +44,10 @@ Once enabled, use skills directly in Claude Code:
 
 Only deploy the MCP server as a standalone service when you need:
 
-- **External tool integration** - Connect non-Claude clients to Agent-Vault
+- **External tool integration** - Connect non-Claude clients to Agentic Inquiry
 - **Production HTTP API** - Deploy as a service for multiple remote clients
 - **Custom MCP workflows** - Build specialized MCP-based tooling
-- **Non-Claude MCP clients** - Use Agent-Vault from other MCP-compatible agents
+- **Non-Claude MCP clients** - Use Agentic Inquiry from other MCP-compatible agents
 
 For local development and Claude Code integration, the plugin system handles everything automatically (no deployment needed).
 
@@ -79,8 +79,8 @@ For local development and Claude Code integration, the plugin system handles eve
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Clone repository
-git clone https://github.com/sbasha/agent-vault.git
-cd agent-vault
+git clone https://github.com/sbasha/agentic-inquiry.git
+cd agentic-inquiry
 
 # Install dependencies
 uv sync
@@ -94,7 +94,7 @@ uv sync
 
 ```bash
 # Start MCP server with default configuration
-uv run python -m agent_vault.mcp.cli
+uv run python -m agentic_inquiry.mcp.cli
 
 # Server will start on localhost:8765
 # Cognitive tools enabled by default
@@ -113,14 +113,14 @@ cp config/mcp.yaml config/mcp.local.yaml
 vim config/mcp.local.yaml
 
 # Start with custom config
-uv run python -m agent_vault.mcp.cli --config config/mcp.local.yaml
+uv run python -m agentic_inquiry.mcp.cli --config config/mcp.local.yaml
 ```
 
 ### Enable Direct Access Tools
 
 ```bash
 # Enable direct access tools via CLI
-uv run python -m agent_vault.mcp.cli --enable-direct-tools
+uv run python -m agentic_inquiry.mcp.cli --enable-direct-tools
 
 # Or via configuration file
 # Edit config/mcp.yaml:
@@ -134,11 +134,11 @@ uv run python -m agent_vault.mcp.cli --enable-direct-tools
 
 ```bash
 # Set default project ID
-uv run python -m agent_vault.mcp.cli --project-id my_project
+uv run python -m agentic_inquiry.mcp.cli --project-id my_project
 
 # Or via environment variable
-export AGV_DEFAULT_PROJECT=my_project
-uv run python -m agent_vault.mcp.cli
+export AI_DEFAULT_PROJECT=my_project
+uv run python -m agentic_inquiry.mcp.cli
 ```
 
 ---
@@ -173,26 +173,26 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD python -c "import requests; requests.get('http://localhost:8765/health')"
 
 # Run MCP server with HTTP transport for health checks
-CMD ["uv", "run", "python", "-m", "agent_vault.mcp.cli", "--transport", "http", "--host", "0.0.0.0"]
+CMD ["uv", "run", "python", "-m", "agentic_inquiry.mcp.cli", "--transport", "http", "--host", "0.0.0.0"]
 ```
 
 ### Build and Run
 
 ```bash
 # Build image
-docker build -t agent-vault-mcp:latest .
+docker build -t agentic-inquiry-mcp:latest .
 
 # Run container
 docker run -d \
-  --name agent-vault-mcp \
+  --name agentic-inquiry-mcp \
   -p 8765:8765 \
   -v $(pwd)/vector_db:/data/vector_db \
   -v $(pwd)/config:/app/config \
-  -e AGV_DEFAULT_PROJECT=my_project \
-  agent-vault-mcp:latest
+  -e AI_DEFAULT_PROJECT=my_project \
+  agentic-inquiry-mcp:latest
 
 # Check logs
-docker logs -f agent-vault-mcp
+docker logs -f agentic-inquiry-mcp
 
 # Check health
 curl http://localhost:8765/health
@@ -207,8 +207,8 @@ version: '3.8'
 services:
   mcp-server:
     build: .
-    image: agent-vault-mcp:latest
-    container_name: agent-vault-mcp
+    image: agentic-inquiry-mcp:latest
+    container_name: agentic-inquiry-mcp
     ports:
       - "8765:8765"
     volumes:
@@ -216,10 +216,10 @@ services:
       - ./config:/app/config
       - ./logs:/app/logs
     environment:
-      - AGV_DEFAULT_PROJECT=my_project
-      - AGV_MCP_ENABLED=true
-      - AGV_MCP_API_HOST=0.0.0.0
-      - AGV_MCP_API_PORT=8765
+      - AI_DEFAULT_PROJECT=my_project
+      - AI_MCP_ENABLED=true
+      - AI_MCP_API_HOST=0.0.0.0
+      - AI_MCP_API_PORT=8765
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8765/health')"]
@@ -254,7 +254,7 @@ mcp:
 
   # Server settings
   server:
-    name: "Agent-Vault"
+    name: "Agentic Inquiry"
     version: "1.0.0"
     description: "AI-powered code and knowledge search"
 
@@ -314,25 +314,25 @@ Override configuration with environment variables:
 
 ```bash
 # Server settings
-export AGV_MCP_ENABLED=true
-export AGV_MCP_SERVER_NAME="My MCP Server"
+export AI_MCP_ENABLED=true
+export AI_MCP_SERVER_NAME="My MCP Server"
 
 # API settings
-export AGV_MCP_API_HOST=0.0.0.0
-export AGV_MCP_API_PORT=8765
-export AGV_MCP_API_AUTH_ENABLED=true
-export AGV_MCP_API_AUTH_API_KEY=your-secret-key
+export AI_MCP_API_HOST=0.0.0.0
+export AI_MCP_API_PORT=8765
+export AI_MCP_API_AUTH_ENABLED=true
+export AI_MCP_API_AUTH_API_KEY=your-secret-key
 
 # Tool settings
-export AGV_MCP_TOOLS_DIRECT_ACCESS_ENABLED=true
+export AI_MCP_TOOLS_DIRECT_ACCESS_ENABLED=true
 
 # Behavior settings
-export AGV_MCP_BEHAVIOR_CACHE_RESPONSES=true
-export AGV_MCP_BEHAVIOR_CACHE_TTL_SECONDS=600
+export AI_MCP_BEHAVIOR_CACHE_RESPONSES=true
+export AI_MCP_BEHAVIOR_CACHE_TTL_SECONDS=600
 
 # Logging
-export AGV_MCP_LOGGING_LEVEL=DEBUG
-export AGV_MCP_LOGGING_LOG_DIR=/var/log/AGV
+export AI_MCP_LOGGING_LEVEL=DEBUG
+export AI_MCP_LOGGING_LOG_DIR=/var/log/AGV
 ```
 
 ### Storage Configuration
@@ -340,7 +340,7 @@ export AGV_MCP_LOGGING_LOG_DIR=/var/log/AGV
 Configure vector database storage:
 
 ```yaml
-# In config/agent-vault.yaml
+# In config/agentic-inquiry.yaml
 storage:
   uri: "vector_db"  # Local directory
   # Or remote LanceDB
@@ -451,15 +451,15 @@ python --version  # Should be 3.10–3.13
 uv sync
 
 # Check configuration
-uv run python -c "from agent_vault.config import Config; Config.load()"
+uv run python -c "from agentic_inquiry.config import Config; Config.load()"
 
 # Check port availability
 lsof -i :8765  # On macOS/Linux
 netstat -ano | findstr :8765  # On Windows
 
 # Start with debug logging
-export AGV_MCP_LOGGING_LEVEL=DEBUG
-uv run python -m agent_vault.mcp.cli
+export AI_MCP_LOGGING_LEVEL=DEBUG
+uv run python -m agentic_inquiry.mcp.cli
 ```
 
 #### Project Not Indexed
@@ -588,8 +588,8 @@ Enable debug mode for detailed logging:
 
 ```bash
 # Via environment variable
-export AGV_MCP_LOGGING_LEVEL=DEBUG
-uv run python -m agent_vault.mcp.cli
+export AI_MCP_LOGGING_LEVEL=DEBUG
+uv run python -m agentic_inquiry.mcp.cli
 
 # Via configuration
 # Edit config/mcp.yaml:
@@ -717,10 +717,10 @@ All inputs are validated via Pydantic models:
 
 ```bash
 # Bind to localhost only (development)
-export AGV_MCP_API_HOST=127.0.0.1
+export AI_MCP_API_HOST=127.0.0.1
 
 # Bind to all interfaces (production with firewall)
-export AGV_MCP_API_HOST=0.0.0.0
+export AI_MCP_API_HOST=0.0.0.0
 
 # Use reverse proxy (recommended)
 # nginx configuration:
@@ -750,18 +750,18 @@ server {
 Create a systemd service for automatic startup:
 
 ```ini
-# /etc/systemd/system/agent-vault-mcp.service
+# /etc/systemd/system/agentic-inquiry-mcp.service
 [Unit]
-Description=Agent-Vault MCP Server
+Description=Agentic Inquiry MCP Server
 After=network.target
 
 [Service]
 Type=simple
 User=AGV
 Group=AGV
-WorkingDirectory=/opt/agent-vault
-Environment="PATH=/opt/agent-vault/.venv/bin:/usr/local/bin:/usr/bin"
-ExecStart=/usr/local/bin/uv run python -m agent_vault.mcp.cli
+WorkingDirectory=/opt/agentic-inquiry
+Environment="PATH=/opt/agentic-inquiry/.venv/bin:/usr/local/bin:/usr/bin"
+ExecStart=/usr/local/bin/uv run python -m agentic_inquiry.mcp.cli
 Restart=always
 RestartSec=10
 StandardOutput=journal
@@ -773,30 +773,30 @@ WantedBy=multi-user.target
 
 ```bash
 # Enable and start service
-sudo systemctl enable agent-vault-mcp
-sudo systemctl start agent-vault-mcp
+sudo systemctl enable agentic-inquiry-mcp
+sudo systemctl start agentic-inquiry-mcp
 
 # Check status
-sudo systemctl status agent-vault-mcp
+sudo systemctl status agentic-inquiry-mcp
 
 # View logs
-sudo journalctl -u agent-vault-mcp -f
+sudo journalctl -u agentic-inquiry-mcp -f
 ```
 
 ### Process Management with Supervisor
 
 ```ini
-# /etc/supervisor/conf.d/agent-vault-mcp.conf
-[program:agent-vault-mcp]
-command=/usr/local/bin/uv run python -m agent_vault.mcp.cli
-directory=/opt/agent-vault
+# /etc/supervisor/conf.d/agentic-inquiry-mcp.conf
+[program:agentic-inquiry-mcp]
+command=/usr/local/bin/uv run python -m agentic_inquiry.mcp.cli
+directory=/opt/agentic-inquiry
 user=AGV
 autostart=true
 autorestart=true
 redirect_stderr=true
-stdout_logfile=/var/log/agent-vault-mcp/stdout.log
-stderr_logfile=/var/log/agent-vault-mcp/stderr.log
-environment=AGV_MCP_API_HOST="0.0.0.0",AGV_MCP_API_PORT="8765"
+stdout_logfile=/var/log/agentic-inquiry-mcp/stdout.log
+stderr_logfile=/var/log/agentic-inquiry-mcp/stderr.log
+environment=AI_MCP_API_HOST="0.0.0.0",AI_MCP_API_PORT="8765"
 ```
 
 ```bash
@@ -805,10 +805,10 @@ sudo supervisorctl reread
 sudo supervisorctl update
 
 # Control service
-sudo supervisorctl start agent-vault-mcp
-sudo supervisorctl stop agent-vault-mcp
-sudo supervisorctl restart agent-vault-mcp
-sudo supervisorctl status agent-vault-mcp
+sudo supervisorctl start agentic-inquiry-mcp
+sudo supervisorctl stop agentic-inquiry-mcp
+sudo supervisorctl restart agentic-inquiry-mcp
+sudo supervisorctl status agentic-inquiry-mcp
 ```
 
 ### Kubernetes Deployment
@@ -818,26 +818,26 @@ sudo supervisorctl status agent-vault-mcp
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: agent-vault-mcp
+  name: agentic-inquiry-mcp
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: agent-vault-mcp
+      app: agentic-inquiry-mcp
   template:
     metadata:
       labels:
-        app: agent-vault-mcp
+        app: agentic-inquiry-mcp
     spec:
       containers:
       - name: mcp-server
-        image: agent-vault-mcp:latest
+        image: agentic-inquiry-mcp:latest
         ports:
         - containerPort: 8765
         env:
-        - name: AGV_MCP_API_HOST
+        - name: AI_MCP_API_HOST
           value: "0.0.0.0"
-        - name: AGV_MCP_API_PORT
+        - name: AI_MCP_API_PORT
           value: "8765"
         volumeMounts:
         - name: vector-db
@@ -875,10 +875,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: agent-vault-mcp
+  name: agentic-inquiry-mcp
 spec:
   selector:
-    app: agent-vault-mcp
+    app: agentic-inquiry-mcp
   ports:
   - protocol: TCP
     port: 8765
@@ -891,14 +891,14 @@ spec:
 kubectl apply -f deployment.yaml
 
 # Check status
-kubectl get pods -l app=agent-vault-mcp
-kubectl get svc agent-vault-mcp
+kubectl get pods -l app=agentic-inquiry-mcp
+kubectl get svc agentic-inquiry-mcp
 
 # View logs
-kubectl logs -f deployment/agent-vault-mcp
+kubectl logs -f deployment/agentic-inquiry-mcp
 
 # Scale deployment
-kubectl scale deployment agent-vault-mcp --replicas=5
+kubectl scale deployment agentic-inquiry-mcp --replicas=5
 ```
 
 ---
@@ -913,7 +913,7 @@ tar -czf vector_db_backup_$(date +%Y%m%d).tar.gz vector_db/
 
 # Automated backup script
 #!/bin/bash
-BACKUP_DIR="/backups/agent-vault"
+BACKUP_DIR="/backups/agentic-inquiry"
 DATE=$(date +%Y%m%d_%H%M%S)
 tar -czf "$BACKUP_DIR/vector_db_$DATE.tar.gz" vector_db/
 
@@ -925,13 +925,13 @@ find "$BACKUP_DIR" -name "vector_db_*.tar.gz" -mtime +7 -delete
 
 ```bash
 # Stop server
-sudo systemctl stop agent-vault-mcp
+sudo systemctl stop agentic-inquiry-mcp
 
 # Restore database
 tar -xzf vector_db_backup_20240115.tar.gz
 
 # Start server
-sudo systemctl start agent-vault-mcp
+sudo systemctl start agentic-inquiry-mcp
 ```
 
 ### Disaster Recovery
@@ -988,7 +988,7 @@ uv sync --upgrade
 
 ```bash
 # 1. Backup current installation
-tar -czf agent-vault-backup-$(date +%Y%m%d).tar.gz .
+tar -czf agentic-inquiry-backup-$(date +%Y%m%d).tar.gz .
 
 # 2. Pull latest changes
 git pull origin main
@@ -997,7 +997,7 @@ git pull origin main
 uv sync
 
 # 5. Restart server
-sudo systemctl restart agent-vault-mcp
+sudo systemctl restart agentic-inquiry-mcp
 
 # 6. Verify health
 curl http://localhost:8765/health
@@ -1010,5 +1010,5 @@ curl http://localhost:8765/health
 For additional help:
 
 - Documentation: [Full documentation](../README.md)
-- GitHub Issues: [Report issues](https://github.com/sbasha/agent-vault/issues)
-- Community: [Join discussions](https://github.com/sbasha/agent-vault/discussions)
+- GitHub Issues: [Report issues](https://github.com/sbasha/agentic-inquiry/issues)
+- Community: [Join discussions](https://github.com/sbasha/agentic-inquiry/discussions)

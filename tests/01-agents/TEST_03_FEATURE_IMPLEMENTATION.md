@@ -8,7 +8,7 @@
 
 ## Test Suite Overview
 
-This test evaluates how effectively an agent can implement a new feature using Agent-Vault to:
+This test evaluates how effectively an agent can implement a new feature using Agentic Inquiry to:
 - Find related existing code
 - Understand implementation patterns
 - Identify correct insertion points
@@ -38,7 +38,7 @@ Feature implementation is successful if the agent can:
 
 **Step 1: Create Session with Unique Project ID**
 ```python
-project_id = "agv_test03_feature_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test03_feature_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Feature implementation test")
 ```
 

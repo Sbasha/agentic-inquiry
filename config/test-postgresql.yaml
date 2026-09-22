@@ -1,8 +1,8 @@
-# Agent-Vault Test Configuration - PostgreSQL Backend
+# Agentic Inquiry Test Configuration - PostgreSQL Backend
 # Uses GCP Cloud SQL for storage with full PostgreSQL configuration.
 #
 # Prerequisites:
-# 1. Source environment file: source .agv/test/gcp-test-*.env
+# 1. Source environment file: source .agentic-inquiry/test/gcp-test-*.env
 # 2. Start Cloud SQL Proxy: cloud-sql-proxy --port 5433 $GCP_CONNECTION_NAME &
 # 3. Ensure Cloud SQL instance is running (use scripts/gcp/gcp-test-setup.sh)
 #
@@ -11,7 +11,7 @@
 
 # Storage configuration - PostgreSQL backend with named configuration
 storage:
-  root: "./.agv/test"
+  root: "./.agentic-inquiry/test"
   default_project_id: "test"
 
   # Use PostgreSQL for vector and graph storage
@@ -79,7 +79,7 @@ storage:
   relational:
     provider: "sqlite"
     sqlite:
-      path: "./.agv/test/agent-vault.db"
+      path: "./.agentic-inquiry/test/agentic-inquiry.db"
 
   use_facade: true
 

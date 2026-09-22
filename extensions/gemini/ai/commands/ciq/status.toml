@@ -1,0 +1,93 @@
+description = "Show current ai state - project, index, environment, and mode"
+prompt = """
+Show current ai state - project, index, environment, and mode
+
+Usage: /ai:status 
+
+# /ai:status
+
+Show the current state of your ai environment.
+
+## Quick Start
+
+```bash
+/ai:status
+```
+
+## What It Shows
+
+```
+ai Status
+──────────
+Mode:        normal | DEV MODE
+Project:     myproject
+Config:      config/local.yaml
+Storage:     lancedb | postgresql
+
+Index:
+  Entities:  1,247
+  Files:     89
+  Last update: 2 hours ago
+
+Environment:
+  Data dir:  .agentic-inquiry/
+  Size:      156 MB
+
+Memories:    23 saved
+```
+
+## Status Checks
+
+### Mode
+- **normal**: Using production environment
+- **DEV MODE**: Using isolated test environment (`.agentic-inquiry/dev/`)
+
+### Project
+- Current `AI_PROJECT_ID` or "default"
+- Shows which config file is active
+
+### Index Health
+- Entity count by type
+- Files indexed
+- Last index timestamp
+- Stale file warnings
+
+### Environment
+- Storage backend (LanceDB/PostgreSQL)
+- Data directory location
+- Disk usage
+
+## CLI Equivalent
+
+```bash
+# /ai:status
+uv run --env-file .env ai index status --project-id ${AI_PROJECT_ID:-default}
+
+# /ai:status
+test -f .agentic-inquiry/.dev-mode && echo "DEV MODE" || echo "normal"
+
+# /ai:status
+du -sh .agentic-inquiry/
+```
+
+## Common Issues
+
+**"No index found"**
+→ Run `/ai:index .` to build the index
+
+**"Index is stale"**
+→ Files changed since last index. Run `/ai:index .` to update
+
+**"No config found"**
+→ Run `/ai:setup local myproject` to configure
+
+## Use Cases
+
+- **Before starting work**: Check you're in the right project/mode
+- **Debugging search issues**: Verify index is current
+- **After switching projects**: Confirm environment
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `ai` CLI command(s) using the available tools.
+"""

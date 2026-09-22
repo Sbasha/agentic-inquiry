@@ -1,6 +1,6 @@
 # AGENTS.md
 
-> **Canonical agent context for Agent-Vault.** `CLAUDE.md` is a symlink to
+> **Canonical agent context for Agentic Inquiry.** `CLAUDE.md` is a symlink to
 > this file. Cursor, Codex, Gemini CLI, and Copilot also read it.
 >
 > Keep this file under ~250 lines. Detail belongs in `docs/` or
@@ -8,9 +8,9 @@
 
 ## What this repo is
 
-**Agent-Vault** is a Claude Code plugin (with a secondary MCP surface) for
+**Agentic Inquiry** is a Claude Code plugin (with a secondary MCP surface) for
 semantic code search, codebase intelligence, and AI-powered onboarding —
-hybrid vector + full-text search over code and docs, behind `/agv:*`
+hybrid vector + full-text search over code and docs, behind `/ai:*`
 slash commands.
 
 For the architecture-doc navigation hub (role-based entry points to
@@ -58,33 +58,33 @@ in fresh sessions. Read it first; Ralph fits *some* tasks, not most.
 uv sync                                    # one-time setup
 uv run --env-file .env pytest -x           # run tests (stop on first failure)
 uv run --env-file .env pytest              # run all tests
-uv run --env-file .env mypy agent_vault/  # typecheck
+uv run --env-file .env mypy agentic_inquiry/  # typecheck
 uv run --env-file .env ruff check . --fix  # lint
 uv run --env-file .env ruff format .       # format
 ```
 
 ## Plugin skills (the user-facing surface)
 
-Users interact with Agent-Vault through plugin skills in
+Users interact with Agentic Inquiry through plugin skills in
 `extensions/claude/`:
 
 | Skill | Purpose |
 |-------|---------|
-| `/agv:search <query>` | Semantic search across code and docs |
-| `/agv:index <path>` | Index a codebase |
-| `/agv:onboard <path>` | AI-powered codebase onboarding |
-| `/agv:entity <name>` | Understand a code entity |
-| `/agv:impact <symbol>` | Analyze change impact |
-| `/agv:lineage <symbol>` | Trace data flow |
-| `/agv:memory` | Save/recall project insights |
-| `/agv:setup` | Configure storage backend |
-| `/agv:env` | Manage environments |
-| `/agv:status` | Show project state |
+| `/ai:search <query>` | Semantic search across code and docs |
+| `/ai:index <path>` | Index a codebase |
+| `/ai:onboard <path>` | AI-powered codebase onboarding |
+| `/ai:entity <name>` | Understand a code entity |
+| `/ai:impact <symbol>` | Analyze change impact |
+| `/ai:lineage <symbol>` | Trace data flow |
+| `/ai:memory` | Save/recall project insights |
+| `/ai:setup` | Configure storage backend |
+| `/ai:env` | Manage environments |
+| `/ai:status` | Show project state |
 
-Dev skills: `/agv-dev:coding-guidelines`, `/agv-dev:testing`,
-`/agv-dev:quality`, `/agv-dev:review`, `/agv-dev:commit`.
+Dev skills: `/ai-dev:coding-guidelines`, `/ai-dev:testing`,
+`/ai-dev:quality`, `/ai-dev:review`, `/ai-dev:commit`.
 
-Both plugins (**agv**, **agv-dev**) are enabled via
+Both plugins (**ai**, **ai-dev**) are enabled via
 `.claude/settings.json` — see [`README.md`](README.md#2-enable-the-plugins).
 Repo-local `.github/` and `.codex/` mirrors point back to the same
 canonical `.claude/` tree for Copilot and Codex compatibility.
@@ -93,14 +93,14 @@ canonical `.claude/` tree for Copilot and Codex compatibility.
 
 | Component | Location | Purpose |
 |-----------|----------|---------|
-| Config | `agent_vault/config.py` | Env → yaml → defaults |
-| Storage | `agent_vault/storage/facade.py` | Unified `StorageFacade` (LanceDB / PostgreSQL / CloudSQL / AlloyDB / RDS / Azure) |
-| Search | `agent_vault/search/service.py` | Vector + FTS + hybrid with IDF-weighted reranking |
-| Parsers | `agent_vault/parsers/chain.py` | Tree-sitter code + DOCX/PDF/DOC docs |
-| Indexing | `agent_vault/indexing/pipeline.py` | Parse → embed → store |
-| Memory | `agent_vault/memory/system.py` | Three-tier memory (working / episodic / semantic) |
-| MCP | `agent_vault/mcp/` | Model Context Protocol server (secondary to plugins) |
-| CLI | `agent_vault/cli/` | `agv index`, `agv search`, … |
+| Config | `agentic_inquiry/config.py` | Env → yaml → defaults |
+| Storage | `agentic_inquiry/storage/facade.py` | Unified `StorageFacade` (LanceDB / PostgreSQL / CloudSQL / AlloyDB / RDS / Azure) |
+| Search | `agentic_inquiry/search/service.py` | Vector + FTS + hybrid with IDF-weighted reranking |
+| Parsers | `agentic_inquiry/parsers/chain.py` | Tree-sitter code + DOCX/PDF/DOC docs |
+| Indexing | `agentic_inquiry/indexing/pipeline.py` | Parse → embed → store |
+| Memory | `agentic_inquiry/memory/system.py` | Three-tier memory (working / episodic / semantic) |
+| MCP | `agentic_inquiry/mcp/` | Model Context Protocol server (secondary to plugins) |
+| CLI | `agentic_inquiry/cli/` | `ai index`, `ai search`, … |
 
 AlloyDB and CloudSQL use the **unified PostgreSQL provider**
 (`storage/providers/postgresql/`). Per-backend setup is documented in
@@ -166,7 +166,7 @@ they tell you. The non-negotiables not covered by a linter:
 - **Async-only at the I/O boundary.** Every database, network, and
   subprocess call is `async def` / `await`.
 - **Validate at boundaries** (user input, MCP clients, external APIs) with
-  `agent_vault.mcp.utils.validation`. Trust internal callers.
+  `agentic_inquiry.mcp.utils.validation`. Trust internal callers.
 - **Never `pickle.loads()` untrusted data.** Use parameterized queries,
   never string interpolation for SQL.
 - **Complete type annotations** on every function.

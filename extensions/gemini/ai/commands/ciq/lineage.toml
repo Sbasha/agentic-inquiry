@@ -1,0 +1,72 @@
+description = "Trace data lineage from source to sink"
+prompt = """
+Trace data lineage from source to sink
+
+Usage: /ai:lineage <entity> [trace|gaps]
+
+# /ai:lineage
+
+Trace how data flows through your codebase.
+
+## Quick Start
+
+```bash
+/ai:lineage User                   # Trace User data flow
+/ai:lineage trace request_data     # Full lineage trace
+/ai:lineage gaps                   # Find lineage gaps
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| (none) | Basic lineage for entity |
+| `trace` | Full trace from source to sink |
+| `gaps` | Find entities without full traceability |
+
+## Lineage Trace
+
+Track data from input to output:
+```bash
+/ai:lineage trace user_input
+```
+
+Returns:
+```
+user_input (API endpoint)
+  → validate_input() (validation layer)
+    → process_request() (business logic)
+      → save_to_db() (persistence)
+        → database.users (sink)
+```
+
+## Lineage Gaps
+
+Find entities that lack full traceability:
+```bash
+/ai:lineage gaps
+```
+
+Identifies:
+- Data with unknown sources
+- Data that disappears (no sink)
+- Broken lineage chains
+
+## CLI Equivalent
+
+```bash
+uv run --env-file .env ai lineage trace user_input --project-id myproject
+uv run --env-file .env ai lineage gaps --project-id myproject
+```
+
+## Use Cases
+
+1. **Compliance**: GDPR data flow documentation
+2. **Debugging**: Track where data transforms incorrectly
+3. **Security**: Ensure sensitive data is handled properly
+4. **Refactoring**: Understand data dependencies before changes
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `ai` CLI command(s) using the available tools.
+"""

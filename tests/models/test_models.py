@@ -6,8 +6,8 @@ import unittest
 from datetime import datetime, timezone
 import json
 
-from agent_vault.models import DocumentChunk, GraphEntity, GraphRelationship
-from agent_vault.models.graph_relationship import (
+from agentic_inquiry.models import DocumentChunk, GraphEntity, GraphRelationship
+from agentic_inquiry.models.graph_relationship import (
     RelationshipType,
     get_inverse_relationship,
     INVERSE_RELATIONSHIPS,
@@ -18,7 +18,7 @@ from agent_vault.models.graph_relationship import (
     validate_relationship_metadata,
     parse_relationship_metadata,
 )
-from agent_vault.config import VECTOR_DIMENSION
+from agentic_inquiry.config import VECTOR_DIMENSION
 
 class TestDataModels(unittest.TestCase):
 
@@ -201,7 +201,7 @@ class TestRelationshipMetadataValidation(unittest.TestCase):
     
     def test_test_relationship_metadata(self):
         """Test TestRelationshipMetadata."""
-        from agent_vault.models.graph_relationship import TestRelationshipMetadata as TestMeta
+        from agentic_inquiry.models.graph_relationship import TestRelationshipMetadata as TestMeta
         
         metadata = TestMeta(
             test_type="unit",

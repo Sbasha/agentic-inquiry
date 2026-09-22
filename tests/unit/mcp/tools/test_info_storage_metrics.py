@@ -24,7 +24,7 @@ class TestStorageMetricsInProjectInfo:
         - storage_metrics is a dict
         - Contains table information
         """
-        from agent_vault.mcp.tools.info import get_project_info
+        from agentic_inquiry.mcp.tools.info import get_project_info
 
         # Create mock services
         mock_session_manager = AsyncMock()
@@ -85,7 +85,7 @@ class TestStorageMetricsInProjectInfo:
         }
 
         # Mock check_project_state
-        with patch("agent_vault.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
+        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
@@ -108,7 +108,7 @@ class TestStorageMetricsInProjectInfo:
         - total_size_bytes is calculated correctly
         - Sizes are numeric
         """
-        from agent_vault.mcp.tools.info import get_project_info
+        from agentic_inquiry.mcp.tools.info import get_project_info
 
         # Create mock services
         mock_session_manager = AsyncMock()
@@ -168,7 +168,7 @@ class TestStorageMetricsInProjectInfo:
         }
 
         # Mock check_project_state
-        with patch("agent_vault.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
+        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
@@ -207,7 +207,7 @@ class TestStorageMetricsInProjectInfo:
         - version_count is numeric
         - version_count reflects MVCC versioning
         """
-        from agent_vault.mcp.tools.info import get_project_info
+        from agentic_inquiry.mcp.tools.info import get_project_info
 
         # Create mock services
         mock_session_manager = AsyncMock()
@@ -267,7 +267,7 @@ class TestStorageMetricsInProjectInfo:
         }
 
         # Mock check_project_state
-        with patch("agent_vault.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
+        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
@@ -300,7 +300,7 @@ class TestStorageMetricsInProjectInfo:
         - Second call uses cached value
         - Cache has reasonable TTL (60 seconds per spec)
         """
-        from agent_vault.mcp.tools.info import get_project_info
+        from agentic_inquiry.mcp.tools.info import get_project_info
 
         # Create mock services
         mock_session_manager = AsyncMock()
@@ -359,7 +359,7 @@ class TestStorageMetricsInProjectInfo:
         }
 
         # Mock check_project_state
-        with patch("agent_vault.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
+        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
@@ -392,7 +392,7 @@ class TestStorageMetricsInProjectInfo:
         - storage_metrics is omitted or None if unavailable
         - Other response fields are still populated
         """
-        from agent_vault.mcp.tools.info import get_project_info
+        from agentic_inquiry.mcp.tools.info import get_project_info
 
         # Create mock services
         mock_session_manager = AsyncMock()
@@ -432,7 +432,7 @@ class TestStorageMetricsInProjectInfo:
         }
 
         # Mock check_project_state
-        with patch("agent_vault.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
+        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,

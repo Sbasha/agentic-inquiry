@@ -16,16 +16,16 @@ have no or minimal indexed data.
 import pytest
 
 pytestmark = pytest.mark.integration
-from agent_vault.config import Config
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.mcp.services.session_manager import SessionManager
-from agent_vault.mcp.tools.search import search_knowledge
-from agent_vault.mcp.tools.info import get_project_info
-from agent_vault.embeddings.service import EmbeddingService
-from agent_vault.search.service import SearchService
-from agent_vault.events.system import EventSystem
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.config import Config
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.mcp.services.session_manager import SessionManager
+from agentic_inquiry.mcp.tools.search import search_knowledge
+from agentic_inquiry.mcp.tools.info import get_project_info
+from agentic_inquiry.embeddings.service import EmbeddingService
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.events.system import EventSystem
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.storage.facade import StorageFacade
 import tempfile
 
 
@@ -58,7 +58,7 @@ async def empty_project_services():
             )
 
             # Create and initialize memory system
-            from agent_vault.memory.system import MemorySystem
+            from agentic_inquiry.memory.system import MemorySystem
             memory_system = MemorySystem(config, embedding_service, event_system=event_system)
             await memory_system.initialize()
 
@@ -122,7 +122,7 @@ async def incomplete_project_services():
             )
 
             # Create and initialize memory system
-            from agent_vault.memory.system import MemorySystem
+            from agentic_inquiry.memory.system import MemorySystem
             memory_system = MemorySystem(config, embedding_service, event_system=event_system)
             await memory_system.initialize()
 

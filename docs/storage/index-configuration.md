@@ -4,11 +4,11 @@
 **Status:** Current
 **Last Updated:** 2026-01-13
 
-This guide explains how to configure and manage vector indexes for optimal performance in Agent-Vault's PostgreSQL backend.
+This guide explains how to configure and manage vector indexes for optimal performance in Agentic Inquiry's PostgreSQL backend.
 
 ## Overview
 
-Agent-Vault supports three vector index types for semantic search:
+Agentic Inquiry supports three vector index types for semantic search:
 
 | Index Type | Best For | Pros | Cons |
 |------------|---------|------|------|
@@ -24,7 +24,7 @@ Agent-Vault supports three vector index types for semantic search:
 New deployments automatically use HNSW indexes with sensible defaults:
 
 ```python
-from agent_vault.storage.config import BackendConfig
+from agentic_inquiry.storage.config import BackendConfig
 
 # Default configuration (HNSW with m=16, ef_construction=64)
 config = BackendConfig(
@@ -32,7 +32,7 @@ config = BackendConfig(
     project="my-project",
     region="us-central1",
     instance="my-instance",
-    database="agent-vault"
+    database="agentic-inquiry"
     # index_type="hnsw" is the default
 )
 ```
@@ -42,7 +42,7 @@ config = BackendConfig(
 Existing deployments with IVF-Flat indexes continue to work unchanged. To migrate to HNSW:
 
 ```bash
-agv index migrate --project my-project --index-type hnsw
+ai index migrate --project my-project --index-type hnsw
 ```
 
 See [Migration Guide](#migrating-indexes) below.
@@ -128,12 +128,12 @@ ScaNN (Scalable Approximate Nearest Neighbors) is Google's production-grade vect
 **Configuration:**
 ```sql
 -- Create ScaNN index on chunks table
-CREATE INDEX idx_chunks_embedding ON agv_v_chunks
+CREATE INDEX idx_chunks_embedding ON ai_v_chunks
 USING ivf (embedding vector_cosine_ops)
 WITH (num_neighbors = 16);
 
 -- Create ScaNN index on entities table
-CREATE INDEX idx_entities_embedding ON agv_v_entities
+CREATE INDEX idx_entities_embedding ON ai_v_entities
 USING ivf (embedding vector_cosine_ops)
 WITH (num_neighbors = 16);
 ```
@@ -168,7 +168,7 @@ BackendConfig(
 
 ### Automatic Lists Calculation
 
-Agent-Vault automatically calculates the optimal `lists` parameter using:
+Agentic Inquiry automatically calculates the optimal `lists` parameter using:
 
 ```
 lists = max(1, min(floor(sqrt(expected_rows)), 10000))
@@ -265,14 +265,14 @@ index_params={"m": 32, "ef_construction": 128}
 
 ### Migration Process
 
-Agent-Vault provides a CLI command for safe index migration:
+Agentic Inquiry provides a CLI command for safe index migration:
 
 ```bash
 # Dry-run (shows plan without making changes)
-agv index migrate --project my-project --index-type hnsw --dry-run
+ai index migrate --project my-project --index-type hnsw --dry-run
 
 # Actual migration
-agv index migrate --project my-project --index-type hnsw
+ai index migrate --project my-project --index-type hnsw
 ```
 
 **Migration Steps:**
@@ -286,17 +286,17 @@ agv index migrate --project my-project --index-type hnsw
 
 **IVF-Flat → HNSW:**
 ```bash
-agv index migrate --project my-project --index-type hnsw
+ai index migrate --project my-project --index-type hnsw
 ```
 
 **HNSW → IVF-Flat (with auto-tuning):**
 ```bash
-agv index migrate --project my-project --index-type ivfflat --expected-rows 1000000
+ai index migrate --project my-project --index-type ivfflat --expected-rows 1000000
 ```
 
 **HNSW → HNSW (parameter change):**
 ```bash
-agv index migrate --project my-project \
+ai index migrate --project my-project \
     --index-type hnsw \
     --index-params '{"m": 32, "ef_construction": 128}'
 ```
@@ -410,7 +410,7 @@ BackendConfig(
 ### Monitoring Index Health
 
 ```python
-from agent_vault.storage import create_storage_facade
+from agentic_inquiry.storage import create_storage_facade
 
 storage = create_storage_facade(config)
 status = await storage.get_maintenance_status()
@@ -426,7 +426,7 @@ Run periodic reindexing during low-traffic windows:
 
 ```bash
 # Weekly reindex (retrain IVF-Flat with current data)
-0 2 * * 0 agv maintenance run --operation reindex --project my-project
+0 2 * * 0 ai maintenance run --operation reindex --project my-project
 ```
 
 ## Troubleshooting
@@ -445,7 +445,7 @@ if status.fragmentation_pct > 20:
 **Solution:**
 ```bash
 # Rebuild index to defragment
-agv index migrate --project my-project --index-type hnsw
+ai index migrate --project my-project --index-type hnsw
 ```
 
 ### High Memory Usage
@@ -458,14 +458,14 @@ agv index migrate --project my-project --index-type hnsw
 
 **Solution 1 (Reduce HNSW parameters):**
 ```bash
-agv index migrate --project my-project \
+ai index migrate --project my-project \
     --index-type hnsw \
     --index-params '{"m": 8, "ef_construction": 32}'
 ```
 
 **Solution 2 (Switch to IVF-Flat):**
 ```bash
-agv index migrate --project my-project --index-type ivfflat
+ai index migrate --project my-project --index-type ivfflat
 ```
 
 ### Index Build Failures

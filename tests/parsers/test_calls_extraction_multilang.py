@@ -11,7 +11,7 @@ Ruby guard for the field-probing fallback, a C++ de-dup guard, and receiver
 
 import pytest
 
-from agent_vault.parsers.implementations.unified_code import UnifiedCodeParser
+from agentic_inquiry.parsers.implementations.unified_code import UnifiedCodeParser
 
 pytestmark = pytest.mark.integration
 

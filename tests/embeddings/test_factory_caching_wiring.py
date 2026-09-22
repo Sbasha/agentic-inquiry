@@ -15,10 +15,10 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from agent_vault.config import Config
-from agent_vault.embeddings.caching import CachingEmbedder
-from agent_vault.embeddings.factory import configure_embedder_for_backend
-from agent_vault.embeddings.noop import NoOpEmbedder
+from agentic_inquiry.config import Config
+from agentic_inquiry.embeddings.caching import CachingEmbedder
+from agentic_inquiry.embeddings.factory import configure_embedder_for_backend
+from agentic_inquiry.embeddings.noop import NoOpEmbedder
 
 pytestmark = pytest.mark.unit
 
@@ -29,7 +29,7 @@ def _reset_registry():
     singleton — without this, the first configure_default_embedder call
     sticks for the rest of the test session.
     """
-    from agent_vault.embeddings.registry import embedding_registry
+    from agentic_inquiry.embeddings.registry import embedding_registry
 
     embedding_registry._default_configured = False
     embedding_registry._default_embedder = None
@@ -59,12 +59,12 @@ class TestCacheWrappingCoversAllLocalProviders:
         mock_inner.ndims.return_value = 384
 
         with patch(
-            "agent_vault.embeddings.sentence_transformer.SentenceTransformerEmbedder",
+            "agentic_inquiry.embeddings.sentence_transformer.SentenceTransformerEmbedder",
             return_value=mock_inner,
         ):
             configure_embedder_for_backend(config, quiet=True)
 
-        from agent_vault.embeddings.registry import embedding_registry
+        from agentic_inquiry.embeddings.registry import embedding_registry
 
         assert isinstance(embedding_registry._default_embedder, CachingEmbedder), (
             "sentence_transformer path should be wrapped in CachingEmbedder"
@@ -79,12 +79,12 @@ class TestCacheWrappingCoversAllLocalProviders:
         mock_inner.ndims.return_value = 384
 
         with patch(
-            "agent_vault.embeddings.local_model.LocalModelEmbedder",
+            "agentic_inquiry.embeddings.local_model.LocalModelEmbedder",
             return_value=mock_inner,
         ):
             configure_embedder_for_backend(config, quiet=True)
 
-        from agent_vault.embeddings.registry import embedding_registry
+        from agentic_inquiry.embeddings.registry import embedding_registry
 
         assert isinstance(embedding_registry._default_embedder, CachingEmbedder), (
             "local_model path should be wrapped in CachingEmbedder"
@@ -99,12 +99,12 @@ class TestCacheWrappingCoversAllLocalProviders:
         mock_inner.ndims.return_value = 384
 
         with patch(
-            "agent_vault.embeddings.fastembed.FastEmbedEmbedder",
+            "agentic_inquiry.embeddings.fastembed.FastEmbedEmbedder",
             return_value=mock_inner,
         ):
             configure_embedder_for_backend(config, quiet=True)
 
-        from agent_vault.embeddings.registry import embedding_registry
+        from agentic_inquiry.embeddings.registry import embedding_registry
 
         assert isinstance(embedding_registry._default_embedder, CachingEmbedder), (
             "fastembed path should be wrapped in CachingEmbedder"
@@ -127,9 +127,9 @@ class TestCacheWrappingSkippedWhenAppropriate:
 
         # Mock the capabilities lookup to return a SERVER_SIDE strategy.
         with patch(
-            "agent_vault.embeddings.factory.get_capabilities_for_backend"
+            "agentic_inquiry.embeddings.factory.get_capabilities_for_backend"
         ) as caps_mock:
-            from agent_vault.embeddings.factory import EmbeddingStrategy
+            from agentic_inquiry.embeddings.factory import EmbeddingStrategy
 
             caps_mock.return_value = MagicMock(
                 embedding_strategy=EmbeddingStrategy.SERVER_SIDE,
@@ -138,7 +138,7 @@ class TestCacheWrappingSkippedWhenAppropriate:
             )
             configure_embedder_for_backend(config, quiet=True)
 
-        from agent_vault.embeddings.registry import embedding_registry
+        from agentic_inquiry.embeddings.registry import embedding_registry
 
         assert isinstance(embedding_registry._default_embedder, NoOpEmbedder), (
             "Server-side backends should use raw NoOpEmbedder, no cache wrap"
@@ -153,12 +153,12 @@ class TestCacheWrappingSkippedWhenAppropriate:
         mock_inner.ndims.return_value = 384
 
         with patch(
-            "agent_vault.embeddings.sentence_transformer.SentenceTransformerEmbedder",
+            "agentic_inquiry.embeddings.sentence_transformer.SentenceTransformerEmbedder",
             return_value=mock_inner,
         ):
             configure_embedder_for_backend(config, quiet=True)
 
-        from agent_vault.embeddings.registry import embedding_registry
+        from agentic_inquiry.embeddings.registry import embedding_registry
 
         assert embedding_registry._default_embedder is mock_inner, (
             "cache.enabled=false should skip the wrap — registry sees the raw embedder"
@@ -174,12 +174,12 @@ class TestCacheWrappingSkippedWhenAppropriate:
         mock_inner.ndims.return_value = 384
 
         with patch(
-            "agent_vault.embeddings.sentence_transformer.SentenceTransformerEmbedder",
+            "agentic_inquiry.embeddings.sentence_transformer.SentenceTransformerEmbedder",
             return_value=mock_inner,
         ):
             configure_embedder_for_backend(config, quiet=True)
 
-        from agent_vault.embeddings.registry import embedding_registry
+        from agentic_inquiry.embeddings.registry import embedding_registry
 
         assert embedding_registry._default_embedder is mock_inner, (
             "max_entries=0 should skip the wrap even with enabled=true"

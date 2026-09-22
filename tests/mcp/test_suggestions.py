@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agent_vault.mcp.utils.suggestions import (
+from agentic_inquiry.mcp.utils.suggestions import (
     generate_suggestions,
     _generate_spelling_suggestions,
     _generate_topic_suggestions,
@@ -24,7 +24,7 @@ async def test_generate_suggestions_empty_results():
     
     config = MagicMock()
     
-    with patch("agent_vault.embeddings.EmbeddingService") as mock_embed:
+    with patch("agentic_inquiry.embeddings.EmbeddingService") as mock_embed:
         mock_embed_instance = AsyncMock()
         mock_embed_instance.embed_async.return_value = [0.1] * 384
         mock_embed.return_value = mock_embed_instance
@@ -78,7 +78,7 @@ async def test_generate_topic_suggestions():
         },
     ]
     
-    with patch("agent_vault.embeddings.EmbeddingService") as mock_embed:
+    with patch("agentic_inquiry.embeddings.EmbeddingService") as mock_embed:
         mock_embed_instance = AsyncMock()
         mock_embed_instance.embed_async.return_value = [0.1] * 384
         mock_embed.return_value = mock_embed_instance
@@ -151,7 +151,7 @@ async def test_generate_suggestions_limit():
     search_service.fts_search.return_value = [{"id": f"chunk{i}"} for i in range(10)]
     search_service.vector_search.return_value = [{"id": f"chunk{i}", "title": f"Item {i}"} for i in range(10)]
     
-    with patch("agent_vault.embeddings.EmbeddingService") as mock_embed:
+    with patch("agentic_inquiry.embeddings.EmbeddingService") as mock_embed:
         mock_embed_instance = AsyncMock()
         mock_embed_instance.embed_async.return_value = [0.1] * 384
         mock_embed.return_value = mock_embed_instance

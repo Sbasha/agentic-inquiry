@@ -11,8 +11,8 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from agent_vault.embeddings.local_model import LocalModelEmbedder, ModelMetadata
-from agent_vault.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.embeddings.local_model import LocalModelEmbedder, ModelMetadata
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
 
 
 @pytest.fixture
@@ -108,7 +108,7 @@ class TestLocalModelEmbedderPipelineIntegration:
     @pytest.mark.asyncio
     async def test_embedder_with_embedding_service(self, integration_embedder):
         """Test LocalModelEmbedder with embedding service."""
-        from agent_vault.indexing.embedding_service import EmbeddingService
+        from agentic_inquiry.indexing.embedding_service import EmbeddingService
         
         # Create embedding service with local embedder
         registry = EmbeddingRegistry()
@@ -141,7 +141,7 @@ class TestLocalModelEmbedderPipelineIntegration:
     @pytest.mark.integration
     def test_embedder_with_registry_configuration(self, integration_embedder):
         """Test LocalModelEmbedder configuration through registry."""
-        from agent_vault.indexing.embedding_service import EmbeddingService
+        from agentic_inquiry.indexing.embedding_service import EmbeddingService
         
         # Create embedding service with local embedder
         registry = EmbeddingRegistry()
@@ -159,8 +159,8 @@ class TestLocalModelEmbedderPipelineIntegration:
     @pytest.mark.integration
     def test_embedder_with_multiple_table_configurations(self, integration_embedder):
         """Test LocalModelEmbedder with per-table configuration."""
-        from agent_vault.embeddings.hashing import HashingEmbedder
-        from agent_vault.indexing.embedding_service import EmbeddingService
+        from agentic_inquiry.embeddings.hashing import HashingEmbedder
+        from agentic_inquiry.indexing.embedding_service import EmbeddingService
         
         # Create registry with different embedders for different tables
         registry = EmbeddingRegistry()
@@ -225,7 +225,7 @@ class TestMultipleModelFormats:
     
     def test_onnx_format_detection(self, tmp_path):
         """Test ONNX format is correctly detected and loaded."""
-        from agent_vault.embeddings.local_model import ModelLoader
+        from agentic_inquiry.embeddings.local_model import ModelLoader
         from datetime import datetime
         
         model_dir = tmp_path / "onnx_model"
@@ -255,7 +255,7 @@ class TestMultipleModelFormats:
     
     def test_safetensors_format_detection(self, tmp_path):
         """Test safetensors format is correctly detected."""
-        from agent_vault.embeddings.local_model import ModelLoader
+        from agentic_inquiry.embeddings.local_model import ModelLoader
         from datetime import datetime
         
         model_dir = tmp_path / "safetensors_model"
@@ -285,7 +285,7 @@ class TestMultipleModelFormats:
     
     def test_pytorch_format_detection(self, tmp_path):
         """Test PyTorch format is correctly detected."""
-        from agent_vault.embeddings.local_model import ModelLoader
+        from agentic_inquiry.embeddings.local_model import ModelLoader
         from datetime import datetime
         
         model_dir = tmp_path / "pytorch_model"
@@ -425,8 +425,8 @@ class TestRegressionPrevention:
     @pytest.mark.integration
     def test_embedding_registry_still_works(self, integration_embedder):
         """Test that EmbeddingRegistry works with LocalModelEmbedder."""
-        from agent_vault.embeddings.registry import EmbeddingRegistry
-        from agent_vault.embeddings.hashing import HashingEmbedder
+        from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+        from agentic_inquiry.embeddings.hashing import HashingEmbedder
         
         registry = EmbeddingRegistry()
         
@@ -445,8 +445,8 @@ class TestRegressionPrevention:
     
     def test_sentence_transformer_embedder_still_works(self, tmp_path):
         """Test that SentenceTransformerEmbedder still works alongside LocalModelEmbedder."""
-        from agent_vault.embeddings.sentence_transformer import SentenceTransformerEmbedder
-        from agent_vault.embeddings.registry import EmbeddingRegistry
+        from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
+        from agentic_inquiry.embeddings.registry import EmbeddingRegistry
         
         # Create SentenceTransformerEmbedder
         st_embedder = SentenceTransformerEmbedder(model_name="all-MiniLM-L6-v2")
@@ -462,8 +462,8 @@ class TestRegressionPrevention:
     
     def test_hashing_embedder_still_works(self):
         """Test that HashingEmbedder still works alongside LocalModelEmbedder."""
-        from agent_vault.embeddings.hashing import HashingEmbedder
-        from agent_vault.embeddings.registry import EmbeddingRegistry
+        from agentic_inquiry.embeddings.hashing import HashingEmbedder
+        from agentic_inquiry.embeddings.registry import EmbeddingRegistry
         
         # Create HashingEmbedder
         hashing = HashingEmbedder(ndims=128)

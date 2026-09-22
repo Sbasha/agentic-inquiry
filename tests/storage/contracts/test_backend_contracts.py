@@ -19,9 +19,9 @@ AlloyDB-specific tests are additionally gated behind ``@pytest.mark.alloydb``.
 
 import pytest
 
-from agent_vault.models.graph_entity import EntityType
-from agent_vault.models.graph_relationship import RelationshipType
-from agent_vault.storage.capabilities import (
+from agentic_inquiry.models.graph_entity import EntityType
+from agentic_inquiry.models.graph_relationship import RelationshipType
+from agentic_inquiry.storage.capabilities import (
     ProviderCapabilities,
     get_capabilities_for_backend,
 )

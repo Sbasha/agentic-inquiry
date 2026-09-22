@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
-from agent_vault.metrics import MetricsTracker
-from agent_vault.metrics.health import HealthTracker
-import agent_vault.metrics.health as health_module
+from agentic_inquiry.metrics import MetricsTracker
+from agentic_inquiry.metrics.health import HealthTracker
+import agentic_inquiry.metrics.health as health_module
 
 def test_health_tracker_activity_detection(monkeypatch):
     metrics = MetricsTracker()

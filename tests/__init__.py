@@ -1,1 +1,1 @@
-"""Test suite for agent_vault."""
+"""Test suite for agentic_inquiry."""

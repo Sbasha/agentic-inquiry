@@ -7,7 +7,7 @@ Run with: pytest tests/stress/ -v --timeout=60
 
 NOTE: These tests are currently skipped because they use outdated APIs:
 1. HybridSearchService constructor changed - requires config and deduplicator
-2. agent_vault.core.types module doesn't exist (moved/renamed)
+2. agentic_inquiry.core.types module doesn't exist (moved/renamed)
 3. Uses non-existent search_service.search() method
 
 TODO: Update to use current SearchService API with proper dependencies.
@@ -37,7 +37,7 @@ class TestConcurrentSearchOperations:
         concurrent_semaphore,
     ):
         """Multiple concurrent searches complete without errors."""
-        from agent_vault.search.hybrid_search import HybridSearchService
+        from agentic_inquiry.search.hybrid_search import HybridSearchService
 
         search_service = HybridSearchService(
             storage=stress_test_storage,
@@ -76,8 +76,8 @@ class TestConcurrentSearchOperations:
         concurrent_semaphore,
     ):
         """Mixed read/write operations don't cause deadlocks."""
-        from agent_vault.search.hybrid_search import HybridSearchService
-        from agent_vault.core.types import Chunk, ContentType
+        from agentic_inquiry.search.hybrid_search import HybridSearchService
+        from agentic_inquiry.core.types import Chunk, ContentType
 
         search_service = HybridSearchService(
             storage=stress_test_storage,
@@ -125,7 +125,7 @@ class TestConcurrentIndexing:
         concurrent_semaphore,
     ):
         """Multiple concurrent chunk stores complete without corruption."""
-        from agent_vault.core.types import Chunk, ContentType
+        from agentic_inquiry.core.types import Chunk, ContentType
 
         async def store_chunk_batch(batch_id: int) -> None:
             async with concurrent_semaphore:
@@ -162,7 +162,7 @@ class TestResourceContention:
         stress_config,
     ):
         """Connection pool handles high load without exhaustion."""
-        from agent_vault.search.hybrid_search import HybridSearchService
+        from agentic_inquiry.search.hybrid_search import HybridSearchService
 
         search_service = HybridSearchService(
             storage=stress_test_storage,
@@ -195,7 +195,7 @@ class TestResourceContention:
         stress_config,
     ):
         """System degrades gracefully under extreme load."""
-        from agent_vault.search.hybrid_search import HybridSearchService
+        from agentic_inquiry.search.hybrid_search import HybridSearchService
 
         search_service = HybridSearchService(
             storage=stress_test_storage,
@@ -239,7 +239,7 @@ class TestAsyncSafety:
         stress_test_storage,
     ):
         """Cancelled operations clean up resources properly."""
-        from agent_vault.search.hybrid_search import HybridSearchService
+        from agentic_inquiry.search.hybrid_search import HybridSearchService
 
         search_service = HybridSearchService(
             storage=stress_test_storage,
@@ -278,7 +278,7 @@ class TestAsyncSafety:
         concurrent_semaphore,
     ):
         """Exceptions in one operation don't affect others."""
-        from agent_vault.search.hybrid_search import HybridSearchService
+        from agentic_inquiry.search.hybrid_search import HybridSearchService
 
         search_service = HybridSearchService(
             storage=stress_test_storage,

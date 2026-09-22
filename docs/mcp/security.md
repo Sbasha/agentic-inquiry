@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Agent-Vault MCP Server implements multiple security layers to protect against common vulnerabilities and ensure safe operation in production environments. This guide documents security features, best practices, and configuration options.
+The Agentic Inquiry MCP Server implements multiple security layers to protect against common vulnerabilities and ensure safe operation in production environments. This guide documents security features, best practices, and configuration options.
 
 ## Security Features
 
@@ -21,7 +21,7 @@ The server uses `validate_file_path()` to ensure that all file paths:
 #### Implementation
 
 ```python
-from agent_vault.mcp.utils.validation import validate_file_path, PathValidationError
+from agentic_inquiry.mcp.utils.validation import validate_file_path, PathValidationError
 from pathlib import Path
 
 # Validate a file path
@@ -80,8 +80,8 @@ mcp:
 ```
 
 **Environment Variables:**
-- `AGV_MCP_SECURITY_PATH_VALIDATION_ENFORCE` - Always true
-- `AGV_MCP_SECURITY_PATH_VALIDATION_FOLLOW_SYMLINKS` - Default: true
+- `AI_MCP_SECURITY_PATH_VALIDATION_ENFORCE` - Always true
+- `AI_MCP_SECURITY_PATH_VALIDATION_FOLLOW_SYMLINKS` - Default: true
 
 ---
 
@@ -104,8 +104,8 @@ mcp:
 **Environment Variables:**
 
 ```bash
-export AGV_MCP_API_AUTH_ENABLED=true
-export AGV_MCP_API_AUTH_API_KEY="your-secure-api-key"
+export AI_MCP_API_AUTH_ENABLED=true
+export AI_MCP_API_AUTH_API_KEY="your-secure-api-key"
 ```
 
 #### Generating API Keys
@@ -338,9 +338,9 @@ mcp:
 ```
 
 **Environment Variables:**
-- `AGV_MCP_API_RATE_LIMITING_ENABLED` - Enable rate limiting
-- `AGV_MCP_API_RATE_LIMITING_REQUESTS_PER_MINUTE` - Rate limit
-- `AGV_MCP_API_RATE_LIMITING_BURST_SIZE` - Burst allowance
+- `AI_MCP_API_RATE_LIMITING_ENABLED` - Enable rate limiting
+- `AI_MCP_API_RATE_LIMITING_REQUESTS_PER_MINUTE` - Rate limit
+- `AI_MCP_API_RATE_LIMITING_BURST_SIZE` - Burst allowance
 
 #### Rate Limit Headers
 
@@ -396,10 +396,10 @@ mcp:
 ```
 
 **Environment Variables:**
-- `AGV_MCP_API_CORS_ENABLED` - Enable CORS
-- `AGV_MCP_API_CORS_ORIGINS` - Comma-separated allowed origins
-- `AGV_MCP_API_CORS_ALLOW_CREDENTIALS` - Allow credentials
-- `AGV_MCP_API_CORS_MAX_AGE` - Preflight cache duration
+- `AI_MCP_API_CORS_ENABLED` - Enable CORS
+- `AI_MCP_API_CORS_ORIGINS` - Comma-separated allowed origins
+- `AI_MCP_API_CORS_ALLOW_CREDENTIALS` - Allow credentials
+- `AI_MCP_API_CORS_MAX_AGE` - Preflight cache duration
 
 #### CORS Headers
 
@@ -576,7 +576,7 @@ chown mcp-user:mcp-group config/mcp.yaml
 ```bash
 # Use environment variables for secrets
 export MCP_API_KEY="$(cat /secure/path/api-key)"
-export AGV_STORAGE_URI="$(cat /secure/path/db-uri)"
+export AI_STORAGE_URI="$(cat /secure/path/db-uri)"
 ```
 
 **Secrets Management:**

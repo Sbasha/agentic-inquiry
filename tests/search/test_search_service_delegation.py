@@ -5,7 +5,7 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.search.service import SearchService
+from agentic_inquiry.search.service import SearchService
 
 
 @pytest.fixture

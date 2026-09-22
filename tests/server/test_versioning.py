@@ -1,8 +1,8 @@
-"""Tests for agent_vault.server.versioning.git - Git-linked versioning."""
+"""Tests for agentic_inquiry.server.versioning.git - Git-linked versioning."""
 
 import pytest
 
-from agent_vault.server.versioning.git import GitVersionManager
+from agentic_inquiry.server.versioning.git import GitVersionManager
 
 
 @pytest.fixture

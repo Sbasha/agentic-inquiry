@@ -4,7 +4,7 @@ Mode: light (no risk trigger fired)
 
 - **Status:** Shipped (2026-07-07)
 
-Issue: [#179](https://github.com/sbasha/311256_agent-vault/issues/179)
+Issue: [#179](https://github.com/sbasha/311256_agentic-inquiry/issues/179)
 
 ## Objective
 
@@ -12,7 +12,7 @@ Method-to-method `calls` graph edges are never produced for **Java** or
 **Rust** (and are silently absent for several other grammars), even though
 entity extraction and the tree-sitter `queries/*.scm` files are correct. The
 failure is two Python-grammar hardcodings in
-`agent_vault/parsers/implementations/unified_code.py`:
+`agentic_inquiry/parsers/implementations/unified_code.py`:
 
 1. `_extract_call_info()` assumes Python's `call` node shape — it reads the
    `function` field and branches on `identifier` / `attribute` node types.
@@ -75,7 +75,7 @@ type), not hardcoded to one grammar.
   Ruby, and C++.
 - **Out of scope:** the `queries/*.scm` files (already correct); the
   relationship *resolution* layer (already works — Python proves it);
-  `agv entity --verbose` display thinness (noted separately in the issue);
+  `ai entity --verbose` display thinness (noted separately in the issue);
   adding brand-new call support for grammars that never worked (Kotlin,
   PHP simple calls, Swift use non-`identifier` name nodes — pre-existing
   gaps, left alone).

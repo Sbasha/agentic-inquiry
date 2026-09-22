@@ -13,11 +13,11 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.mcp.services.maintenance_manager import MaintenanceManager
-from agent_vault.events.system import EventSystem
-from agent_vault.events.types import EventTypes
-from agent_vault.config import Config
-from agent_vault.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.mcp.services.maintenance_manager import MaintenanceManager
+from agentic_inquiry.events.system import EventSystem
+from agentic_inquiry.events.types import EventTypes
+from agentic_inquiry.config import Config
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
 
 
 @pytest.fixture
@@ -186,7 +186,7 @@ class TestMaintenanceConfigIntegration:
 
         # Test 1: project.closed trigger
         mock_storage_with_lancedb.run_maintenance.reset_mock()
-        with patch("agent_vault.config.Config.load") as mock_load:
+        with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.maintenance.enabled = True
             mock_config.maintenance.trigger = "project.closed"
@@ -202,7 +202,7 @@ class TestMaintenanceConfigIntegration:
 
         # Test 2: indexing.completed trigger
         mock_storage_with_lancedb.run_maintenance.reset_mock()
-        with patch("agent_vault.config.Config.load") as mock_load:
+        with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.maintenance.enabled = True
             mock_config.maintenance.trigger = "indexing.completed"
@@ -399,7 +399,7 @@ class TestMaintenanceBackendSupport:
         )
 
         # Mock config
-        with patch("agent_vault.config.Config.load") as mock_load:
+        with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
             mock_config.maintenance.enabled = True
             mock_config.maintenance.trigger = "project.closed"

@@ -4,7 +4,7 @@ This directory contains tests for the Model Context Protocol (MCP) server implem
 
 ## Overview
 
-The MCP test suite validates the functionality of the Agent-Vault MCP server, including:
+The MCP test suite validates the functionality of the Agentic Inquiry MCP server, including:
 - Tool implementations (search, analysis, context building)
 - Service layer (session management, entity resolution, impact analysis)
 - Integration flows (end-to-end workflows)
@@ -80,7 +80,7 @@ uv run pytest tests/mcp/ -v
 
 ### Run with coverage
 ```bash
-uv run pytest tests/mcp/ --cov=agent_vault.mcp
+uv run pytest tests/mcp/ --cov=agentic_inquiry.mcp
 ```
 
 ## Test Categories
@@ -271,7 +271,7 @@ When adding new tests to the MCP test suite:
    uv run pytest tests/mcp/test_new_feature.py -v
    
    # Check coverage
-   uv run pytest tests/mcp/test_new_feature.py --cov=agent_vault.mcp
+   uv run pytest tests/mcp/test_new_feature.py --cov=agentic_inquiry.mcp
    
    # Run with diagnostics
    uv run pytest tests/mcp/test_new_feature.py -vv --tb=short

@@ -7,7 +7,7 @@ pytestmark = pytest.mark.integration
 import time
 from pathlib import Path
 
-from agent_vault.utils.logging_setup import LogCleanupManager
+from agentic_inquiry.utils.logging_setup import LogCleanupManager
 
 
 @pytest.fixture

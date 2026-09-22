@@ -8,7 +8,7 @@
 
 ## Test Suite Overview
 
-This test evaluates how effectively an agent can review code changes using Agent-Vault to:
+This test evaluates how effectively an agent can review code changes using Agentic Inquiry to:
 - Understand what's being changed and why
 - Check consistency with existing patterns
 - Identify potential impacts and risks
@@ -40,7 +40,7 @@ Code review is successful if the agent can:
 
 **Step 1: Create Session with Unique Project ID**
 ```python
-project_id = "agv_test07_review_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test07_review_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Code review test")
 ```
 

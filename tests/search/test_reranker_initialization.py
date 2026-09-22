@@ -7,11 +7,11 @@ pytestmark = pytest.mark.integration
 import inspect
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config
-from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
-from agent_vault.exceptions import ConfigurationError
-from agent_vault.search.service import SearchService
-from agent_vault.search.rerankers import (
+from agentic_inquiry.config import Config
+from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+from agentic_inquiry.exceptions import ConfigurationError
+from agentic_inquiry.search.service import SearchService
+from agentic_inquiry.search.rerankers import (
     RRFReranker,
     LinearCombinationReranker,
 )

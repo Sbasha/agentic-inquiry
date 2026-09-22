@@ -13,7 +13,7 @@
 #   --help        Show this help message
 #
 # Output:
-#   Creates .agv/test/gcp-test-{TEST_ID}.env with connection details
+#   Creates .agentic-inquiry/test/gcp-test-{TEST_ID}.env with connection details
 #
 
 set -euo pipefail
@@ -81,9 +81,9 @@ if [[ -z "$TEST_ID" ]]; then
 fi
 
 # Derived names
-INSTANCE_NAME="agv-test-${TEST_ID}"
-DATABASE_NAME="agent-vault_test"
-USER_NAME="agv_test_user"
+INSTANCE_NAME="ai-test-${TEST_ID}"
+DATABASE_NAME="agentic-inquiry_test"
+USER_NAME="ai_test_user"
 # Cross-platform password generation
 generate_password() {
     if command -v openssl &>/dev/null; then
@@ -95,7 +95,7 @@ generate_password() {
     fi
 }
 USER_PASSWORD="$(generate_password)"
-ENV_DIR=".agv/test"
+ENV_DIR=".agentic-inquiry/test"
 mkdir -p "$ENV_DIR"
 ENV_FILE="${ENV_DIR}/gcp-test-${TEST_ID}.env"
 
@@ -198,14 +198,14 @@ export GCP_PUBLIC_IP="${PUBLIC_IP}"
 # Connection string for direct connection (requires Cloud SQL Proxy or authorized network)
 export GCP_CONNECTION_STRING="postgresql://${USER_NAME}:${USER_PASSWORD}@localhost:5432/${DATABASE_NAME}"
 
-# For agent-vault BackendConfig
+# For agentic-inquiry BackendConfig
 export CLOUDSQL_PROJECT="${PROJECT}"
 export CLOUDSQL_REGION="${REGION}"
 export CLOUDSQL_INSTANCE="${INSTANCE_NAME}"
 export CLOUDSQL_DATABASE="${DATABASE_NAME}"
 export CLOUDSQL_USER="${USER_NAME}"
 
-# Generic connection string for agent-vault.yaml
+# Generic connection string for agentic-inquiry.yaml
 export DB_CONNECTION_STRING="postgresql://${USER_NAME}:${USER_PASSWORD}@localhost:5433/${DATABASE_NAME}"
 EOF
 

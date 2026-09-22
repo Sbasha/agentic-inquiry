@@ -8,7 +8,7 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agent_vault.mcp.tools.knowledge import add_knowledge
+from agentic_inquiry.mcp.tools.knowledge import add_knowledge
 
 
 class _DummyEmbedder:
@@ -26,14 +26,14 @@ class _DummyEmbedder:
 @pytest.fixture
 async def mock_services_with_events(tmp_path):
     """Create mock services with event tracking."""
-    from agent_vault.config import (
+    from agentic_inquiry.config import (
         Config, StorageConfig, CacheConfig, DocumentCacheConfig,
         SearchConfig, HybridSearchConfig, GraphSearchConfig,
         EmbeddingsConfig, SentenceTransformerConfig,
         ParsersConfig, ParserConfig, ProgressConfig
     )
     from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
-    from agent_vault.mcp.services.session_manager import SessionManager
+    from agentic_inquiry.mcp.services.session_manager import SessionManager
     
     # Create config
     config = Config()
@@ -84,7 +84,7 @@ async def mock_services_with_events(tmp_path):
     await mock_db_manager.connect()
     
     # Configure embedder for the database manager
-    from agent_vault.embeddings.registry import EmbeddingRegistry
+    from agentic_inquiry.embeddings.registry import EmbeddingRegistry
     registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
     mock_db_manager.mock_embedding_registry = registry
 
@@ -133,9 +133,9 @@ def patch_indexing_pipeline(mock_services_with_events):
     NOTE: Import the real class BEFORE patching to avoid recursion.
     """
     # Import the real class BEFORE the patch context
-    from agent_vault.indexing.pipeline import IndexingPipeline as RealIndexingPipeline
+    from agentic_inquiry.indexing.pipeline import IndexingPipeline as RealIndexingPipeline
 
-    with patch("agent_vault.indexing.pipeline.IndexingPipeline") as mock_class:
+    with patch("agentic_inquiry.indexing.pipeline.IndexingPipeline") as mock_class:
         def create_pipeline(*args, **kwargs):
             # Override to use our test registry - use the REAL class
             return RealIndexingPipeline(

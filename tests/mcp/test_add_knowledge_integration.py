@@ -8,7 +8,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.mcp.tools.knowledge import add_knowledge
+from agentic_inquiry.mcp.tools.knowledge import add_knowledge
 
 
 @pytest.fixture
@@ -153,7 +153,7 @@ export class UserService {
     assert result["chunks_created"] > 0
     
     # Verify searchable content
-    from agent_vault.search.service import SearchService
+    from agentic_inquiry.search.service import SearchService
     search_service = SearchService(
         storage=mcp_services["storage"],  # Use StorageFacade for SearchService
         config=mcp_services["config"],
@@ -247,7 +247,7 @@ The main API includes:
     assert result["chunks_created"] > 0
     
     # Verify searchable content
-    from agent_vault.search.service import SearchService
+    from agentic_inquiry.search.service import SearchService
     search_service = SearchService(
         storage=mcp_services["storage"],  # Use StorageFacade for SearchService
         config=mcp_services["config"],
@@ -371,7 +371,7 @@ This is documentation content.
     assert final_event["data"]["chunks_created"] > 0, "Expected chunks to be created"
     
     # Verify all files are searchable
-    from agent_vault.search.service import SearchService
+    from agentic_inquiry.search.service import SearchService
     search_service = SearchService(
         storage=mcp_services["storage"],  # Use StorageFacade for SearchService
         config=mcp_services["config"],
@@ -666,7 +666,7 @@ We can search for this content later."""
     assert result["content_type"] == "text"
     
     # Verify searchable
-    from agent_vault.search.service import SearchService
+    from agentic_inquiry.search.service import SearchService
     search_service = SearchService(
         storage=mcp_services["storage"],  # Use StorageFacade for SearchService
         config=mcp_services["config"],

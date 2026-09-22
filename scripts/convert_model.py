@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Model conversion script for agent_vault.
+"""Model conversion script for agentic_inquiry.
 
 This script downloads models from HuggingFace Hub and converts them to
 ONNX format for use with LocalModelEmbedder. It handles model download,
@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 def detect_workspace_root() -> Path:
     """Detect the workspace root directory.
     
-    Looks for agent-vault.yaml or config/default.yaml to identify workspace root.
+    Looks for agentic-inquiry.yaml or config/default.yaml to identify workspace root.
     Falls back to current directory if not found.
     
     Returns:
@@ -54,7 +54,7 @@ def detect_workspace_root() -> Path:
     
     # Check current directory and parents for workspace markers
     for path in [current] + list(current.parents):
-        if (path / "agent-vault.yaml").exists() or (path / "config" / "default.yaml").exists():
+        if (path / "agentic-inquiry.yaml").exists() or (path / "config" / "default.yaml").exists():
             logger.debug("Detected workspace root: %s", path)
             return path
     
@@ -206,7 +206,7 @@ def convert_to_onnx(
         tokenizer_type = type(tokenizer).__name__
         
         # Create metadata
-        from agent_vault.embeddings.local_model import ModelMetadata
+        from agentic_inquiry.embeddings.local_model import ModelMetadata
         
         metadata = ModelMetadata(
             model_id=model_id,
@@ -249,7 +249,7 @@ def validate_converted_model(model_dir: Path) -> None:
     logger.info("Running validation tests...")
     
     try:
-        from agent_vault.embeddings.local_model import LocalModelEmbedder
+        from agentic_inquiry.embeddings.local_model import LocalModelEmbedder
         
         # Create embedder instance
         embedder = LocalModelEmbedder(model_path=model_dir)
@@ -397,7 +397,7 @@ def main() -> int:
         Exit code (0 for success, non-zero for failure)
     """
     parser = argparse.ArgumentParser(
-        description="Convert HuggingFace models to ONNX format for agent-vault",
+        description="Convert HuggingFace models to ONNX format for agentic-inquiry",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__
     )
@@ -508,7 +508,7 @@ def main() -> int:
         logger.info("Model saved to: %s", output_dir)
         logger.info("ONNX model: %s", onnx_path)
         logger.info("")
-        logger.info("To use this model in agent-vault, configure:")
+        logger.info("To use this model in agentic-inquiry, configure:")
         logger.info("  embedding:")
         logger.info("    provider: local")
         logger.info("    local_model:")
@@ -518,7 +518,7 @@ def main() -> int:
         # Display model info
         metadata_path = output_dir / "metadata.json"
         if metadata_path.exists():
-            from agent_vault.embeddings.local_model import ModelMetadata
+            from agentic_inquiry.embeddings.local_model import ModelMetadata
             metadata = ModelMetadata.load(metadata_path)
             logger.info("Model Information:")
             logger.info("  Model ID: %s", metadata.model_id)

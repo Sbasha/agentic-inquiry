@@ -136,7 +136,7 @@ Manages embedding providers and generates vector embeddings.
 
 **Example:**
 ```python
-from agent_vault.embeddings.registry import embedding_registry
+from agentic_inquiry.embeddings.registry import embedding_registry
 
 # Get embedding for text
 embedding = embedding_registry.embed("sample text")
@@ -187,7 +187,7 @@ Ensures ACID properties for database operations.
 
 **Example:**
 ```python
-from agent_vault.database.transaction import Transaction
+from agentic_inquiry.database.transaction import Transaction
 
 async with Transaction(db_manager) as txn:
     # All operations in this block are atomic
@@ -405,7 +405,7 @@ class GraphRelationship:
 The pipeline supports incremental updates using file watching:
 
 ```python
-from agent_vault.watching.watcher import FileWatcher
+from agentic_inquiry.watching.watcher import FileWatcher
 
 # Create watcher
 watcher = FileWatcher(
@@ -544,7 +544,7 @@ Enable detailed logging:
 ```python
 import logging
 
-logging.getLogger("agent_vault.indexing").setLevel(logging.DEBUG)
+logging.getLogger("agentic_inquiry.indexing").setLevel(logging.DEBUG)
 ```
 
 **Log Levels:**
@@ -589,7 +589,7 @@ def test_index_directory():
 
 ## Server-Side Embedding Support
 
-Agent-Vault supports server-side embedding generation for cloud databases (AlloyDB, CloudSQL with google_ml_integration), eliminating local embedding overhead and achieving 27x indexing performance improvement.
+Agentic Inquiry supports server-side embedding generation for cloud databases (AlloyDB, CloudSQL with google_ml_integration), eliminating local embedding overhead and achieving 27x indexing performance improvement.
 
 ### Configuration
 
@@ -620,17 +620,17 @@ storage:
 
 When `embedding_strategy == "server_side"`:
 
-1. **NoOpEmbedder**: Pipeline uses `agent_vault.embeddings.noop.NoOpEmbedder` instead of local SentenceTransformer
+1. **NoOpEmbedder**: Pipeline uses `agentic_inquiry.embeddings.noop.NoOpEmbedder` instead of local SentenceTransformer
 2. **Skip embedding column**: Providers skip the `embedding` column during `upsert_chunks()` and `upsert_entities()`
 3. **Auto-embed after indexing**: Pipeline calls `generate_embeddings()` method on the provider after indexing completes
 4. **String queries**: Search accepts raw query text; provider calls server-side `embedding()` function
 
 **Table Schema:**
 All storage backends use the `agv_*` table prefix:
-- `agv_v_chunks`: Vector chunks with content and embeddings
-- `agv_v_chunks_fts`: Full-text search index (PostgreSQL/CloudSQL/AlloyDB only)
-- `agv_g_entities`: Graph entities
-- `agv_g_relationships`: Graph relationships
+- `ai_v_chunks`: Vector chunks with content and embeddings
+- `ai_v_chunks_fts`: Full-text search index (PostgreSQL/CloudSQL/AlloyDB only)
+- `ai_g_entities`: Graph entities
+- `ai_g_relationships`: Graph relationships
 
 ### Auto-Embedding Methods
 

@@ -7,11 +7,11 @@ pytestmark = pytest.mark.integration
 
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config
-from agent_vault.embeddings.base import Embedder
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.config import Config
+from agentic_inquiry.embeddings.base import Embedder
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -37,7 +37,7 @@ def test_flush_relationships_with_enhanced_resolution():
     """Test that flush_pending_relationships uses enhanced resolution and tracks statistics."""
     async def run():
         import uuid
-        from agent_vault.events import EventSystem
+        from agentic_inquiry.events import EventSystem
         
         config = Config.load()
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
@@ -133,7 +133,7 @@ def test_flush_relationships_external_dependency():
     """Test that external dependencies are handled correctly."""
     async def run():
         import uuid
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.config import Config, StorageConfig
         
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
@@ -209,7 +209,7 @@ def test_flush_relationships_confidence_tracking():
     """Test that confidence levels are tracked correctly."""
     async def run():
         import uuid
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.config import Config, StorageConfig
         
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
@@ -294,7 +294,7 @@ def test_get_resolution_stats_api():
     """Test the get_resolution_stats() public API method."""
     async def run():
         import uuid
-        from agent_vault.config import Config, StorageConfig
+        from agentic_inquiry.config import Config, StorageConfig
         
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")

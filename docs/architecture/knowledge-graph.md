@@ -203,8 +203,8 @@ Converts Python import paths to file paths and looks up symbols.
 
 **Example:**
 ```python
-# Import: from agent_vault.indexing.pipeline import IndexingPipeline
-# Converts to: agent_vault/indexing/pipeline.py
+# Import: from agentic_inquiry.indexing.pipeline import IndexingPipeline
+# Converts to: agentic_inquiry/indexing/pipeline.py
 # Looks up: IndexingPipeline in that file
 ```
 

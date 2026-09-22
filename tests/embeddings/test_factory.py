@@ -4,10 +4,10 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config
-from agent_vault.embeddings.base import Embedder
-from agent_vault.embeddings.sentence_transformer import SentenceTransformerEmbedder
-from agent_vault.embeddings.hashing import HashingEmbedder
+from agentic_inquiry.config import Config
+from agentic_inquiry.embeddings.base import Embedder
+from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
+from agentic_inquiry.embeddings.hashing import HashingEmbedder
 
 
 class TestEmbedderInstantiation:
@@ -76,7 +76,7 @@ class TestEmbedderInstantiation:
     
     def test_create_embedder_integration_with_registry(self):
         """Test that directly instantiated embedder works with EmbeddingRegistry."""
-        from agent_vault.embeddings.registry import EmbeddingRegistry
+        from agentic_inquiry.embeddings.registry import EmbeddingRegistry
         
         # Create embedder with direct instantiation
         config = Config.load()

@@ -8,8 +8,8 @@ import logging
 import logging.handlers
 from pathlib import Path
 
-from agent_vault.config import LoggingConfig
-from agent_vault.utils.logging_setup import LoggingConfigurator
+from agentic_inquiry.config import LoggingConfig
+from agentic_inquiry.utils.logging_setup import LoggingConfigurator
 
 
 @pytest.fixture
@@ -48,7 +48,7 @@ def cleanup_logging():
     # Reset log levels for common loggers
     root_logger.setLevel(logging.WARNING)
     for service in ["parsers", "database", "search", "indexing", "embeddings", "caching"]:
-        logger = logging.getLogger(f"agent_vault.{service}")
+        logger = logging.getLogger(f"agentic_inquiry.{service}")
         logger.setLevel(logging.NOTSET)
 
 
@@ -157,7 +157,7 @@ class TestServiceSpecificLevelConfiguration:
         
         LoggingConfigurator._apply_log_levels(logging_config)
         
-        parsers_logger = logging.getLogger("agent_vault.parsers")
+        parsers_logger = logging.getLogger("agentic_inquiry.parsers")
         assert parsers_logger.level == logging.DEBUG
     
     def test_applies_multiple_service_levels(self, logging_config):
@@ -171,9 +171,9 @@ class TestServiceSpecificLevelConfiguration:
         
         LoggingConfigurator._apply_log_levels(logging_config)
         
-        assert logging.getLogger("agent_vault.parsers").level == logging.DEBUG
-        assert logging.getLogger("agent_vault.database").level == logging.WARNING
-        assert logging.getLogger("agent_vault.search").level == logging.ERROR
+        assert logging.getLogger("agentic_inquiry.parsers").level == logging.DEBUG
+        assert logging.getLogger("agentic_inquiry.database").level == logging.WARNING
+        assert logging.getLogger("agentic_inquiry.search").level == logging.ERROR
     
     def test_service_level_overrides_global_level(self, logging_config):
         """Test that service level overrides global level."""
@@ -183,7 +183,7 @@ class TestServiceSpecificLevelConfiguration:
         LoggingConfigurator._apply_log_levels(logging_config)
         
         root_logger = logging.getLogger()
-        parsers_logger = logging.getLogger("agent_vault.parsers")
+        parsers_logger = logging.getLogger("agentic_inquiry.parsers")
         
         assert root_logger.level == logging.ERROR
         assert parsers_logger.level == logging.DEBUG
@@ -196,7 +196,7 @@ class TestServiceSpecificLevelConfiguration:
         LoggingConfigurator._apply_log_levels(logging_config)
         
         # Database logger should inherit from root
-        database_logger = logging.getLogger("agent_vault.database")
+        database_logger = logging.getLogger("agentic_inquiry.database")
         # When not explicitly set, logger.level is NOTSET (0)
         # but effective level comes from parent
         assert database_logger.getEffectiveLevel() == logging.WARNING

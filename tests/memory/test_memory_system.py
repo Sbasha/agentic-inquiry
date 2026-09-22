@@ -11,7 +11,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import numpy as np
 
-from agent_vault.config import (
+from agentic_inquiry.config import (
     Config,
     ConsolidationConfig,
     EpisodicMemoryConfig,
@@ -21,8 +21,8 @@ from agent_vault.config import (
     SummaryConfig,
     WorkingMemoryConfig,
 )
-from agent_vault.memory.models import MemoryContext, MemoryTier
-from agent_vault.memory.system import MemorySystem
+from agentic_inquiry.memory.models import MemoryContext, MemoryTier
+from agentic_inquiry.memory.system import MemorySystem
 
 
 @pytest.fixture
@@ -81,7 +81,7 @@ async def memory_system(
     memory_config: MemoryConfig,
 ) -> MemorySystem:
     """Create a memory system instance."""
-    from agent_vault.config import (
+    from agentic_inquiry.config import (
         StorageConfig,
         CacheConfig,
         DocumentCacheConfig,
@@ -126,12 +126,12 @@ def sample_context() -> MemoryContext:
 @pytest.mark.asyncio
 async def test_memory_system_initialization(memory_system: MemorySystem) -> None:
     """Test memory system initialization."""
-    from agent_vault.memory.working import WorkingMemory
-    from agent_vault.memory.episodic import EpisodicMemory
-    from agent_vault.memory.semantic import SemanticMemory
-    from agent_vault.memory.consolidation import ConsolidationEngine
-    from agent_vault.memory.retrieval import RetrievalEngine
-    from agent_vault.memory.context import ContextManager
+    from agentic_inquiry.memory.working import WorkingMemory
+    from agentic_inquiry.memory.episodic import EpisodicMemory
+    from agentic_inquiry.memory.semantic import SemanticMemory
+    from agentic_inquiry.memory.consolidation import ConsolidationEngine
+    from agentic_inquiry.memory.retrieval import RetrievalEngine
+    from agentic_inquiry.memory.context import ContextManager
 
     assert memory_system._initialized is True
     assert memory_system.working_memory is not None
@@ -682,7 +682,7 @@ async def test_configuration_loading(
 ) -> None:
     """Test that configuration is properly loaded."""
     # Create a custom config
-    from agent_vault.config import StorageConfig, EmbeddingsConfig
+    from agentic_inquiry.config import StorageConfig, EmbeddingsConfig
     
     custom_config = MagicMock(spec=Config)
     custom_config.memory = MemoryConfig(
@@ -762,7 +762,7 @@ async def test_async_context_manager(
     memory_config: MemoryConfig,
 ) -> None:
     """Test MemorySystem async context manager initializes and shuts down properly."""
-    from agent_vault.config import StorageConfig, CacheConfig, DocumentCacheConfig, EmbeddingsConfig
+    from agentic_inquiry.config import StorageConfig, CacheConfig, DocumentCacheConfig, EmbeddingsConfig
 
     # Create config like the memory_system fixture
     config = MagicMock(spec=Config)
@@ -804,7 +804,7 @@ async def test_async_context_manager_handles_exception(
     memory_config: MemoryConfig,
 ) -> None:
     """Test MemorySystem async context manager shuts down even on exception."""
-    from agent_vault.config import StorageConfig, CacheConfig, DocumentCacheConfig, EmbeddingsConfig
+    from agentic_inquiry.config import StorageConfig, CacheConfig, DocumentCacheConfig, EmbeddingsConfig
 
     # Create config like the memory_system fixture
     config = MagicMock(spec=Config)

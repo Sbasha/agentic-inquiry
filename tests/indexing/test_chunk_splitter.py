@@ -4,14 +4,14 @@ from __future__ import annotations
 
 import pytest
 
-from agent_vault.indexing.chunk_splitter import (
+from agentic_inquiry.indexing.chunk_splitter import (
     MIN_CHUNK_SIZE,
     _hard_split,
     _split_content,
     _split_on_separator,
     split_parser_chunks,
 )
-from agent_vault.parsers.models import ParserChunk
+from agentic_inquiry.parsers.models import ParserChunk
 
 
 def _make_chunk(content: str, **kwargs) -> ParserChunk:

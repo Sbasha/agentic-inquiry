@@ -11,7 +11,7 @@ import logging
 from datetime import datetime, timedelta
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.mcp.services.temporal_analyzer import TemporalAnalyzer
+from agentic_inquiry.mcp.services.temporal_analyzer import TemporalAnalyzer
 
 
 class TestTemporalAnalyzerExceptionLogging:
@@ -133,7 +133,7 @@ class TestSuggestionsExceptionLogging:
         self, mock_search_service, mock_config, caplog
     ):
         """Verify that spelling suggestion search failures are logged."""
-        from agent_vault.mcp.utils.suggestions import _generate_spelling_suggestions
+        from agentic_inquiry.mcp.utils.suggestions import _generate_spelling_suggestions
 
         # Make fts_search raise an exception
         mock_search_service.fts_search.side_effect = Exception("Search failed")
@@ -159,7 +159,7 @@ class TestSuggestionsExceptionLogging:
         self, mock_search_service, mock_config, caplog
     ):
         """Verify that threshold suggestion search failures are logged."""
-        from agent_vault.mcp.utils.suggestions import _generate_threshold_suggestions
+        from agentic_inquiry.mcp.utils.suggestions import _generate_threshold_suggestions
 
         # Make fts_search raise an exception
         mock_search_service.fts_search.side_effect = Exception("Search unavailable")
@@ -185,7 +185,7 @@ class TestDirectAccessExceptionLogging:
     @pytest.mark.asyncio
     async def test_entity_lookup_logs_db_failure(self, caplog):
         """Verify that entity lookup failures are logged, not silently passed."""
-        from agent_vault.mcp.tools.direct_access import graph_traverse
+        from agentic_inquiry.mcp.tools.direct_access import graph_traverse
 
         # Create mock services
         mock_config = MagicMock()

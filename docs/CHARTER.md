@@ -1,8 +1,8 @@
-# Agent-Vault Charter
+# Agentic Inquiry Charter
 
 ## Mission
 
-Agent-Vault gives AI coding assistants deep, persistent understanding of a
+Agentic Inquiry gives AI coding assistants deep, persistent understanding of a
 codebase by indexing source and docs into a hybrid (vector + full-text)
 search layer exposed through Claude Code plugin skills.
 
@@ -21,26 +21,26 @@ search layer exposed through Claude Code plugin skills.
   [`docs/rfc/`](rfc/); the in-scope set above tracks what is shipped
   in the codebase today.
 - **Code intelligence primitives.** Entity extraction, impact analysis,
-  data lineage tracing, and onboarding reports — surfaced as `/agv:*`
+  data lineage tracing, and onboarding reports — surfaced as `/ai:*`
   slash commands.
 - **Persistent multi-tier memory.** Working / episodic / semantic memory
   tiers that survive across Claude Code sessions.
-- **Two delivery surfaces.** Claude Code plugins (`agv`, `agv-dev`) are
+- **Two delivery surfaces.** Claude Code plugins (`ai`, `ai-dev`) are
   the primary interface; the MCP server is the secondary surface for
   non-Claude or HTTP integrations.
 
 ### Out of scope
 
-- **A general-purpose ML or LLM training platform.** Agent-Vault
+- **A general-purpose ML or LLM training platform.** Agentic Inquiry
   consumes embeddings and chat models; it does not train them.
 - **A general-purpose vector database.** We layer on top of pgvector,
   LanceDB, and managed cloud equivalents — we do not build a new one.
-- **A code-modification agent.** Agent-Vault surfaces understanding;
+- **A code-modification agent.** Agentic Inquiry surfaces understanding;
   edits are performed by Claude Code (or whoever invokes the plugin).
 - **Bespoke per-customer forks.** Customer-specific behaviour belongs in
   configuration and plugin extensions, not in branching the core.
 - **Replacing user-facing documentation.** Docs in `docs/guides/`
-  describe how users use Agent-Vault; the system itself is not a
+  describe how users use Agentic Inquiry; the system itself is not a
   substitute for written docs.
 
 ## Principles
@@ -52,8 +52,8 @@ search layer exposed through Claude Code plugin skills.
    heuristic.
 
 2. **The plugins are the primary interface; the library is the
-   contract.** Slash commands in `extensions/claude/agv/` are how users
-   interact; the Python API in `agent_vault/` is the supported surface
+   contract.** Slash commands in `extensions/claude/ai/` are how users
+   interact; the Python API in `agentic_inquiry/` is the supported surface
    for tests, integrations, and the MCP server. *Example:* a new
    capability lands as a Python API change *and* a plugin command in
    the same PR, not one without the other.
@@ -71,7 +71,7 @@ search layer exposed through Claude Code plugin skills.
 
 5. **Validate at boundaries, trust internal callers.** Input from
    users, MCP clients, and external APIs goes through
-   `agent_vault.mcp.utils.validation`. *Example:* `validate_file_path`
+   `agentic_inquiry.mcp.utils.validation`. *Example:* `validate_file_path`
    protects path-traversal at the MCP edge so internal indexing code
    doesn't need redundant checks.
 
@@ -82,7 +82,7 @@ search layer exposed through Claude Code plugin skills.
 
 7. **The structure is intentional.** Top-level directories, doc
    buckets, and convention boundaries are load-bearing. *Example:*
-   adding a top-level directory or moving `agent_vault/parsers/`
+   adding a top-level directory or moving `agentic_inquiry/parsers/`
    under `storage/` goes through an RFC, not a refactor PR.
 
 ## How to change this charter

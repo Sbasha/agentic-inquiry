@@ -1,10 +1,10 @@
-"""Tests for agent_vault.server.cache.manager - LRU+TTL cache and dedup."""
+"""Tests for agentic_inquiry.server.cache.manager - LRU+TTL cache and dedup."""
 
 import time
 
 import pytest
 
-from agent_vault.server.cache.manager import LRUTTLCache, ServerCacheManager
+from agentic_inquiry.server.cache.manager import LRUTTLCache, ServerCacheManager
 
 
 class TestLRUTTLCache:

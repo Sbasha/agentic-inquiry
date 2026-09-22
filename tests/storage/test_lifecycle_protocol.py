@@ -5,7 +5,7 @@ from typing import Any, ClassVar, Dict
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.storage.protocols import BackendLifecycle, has_lifecycle_support
+from agentic_inquiry.storage.protocols import BackendLifecycle, has_lifecycle_support
 
 
 class TestBackendLifecycleProtocol:
@@ -362,7 +362,7 @@ class TestRealProviderSupportedRoles:
         InMemoryProvider should only support vector and graph roles, not events
         or file_tracker (those require persistent storage like SQLite).
         """
-        from agent_vault.storage.providers.memory import InMemoryProvider
+        from agentic_inquiry.storage.providers.memory import InMemoryProvider
 
         # Verify SUPPORTED_ROLES is exactly what we expect
         assert InMemoryProvider.SUPPORTED_ROLES == frozenset({"vector", "graph"})
@@ -373,7 +373,7 @@ class TestRealProviderSupportedRoles:
 
     def test_lancedb_provider_supported_roles(self):
         """Test that LanceDBProvider advertises correct roles."""
-        from agent_vault.storage.providers.lancedb import LanceDBProvider
+        from agentic_inquiry.storage.providers.lancedb import LanceDBProvider
 
         # LanceDB supports vector and graph
         assert "vector" in LanceDBProvider.SUPPORTED_ROLES

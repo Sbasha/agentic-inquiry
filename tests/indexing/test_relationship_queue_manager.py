@@ -6,7 +6,7 @@ pytestmark = pytest.mark.unit
 
 from unittest.mock import MagicMock
 
-from agent_vault.indexing.relationship_queue_manager import RelationshipQueueManager
+from agentic_inquiry.indexing.relationship_queue_manager import RelationshipQueueManager
 
 
 def create_mock_relationship(

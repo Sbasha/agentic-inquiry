@@ -6,7 +6,7 @@ mcp:
 
   # Server settings
   server:
-    name: "Agent-Vault"
+    name: "Agentic Inquiry"
     version: "1.0.0"
     description: "AI-powered code and knowledge search"
 

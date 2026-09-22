@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.database.transaction import Transaction
+from agentic_inquiry.database.transaction import Transaction
 
 
 class CustomManager:

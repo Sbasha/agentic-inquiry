@@ -20,9 +20,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.indexing.relationship_resolver import RelationshipResolver
-from agent_vault.indexing.symbol_registry import SymbolRegistry
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
+from agentic_inquiry.indexing.symbol_registry import SymbolRegistry
 
 
 class LogCapture:
@@ -69,9 +69,9 @@ class LogCapture:
 def log_capture():
     """Fixture providing log capture for relationship resolver."""
     capture = LogCapture()
-    capture.attach("agent_vault.indexing.relationship_resolver")
+    capture.attach("agentic_inquiry.indexing.relationship_resolver")
     yield capture
-    capture.detach("agent_vault.indexing.relationship_resolver")
+    capture.detach("agentic_inquiry.indexing.relationship_resolver")
 
 
 @pytest.fixture

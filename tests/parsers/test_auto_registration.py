@@ -7,7 +7,7 @@ and that the registry functions (get_parser, available_parsers) work correctly.
 import pytest
 
 pytestmark = pytest.mark.unit
-from agent_vault.parsers.executor import (
+from agentic_inquiry.parsers.executor import (
     get_parser,
     get_parser_instance,
     available_parsers,
@@ -15,7 +15,7 @@ from agent_vault.parsers.executor import (
 )
 
 # Import implementations module to trigger auto-registration
-from agent_vault.parsers import implementations  # noqa: F401
+from agentic_inquiry.parsers import implementations  # noqa: F401
 
 
 def test_parsers_auto_registered():

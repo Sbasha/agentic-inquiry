@@ -14,7 +14,7 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
 # Copy project files
 COPY pyproject.toml uv.lock README.md ./
-COPY agent_vault/ agent_vault/
+COPY agentic_inquiry/ agentic_inquiry/
 COPY config/ config/
 COPY extensions/ extensions/
 COPY scripts/deploy/entrypoint.py entrypoint.py

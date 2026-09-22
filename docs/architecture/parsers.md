@@ -158,7 +158,7 @@ The `ParserChain` orchestrates parser selection and execution:
 
 ### Priority Configuration
 
-Parser priority is configured in `agent-vault.yaml`:
+Parser priority is configured in `agentic-inquiry.yaml`:
 
 ```yaml
 parsers:
@@ -246,7 +246,7 @@ ParsedDocument(
 )
 ```
 
-**Implementation:** `agent_vault/parsers/implementations/unified_code.py`
+**Implementation:** `agentic_inquiry/parsers/implementations/unified_code.py`
 
 ### 2. Salesforce Metadata Parser
 
@@ -263,7 +263,7 @@ Handles a short allowlist of Salesforce DX source-format metadata files. `can_pa
 - Object and field API names
 - `salesforce_field`, `salesforce_touches`, and `salesforce_invokes` relationships for impact/lineage
 
-**Implementation:** `agent_vault/parsers/implementations/salesforce_metadata.py`
+**Implementation:** `agentic_inquiry/parsers/implementations/salesforce_metadata.py`
 
 ### 3. Document Parser
 
@@ -313,7 +313,7 @@ ParsedDocument(
 )
 ```
 
-**Implementation:** `agent_vault/parsers/implementations/document.py`
+**Implementation:** `agentic_inquiry/parsers/implementations/document.py`
 
 #### Thread Safety and File Size Limits
 
@@ -388,14 +388,14 @@ ParsedDocument(
 )
 ```
 
-**Implementation:** `agent_vault/parsers/implementations/fallback_text.py`
+**Implementation:** `agentic_inquiry/parsers/implementations/fallback_text.py`
 
 ## Parser Registration
 
 Parsers are registered using the `@register_parser` decorator:
 
 ```python
-from agent_vault.parsers.executor import register_parser
+from agentic_inquiry.parsers.executor import register_parser
 
 @register_parser("my_parser")
 class MyParser:
@@ -622,7 +622,7 @@ def test_parser_chain():
 - [Development Guide](../development/README.md) - Parser development guidelines
 
 ### Extension & Customization
-- [Extending Agent-Vault](../customization/extending.md#custom-parsers) - Custom parser guide
+- [Extending Agentic Inquiry](../customization/extending.md#custom-parsers) - Custom parser guide
 - [Parser Guidelines](../development/parser-guidelines.md) - Parser implementation best practices
 
 ### Reference

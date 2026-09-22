@@ -7,7 +7,7 @@ import math
 from copy import deepcopy
 from typing import Any, Dict, Iterable, List, Optional
 
-from agent_vault.database.lancedb_manager import (
+from agentic_inquiry.database.lancedb_manager import (
     FORBIDDEN_FIELD_ALIASES,
     REQUIRED_FIELDS,
 )

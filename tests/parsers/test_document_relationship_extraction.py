@@ -12,7 +12,7 @@ from unittest.mock import Mock, patch
 from hypothesis import given, settings
 import hypothesis.strategies as st
 
-from agent_vault.parsers.implementations.document import DocumentParser
+from agentic_inquiry.parsers.implementations.document import DocumentParser
 
 
 def create_mock_element(element_type: str, text: str = "content", page_number: int = 1):

@@ -14,7 +14,7 @@ from hypothesis import given, settings
 import hypothesis.strategies as st
 from typing import Any, Dict
 
-from agent_vault.parsers.implementations.document import (
+from agentic_inquiry.parsers.implementations.document import (
     DocumentParser,
     ALLOWED_METADATA_TYPES,
 )

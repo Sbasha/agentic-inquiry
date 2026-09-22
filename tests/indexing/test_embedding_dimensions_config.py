@@ -15,8 +15,8 @@ pytestmark = pytest.mark.unit
 from hypothesis import given, strategies as st, settings
 from unittest.mock import MagicMock, AsyncMock
 
-from agent_vault.indexing.graph_builder import GraphBuilder, GraphBuilderConfig
-from agent_vault.indexing.relationship_resolver import RelationshipResolver
+from agentic_inquiry.indexing.graph_builder import GraphBuilder, GraphBuilderConfig
+from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
 
 
 # =============================================================================
@@ -67,7 +67,7 @@ class TestZeroVectorDimensions:
         )
         
         # Create a mock external entity
-        from agent_vault.indexing.external_entity_resolver import ExternalEntityInfo, ExternalCategory
+        from agentic_inquiry.indexing.external_entity_resolver import ExternalEntityInfo, ExternalCategory
         mock_entity = ExternalEntityInfo(
             entity_id="test::entity",
             name="TestEntity",

@@ -4,7 +4,7 @@
 **Status:** Current
 **Last Updated:** 2026-01-13
 
-This guide explains how to perform routine maintenance operations on Agent-Vault's PostgreSQL backend for optimal performance and reliability.
+This guide explains how to perform routine maintenance operations on Agentic Inquiry's PostgreSQL backend for optimal performance and reliability.
 
 ## Overview
 
@@ -26,16 +26,16 @@ Regular maintenance is essential for:
 
 **All operations (recommended):**
 ```bash
-agv maintenance run --project my-project
+ai maintenance run --project my-project
 ```
 
 **Specific operation:**
 ```bash
 # VACUUM only
-agv maintenance run --project my-project --operation vacuum
+ai maintenance run --project my-project --operation vacuum
 
 # Reindex only
-agv maintenance run --project my-project --operation reindex
+ai maintenance run --project my-project --operation reindex
 ```
 
 ## VACUUM Operations
@@ -52,21 +52,21 @@ PostgreSQL VACUUM reclaims storage space from dead tuples created by updates and
 
 **Automatic (recommended):**
 ```bash
-agv maintenance run --project my-project --operation vacuum
+ai maintenance run --project my-project --operation vacuum
 ```
 
 **Manual SQL:**
 ```sql
-VACUUM ANALYZE agv_v_chunks;
-VACUUM ANALYZE agv_g_entities;
-VACUUM ANALYZE agv_g_relationships;
+VACUUM ANALYZE ai_v_chunks;
+VACUUM ANALYZE ai_g_entities;
+VACUUM ANALYZE ai_g_relationships;
 ```
 
 ### VACUUM Modes
 
 **VACUUM ANALYZE (default):**
 ```bash
-agv maintenance run --project my-project --operation vacuum
+ai maintenance run --project my-project --operation vacuum
 ```
 - Reclaims space
 - Updates table statistics
@@ -76,7 +76,7 @@ agv maintenance run --project my-project --operation vacuum
 **VACUUM FULL (advanced):**
 ```sql
 -- Only run during maintenance windows (requires table lock)
-VACUUM FULL agv_v_chunks;
+VACUUM FULL ai_v_chunks;
 ```
 - Reclaims ALL space
 - Rewrites entire table
@@ -115,14 +115,14 @@ Vector indexes (HNSW, IVF-Flat) can become fragmented over time:
 
 **Standard reindex:**
 ```bash
-agv maintenance run --project my-project --operation reindex
+ai maintenance run --project my-project --operation reindex
 ```
 
 ### REINDEX Strategies
 
 **Concurrent (default, no downtime):**
 ```bash
-agv maintenance run --project my-project --operation reindex
+ai maintenance run --project my-project --operation reindex
 ```
 - Uses `CREATE INDEX CONCURRENTLY`
 - No table locks
@@ -132,7 +132,7 @@ agv maintenance run --project my-project --operation reindex
 **Blocking (faster, requires downtime):**
 ```sql
 -- Only during maintenance windows
-REINDEX INDEX agv_v_chunks_embedding_idx;
+REINDEX INDEX ai_v_chunks_embedding_idx;
 ```
 - Faster rebuild
 - Requires exclusive lock
@@ -145,16 +145,16 @@ REINDEX INDEX agv_v_chunks_embedding_idx;
 **Production Environment:**
 ```bash
 # Daily VACUUM (low traffic hours)
-0 2 * * * agv maintenance run --project prod --operation vacuum
+0 2 * * * ai maintenance run --project prod --operation vacuum
 
 # Weekly REINDEX (weekend low traffic)
-0 2 * * 0 agv maintenance run --project prod --operation reindex
+0 2 * * 0 ai maintenance run --project prod --operation reindex
 ```
 
 **Development Environment:**
 ```bash
 # Weekly all operations
-0 2 * * 0 agv maintenance run --project dev
+0 2 * * 0 ai maintenance run --project dev
 ```
 
 ### Scheduling with Cron
@@ -165,22 +165,22 @@ REINDEX INDEX agv_v_chunks_embedding_idx;
 crontab -e
 
 # Add maintenance jobs
-0 2 * * * cd /path/to/agent-vault && \
-    /path/to/.venv/bin/agv maintenance run --project prod --operation vacuum \
-    >> /var/log/agent-vault/maintenance.log 2>&1
+0 2 * * * cd /path/to/agentic-inquiry && \
+    /path/to/.venv/bin/ai maintenance run --project prod --operation vacuum \
+    >> /var/log/agentic-inquiry/maintenance.log 2>&1
 
-0 2 * * 0 cd /path/to/agent-vault && \
-    /path/to/.venv/bin/agv maintenance run --project prod --operation reindex \
-    >> /var/log/agent-vault/maintenance.log 2>&1
+0 2 * * 0 cd /path/to/agentic-inquiry && \
+    /path/to/.venv/bin/ai maintenance run --project prod --operation reindex \
+    >> /var/log/agentic-inquiry/maintenance.log 2>&1
 ```
 
 **Testing cron jobs:**
 ```bash
 # Run maintenance manually first
-/path/to/.venv/bin/agv maintenance run --project prod --operation vacuum
+/path/to/.venv/bin/ai maintenance run --project prod --operation vacuum
 
 # Check logs
-tail -f /var/log/agent-vault/maintenance.log
+tail -f /var/log/agentic-inquiry/maintenance.log
 ```
 
 ### Scheduling with Google Cloud Scheduler
@@ -205,28 +205,28 @@ gcloud scheduler jobs create http reindex-maintenance \
 **Or trigger via Pub/Sub:**
 ```bash
 # Create topic
-gcloud pubsub topics create agent-vault-maintenance
+gcloud pubsub topics create agentic-inquiry-maintenance
 
 # Create subscription that runs maintenance
 gcloud scheduler jobs create pubsub vacuum-job \
     --schedule="0 2 * * *" \
-    --topic=agent-vault-maintenance \
+    --topic=agentic-inquiry-maintenance \
     --message-body='{"operation": "vacuum", "project": "prod"}'
 ```
 
 ### Scheduling with systemd Timers
 
-**Create service file:** `/etc/systemd/system/agv-maintenance.service`
+**Create service file:** `/etc/systemd/system/ai-maintenance.service`
 ```ini
 [Unit]
-Description=Agent-Vault Maintenance
+Description=Agentic Inquiry Maintenance
 After=network.target
 
 [Service]
 Type=oneshot
-User=agv
-WorkingDirectory=/opt/agent-vault
-ExecStart=/opt/agent-vault/.venv/bin/agv maintenance run --project prod
+User=ai
+WorkingDirectory=/opt/agentic-inquiry
+ExecStart=/opt/agentic-inquiry/.venv/bin/ai maintenance run --project prod
 StandardOutput=journal
 StandardError=journal
 
@@ -234,11 +234,11 @@ StandardError=journal
 WantedBy=multi-user.target
 ```
 
-**Create timer:** `/etc/systemd/system/agv-maintenance.timer`
+**Create timer:** `/etc/systemd/system/ai-maintenance.timer`
 ```ini
 [Unit]
-Description=Agent-Vault Daily Maintenance
-Requires=agv-maintenance.service
+Description=Agentic Inquiry Daily Maintenance
+Requires=ai-maintenance.service
 
 [Timer]
 OnCalendar=daily
@@ -252,11 +252,11 @@ WantedBy=timers.target
 **Enable and start:**
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable agv-maintenance.timer
-sudo systemctl start agv-maintenance.timer
+sudo systemctl enable ai-maintenance.timer
+sudo systemctl start ai-maintenance.timer
 
 # Check status
-sudo systemctl list-timers agv-maintenance.timer
+sudo systemctl list-timers ai-maintenance.timer
 ```
 
 ## Monitoring and Alerts
@@ -328,12 +328,12 @@ WHERE relname LIKE 'agv_%';
 from prometheus_client import Gauge, Counter
 
 # Table metrics
-dead_tuples = Gauge('agv_dead_tuples_total', 'Dead tuples per table', ['table'])
-table_size = Gauge('agv_table_size_bytes', 'Table size in bytes', ['table'])
+dead_tuples = Gauge('ai_dead_tuples_total', 'Dead tuples per table', ['table'])
+table_size = Gauge('ai_table_size_bytes', 'Table size in bytes', ['table'])
 
 # Maintenance metrics
-maintenance_duration = Gauge('agv_maintenance_duration_seconds', 'Maintenance duration', ['operation'])
-maintenance_runs = Counter('agv_maintenance_runs_total', 'Maintenance runs', ['operation', 'status'])
+maintenance_duration = Gauge('ai_maintenance_duration_seconds', 'Maintenance duration', ['operation'])
+maintenance_runs = Counter('ai_maintenance_runs_total', 'Maintenance runs', ['operation', 'status'])
 
 # Update metrics
 status = await storage.get_maintenance_status()
@@ -392,20 +392,20 @@ table_size.labels(table='chunks').set(status.table_size_bytes)
 ```sql
 -- Increase maintenance_work_mem (per session)
 SET maintenance_work_mem = '1GB';
-VACUUM ANALYZE agv_v_chunks;
+VACUUM ANALYZE ai_v_chunks;
 ```
 
 **Speed up REINDEX:**
 ```sql
 -- Increase max_parallel_maintenance_workers
 SET max_parallel_maintenance_workers = 4;
-REINDEX INDEX CONCURRENTLY agv_v_chunks_embedding_idx;
+REINDEX INDEX CONCURRENTLY ai_v_chunks_embedding_idx;
 ```
 
 **Reduce I/O impact:**
 ```bash
 # Use ionice on Linux
-ionice -c 3 agv maintenance run --project prod --operation reindex
+ionice -c 3 ai maintenance run --project prod --operation reindex
 ```
 
 ## Troubleshooting
@@ -438,7 +438,7 @@ SELECT pg_terminate_backend(PID);
 SELECT slot_name, active, restart_lsn FROM pg_replication_slots;
 
 -- If bloat >50%, run VACUUM FULL during maintenance window
-VACUUM FULL agv_v_chunks;
+VACUUM FULL ai_v_chunks;
 ```
 
 ### REINDEX Issues
@@ -486,7 +486,7 @@ SELECT pg_cancel_backend(PID);
 
 **Run maintenance:**
 ```bash
-agv maintenance run [OPTIONS]
+ai maintenance run [OPTIONS]
 
 Options:
   --project, -p TEXT         Project ID for table prefix (overrides config)

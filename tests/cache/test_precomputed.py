@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 from datetime import datetime, timedelta
 
-from agent_vault.cache.precomputed import PrecomputedCache, CacheEntry
+from agentic_inquiry.cache.precomputed import PrecomputedCache, CacheEntry
 
 
 class TestCacheEntry:

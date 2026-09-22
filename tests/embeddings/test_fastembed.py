@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 import numpy as np
 import pytest
 
-from agent_vault.embeddings.fastembed import FastEmbedEmbedder
+from agentic_inquiry.embeddings.fastembed import FastEmbedEmbedder
 
 
 @pytest.mark.unit

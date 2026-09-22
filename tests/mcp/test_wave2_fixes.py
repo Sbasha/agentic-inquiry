@@ -10,8 +10,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
-from agent_vault.mcp.services.entity_resolver import EntityResolver
-from agent_vault.models.graph_entity import EntityType
+from agentic_inquiry.mcp.services.entity_resolver import EntityResolver
+from agentic_inquiry.models.graph_entity import EntityType
 
 
 class TestGraphTraverseTypeField:
@@ -46,7 +46,7 @@ class TestGraphTraverseTypeField:
     @pytest.mark.asyncio
     async def test_graph_traverse_filters_by_type_field(self, mock_services):
         """Verify graph_traverse filters relationships using 'type' field, not 'relationship_type'."""
-        from agent_vault.mcp.tools.direct_access import graph_traverse
+        from agentic_inquiry.mcp.tools.direct_access import graph_traverse
 
         mock_db = mock_services["storage"]
 
@@ -86,7 +86,7 @@ class TestGraphTraverseTypeField:
     @pytest.mark.asyncio
     async def test_graph_traverse_type_filter_is_case_insensitive(self, mock_services):
         """Verify graph_traverse type filtering is case-insensitive."""
-        from agent_vault.mcp.tools.direct_access import graph_traverse
+        from agentic_inquiry.mcp.tools.direct_access import graph_traverse
 
         mock_db = mock_services["storage"]
 
@@ -123,7 +123,7 @@ class TestGraphTraverseTypeField:
     @pytest.mark.asyncio
     async def test_graph_traverse_invalid_max_depth_returns_error(self, mock_services):
         """Verify graph_traverse returns validation error for invalid max_depth."""
-        from agent_vault.mcp.tools.direct_access import graph_traverse
+        from agentic_inquiry.mcp.tools.direct_access import graph_traverse
 
         # Test max_depth = 0 (below minimum)
         result = await graph_traverse(
@@ -152,7 +152,7 @@ class TestGraphTraverseTypeField:
     @pytest.mark.asyncio
     async def test_graph_traverse_invalid_direction_returns_error(self, mock_services):
         """Verify graph_traverse returns validation error for invalid direction."""
-        from agent_vault.mcp.tools.direct_access import graph_traverse
+        from agentic_inquiry.mcp.tools.direct_access import graph_traverse
 
         result = await graph_traverse(
             services=mock_services,
@@ -168,7 +168,7 @@ class TestGraphTraverseTypeField:
     @pytest.mark.asyncio
     async def test_graph_traverse_entity_not_found_returns_error(self, mock_services):
         """Verify graph_traverse returns helpful error when entity not found."""
-        from agent_vault.mcp.tools.direct_access import graph_traverse
+        from agentic_inquiry.mcp.tools.direct_access import graph_traverse
 
         mock_db = mock_services["storage"]
 
@@ -242,7 +242,7 @@ class TestEntityResolverPreference:
                 "id": "cls_001",
                 "name": "LanceDBManager",
                 "type": EntityType.CODE_CLASS.value,
-                "file_path": "agent_vault/database/lancedb_manager.py",
+                "file_path": "agentic_inquiry/database/lancedb_manager.py",
             },
         ]
 
@@ -250,7 +250,7 @@ class TestEntityResolverPreference:
 
         assert result is not None
         assert result.entity_type == EntityType.CODE_CLASS.value
-        assert result.file_path == "agent_vault/database/lancedb_manager.py"
+        assert result.file_path == "agentic_inquiry/database/lancedb_manager.py"
 
     @pytest.mark.asyncio
     async def test_exact_match_prefers_code_function_over_external(
@@ -400,7 +400,7 @@ class TestRelationshipResolverLogging:
     @pytest.fixture
     def resolver(self, mock_symbol_registry, mock_db_manager, tmp_path):
         """Create a RelationshipResolver instance."""
-        from agent_vault.indexing.relationship_resolver import RelationshipResolver
+        from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
 
         return RelationshipResolver(
             symbol_registry=mock_symbol_registry,
@@ -416,7 +416,7 @@ class TestRelationshipResolverLogging:
         import logging
 
         # Capture debug logs
-        with caplog.at_level(logging.DEBUG, logger="agent_vault.indexing.relationship_resolver"):
+        with caplog.at_level(logging.DEBUG, logger="agentic_inquiry.indexing.relationship_resolver"):
             # Call _resolve_impl - it will fail to resolve (no matching entities)
             _result = await resolver._resolve_impl(
                 target_name="NonExistentSymbol",
@@ -443,7 +443,7 @@ class TestRelationshipResolverLogging:
         """Verify _resolve_impl logs warning when all strategies fail."""
         import logging
 
-        with caplog.at_level(logging.WARNING, logger="agent_vault.indexing.relationship_resolver"):
+        with caplog.at_level(logging.WARNING, logger="agentic_inquiry.indexing.relationship_resolver"):
             result = await resolver._resolve_impl(
                 target_name="UnresolvableSymbol",
                 target_type=None,

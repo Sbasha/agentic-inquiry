@@ -11,12 +11,12 @@ This document is a guardrail for the database abstraction + connector architectu
 ### User Interface Layer (Plugin Skills + CLI + MCP)
 
 Owns **user interaction and command orchestration**:
-- **Plugin Skills** (PRIMARY): Claude Code plugin skills in `extensions/claude/agv/` and `extensions/claude/agv-dev/`
-  - `/agv:search`, `/agv:index`, `/agv:onboard`, `/agv:entity`, etc.
+- **Plugin Skills** (PRIMARY): Claude Code plugin skills in `extensions/claude/ai/` and `extensions/claude/ai-dev/`
+  - `/ai:search`, `/ai:index`, `/ai:onboard`, `/ai:entity`, etc.
   - Hook into Claude Code lifecycle (before/after build, etc.)
   - User-facing commands and workflows
   - `.github/` and `.codex/` mirrors point to the same skill and agent tree for Copilot and Codex
-- **CLI** (SECONDARY): Command-line interface (`agv index`, `agv search`, etc.)
+- **CLI** (SECONDARY): Command-line interface (`ai index`, `ai search`, etc.)
   - Batch operations, scripting, CI/CD integration
 - **MCP** (ADVANCED/OPTIONAL): Model Context Protocol server for external integrations
   - Programmatic access for non-Claude AI clients
@@ -139,7 +139,7 @@ Exception: If a storage backend provides a native hybrid+rerank primitive, it ca
 ### New Storage Provider
 
 Minimum work:
-- Implement `VectorStorageProtocol` and/or `GraphStorageProtocol` (see `agent_vault.storage.protocols`)
+- Implement `VectorStorageProtocol` and/or `GraphStorageProtocol` (see `agentic_inquiry.storage.protocols`)
 - Implement lifecycle methods: `initialize()`, `close()`, `health_check()`
 - Implement CRUD methods: `upsert_chunks()`, `delete_chunks()`, `get_chunks()`
 - Implement search methods: `vector_search()`, `fts_search()`, optionally `hybrid_search()`
@@ -148,7 +148,7 @@ Minimum work:
   - Server-side: skip embedding column in upsert, implement `generate_embeddings()`
 - Implement `Filter` AST translation with strict field validation
 - Implement logical→physical schema mapping and index configuration
-- Register provider in `agent_vault.storage.registry`
+- Register provider in `agentic_inquiry.storage.registry`
 - Add config schema to `storage/schemas/<backend>.schema.json`
 - Pass protocol compliance tests
 

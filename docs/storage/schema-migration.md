@@ -4,17 +4,17 @@
 **Status:** Current
 **Last Updated:** 2026-01-13
 
-This guide explains how to handle schema changes in Agent-Vault's PostgreSQL backend, including embedding dimension migrations, Python compatibility, and backup/restore procedures.
+This guide explains how to handle schema changes in Agentic Inquiry's PostgreSQL backend, including embedding dimension migrations, Python compatibility, and backup/restore procedures.
 
 ## Overview
 
-Schema migrations in Agent-Vault are **explicit and opt-in** to prevent accidental data loss. The system detects mismatches at startup and provides clear guidance for resolution.
+Schema migrations in Agentic Inquiry are **explicit and opt-in** to prevent accidental data loss. The system detects mismatches at startup and provides clear guidance for resolution.
 
 ### Migration Scenarios
 
 | Scenario | Detection | Action Required |
 |----------|-----------|-----------------|
-| **Dimension mismatch** | Startup error | Run `agv schema migrate` |
+| **Dimension mismatch** | Startup error | Run `ai schema migrate` |
 | **New optional columns** | Auto-applied | None (backward compatible) |
 | **Python 3.13+ upgrade** | Connection mode fallback | Update connection config |
 | **SSL configuration change** | Connection error | Update SSL settings |
@@ -35,10 +35,10 @@ Schema migrations in Agent-Vault are **explicit and opt-in** to prevent accident
 
 ### Detection at Startup
 
-Agent-Vault automatically detects dimension mismatches when initializing:
+Agentic Inquiry automatically detects dimension mismatches when initializing:
 
 ```python
-from agent_vault.storage import create_storage_facade
+from agentic_inquiry.storage import create_storage_facade
 
 config = BackendConfig(
     embedding_dimension=1536,  # New dimension
@@ -54,7 +54,7 @@ SchemaMismatchError: Embedding dimension mismatch detected.
   Configured: 1536 dimensions
   Existing table: 768 dimensions
 
-To migrate, run: agv schema migrate --project my-project --new-dimension 1536 --confirm-data-loss
+To migrate, run: ai schema migrate --project my-project --new-dimension 1536 --confirm-data-loss
 This will drop and recreate the embedding column, requiring full re-indexing.
 ```
 
@@ -64,7 +64,7 @@ This will drop and recreate the embedding column, requiring full re-indexing.
 
 ```bash
 # Dry-run shows what will happen WITHOUT making changes
-agv schema migrate --project my-project --new-dimension 1536 --dry-run
+ai schema migrate --project my-project --new-dimension 1536 --dry-run
 ```
 
 **Output:**
@@ -74,7 +74,7 @@ Schema Migration Plan
 
 Source Configuration:
   Project: my-project
-  Table: agv_v_chunks
+  Table: ai_v_chunks
   Current dimension: 768
   Configured dimension: 1536
 
@@ -104,7 +104,7 @@ Migration requires explicit confirmation:
 
 ```bash
 # This flag acknowledges embeddings will be deleted
-agv schema migrate --project my-project --new-dimension 1536 --confirm-data-loss
+ai schema migrate --project my-project --new-dimension 1536 --confirm-data-loss
 ```
 
 **Migration Progress:**
@@ -139,15 +139,15 @@ Migration completed successfully in 28.3 seconds
 
 Next Steps:
   1. Re-index all content:
-     agv index rebuild --project my-project
+     ai index rebuild --project my-project
 
   2. Monitor re-indexing progress:
-     agv get-project-info --project my-project
+     ai get-project-info --project my-project
 
 Backup Information:
   Table: _agv_migration_backup_chunks_20260113_143022
   Retention: 7 days (auto-cleanup on 2026-01-20)
-  To restore: agv schema restore --project my-project --backup 20260113_143022
+  To restore: ai schema restore --project my-project --backup 20260113_143022
 ```
 
 #### Step 3: Re-Index Content
@@ -155,7 +155,7 @@ Backup Information:
 After migration, all content must be re-indexed with new embeddings:
 
 ```python
-from agent_vault.indexing import IndexingPipeline
+from agentic_inquiry.indexing import IndexingPipeline
 
 pipeline = IndexingPipeline(storage_facade)
 
@@ -168,7 +168,7 @@ await pipeline.index_directory(
 
 **Or via CLI:**
 ```bash
-agv add-knowledge --project my-project \
+ai add-knowledge --project my-project \
     --content-type code \
     --source /path/to/project \
     --force-reindex
@@ -177,11 +177,11 @@ agv add-knowledge --project my-project \
 ### Backup Verification
 
 **Automatic Verification:**
-Agent-Vault verifies backup integrity before proceeding:
+Agentic Inquiry verifies backup integrity before proceeding:
 
 ```sql
 -- Counts must match exactly
-SELECT COUNT(*) FROM agv_v_chunks;        -- Source
+SELECT COUNT(*) FROM ai_v_chunks;        -- Source
 SELECT COUNT(*) FROM _agv_migration_backup_...;   -- Backup
 ```
 
@@ -202,7 +202,7 @@ Backup table dropped: _agv_migration_backup_chunks_20260113_143022
 
 **Custom Retention:**
 ```bash
-agv schema migrate --project my-project \
+ai schema migrate --project my-project \
     --new-dimension 1536 \
     --confirm-data-loss \
     --backup-retention-days 30
@@ -227,10 +227,10 @@ If migration fails or you need to rollback:
 
 ```bash
 # List available backups
-agv schema list-backups --project my-project
+ai schema list-backups --project my-project
 
 # Restore from specific backup
-agv schema restore --project my-project --backup 20260113_143022
+ai schema restore --project my-project --backup 20260113_143022
 ```
 
 **Restore Process:**
@@ -246,7 +246,7 @@ agv schema restore --project my-project --backup 20260113_143022
 
 ### Connection Mode Detection
 
-Agent-Vault automatically selects the appropriate connection mode based on Python version and available packages:
+Agentic Inquiry automatically selects the appropriate connection mode based on Python version and available packages:
 
 | Python Version | Primary Mode | Fallback Mode |
 |----------------|--------------|---------------|
@@ -283,11 +283,11 @@ cloud-sql-proxy --port 5432 \
 
 **Step 3: Configure Direct Connection**
 ```python
-from agent_vault.storage.config import BackendConfig
+from agentic_inquiry.storage.config import BackendConfig
 
 config = BackendConfig(
     type="cloudsql",
-    connection_string="postgresql://user:pass@localhost:5432/agent-vault",
+    connection_string="postgresql://user:pass@localhost:5432/agentic-inquiry",
     ssl_mode="require"  # Required for direct connections
 )
 ```
@@ -313,7 +313,7 @@ gcloud sql ssl-certs describe client-cert \
 ```python
 config = BackendConfig(
     type="cloudsql",
-    connection_string="postgresql://user:pass@35.1.2.3:5432/agent-vault",
+    connection_string="postgresql://user:pass@35.1.2.3:5432/agentic-inquiry",
     ssl_mode="verify-full",  # Verify server identity
     ssl_ca_cert="/path/to/server-ca.pem"
 )
@@ -391,13 +391,13 @@ config = BackendConfig(
 
 ### Connection Mode Warnings
 
-When direct connection mode is used, Agent-Vault logs a warning:
+When direct connection mode is used, Agentic Inquiry logs a warning:
 
 ```
 WARNING: Using direct asyncpg connection. IAM authentication is not available.
 For production, consider using Cloud SQL Auth Proxy.
 
-Connection: postgresql://user@localhost:5432/agent-vault
+Connection: postgresql://user@localhost:5432/agentic-inquiry
 SSL Mode: require
 Python Version: 3.13.0
 ```
@@ -411,26 +411,26 @@ This is informational only and does not indicate a problem if Auth Proxy is runn
 CloudSQLConnectorUnavailable: The cloud-sql-python-connector package is not available.
 
 This can happen because:
-  1. The 'cloudsql' extras were not installed: pip install agent-vault[cloudsql]
+  1. The 'cloudsql' extras were not installed: pip install agentic-inquiry[cloudsql]
   2. Python 3.13+ is being used (connector not yet supported)
 
 Options:
-  A) Install extras: pip install agent-vault[cloudsql]
+  A) Install extras: pip install agentic-inquiry[cloudsql]
   B) Use direct connection: Set 'connection_string' instead of 'project/instance/region'
      Note: Direct connection requires Cloud SQL Auth Proxy or public IP with SSL.
 
-See: https://docs.agent-vault.dev/storage/cloudsql-setup#python-313
+See: https://docs.agentic-inquiry.dev/storage/cloudsql-setup#python-313
 ```
 
 ## Additive Schema Changes
 
 ### Supported Changes
 
-Agent-Vault supports adding new optional columns without breaking existing deployments:
+Agentic Inquiry supports adding new optional columns without breaking existing deployments:
 
 ```sql
 -- Automatically handled at startup
-ALTER TABLE agv_v_chunks
+ALTER TABLE ai_v_chunks
 ADD COLUMN IF NOT EXISTS new_column TEXT;
 ```
 
@@ -460,7 +460,7 @@ storage = create_storage_facade(config)  # Works fine, column auto-added
 
 ### Version Metadata
 
-Agent-Vault tracks schema versions in a metadata table:
+Agentic Inquiry tracks schema versions in a metadata table:
 
 ```sql
 CREATE TABLE IF NOT EXISTS _agv_schema_meta (
@@ -485,7 +485,7 @@ curl http://localhost:8080/health
   "status": "healthy",
   "schema_version": 2,
   "embedding_dimension": 1536,
-  "database": "agent-vault",
+  "database": "agentic-inquiry",
   "index_type": "hnsw"
 }
 ```
@@ -515,7 +515,7 @@ All schema changes are logged for compliance and debugging:
 
 ```python
 import logging
-logger = logging.getLogger("agent_vault.storage.audit")
+logger = logging.getLogger("agentic_inquiry.storage.audit")
 ```
 
 **Logged Events:**
@@ -532,10 +532,10 @@ logger = logging.getLogger("agent_vault.storage.audit")
 **Audit Log Location:**
 ```bash
 # Default location
-tail -f /var/log/agent-vault/audit.log
+tail -f /var/log/agentic-inquiry/audit.log
 
 # Or configured via environment
-export agv_AUDIT_LOG=/path/to/audit.log
+export AI_AUDIT_LOG=/path/to/audit.log
 ```
 
 ## Troubleshooting
@@ -574,10 +574,10 @@ gcloud sql instances patch my-instance --tier db-standard-8
 **Solution:**
 ```bash
 # Retry migration (creates new backup)
-agv schema migrate --project my-project --new-dimension 1536 --confirm-data-loss
+ai schema migrate --project my-project --new-dimension 1536 --confirm-data-loss
 
 # Or manually verify and force
-psql -c "SELECT COUNT(*) FROM agv_v_chunks;"
+psql -c "SELECT COUNT(*) FROM ai_v_chunks;"
 psql -c "SELECT COUNT(*) FROM _agv_migration_backup_chunks_..."
 ```
 
@@ -610,7 +610,7 @@ cloud-sql-proxy --port 5432 my-project:region:instance
 
 # Update config
 config = BackendConfig(
-    connection_string="postgresql://user:pass@localhost:5432/agent-vault",
+    connection_string="postgresql://user:pass@localhost:5432/agentic-inquiry",
     ssl_mode="require"
 )
 ```
@@ -620,7 +620,7 @@ config = BackendConfig(
 # Use Python 3.12
 pyenv install 3.12.7
 pyenv local 3.12.7
-pip install agent-vault[cloudsql]
+pip install agentic-inquiry[cloudsql]
 ```
 
 ## Configuration Reference
@@ -645,7 +645,7 @@ class BackendConfig:
 ### Migration CLI Options
 
 ```bash
-agv schema migrate --help
+ai schema migrate --help
 
 Options:
   --project TEXT              Project name [required]

@@ -36,8 +36,8 @@ This is not a comprehensive test. It does NOT test:
 
 ### Prerequisites
 
-1. **MCP Server Running** - Agent-Vault MCP server must be started
-2. **Test Codebase** - Small codebase to index (your own project or agent-vault itself)
+1. **MCP Server Running** - Agentic Inquiry MCP server must be started
+2. **Test Codebase** - Small codebase to index (your own project or agentic-inquiry itself)
 3. **Project Path** - Know the path to the codebase you'll test with
 
 ### Test Environment
@@ -335,16 +335,16 @@ Next Steps: [what needs to be fixed]
 ### Server Not Responding
 ```bash
 # Check if server is running
-ps aux | grep agv
+ps aux | grep ai
 
 # Restart server
-uv run agv [project_name]
+uv run ai [project_name]
 ```
 
 ### Indexing Failed
 ```bash
 # Check logs
-tail -f workspace/logs/agent-vault.log
+tail -f workspace/logs/agentic-inquiry.log
 
 # Common issues:
 # - File permissions

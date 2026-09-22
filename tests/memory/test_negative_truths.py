@@ -1,10 +1,10 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock
 
-from agent_vault.memory.system import MemorySystem
-from agent_vault.memory.models import MemoryContext, MemoryItem, MemoryTier, MemoryStatus, RetrievalResult
-from agent_vault.memory.retrieval import RetrievalEngine
-from agent_vault.memory.protocols import MemoryStorageProtocol
+from agentic_inquiry.memory.system import MemorySystem
+from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier, MemoryStatus, RetrievalResult
+from agentic_inquiry.memory.retrieval import RetrievalEngine
+from agentic_inquiry.memory.protocols import MemoryStorageProtocol
 
 @pytest.mark.asyncio
 async def test_negate_memory():

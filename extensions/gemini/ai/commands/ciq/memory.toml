@@ -1,0 +1,65 @@
+description = "Save and recall project memories and insights"
+prompt = """
+Save and recall project memories and insights
+
+Usage: /ai:memory [save|recall|list] <text|query>
+
+# /ai:memory
+
+Persistent memory for project insights and learnings.
+
+## Quick Start
+
+```bash
+/ai:memory save "Auth uses JWT with 24h expiry"    # Save insight
+/ai:memory recall "authentication"                  # Find memories
+/ai:memory list                                     # List all memories
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| `save` | Store a new memory |
+| `recall` | Search memories by query |
+| `list` | Show all saved memories |
+
+## Saving Memories
+
+Store insights, decisions, gotchas:
+```bash
+/ai:memory save "The SearchService requires warm-up on cold start"
+/ai:memory save "Don't use pickle for entity serialization - security risk"
+/ai:memory save "Config precedence: env vars > yaml > defaults"
+```
+
+## Recalling Memories
+
+Semantic search across memories:
+```bash
+/ai:memory recall "startup performance"
+# /ai:memory
+
+/ai:memory recall "security"
+# /ai:memory
+```
+
+## CLI Equivalent
+
+```bash
+uv run --env-file .env ai memory save "insight here" --project-id myproject
+uv run --env-file .env ai memory recall "query" --project-id myproject
+uv run --env-file .env ai memory list --project-id myproject
+```
+
+## Use Cases
+
+1. **Knowledge capture**: Save learnings as you go
+2. **Onboarding**: Build institutional knowledge
+3. **Debugging**: Remember past solutions
+4. **Decisions**: Document why things are the way they are
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `ai` CLI command(s) using the available tools.
+"""

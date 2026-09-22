@@ -1,0 +1,66 @@
+description = "Synchronize AGENTS.md with ai-dev skills to keep documentation lean"
+prompt = """
+Synchronize AGENTS.md with ai-dev skills to keep documentation lean
+
+Usage: /ai-dev:sync-agents 
+
+# Sync AGENTS.md with Skills
+
+This command updates AGENTS.md to reference skills instead of duplicating content.
+
+## Process
+
+1. **Scan ai-dev skills** for current coverage:
+   - `coding-guidelines` - Code standards
+   - `testing` - Test commands and patterns
+   - `quality` - Quality checklists
+   - `extending` - How to extend ai
+   - `plugins` - CLI integrations
+   - `commit` - Commit requirements
+
+2. **Scan ai skills** for user-facing workflows:
+   - `/ai:search`, `/ai:index`, `/ai:entity`, etc.
+
+3. **Update AGENTS.md** to:
+   - Keep essential quick-reference content
+   - Replace detailed sections with skill references
+   - Add skill invocation examples
+
+## Execution
+
+Read current AGENTS.md and identify sections that are now covered by skills.
+For each covered section, replace detailed content with:
+
+```markdown
+## [Section Name]
+
+For detailed guidance, invoke the skill:
+- `/ai-dev:skill-name` - Brief description
+
+Quick reference: [1-2 key points only]
+```
+
+## Skill Reference Format
+
+```markdown
+| Topic | Skill | Invoke |
+|-------|-------|--------|
+| Coding standards | coding-guidelines | `/ai-dev:coding-guidelines` |
+| Testing | testing | `/ai-dev:testing` |
+| Quality | quality | `/ai-dev:quality` |
+| Extending ai | extending | `/ai-dev:extending` |
+| CLI plugins | plugins | `/ai-dev:plugins` |
+| Commits | commit | `/ai-dev:commit` |
+```
+
+## Output
+
+After sync:
+- AGENTS.md should be under 500 lines
+- All detailed content lives in skills
+- Quick reference sections remain for common operations
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `ai` CLI command(s) using the available tools.
+"""

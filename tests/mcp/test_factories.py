@@ -34,10 +34,10 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import Mock, patch, AsyncMock
 
-from agent_vault.config import Config
-from agent_vault.mcp.factories import create_mcp_services
-from agent_vault.mcp.services.token_optimizer import TokenOptimizer
-from agent_vault.mcp.utils.cache import MCPCacheManager
+from agentic_inquiry.config import Config
+from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
+from agentic_inquiry.mcp.utils.cache import MCPCacheManager
 
 
 @pytest.fixture
@@ -54,11 +54,11 @@ def real_config(integration_config):
     - Config schema violations
     """
     # Add MCP server configuration required by factory
-    from agent_vault.config import MCPConfig, MCPServerConfig
+    from agentic_inquiry.config import MCPConfig, MCPServerConfig
 
     integration_config.mcp = MCPConfig(
         server=MCPServerConfig(
-            name="Agent-Vault Test",
+            name="Agentic Inquiry Test",
             version="1.0.0",
             description="Test MCP Server"
         )
@@ -70,20 +70,20 @@ def real_config(integration_config):
 class TestCreateMCPServices:
     """Test create_mcp_services factory function."""
 
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.mcp.factories.SearchService')
-    @patch('agent_vault.mcp.factories.IndexingPipeline')
-    @patch('agent_vault.embeddings.service.EmbeddingService')
-    @patch('agent_vault.mcp.factories.MemorySystem')
-    @patch('agent_vault.events.system.EventSystem')
-    @patch('agent_vault.mcp.factories.SessionManager')
-    @patch('agent_vault.mcp.factories.EntityResolver')
-    @patch('agent_vault.mcp.factories.ImpactAnalyzer')
-    @patch('agent_vault.mcp.factories.ContextBuilder')
-    @patch('agent_vault.mcp.factories.PatternAnalyzer')
-    @patch('agent_vault.mcp.factories.TemporalAnalyzer')
-    @patch('agent_vault.mcp.factories.embedding_registry')
-    @patch('agent_vault.mcp.factories.LanceDBMemoryAdapter')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.mcp.factories.SearchService')
+    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
+    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
+    @patch('agentic_inquiry.mcp.factories.MemorySystem')
+    @patch('agentic_inquiry.events.system.EventSystem')
+    @patch('agentic_inquiry.mcp.factories.SessionManager')
+    @patch('agentic_inquiry.mcp.factories.EntityResolver')
+    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
+    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.LanceDBMemoryAdapter')
     async def test_creates_all_services(
         self,
         mock_memory_adapter,
@@ -195,20 +195,20 @@ class TestCreateMCPServices:
         assert isinstance(services["token_optimizer"], TokenOptimizer)
         assert isinstance(services["cache_manager"], MCPCacheManager)
 
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.mcp.factories.SearchService')
-    @patch('agent_vault.mcp.factories.IndexingPipeline')
-    @patch('agent_vault.embeddings.service.EmbeddingService')
-    @patch('agent_vault.mcp.factories.MemorySystem')
-    @patch('agent_vault.mcp.factories.LanceDBMemoryAdapter')
-    @patch('agent_vault.events.system.EventSystem')
-    @patch('agent_vault.mcp.factories.SessionManager')
-    @patch('agent_vault.mcp.factories.EntityResolver')
-    @patch('agent_vault.mcp.factories.ImpactAnalyzer')
-    @patch('agent_vault.mcp.factories.ContextBuilder')
-    @patch('agent_vault.mcp.factories.PatternAnalyzer')
-    @patch('agent_vault.mcp.factories.TemporalAnalyzer')
-    @patch('agent_vault.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.mcp.factories.SearchService')
+    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
+    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
+    @patch('agentic_inquiry.mcp.factories.MemorySystem')
+    @patch('agentic_inquiry.mcp.factories.LanceDBMemoryAdapter')
+    @patch('agentic_inquiry.events.system.EventSystem')
+    @patch('agentic_inquiry.mcp.factories.SessionManager')
+    @patch('agentic_inquiry.mcp.factories.EntityResolver')
+    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
+    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
     async def test_passes_correct_dependencies(
         self,
         mock_embedding_registry,
@@ -353,8 +353,8 @@ class TestCreateMCPServices:
         assert isinstance(services["token_optimizer"], TokenOptimizer)
         assert isinstance(services["cache_manager"], MCPCacheManager)
 
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
     async def test_propagates_creation_errors(
         self,
         mock_embedding_registry,
@@ -376,19 +376,19 @@ class TestCreateMCPServices:
         with pytest.raises(Exception, match="Storage creation failed"):
             await create_mcp_services(real_config, "test_project")
 
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.mcp.factories.SearchService')
-    @patch('agent_vault.mcp.factories.IndexingPipeline')
-    @patch('agent_vault.embeddings.service.EmbeddingService')
-    @patch('agent_vault.mcp.factories.MemorySystem')
-    @patch('agent_vault.events.system.EventSystem')
-    @patch('agent_vault.mcp.factories.SessionManager')
-    @patch('agent_vault.mcp.factories.EntityResolver')
-    @patch('agent_vault.mcp.factories.ImpactAnalyzer')
-    @patch('agent_vault.mcp.factories.ContextBuilder')
-    @patch('agent_vault.mcp.factories.PatternAnalyzer')
-    @patch('agent_vault.mcp.factories.TemporalAnalyzer')
-    @patch('agent_vault.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.mcp.factories.SearchService')
+    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
+    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
+    @patch('agentic_inquiry.mcp.factories.MemorySystem')
+    @patch('agentic_inquiry.events.system.EventSystem')
+    @patch('agentic_inquiry.mcp.factories.SessionManager')
+    @patch('agentic_inquiry.mcp.factories.EntityResolver')
+    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
+    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
     async def test_config_accessible_in_services(
         self,
         mock_embedding_registry,
@@ -443,19 +443,19 @@ class TestCreateMCPServices:
         first_key = next(iter(services.keys()))
         assert first_key == "config"
 
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.mcp.factories.SearchService')
-    @patch('agent_vault.mcp.factories.IndexingPipeline')
-    @patch('agent_vault.embeddings.service.EmbeddingService')
-    @patch('agent_vault.mcp.factories.MemorySystem')
-    @patch('agent_vault.events.system.EventSystem')
-    @patch('agent_vault.mcp.factories.SessionManager')
-    @patch('agent_vault.mcp.factories.EntityResolver')
-    @patch('agent_vault.mcp.factories.ImpactAnalyzer')
-    @patch('agent_vault.mcp.factories.ContextBuilder')
-    @patch('agent_vault.mcp.factories.PatternAnalyzer')
-    @patch('agent_vault.mcp.factories.TemporalAnalyzer')
-    @patch('agent_vault.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.mcp.factories.SearchService')
+    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
+    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
+    @patch('agentic_inquiry.mcp.factories.MemorySystem')
+    @patch('agentic_inquiry.events.system.EventSystem')
+    @patch('agentic_inquiry.mcp.factories.SessionManager')
+    @patch('agentic_inquiry.mcp.factories.EntityResolver')
+    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
+    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
     async def test_server_config_created_correctly(
         self,
         mock_embedding_registry,
@@ -514,19 +514,19 @@ class TestCreateMCPServices:
         assert server_config["server_version"] == real_config.mcp.server.version
         assert server_config["server_description"] == real_config.mcp.server.description
 
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.mcp.factories.SearchService')
-    @patch('agent_vault.mcp.factories.IndexingPipeline')
-    @patch('agent_vault.embeddings.service.EmbeddingService')
-    @patch('agent_vault.mcp.factories.MemorySystem')
-    @patch('agent_vault.events.system.EventSystem')
-    @patch('agent_vault.mcp.factories.SessionManager')
-    @patch('agent_vault.mcp.factories.EntityResolver')
-    @patch('agent_vault.mcp.factories.ImpactAnalyzer')
-    @patch('agent_vault.mcp.factories.ContextBuilder')
-    @patch('agent_vault.mcp.factories.PatternAnalyzer')
-    @patch('agent_vault.mcp.factories.TemporalAnalyzer')
-    @patch('agent_vault.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.mcp.factories.SearchService')
+    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
+    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
+    @patch('agentic_inquiry.mcp.factories.MemorySystem')
+    @patch('agentic_inquiry.events.system.EventSystem')
+    @patch('agentic_inquiry.mcp.factories.SessionManager')
+    @patch('agentic_inquiry.mcp.factories.EntityResolver')
+    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
+    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
     async def test_server_config_accessible_in_services_dict(
         self,
         mock_embedding_registry,
@@ -577,19 +577,19 @@ class TestCreateMCPServices:
             "default_project_id", "server_name", "server_version", "server_description"
         ])
 
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.mcp.factories.SearchService')
-    @patch('agent_vault.mcp.factories.IndexingPipeline')
-    @patch('agent_vault.embeddings.service.EmbeddingService')
-    @patch('agent_vault.mcp.factories.MemorySystem')
-    @patch('agent_vault.events.system.EventSystem')
-    @patch('agent_vault.mcp.factories.SessionManager')
-    @patch('agent_vault.mcp.factories.EntityResolver')
-    @patch('agent_vault.mcp.factories.ImpactAnalyzer')
-    @patch('agent_vault.mcp.factories.ContextBuilder')
-    @patch('agent_vault.mcp.factories.PatternAnalyzer')
-    @patch('agent_vault.mcp.factories.TemporalAnalyzer')
-    @patch('agent_vault.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.mcp.factories.SearchService')
+    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
+    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
+    @patch('agentic_inquiry.mcp.factories.MemorySystem')
+    @patch('agentic_inquiry.events.system.EventSystem')
+    @patch('agentic_inquiry.mcp.factories.SessionManager')
+    @patch('agentic_inquiry.mcp.factories.EntityResolver')
+    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
+    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
     async def test_event_system_initialization(
         self,
         mock_embedding_registry,
@@ -644,9 +644,9 @@ class TestCreateMCPServices:
         assert "event_system" in services
         assert services["event_system"] == event_system
 
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.events.system.EventSystem')
-    @patch('agent_vault.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.events.system.EventSystem')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
     async def test_event_system_initialization_failure(
         self,
         mock_embedding_registry,
@@ -688,19 +688,19 @@ class TestRealImplementations:
     This ensures the pure logic is exercised in tests.
     """
 
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.mcp.factories.SearchService')
-    @patch('agent_vault.mcp.factories.IndexingPipeline')
-    @patch('agent_vault.embeddings.service.EmbeddingService')
-    @patch('agent_vault.mcp.factories.MemorySystem')
-    @patch('agent_vault.events.system.EventSystem')
-    @patch('agent_vault.mcp.factories.SessionManager')
-    @patch('agent_vault.mcp.factories.EntityResolver')
-    @patch('agent_vault.mcp.factories.ImpactAnalyzer')
-    @patch('agent_vault.mcp.factories.ContextBuilder')
-    @patch('agent_vault.mcp.factories.PatternAnalyzer')
-    @patch('agent_vault.mcp.factories.TemporalAnalyzer')
-    @patch('agent_vault.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.mcp.factories.SearchService')
+    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
+    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
+    @patch('agentic_inquiry.mcp.factories.MemorySystem')
+    @patch('agentic_inquiry.events.system.EventSystem')
+    @patch('agentic_inquiry.mcp.factories.SessionManager')
+    @patch('agentic_inquiry.mcp.factories.EntityResolver')
+    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
+    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
     async def test_token_optimizer_is_real_implementation(
         self,
         mock_embedding_registry,
@@ -752,19 +752,19 @@ class TestRealImplementations:
         assert isinstance(snippet, str)
         assert len(snippet) > 0
 
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.mcp.factories.SearchService')
-    @patch('agent_vault.mcp.factories.IndexingPipeline')
-    @patch('agent_vault.embeddings.service.EmbeddingService')
-    @patch('agent_vault.mcp.factories.MemorySystem')
-    @patch('agent_vault.events.system.EventSystem')
-    @patch('agent_vault.mcp.factories.SessionManager')
-    @patch('agent_vault.mcp.factories.EntityResolver')
-    @patch('agent_vault.mcp.factories.ImpactAnalyzer')
-    @patch('agent_vault.mcp.factories.ContextBuilder')
-    @patch('agent_vault.mcp.factories.PatternAnalyzer')
-    @patch('agent_vault.mcp.factories.TemporalAnalyzer')
-    @patch('agent_vault.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.mcp.factories.SearchService')
+    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
+    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
+    @patch('agentic_inquiry.mcp.factories.MemorySystem')
+    @patch('agentic_inquiry.events.system.EventSystem')
+    @patch('agentic_inquiry.mcp.factories.SessionManager')
+    @patch('agentic_inquiry.mcp.factories.EntityResolver')
+    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
+    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
     async def test_cache_manager_is_real_implementation(
         self,
         mock_embedding_registry,
@@ -835,19 +835,19 @@ class TestIntegrationFactoryWithRealStorage:
     """
 
     @pytest.mark.integration
-    @patch('agent_vault.mcp.factories.StorageFacade')
-    @patch('agent_vault.mcp.factories.SearchService')
-    @patch('agent_vault.mcp.factories.IndexingPipeline')
-    @patch('agent_vault.embeddings.service.EmbeddingService')
-    @patch('agent_vault.mcp.factories.MemorySystem')
-    @patch('agent_vault.events.system.EventSystem')
-    @patch('agent_vault.mcp.factories.SessionManager')
-    @patch('agent_vault.mcp.factories.EntityResolver')
-    @patch('agent_vault.mcp.factories.ImpactAnalyzer')
-    @patch('agent_vault.mcp.factories.ContextBuilder')
-    @patch('agent_vault.mcp.factories.PatternAnalyzer')
-    @patch('agent_vault.mcp.factories.TemporalAnalyzer')
-    @patch('agent_vault.mcp.factories.embedding_registry')
+    @patch('agentic_inquiry.mcp.factories.StorageFacade')
+    @patch('agentic_inquiry.mcp.factories.SearchService')
+    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
+    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
+    @patch('agentic_inquiry.mcp.factories.MemorySystem')
+    @patch('agentic_inquiry.events.system.EventSystem')
+    @patch('agentic_inquiry.mcp.factories.SessionManager')
+    @patch('agentic_inquiry.mcp.factories.EntityResolver')
+    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
+    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
+    @patch('agentic_inquiry.mcp.factories.embedding_registry')
     async def test_factory_creates_working_real_utilities(
         self,
         mock_embedding_registry,
@@ -937,7 +937,7 @@ class TestMCPServerShutdown:
 
     async def test_shutdown_stops_event_system(self):
         """Test that shutdown calls event_system.stop()."""
-        from agent_vault.mcp.server import MCPServer
+        from agentic_inquiry.mcp.server import MCPServer
 
         # Create mock services
         event_system = Mock()
@@ -965,7 +965,7 @@ class TestMCPServerShutdown:
 
     async def test_shutdown_handles_event_system_error(self):
         """Test that shutdown handles EventSystem.stop() errors gracefully."""
-        from agent_vault.mcp.server import MCPServer
+        from agentic_inquiry.mcp.server import MCPServer
 
         # Create mock services with failing event system
         event_system = Mock()
@@ -993,7 +993,7 @@ class TestMCPServerShutdown:
 
     async def test_shutdown_without_event_system(self):
         """Test that shutdown works when event_system is not in services."""
-        from agent_vault.mcp.server import MCPServer
+        from agentic_inquiry.mcp.server import MCPServer
 
         # Create services without event_system
         services = {

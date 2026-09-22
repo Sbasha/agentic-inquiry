@@ -1,0 +1,12 @@
+{
+  "name": "ai",
+  "version": "1.5.0",
+  "description": "Agentic Inquiry - Semantic Search, Onboarding, and Codebase Intelligence",
+  "mcpServers": {
+    "ai-daemon": {
+      "command": "python3",
+      "args": ["-m", "extensions.gemini.agentic-inquiry.servers.daemon", "--workspace", "${workspacePath}"],
+      "cwd": "${extensionPath}"
+    }
+  }
+}

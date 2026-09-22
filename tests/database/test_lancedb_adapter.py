@@ -18,10 +18,10 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
-from agent_vault.database.filters import and_, eq, gt, is_in
-from agent_vault.database.query_spec import QuerySpec
-from agent_vault.database.results import SearchResult
+from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+from agentic_inquiry.database.filters import and_, eq, gt, is_in
+from agentic_inquiry.database.query_spec import QuerySpec
+from agentic_inquiry.database.results import SearchResult
 
 
 @pytest.fixture
@@ -820,7 +820,7 @@ class TestConfigBasedWeights:
         from unittest.mock import patch
 
         with patch(
-            "agent_vault.database.adapters.lancedb_adapter.LanceDBManager.from_config",
+            "agentic_inquiry.database.adapters.lancedb_adapter.LanceDBManager.from_config",
             return_value=mock_manager,
         ):
             adapter = await LanceDBAdapter.from_config(mock_config)

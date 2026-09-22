@@ -3,7 +3,7 @@
 import pytest
 
 import asyncio
-from agent_vault.metrics import (
+from agentic_inquiry.metrics import (
     LatencyMetrics,
     MetricsTracker,
     get_metrics_tracker,

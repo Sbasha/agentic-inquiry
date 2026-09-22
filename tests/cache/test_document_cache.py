@@ -14,8 +14,8 @@ pytestmark = pytest.mark.unit
 
 import time
 
-from agent_vault.cache import DocumentCache, get_cache, register_cache, available_caches
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.cache import DocumentCache, get_cache, register_cache, available_caches
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
 
 
 @pytest.fixture
@@ -270,7 +270,7 @@ class TestCacheRegistry:
             assert retrieved is cache
         finally:
             # Cleanup
-            from agent_vault.cache import _cache_registry
+            from agentic_inquiry.cache import _cache_registry
             _cache_registry.unregister("test_cache")
     
     def test_get_default_cache(self):
@@ -285,7 +285,7 @@ class TestCacheRegistry:
         assert "default" in caches
 
     def test_import_has_no_side_effects(self):
-        """``import agent_vault.cache`` must not trigger Config.load() or
+        """``import agentic_inquiry.cache`` must not trigger Config.load() or
         construct DocumentCache eagerly. Default cache registration is
         deferred to first ``get_cache()`` / ``available_caches()`` call.
 
@@ -295,7 +295,7 @@ class TestCacheRegistry:
 
         Runs in a subprocess so popping/re-importing the module cannot
         contaminate other tests in this suite that hold module-level
-        references to agent_vault.cache.
+        references to agentic_inquiry.cache.
         """
         import subprocess
         import sys
@@ -306,8 +306,8 @@ class TestCacheRegistry:
             import sys
             calls = []
 
-            # Patch Config.load BEFORE importing agent_vault.cache
-            import agent_vault.config as cfg
+            # Patch Config.load BEFORE importing agentic_inquiry.cache
+            import agentic_inquiry.config as cfg
             original = cfg.Config.load
 
             def spy(*args, **kwargs):
@@ -316,7 +316,7 @@ class TestCacheRegistry:
 
             cfg.Config.load = classmethod(lambda cls, *a, **kw: spy(*a, **kw))
 
-            import agent_vault.cache  # noqa: F401
+            import agentic_inquiry.cache  # noqa: F401
 
             print(f"LOAD_COUNT={len(calls)}")
             sys.exit(0 if len(calls) == 0 else 1)
@@ -329,7 +329,7 @@ class TestCacheRegistry:
             timeout=30,
         )
         assert result.returncode == 0, (
-            "importing agent_vault.cache had side effects:\n"
+            "importing agentic_inquiry.cache had side effects:\n"
             f"  stdout: {result.stdout}\n"
             f"  stderr: {result.stderr}"
         )
@@ -364,7 +364,7 @@ class TestDiskPersistence:
     @pytest.fixture
     def disk_cache_config(self, tmp_path):
         """Create a config with disk persistence enabled."""
-        from agent_vault.config import Config, StorageConfig, DocumentCacheStorageConfig, CacheConfig, DocumentCacheConfig
+        from agentic_inquiry.config import Config, StorageConfig, DocumentCacheStorageConfig, CacheConfig, DocumentCacheConfig
         
         storage_config = StorageConfig(
             root=str(tmp_path / "storage"),
@@ -426,7 +426,7 @@ class TestDiskPersistence:
     @pytest.mark.asyncio
     async def test_project_id_isolation(self, tmp_path, sample_document):
         """Test that cache keys are isolated by project_id."""
-        from agent_vault.config import Config, StorageConfig, DocumentCacheStorageConfig, CacheConfig, DocumentCacheConfig
+        from agentic_inquiry.config import Config, StorageConfig, DocumentCacheStorageConfig, CacheConfig, DocumentCacheConfig
         
         # Create config with shared storage root
         storage_root = tmp_path / "storage"
@@ -458,7 +458,7 @@ class TestDiskPersistence:
     @pytest.mark.asyncio
     async def test_disk_persistence_error_fallback(self, tmp_path, sample_document):
         """Test that cache falls back to memory-only mode on disk errors."""
-        from agent_vault.config import Config, StorageConfig, DocumentCacheStorageConfig, CacheConfig, DocumentCacheConfig
+        from agentic_inquiry.config import Config, StorageConfig, DocumentCacheStorageConfig, CacheConfig, DocumentCacheConfig
         
         # Create config with invalid path (to trigger error)
         config = Config(
@@ -506,7 +506,7 @@ class TestDiskPersistence:
     @pytest.mark.asyncio
     async def test_memory_only_mode(self, tmp_path, sample_document):
         """Test that memory-only mode works when disk persistence is disabled."""
-        from agent_vault.config import Config, StorageConfig, DocumentCacheStorageConfig, CacheConfig, DocumentCacheConfig
+        from agentic_inquiry.config import Config, StorageConfig, DocumentCacheStorageConfig, CacheConfig, DocumentCacheConfig
         
         config = Config(
             storage=StorageConfig(

@@ -11,7 +11,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.config import Config, LoggingConfig
+from agentic_inquiry.config import Config, LoggingConfig
 
 
 @pytest.mark.parametrize(
@@ -58,15 +58,15 @@ class TestEnvironmentVariableOverrides:
     @pytest.mark.parametrize(
         ("env_var", "env_value", "config_data", "path", "expected"),
         [
-            ("AGV_LOGGING_DIRECTORY", "/tmp/custom_logs", {'logging': {'directory': 'logs'}}, ("logging", "directory"), "/tmp/custom_logs"),
-            ("AGV_LOGGING_LEVEL", "DEBUG", {'logging': {'level': 'INFO'}}, ("logging", "level"), "DEBUG"),
-            ("AGV_LOGGING_MAX_BYTES", "20971520", {'logging': {'max_bytes': 10485760}}, ("logging", "max_bytes"), 20971520),
-            ("AGV_LOGGING_BACKUP_COUNT", "10", {'logging': {'backup_count': 5}}, ("logging", "backup_count"), 10),
-            ("AGV_LOGGING_RETENTION_HOURS", "48", {'logging': {'retention_hours': 24}}, ("logging", "retention_hours"), 48),
-            ("AGV_LOGGING_FORMAT", "%(levelname)s: %(message)s", {'logging': {'format': '%(asctime)s - %(message)s'}}, ("logging", "format"), "%(levelname)s: %(message)s"),
-            ("AGV_LOGGING_DATE_FORMAT", "%Y/%m/%d", {'logging': {'date_format': '%Y-%m-%d %H:%M:%S'}}, ("logging", "date_format"), "%Y/%m/%d"),
-            ("AGV_LOGGING_SERVICE_LEVELS_PARSERS", "DEBUG", {'logging': {'service_levels': {}}}, ("logging", "service_levels", "parsers"), "DEBUG"),
-            ("AGV_LOGGING_SERVICE_LEVELS_DATABASE", "WARNING", {'logging': {'service_levels': {}}}, ("logging", "service_levels", "database"), "WARNING"),
+            ("AI_LOGGING_DIRECTORY", "/tmp/custom_logs", {'logging': {'directory': 'logs'}}, ("logging", "directory"), "/tmp/custom_logs"),
+            ("AI_LOGGING_LEVEL", "DEBUG", {'logging': {'level': 'INFO'}}, ("logging", "level"), "DEBUG"),
+            ("AI_LOGGING_MAX_BYTES", "20971520", {'logging': {'max_bytes': 10485760}}, ("logging", "max_bytes"), 20971520),
+            ("AI_LOGGING_BACKUP_COUNT", "10", {'logging': {'backup_count': 5}}, ("logging", "backup_count"), 10),
+            ("AI_LOGGING_RETENTION_HOURS", "48", {'logging': {'retention_hours': 24}}, ("logging", "retention_hours"), 48),
+            ("AI_LOGGING_FORMAT", "%(levelname)s: %(message)s", {'logging': {'format': '%(asctime)s - %(message)s'}}, ("logging", "format"), "%(levelname)s: %(message)s"),
+            ("AI_LOGGING_DATE_FORMAT", "%Y/%m/%d", {'logging': {'date_format': '%Y-%m-%d %H:%M:%S'}}, ("logging", "date_format"), "%Y/%m/%d"),
+            ("AI_LOGGING_SERVICE_LEVELS_PARSERS", "DEBUG", {'logging': {'service_levels': {}}}, ("logging", "service_levels", "parsers"), "DEBUG"),
+            ("AI_LOGGING_SERVICE_LEVELS_DATABASE", "WARNING", {'logging': {'service_levels': {}}}, ("logging", "service_levels", "database"), "WARNING"),
         ],
     )
     def test_logging_env_overrides(self, monkeypatch, env_var, env_value, config_data, path, expected):
@@ -81,11 +81,11 @@ class TestEnvironmentVariableOverrides:
 
     def test_multiple_logging_overrides(self, monkeypatch):
         """Test multiple logging environment variable overrides simultaneously."""
-        monkeypatch.setenv("AGV_LOGGING_DIRECTORY", "/tmp/logs")
-        monkeypatch.setenv("AGV_LOGGING_LEVEL", "WARNING")
-        monkeypatch.setenv("AGV_LOGGING_MAX_BYTES", "52428800")  # 50MB
-        monkeypatch.setenv("AGV_LOGGING_RETENTION_HOURS", "72")
-        monkeypatch.setenv("AGV_LOGGING_SERVICE_LEVELS_PARSERS", "DEBUG")
+        monkeypatch.setenv("AI_LOGGING_DIRECTORY", "/tmp/logs")
+        monkeypatch.setenv("AI_LOGGING_LEVEL", "WARNING")
+        monkeypatch.setenv("AI_LOGGING_MAX_BYTES", "52428800")  # 50MB
+        monkeypatch.setenv("AI_LOGGING_RETENTION_HOURS", "72")
+        monkeypatch.setenv("AI_LOGGING_SERVICE_LEVELS_PARSERS", "DEBUG")
         
         config_data = {
             'logging': {
@@ -106,7 +106,7 @@ class TestEnvironmentVariableOverrides:
     
     def test_service_levels_creates_logging_section(self, monkeypatch):
         """Test that service_levels env var creates logging section if missing."""
-        monkeypatch.setenv("AGV_LOGGING_SERVICE_LEVELS_PARSERS", "DEBUG")
+        monkeypatch.setenv("AI_LOGGING_SERVICE_LEVELS_PARSERS", "DEBUG")
         
         config_data = {}
         config_data = Config._apply_env_overrides(config_data)
@@ -316,9 +316,9 @@ logging:
 """)
         
         # Set environment overrides
-        monkeypatch.setenv("AGV_LOGGING_LEVEL", "DEBUG")
-        monkeypatch.setenv("AGV_LOGGING_MAX_BYTES", "52428800")
-        monkeypatch.setenv("AGV_LOGGING_SERVICE_LEVELS_PARSERS", "DEBUG")
+        monkeypatch.setenv("AI_LOGGING_LEVEL", "DEBUG")
+        monkeypatch.setenv("AI_LOGGING_MAX_BYTES", "52428800")
+        monkeypatch.setenv("AI_LOGGING_SERVICE_LEVELS_PARSERS", "DEBUG")
         
         config = Config.load(str(config_file))
         

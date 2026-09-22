@@ -1,10 +1,10 @@
 # Pluggable Storage Backends
 
-This document describes how to configure and use pluggable storage backends in Agent-Vault.
+This document describes how to configure and use pluggable storage backends in Agentic Inquiry.
 
 ## Overview
 
-Agent-Vault supports multiple storage backends for different storage roles:
+Agentic Inquiry supports multiple storage backends for different storage roles:
 
 | Role | Description | Supported Backends |
 |------|-------------|-------------------|
@@ -23,7 +23,7 @@ Use named backends with explicit role assignments:
 
 ```yaml
 storage:
-  root: "/data/agent-vault"
+  root: "/data/agentic-inquiry"
 
   # Define named backends
   backends:
@@ -35,7 +35,7 @@ storage:
       type: postgresql
       host: localhost
       port: 5432
-      database: agent-vault
+      database: agentic-inquiry
       user: ${POSTGRES_USER}
       password: ${POSTGRES_PASSWORD}
 
@@ -56,7 +56,7 @@ For simple deployments, the legacy single-provider mode still works:
 
 ```yaml
 storage:
-  root: "/data/agent-vault"
+  root: "/data/agentic-inquiry"
   lancedb:
     uri: "${storage.root}/lancedb"
 ```
@@ -84,7 +84,7 @@ backends:
     type: postgresql
     host: localhost
     port: 5432
-    database: agent-vault
+    database: agentic-inquiry
     user: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     pool_size: 20
@@ -110,7 +110,7 @@ backends:
     region: us-central1
     cluster: your-cluster
     instance: your-instance
-    database: agent-vault
+    database: agentic-inquiry
     user: postgres
     password: ${ALLOYDB_PASSWORD}
 
@@ -159,7 +159,7 @@ storage:
     postgres:
       type: postgresql
       host: db.example.com
-      database: agent-vault
+      database: agentic-inquiry
 
     sqlite:
       type: sqlite
@@ -189,8 +189,8 @@ PostgreSQL backends automatically share connection pools when using the same bac
 The `StorageFacade` provides a unified interface across all backend types:
 
 ```python
-from agent_vault.config import Config
-from agent_vault.storage.facade import StorageFacade
+from agentic_inquiry.config import Config
+from agentic_inquiry.storage.facade import StorageFacade
 
 # Create facade from config
 config = Config.load()
@@ -218,7 +218,7 @@ await facade.close()
 ### Direct Provider Access
 
 ```python
-from agent_vault.storage.registry import create_provider
+from agentic_inquiry.storage.registry import create_provider
 
 # Create a specific provider
 events_provider = create_provider(
@@ -244,7 +244,7 @@ All providers implement typed protocols:
 - `EventStorageProtocol` - 9 methods for event operations
 - `FileTrackerProtocol` - 14 methods for file tracking
 
-See `agent_vault.storage.protocols` for full protocol definitions.
+See `agentic_inquiry.storage.protocols` for full protocol definitions.
 
 ## Migration
 
@@ -266,5 +266,5 @@ The following methods are deprecated and will emit warnings:
 ## Requirements
 
 - LanceDB: Included in base package
-- PostgreSQL: Install with `pip install agent-vault[postgresql]`
+- PostgreSQL: Install with `pip install agentic-inquiry[postgresql]`
 - SQLite: Included in base package (uses aiosqlite)

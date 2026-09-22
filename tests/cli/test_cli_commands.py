@@ -16,7 +16,7 @@ class TestMaintenanceCLI:
 
     def test_run_command_accepts_project_option(self):
         """Test that run command accepts --project option."""
-        from agent_vault.cli.maintenance import maintenance
+        from agentic_inquiry.cli.maintenance import maintenance
 
         runner = CliRunner()
 
@@ -28,7 +28,7 @@ class TestMaintenanceCLI:
 
     def test_run_command_project_short_option(self):
         """Test that -p short option works for project."""
-        from agent_vault.cli.maintenance import maintenance
+        from agentic_inquiry.cli.maintenance import maintenance
 
         runner = CliRunner()
 
@@ -39,7 +39,7 @@ class TestMaintenanceCLI:
 
     def test_run_command_shows_operations(self):
         """Test that run command help shows available operations."""
-        from agent_vault.cli.maintenance import maintenance
+        from agentic_inquiry.cli.maintenance import maintenance
 
         runner = CliRunner()
 
@@ -49,14 +49,14 @@ class TestMaintenanceCLI:
         assert "reindex" in result.output
         assert "all" in result.output
 
-    @patch("agent_vault.cli.maintenance._load_config")
-    @patch("agent_vault.cli.maintenance._get_postgresql_backend")
-    @patch("agent_vault.cli.maintenance.asyncio.run")
+    @patch("agentic_inquiry.cli.maintenance._load_config")
+    @patch("agentic_inquiry.cli.maintenance._get_postgresql_backend")
+    @patch("agentic_inquiry.cli.maintenance.asyncio.run")
     def test_project_option_passed_to_async(
         self, mock_asyncio_run, mock_get_backend, mock_load_config
     ):
         """Test that --project is passed to the async function."""
-        from agent_vault.cli.maintenance import maintenance
+        from agentic_inquiry.cli.maintenance import maintenance
 
         # Setup mocks
         mock_config = MagicMock()
@@ -78,14 +78,14 @@ class TestMaintenanceCLI:
         # Verify asyncio.run was called
         assert mock_asyncio_run.called
 
-    @patch("agent_vault.cli.maintenance._load_config")
-    @patch("agent_vault.cli.maintenance._get_postgresql_backend")
-    @patch("agent_vault.cli.maintenance.asyncio.run")
+    @patch("agentic_inquiry.cli.maintenance._load_config")
+    @patch("agentic_inquiry.cli.maintenance._get_postgresql_backend")
+    @patch("agentic_inquiry.cli.maintenance.asyncio.run")
     def test_project_displayed_in_output(
         self, mock_asyncio_run, mock_get_backend, mock_load_config
     ):
         """Test that project is displayed in output when provided."""
-        from agent_vault.cli.maintenance import maintenance
+        from agentic_inquiry.cli.maintenance import maintenance
 
         # Setup mocks
         mock_config = MagicMock()
@@ -113,7 +113,7 @@ class TestSchemaCLI:
 
     def test_list_backups_command_exists(self):
         """Test that list-backups command exists."""
-        from agent_vault.cli.schema_migrate import schema
+        from agentic_inquiry.cli.schema_migrate import schema
 
         runner = CliRunner()
 
@@ -124,7 +124,7 @@ class TestSchemaCLI:
 
     def test_list_backups_accepts_connection_string(self):
         """Test that list-backups accepts --connection-string option."""
-        from agent_vault.cli.schema_migrate import schema
+        from agentic_inquiry.cli.schema_migrate import schema
 
         runner = CliRunner()
 
@@ -132,11 +132,11 @@ class TestSchemaCLI:
         result = runner.invoke(schema, ["list-backups", "--help"])
         assert result.exit_code == 0
         assert "--connection-string" in result.output
-        assert "agv_CONNECTION_STRING" in result.output
+        assert "AI_CONNECTION_STRING" in result.output
 
     def test_list_backups_accepts_table_filter(self):
         """Test that list-backups accepts --table option."""
-        from agent_vault.cli.schema_migrate import schema
+        from agentic_inquiry.cli.schema_migrate import schema
 
         runner = CliRunner()
 
@@ -147,24 +147,24 @@ class TestSchemaCLI:
 
     def test_list_backups_requires_connection_string(self):
         """Test that list-backups fails gracefully without connection string."""
-        from agent_vault.cli.schema_migrate import schema
+        from agentic_inquiry.cli.schema_migrate import schema
 
         runner = CliRunner()
 
         # Run without connection string (and without env var)
         result = runner.invoke(
-            schema, ["list-backups"], env={"agv_CONNECTION_STRING": ""}
+            schema, ["list-backups"], env={"AI_CONNECTION_STRING": ""}
         )
 
         # Should fail with helpful message
         assert result.exit_code != 0
         assert "Connection string required" in result.output
 
-    @patch("agent_vault.cli.schema_migrate.PostgresConnectionManager")
-    @patch("agent_vault.cli.schema_migrate.asyncio.run")
+    @patch("agentic_inquiry.cli.schema_migrate.PostgresConnectionManager")
+    @patch("agentic_inquiry.cli.schema_migrate.asyncio.run")
     def test_list_backups_calls_database(self, mock_asyncio_run, mock_conn_manager):
         """Test that list-backups calls database operations."""
-        from agent_vault.cli.schema_migrate import schema
+        from agentic_inquiry.cli.schema_migrate import schema
 
         runner = CliRunner()
 
@@ -183,7 +183,7 @@ class TestMaintenanceCLIHelp:
 
     def test_help_shows_project_example(self):
         """Test that help text shows project usage example."""
-        from agent_vault.cli.maintenance import maintenance
+        from agentic_inquiry.cli.maintenance import maintenance
 
         runner = CliRunner()
 
@@ -194,7 +194,7 @@ class TestMaintenanceCLIHelp:
 
     def test_maintenance_group_help(self):
         """Test that maintenance group has help text."""
-        from agent_vault.cli.maintenance import maintenance
+        from agentic_inquiry.cli.maintenance import maintenance
 
         runner = CliRunner()
 
@@ -208,7 +208,7 @@ class TestSchemaRestoreCommand:
 
     def test_restore_command_exists(self):
         """Test that restore command exists."""
-        from agent_vault.cli.schema_migrate import schema
+        from agentic_inquiry.cli.schema_migrate import schema
 
         runner = CliRunner()
 
@@ -218,7 +218,7 @@ class TestSchemaRestoreCommand:
 
     def test_restore_requires_project(self):
         """Test that restore requires --project option."""
-        from agent_vault.cli.schema_migrate import schema
+        from agentic_inquiry.cli.schema_migrate import schema
 
         runner = CliRunner()
 
@@ -233,7 +233,7 @@ class TestSchemaMigrateCommand:
 
     def test_migrate_command_exists(self):
         """Test that migrate command exists."""
-        from agent_vault.cli.schema_migrate import schema
+        from agentic_inquiry.cli.schema_migrate import schema
 
         runner = CliRunner()
 
@@ -243,7 +243,7 @@ class TestSchemaMigrateCommand:
 
     def test_migrate_requires_new_dimension(self):
         """Test that migrate requires --new-dimension option."""
-        from agent_vault.cli.schema_migrate import schema
+        from agentic_inquiry.cli.schema_migrate import schema
 
         runner = CliRunner()
 
@@ -262,9 +262,9 @@ class TestMaintenanceAsyncFunctions:
     @pytest.mark.asyncio
     async def test_run_maintenance_async_vacuum(self):
         """Test _run_maintenance_async executes vacuum operation."""
-        from agent_vault.cli.maintenance import _run_maintenance_async
-        from agent_vault.storage.config import BackendConfig
-        from agent_vault.storage.providers.postgresql.maintenance import MaintenanceResult
+        from agentic_inquiry.cli.maintenance import _run_maintenance_async
+        from agentic_inquiry.storage.config import BackendConfig
+        from agentic_inquiry.storage.providers.postgresql.maintenance import MaintenanceResult
 
         # Create mock backend config
         backend = BackendConfig(
@@ -274,9 +274,9 @@ class TestMaintenanceAsyncFunctions:
 
         # Mock PostgresConnectionManager and PostgresMaintenanceService
         with patch(
-            "agent_vault.cli.maintenance.PostgresConnectionManager"
+            "agentic_inquiry.cli.maintenance.PostgresConnectionManager"
         ) as MockConnMgr, patch(
-            "agent_vault.cli.maintenance.PostgresMaintenanceService"
+            "agentic_inquiry.cli.maintenance.PostgresMaintenanceService"
         ) as MockService:
             # Setup connection manager mock
             mock_conn_mgr = AsyncMock()
@@ -287,7 +287,7 @@ class TestMaintenanceAsyncFunctions:
             mock_service = MagicMock()
             mock_result = MaintenanceResult(
                 operation="vacuum",
-                table_name="agv_v_chunks",
+                table_name="ai_v_chunks",
                 duration_seconds=5.2,
                 statistics={
                     "dead_tuples_before": 100,
@@ -309,15 +309,15 @@ class TestMaintenanceAsyncFunctions:
             mock_conn_mgr.initialize.assert_called_once()
             mock_conn_mgr.close.assert_called_once()
             mock_service.run_maintenance.assert_called_once_with(
-                operation="vacuum", table_name="agv_v_chunks"
+                operation="vacuum", table_name="ai_v_chunks"
             )
 
     @pytest.mark.asyncio
     async def test_run_maintenance_async_reindex(self):
         """Test _run_maintenance_async executes reindex operation."""
-        from agent_vault.cli.maintenance import _run_maintenance_async
-        from agent_vault.storage.config import BackendConfig
-        from agent_vault.storage.providers.postgresql.maintenance import MaintenanceResult
+        from agentic_inquiry.cli.maintenance import _run_maintenance_async
+        from agentic_inquiry.storage.config import BackendConfig
+        from agentic_inquiry.storage.providers.postgresql.maintenance import MaintenanceResult
 
         backend = BackendConfig(
             type="postgresql",
@@ -325,9 +325,9 @@ class TestMaintenanceAsyncFunctions:
         )
 
         with patch(
-            "agent_vault.cli.maintenance.PostgresConnectionManager"
+            "agentic_inquiry.cli.maintenance.PostgresConnectionManager"
         ) as MockConnMgr, patch(
-            "agent_vault.cli.maintenance.PostgresMaintenanceService"
+            "agentic_inquiry.cli.maintenance.PostgresMaintenanceService"
         ) as MockService:
             mock_conn_mgr = AsyncMock()
             MockConnMgr.from_backend_config.return_value = mock_conn_mgr
@@ -336,7 +336,7 @@ class TestMaintenanceAsyncFunctions:
             mock_service = MagicMock()
             mock_result = MaintenanceResult(
                 operation="reindex",
-                table_name="agv_v_chunks",
+                table_name="ai_v_chunks",
                 duration_seconds=12.5,
                 statistics={"indexes_rebuilt": 3},
             )
@@ -349,15 +349,15 @@ class TestMaintenanceAsyncFunctions:
             )
 
             mock_service.run_maintenance.assert_called_once_with(
-                operation="reindex", table_name="agv_v_chunks"
+                operation="reindex", table_name="ai_v_chunks"
             )
 
     @pytest.mark.asyncio
     async def test_run_maintenance_async_all_operations(self):
         """Test _run_maintenance_async executes all operations."""
-        from agent_vault.cli.maintenance import _run_maintenance_async
-        from agent_vault.storage.config import BackendConfig
-        from agent_vault.storage.providers.postgresql.maintenance import MaintenanceResult
+        from agentic_inquiry.cli.maintenance import _run_maintenance_async
+        from agentic_inquiry.storage.config import BackendConfig
+        from agentic_inquiry.storage.providers.postgresql.maintenance import MaintenanceResult
 
         backend = BackendConfig(
             type="postgresql",
@@ -365,9 +365,9 @@ class TestMaintenanceAsyncFunctions:
         )
 
         with patch(
-            "agent_vault.cli.maintenance.PostgresConnectionManager"
+            "agentic_inquiry.cli.maintenance.PostgresConnectionManager"
         ) as MockConnMgr, patch(
-            "agent_vault.cli.maintenance.PostgresMaintenanceService"
+            "agentic_inquiry.cli.maintenance.PostgresMaintenanceService"
         ) as MockService:
             mock_conn_mgr = AsyncMock()
             MockConnMgr.from_backend_config.return_value = mock_conn_mgr
@@ -376,13 +376,13 @@ class TestMaintenanceAsyncFunctions:
             mock_service = MagicMock()
             vacuum_result = MaintenanceResult(
                 operation="vacuum",
-                table_name="agv_v_chunks",
+                table_name="ai_v_chunks",
                 duration_seconds=5.0,
                 statistics={},
             )
             reindex_result = MaintenanceResult(
                 operation="reindex",
-                table_name="agv_v_chunks",
+                table_name="ai_v_chunks",
                 duration_seconds=10.0,
                 statistics={},
             )
@@ -405,8 +405,8 @@ class TestMaintenanceAsyncFunctions:
     @pytest.mark.asyncio
     async def test_run_maintenance_async_cleans_up_on_error(self):
         """Test _run_maintenance_async properly shuts down on error."""
-        from agent_vault.cli.maintenance import _run_maintenance_async
-        from agent_vault.storage.config import BackendConfig
+        from agentic_inquiry.cli.maintenance import _run_maintenance_async
+        from agentic_inquiry.storage.config import BackendConfig
 
         backend = BackendConfig(
             type="postgresql",
@@ -414,9 +414,9 @@ class TestMaintenanceAsyncFunctions:
         )
 
         with patch(
-            "agent_vault.cli.maintenance.PostgresConnectionManager"
+            "agentic_inquiry.cli.maintenance.PostgresConnectionManager"
         ) as MockConnMgr, patch(
-            "agent_vault.cli.maintenance.PostgresMaintenanceService"
+            "agentic_inquiry.cli.maintenance.PostgresMaintenanceService"
         ) as MockService:
             mock_conn_mgr = AsyncMock()
             MockConnMgr.from_backend_config.return_value = mock_conn_mgr
@@ -443,14 +443,14 @@ class TestLoadConfigFunction:
 
     def test_load_config_missing_file_exits(self, tmp_path):
         """Test that _load_config exits when file is missing."""
-        from agent_vault.cli.maintenance import _load_config
+        from agentic_inquiry.cli.maintenance import _load_config
 
         with pytest.raises(SystemExit):
             _load_config(tmp_path / "nonexistent.yaml")
 
     def test_load_config_invalid_yaml_exits(self, tmp_path):
         """Test that _load_config exits on invalid YAML."""
-        from agent_vault.cli.maintenance import _load_config
+        from agentic_inquiry.cli.maintenance import _load_config
 
         # Create invalid YAML file
         config_file = tmp_path / "invalid.yaml"
@@ -461,8 +461,8 @@ class TestLoadConfigFunction:
 
     def test_load_config_valid_file_returns_config(self, tmp_path):
         """Test that _load_config returns StorageConfig for valid file."""
-        from agent_vault.cli.maintenance import _load_config
-        from agent_vault.config import StorageConfig
+        from agentic_inquiry.cli.maintenance import _load_config
+        from agentic_inquiry.config import StorageConfig
 
         # Create valid YAML config
         config_file = tmp_path / "valid.yaml"

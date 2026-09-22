@@ -13,10 +13,10 @@ from typing import Any, AsyncIterator, Dict, List
 import lancedb
 import pytest
 
-from agent_vault.config import Config, StorageConfig
-from agent_vault.database.lancedb_manager import LanceDBManager
-from agent_vault.database.lancedb_schemas import get_document_chunks_schema
-from agent_vault.models.document_chunk import BRANCH_INDEXING_FIELDS, DocumentChunk
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.database.lancedb_manager import LanceDBManager
+from agentic_inquiry.database.lancedb_schemas import get_document_chunks_schema
+from agentic_inquiry.models.document_chunk import BRANCH_INDEXING_FIELDS, DocumentChunk
 
 pytestmark = pytest.mark.integration
 
@@ -155,7 +155,7 @@ async def test_legacy_tantivy_index_dir_is_removed_and_native_index_built(
 
 
 def test_legacy_fts_removal_refuses_symlinked_index_dir(tmp_path: Path) -> None:
-    from agent_vault.database.tables import remove_legacy_fts_index
+    from agentic_inquiry.database.tables import remove_legacy_fts_index
 
     outside = tmp_path / "outside" / "fts"
     outside.mkdir(parents=True)
@@ -172,7 +172,7 @@ def test_legacy_fts_removal_refuses_symlinked_index_dir(tmp_path: Path) -> None:
 
 
 def test_legacy_fts_removal_refuses_symlinked_parent(tmp_path: Path) -> None:
-    from agent_vault.database.tables import remove_legacy_fts_index
+    from agentic_inquiry.database.tables import remove_legacy_fts_index
 
     outside = tmp_path / "outside"
     (outside / "fts").mkdir(parents=True)
@@ -191,9 +191,9 @@ def test_legacy_fts_removal_ignores_remote_uri(
 ) -> None:
     import logging
 
-    from agent_vault.database.tables import remove_legacy_fts_index
+    from agentic_inquiry.database.tables import remove_legacy_fts_index
 
-    caplog.set_level(logging.DEBUG, logger="agent_vault.database.tables")
+    caplog.set_level(logging.DEBUG, logger="agentic_inquiry.database.tables")
     remove_legacy_fts_index("s3://bucket/vault", "document_chunks")
     remove_legacy_fts_index(None, "document_chunks")
     skipped = [r for r in caplog.records if "no local database path" in r.getMessage()]
@@ -203,7 +203,7 @@ def test_legacy_fts_removal_ignores_remote_uri(
 def test_legacy_fts_removal_refuses_symlink_to_file(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
 ) -> None:
-    from agent_vault.database.tables import remove_legacy_fts_index
+    from agentic_inquiry.database.tables import remove_legacy_fts_index
 
     victim = tmp_path / "victim.txt"
     victim.write_text("x")

@@ -74,8 +74,8 @@ def pytest_configure(config):
         "markers",
         "cloud_smoke: smoke tests that hit live cloud endpoints "
         "(AWS RDS / Aurora / Bedrock, Azure Postgres / OpenAI, and "
-        "S3 / GCS object storage via agv_SMOKE_S3_BUCKET / "
-        "agv_SMOKE_GCS_BUCKET). Skipped by default; opt in with "
+        "S3 / GCS object storage via AI_SMOKE_S3_BUCKET / "
+        "AI_SMOKE_GCS_BUCKET). Skipped by default; opt in with "
         "`-m cloud_smoke` and the appropriate credentials in the "
         "environment.",
     )
@@ -115,7 +115,7 @@ def pytest_sessionfinish(session, exitstatus):
     """Clean up all resources after test session completes.
 
     This ensures proper shutdown of:
-    - agent-vault executors (LanceDB, embedding thread pools)
+    - agentic-inquiry executors (LanceDB, embedding thread pools)
     - LanceDB old versions (prevents disk space bloat)
     - Any remaining asyncio resources
     - Stray non-daemon threads
@@ -124,9 +124,9 @@ def pytest_sessionfinish(session, exitstatus):
     import threading
     import time
 
-    # 1. Shutdown agent-vault executors (primary source of stuck threads)
+    # 1. Shutdown agentic-inquiry executors (primary source of stuck threads)
     try:
-        from agent_vault.executors import shutdown_executors
+        from agentic_inquiry.executors import shutdown_executors
         shutdown_executors(wait=True, cancel_futures=True)
     except Exception:
         pass
@@ -142,14 +142,14 @@ def pytest_sessionfinish(session, exitstatus):
 
         # Check if a non-LanceDB backend was configured for this test session
         # If so, skip LanceDB cleanup to avoid touching data from other backends
-        backend_env = os.environ.get("agv_STORAGE_BACKEND", "").lower()
+        backend_env = os.environ.get("AI_STORAGE_BACKEND", "").lower()
         cloudsql_configured = bool(os.environ.get("CLOUDSQL_CONNECTION_NAME"))
         postgres_configured = bool(os.environ.get("POSTGRES_CONNECTION_STRING"))
 
         if backend_env in ("postgresql", "cloudsql", "postgres") or cloudsql_configured or postgres_configured:
             pass  # Skip LanceDB cleanup for non-LanceDB backends
         else:
-            lancedb_path = ".agv/lancedb"
+            lancedb_path = ".agentic-inquiry/lancedb"
             if os.path.exists(lancedb_path):
                 db = lancedb.connect(lancedb_path)
                 for table_name in db.table_names():
@@ -230,7 +230,7 @@ def reset_cloud_detect_cache_global():
     that mock different probe outcomes in different test cases.
     """
     try:
-        import agent_vault.cli.cloud_detect as _cloud_detect_mod
+        import agentic_inquiry.cli.cloud_detect as _cloud_detect_mod
         _cloud_detect_mod._cloud_context_cache = _cloud_detect_mod._UNSET
         yield
         _cloud_detect_mod._cloud_context_cache = _cloud_detect_mod._UNSET
@@ -241,7 +241,7 @@ def reset_cloud_detect_cache_global():
 @pytest.fixture(autouse=True)
 def mock_metrics_reset():
     """Reset global metrics before and after each test for isolation."""
-    from agent_vault.metrics import reset_metrics
+    from agentic_inquiry.metrics import reset_metrics
 
     # Reset before test
     reset_metrics()
@@ -258,7 +258,7 @@ def reset_embedding_registry():
     _default_configured persists across tests, causing non-deterministic
     behavior when tests modify the global state.
     """
-    from agent_vault.embeddings.registry import embedding_registry
+    from agentic_inquiry.embeddings.registry import embedding_registry
 
     # Reset before test
     embedding_registry.reset()
@@ -270,7 +270,7 @@ def reset_embedding_registry():
 @pytest.fixture
 def mock_config():
     """Provide a test configuration instance."""
-    from agent_vault.config import Config
+    from agentic_inquiry.config import Config
     return Config.load()
 
 
@@ -287,7 +287,7 @@ def mock_temp_config(tmp_path):
     Returns:
         Config instance with storage.root set to temporary directory
     """
-    from agent_vault.config import Config, StorageConfig, CacheConfig, DocumentCacheConfig
+    from agentic_inquiry.config import Config, StorageConfig, CacheConfig, DocumentCacheConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path), default_project_id="test_default", backend="lancedb")
@@ -316,7 +316,7 @@ def integration_config(tmp_path):
     Returns:
         Config instance with all required schema properties
     """
-    from agent_vault.config import (
+    from agentic_inquiry.config import (
         Config,
         StorageConfig,
         LanceDBConfig,
@@ -452,7 +452,7 @@ async def mock_embedding_registry():
     Returns:
         EmbeddingRegistry instance configured with a dummy embedder for testing
     """
-    from agent_vault.embeddings.registry import EmbeddingRegistry
+    from agentic_inquiry.embeddings.registry import EmbeddingRegistry
     
     return EmbeddingRegistry(default_embedder=_DummyEmbedder())
 
@@ -534,8 +534,8 @@ async def mock_storage_facade(mock_db_manager, mock_temp_config):
     Returns:
         StorageFacade instance ready for use in tests
     """
-    from agent_vault.storage.facade import StorageFacade
-    from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
+    from agentic_inquiry.storage.facade import StorageFacade
+    from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
 
     # Create an adapter wrapping the in-memory manager
     adapter = LanceDBAdapter(mock_db_manager)
@@ -568,7 +568,7 @@ async def mock_indexing_pipeline(mock_db_manager, mock_temp_config, mock_embeddi
     Returns:
         IndexingPipeline instance ready for use in tests
     """
-    from agent_vault.indexing.pipeline import IndexingPipeline
+    from agentic_inquiry.indexing.pipeline import IndexingPipeline
     import uuid
 
     # Generate unique project_id for test isolation
@@ -612,7 +612,7 @@ def create_test_episodic_item(
         MemoryItem instance configured for episodic memory
     """
     import uuid
-    from agent_vault.memory import MemoryItem, MemoryTier
+    from agentic_inquiry.memory import MemoryItem, MemoryTier
     
     return MemoryItem(
         id=str(uuid.uuid4()),
@@ -665,7 +665,7 @@ def create_test_semantic_item(
         MemoryItem instance configured for semantic memory
     """
     import uuid
-    from agent_vault.memory import MemoryItem, MemoryTier
+    from agentic_inquiry.memory import MemoryItem, MemoryTier
     
     return MemoryItem(
         id=str(uuid.uuid4()),

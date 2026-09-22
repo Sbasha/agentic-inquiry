@@ -11,12 +11,12 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.mcp.utils.errors import MCPErrorHandler
-from agent_vault.mcp.models.errors import (
+from agentic_inquiry.mcp.utils.errors import MCPErrorHandler
+from agentic_inquiry.mcp.models.errors import (
     SessionNotFoundError,
     EntityNotFoundError,
 )
-from agent_vault.exceptions import (
+from agentic_inquiry.exceptions import (
     ConfigurationError,
     StorageError,
     ParsingError,

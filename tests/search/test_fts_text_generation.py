@@ -12,11 +12,11 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.parsers.executor import get_parser_instance
-from agent_vault.parsers.implementations.document import DocumentParser
+from agentic_inquiry.parsers.executor import get_parser_instance
+from agentic_inquiry.parsers.implementations.document import DocumentParser
 
 # Trigger parser auto-registration
-import agent_vault.parsers.implementations  # noqa: F401
+import agentic_inquiry.parsers.implementations  # noqa: F401
 
 
 class TestUnifiedCodeParserFTSText:

@@ -34,9 +34,9 @@ Both modes are fully compatible and can be used interchangeably within the same 
 ### Basic Usage
 
 ```python
-from agent_vault.events import EventSystem, EventTypes
-from agent_vault.events.payloads import IndexingStartedPayload
-from agent_vault.events.models import EventStatus
+from agentic_inquiry.events import EventSystem, EventTypes
+from agentic_inquiry.events.payloads import IndexingStartedPayload
+from agentic_inquiry.events.models import EventStatus
 
 # Create a typed payload
 payload = IndexingStartedPayload(
@@ -61,7 +61,7 @@ Invalid payloads raise `ValidationError` at creation time:
 
 ```python
 from pydantic import ValidationError
-from agent_vault.events.payloads import IndexingStartedPayload
+from agentic_inquiry.events.payloads import IndexingStartedPayload
 
 try:
     # Missing required field 'content_type'
@@ -75,7 +75,7 @@ except ValidationError as e:
 ### Indexing Events
 
 ```python
-from agent_vault.events.payloads import (
+from agentic_inquiry.events.payloads import (
     IndexingStartedPayload,
     IndexingProgressPayload,
     IndexingCompletedPayload,
@@ -96,7 +96,7 @@ payload = IndexingProgressPayload(
 ### Search Events
 
 ```python
-from agent_vault.events.payloads import (
+from agentic_inquiry.events.payloads import (
     SearchQueryStartedPayload,
     SearchQueryCompletedPayload,
     SearchQueryFailedPayload,
@@ -114,7 +114,7 @@ payload = SearchQueryStartedPayload(
 ### Memory Events
 
 ```python
-from agent_vault.events.payloads import (
+from agentic_inquiry.events.payloads import (
     MemoryStoredPayload,
     MemoryRetrievedPayload,
     MemoryConsolidatedPayload,
@@ -133,7 +133,7 @@ payload = MemoryStoredPayload(
 ### File Watching Events
 
 ```python
-from agent_vault.events.payloads import (
+from agentic_inquiry.events.payloads import (
     WatchingStartedPayload,
     WatchingStoppedPayload,
     WatchingFileChangedPayload,
@@ -150,7 +150,7 @@ payload = WatchingFileChangedPayload(
 ### Parsing Events
 
 ```python
-from agent_vault.events.payloads import (
+from agentic_inquiry.events.payloads import (
     ParsingStartedPayload,
     ParsingCompletedPayload,
     ParsingFailedPayload,
@@ -161,7 +161,7 @@ from agent_vault.events.payloads import (
 ### Project Lifecycle Events
 
 ```python
-from agent_vault.events.payloads import (
+from agentic_inquiry.events.payloads import (
     ProjectInitializedPayload,
     ProjectLoadedPayload,
     ProjectClosedPayload,
@@ -171,7 +171,7 @@ from agent_vault.events.payloads import (
 ### System Events
 
 ```python
-from agent_vault.events.payloads import (
+from agentic_inquiry.events.payloads import (
     SystemStartedPayload,
     SystemStoppedPayload,
     SystemErrorPayload,
@@ -193,7 +193,7 @@ payload = SystemErrorPayload(
 Extend `BaseEventPayload` for custom event types:
 
 ```python
-from agent_vault.events.payloads import BaseEventPayload
+from agentic_inquiry.events.payloads import BaseEventPayload
 from pydantic import Field
 
 class CustomAnalysisPayload(BaseEventPayload):
@@ -223,7 +223,7 @@ await event_system.emit_typed(
 Validate metadata from stored events:
 
 ```python
-from agent_vault.events.payloads import IndexingStartedPayload
+from agentic_inquiry.events.payloads import IndexingStartedPayload
 
 # Retrieve event from store
 events = await event_store.get_operation_events(operation_id)
@@ -240,8 +240,8 @@ for event in events:
 Use `Event.from_payload()` for type-safe event creation:
 
 ```python
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.events.payloads import IndexingCompletedPayload
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.events.payloads import IndexingCompletedPayload
 
 payload = IndexingCompletedPayload(
     files_processed=42,
@@ -296,7 +296,7 @@ await event_system.emit(
 
 **After (typed)**:
 ```python
-from agent_vault.events.payloads import IndexingStartedPayload
+from agentic_inquiry.events.payloads import IndexingStartedPayload
 
 payload = IndexingStartedPayload(
     path="/path/to/file",
@@ -388,7 +388,7 @@ class CustomPayload(BaseEventPayload):
 
 ```python
 import pytest
-from agent_vault.events.payloads import IndexingStartedPayload
+from agentic_inquiry.events.payloads import IndexingStartedPayload
 from pydantic import ValidationError
 
 def test_indexing_started_payload_valid():

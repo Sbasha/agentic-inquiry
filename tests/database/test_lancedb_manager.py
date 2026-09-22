@@ -9,8 +9,8 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.config import Config, StorageConfig, LanceDBConfig
-from agent_vault.database.lancedb_manager import LanceDBManager, SyncLanceDBManager
+from agentic_inquiry.config import Config, StorageConfig, LanceDBConfig
+from agentic_inquiry.database.lancedb_manager import LanceDBManager, SyncLanceDBManager
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -779,7 +779,7 @@ async def test_validate_record_accepts_valid_records(mock_db_manager):
 @pytest.mark.asyncio
 async def test_add_rows_validates_before_write(mock_db_manager):
     """Test that _add_rows validates records before writing to database."""
-    from agent_vault.database.lancedb_manager import (
+    from agentic_inquiry.database.lancedb_manager import (
         FORBIDDEN_FIELD_ALIASES,
         REQUIRED_FIELDS,
     )

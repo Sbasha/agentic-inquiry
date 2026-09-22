@@ -25,7 +25,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 # Also add tests dir so protocols can be imported
 sys.path.insert(0, str(PROJECT_ROOT / "tests/01-agents"))
 
-DEFAULT_CONFIG = str(PROJECT_ROOT / ".agv/envs/agv-prod/config.yaml")
+DEFAULT_CONFIG = str(PROJECT_ROOT / ".agentic-inquiry/envs/ai-prod/config.yaml")
 TEST_DIR = PROJECT_ROOT / "tests/01-agents"
 
 # Test registry — maps test ID to slug and protocol file
@@ -53,8 +53,8 @@ def log(msg: str):
 
 async def create_shared_server(config_path: str):
     """Create a single MCPServer instance shared across all tests."""
-    from agent_vault.config import Config
-    from agent_vault.mcp.server import MCPServer
+    from agentic_inquiry.config import Config
+    from agentic_inquiry.mcp.server import MCPServer
 
     log(f"Loading config: {config_path}")
     config = Config.load_with_overlay(config_path)
@@ -111,7 +111,7 @@ async def run_test(
 async def main():
     import argparse
 
-    parser = argparse.ArgumentParser(description="Run agv UAT tests with shared server")
+    parser = argparse.ArgumentParser(description="Run ai UAT tests with shared server")
     parser.add_argument("--tests", default="ALL", help="Comma-separated test IDs or ALL")
     parser.add_argument("--config", default=DEFAULT_CONFIG, help="Config overlay path")
     parser.add_argument("--parallel", type=int, default=3, help="Max parallel tests")
@@ -135,7 +135,7 @@ async def main():
             sys.exit(1)
 
     run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_dir = PROJECT_ROOT / "test_results" / "agv" / run_id
+    base_dir = PROJECT_ROOT / "test_results" / "ai" / run_id
 
     log(f"UAT Run: {run_id}")
     log(f"Mode: {args.mode}")

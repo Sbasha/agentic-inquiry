@@ -45,9 +45,9 @@ async def golden_indexed_storage(mock_db_manager, mock_temp_config, mock_embeddi
     This fixture indexes the golden dataset and returns a storage
     instance ready for search queries.
     """
-    from agent_vault.indexing.pipeline import IndexingPipeline
-    from agent_vault.storage.facade import StorageFacade
-    from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
+    from agentic_inquiry.indexing.pipeline import IndexingPipeline
+    from agentic_inquiry.storage.facade import StorageFacade
+    from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
 
     # Skip if dataset doesn't exist
     if not golden_dataset_path.exists():
@@ -88,7 +88,7 @@ def golden_deduplicator():
 @pytest_asyncio.fixture
 async def golden_search_service(golden_indexed_storage, mock_temp_config, golden_deduplicator):
     """Create a HybridSearchService for golden tests."""
-    from agent_vault.search.hybrid_search import HybridSearchService
+    from agentic_inquiry.search.hybrid_search import HybridSearchService
 
     return HybridSearchService(
         storage=golden_indexed_storage,

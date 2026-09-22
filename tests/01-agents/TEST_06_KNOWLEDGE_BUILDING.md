@@ -8,7 +8,7 @@
 
 ## Test Suite Overview
 
-This test evaluates how effectively an agent can build and leverage knowledge using Agent-Vault to:
+This test evaluates how effectively an agent can build and leverage knowledge using Agentic Inquiry to:
 - Store meaningful insights and patterns
 - Recall previous learnings accurately
 - Track decisions and rationale
@@ -39,7 +39,7 @@ Knowledge building is successful if the agent can:
 
 **Step 1: Create Session with Unique Project ID**
 ```python
-project_id = "agv_test06_knowledge_{YYYYMMDD_HHMMSS}"
+project_id = "ai_test06_knowledge_{YYYYMMDD_HHMMSS}"
 session = create_session(project_id=project_id, description="Knowledge building test")
 ```
 

@@ -13,7 +13,7 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agent_vault.database.results import (
+from agentic_inquiry.database.results import (
     SearchResult,
     dict_to_search_result,
     dicts_to_search_results,

@@ -9,8 +9,8 @@ import time
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, List, Optional
 
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.events.system import EventSystem
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.events.system import EventSystem
 
 
 class EventCapture:
@@ -54,7 +54,7 @@ class EventCapture:
             **metadata: Any,
         ) -> None:
             """Capture event instead of emitting to queue."""
-            from agent_vault.correlation import get_correlation_id
+            from agentic_inquiry.correlation import get_correlation_id
             
             if operation_id is None:
                 operation_id = get_correlation_id()

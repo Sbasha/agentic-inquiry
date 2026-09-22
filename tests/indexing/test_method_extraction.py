@@ -20,12 +20,12 @@ pytestmark = [
 import uuid
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.config import Config
-from agent_vault.embeddings.base import Embedder
-from agent_vault.embeddings.registry import EmbeddingRegistry
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.parsers.implementations.unified_code import UnifiedCodeParser
-from agent_vault.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.config import Config
+from agentic_inquiry.embeddings.base import Embedder
+from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.parsers.implementations.unified_code import UnifiedCodeParser
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -51,21 +51,21 @@ class TestElementTypeMapping:
 
     def test_method_maps_to_method(self):
         """Verify 'method' maps to 'method' in type mapping."""
-        from agent_vault.parsers.implementations.unified_code import CodeUtilities
+        from agentic_inquiry.parsers.implementations.unified_code import CodeUtilities
 
         type_map = CodeUtilities.get_element_type_mapping()
         assert type_map.get("method") == "method"
 
     def test_function_maps_to_function(self):
         """Verify 'function' still maps to 'function'."""
-        from agent_vault.parsers.implementations.unified_code import CodeUtilities
+        from agentic_inquiry.parsers.implementations.unified_code import CodeUtilities
 
         type_map = CodeUtilities.get_element_type_mapping()
         assert type_map.get("function") == "function"
 
     def test_constructor_maps_to_method(self):
         """Verify 'constructor' maps to 'method'."""
-        from agent_vault.parsers.implementations.unified_code import CodeUtilities
+        from agentic_inquiry.parsers.implementations.unified_code import CodeUtilities
 
         type_map = CodeUtilities.get_element_type_mapping()
         assert type_map.get("constructor") == "method"

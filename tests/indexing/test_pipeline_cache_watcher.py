@@ -5,10 +5,10 @@ import pytest
 pytestmark = pytest.mark.unit
 
 from unittest.mock import AsyncMock, MagicMock
-from agent_vault.indexing.pipeline import IndexingPipeline
-from agent_vault.parsers.models import ParsedDocument, ParserChunk
-from agent_vault.cache import register_cache
-from agent_vault.watching import register_watcher
+from agentic_inquiry.indexing.pipeline import IndexingPipeline
+from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
+from agentic_inquiry.cache import register_cache
+from agentic_inquiry.watching import register_watcher
 from tests.helpers.async_utils import AsyncTestHelper
 
 
@@ -110,7 +110,7 @@ def mock_cache(request):
     cache._test_cache_name = cache_name
     yield cache
     # Cleanup
-    from agent_vault.cache import _cache_registry
+    from agentic_inquiry.cache import _cache_registry
     try:
         _cache_registry.unregister(cache_name)
     except (KeyError, AttributeError):
@@ -128,7 +128,7 @@ def mock_watcher(request):
     watcher._test_watcher_name = watcher_name
     yield watcher
     # Cleanup
-    from agent_vault.watching import _watcher_registry
+    from agentic_inquiry.watching import _watcher_registry
     try:
         _watcher_registry.unregister(watcher_name)
     except (KeyError, AttributeError):
@@ -137,7 +137,7 @@ def mock_watcher(request):
 
 def test_pipeline_without_cache_and_watcher(mock_db_manager, tmp_path):
     """Test that pipeline works without cache or watcher."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -156,7 +156,7 @@ def test_pipeline_without_cache_and_watcher(mock_db_manager, tmp_path):
 
 def test_pipeline_with_cache(mock_db_manager, tmp_path, mock_cache):
     """Test that pipeline initializes with cache."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -176,7 +176,7 @@ def test_pipeline_with_cache(mock_db_manager, tmp_path, mock_cache):
 
 def test_pipeline_with_watcher(mock_db_manager, tmp_path, mock_watcher):
     """Test that pipeline initializes with watcher."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
 
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -202,7 +202,7 @@ def test_pipeline_with_watcher(mock_db_manager, tmp_path, mock_watcher):
 
 def test_pipeline_watcher_without_auto_watch(mock_db_manager, tmp_path, mock_watcher):
     """Test that watcher is not started if auto_watch is False."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -224,7 +224,7 @@ def test_pipeline_watcher_without_auto_watch(mock_db_manager, tmp_path, mock_wat
 @pytest.mark.asyncio
 async def test_cache_document(mock_db_manager, tmp_path, mock_cache):
     """Test caching a parsed document."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -257,7 +257,7 @@ async def test_cache_document(mock_db_manager, tmp_path, mock_cache):
 @pytest.mark.asyncio
 async def test_get_cached_document(mock_db_manager, tmp_path, mock_cache):
     """Test retrieving a cached document."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -291,7 +291,7 @@ async def test_get_cached_document(mock_db_manager, tmp_path, mock_cache):
 @pytest.mark.asyncio
 async def test_invalidate_cache(mock_db_manager, tmp_path, mock_cache):
     """Test invalidating cache entry."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -324,7 +324,7 @@ async def test_invalidate_cache(mock_db_manager, tmp_path, mock_cache):
 @pytest.mark.asyncio
 async def test_file_change_callback_modified(mock_db_manager, tmp_path, mock_watcher, mock_cache):
     """Test file change callback for modified files."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -367,7 +367,7 @@ async def test_file_change_callback_modified(mock_db_manager, tmp_path, mock_wat
 @pytest.mark.asyncio
 async def test_file_change_callback_deleted(mock_db_manager, tmp_path, mock_watcher, mock_cache):
     """Test file change callback for deleted files."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -409,7 +409,7 @@ async def test_file_change_callback_deleted(mock_db_manager, tmp_path, mock_watc
 
 def test_stop_watching(mock_db_manager, tmp_path, mock_watcher):
     """Test stopping the file watcher."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -435,7 +435,7 @@ def test_stop_watching(mock_db_manager, tmp_path, mock_watcher):
 
 def test_stop_watching_without_watcher(mock_db_manager, tmp_path):
     """Test that stop_watching is safe to call without a watcher."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -456,9 +456,9 @@ def test_stop_watching_without_watcher(mock_db_manager, tmp_path):
 @pytest.mark.asyncio
 async def test_process_document_caches_result(mock_db_manager, tmp_path, mock_cache):
     """Test that process_document caches the parsed document."""
-    from agent_vault.config import Config, StorageConfig
-    from agent_vault.embeddings.registry import EmbeddingRegistry
-    from agent_vault.embeddings.hashing import HashingEmbedder
+    from agentic_inquiry.config import Config, StorageConfig
+    from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+    from agentic_inquiry.embeddings.hashing import HashingEmbedder
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -507,7 +507,7 @@ async def test_process_document_caches_result(mock_db_manager, tmp_path, mock_ca
 
 def test_invalid_cache_name(mock_db_manager, tmp_path):
     """Test that invalid cache name is handled gracefully."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))
@@ -527,7 +527,7 @@ def test_invalid_cache_name(mock_db_manager, tmp_path):
 
 def test_invalid_watcher_name(mock_db_manager, tmp_path):
     """Test that invalid watcher name is handled gracefully."""
-    from agent_vault.config import Config, StorageConfig
+    from agentic_inquiry.config import Config, StorageConfig
     
     config = Config()
     config.storage = StorageConfig(root=str(tmp_path))

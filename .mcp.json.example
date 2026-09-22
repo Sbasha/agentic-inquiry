@@ -1,23 +1,23 @@
 {
   "mcpServers": {
-    "agv-sse": {
+    "ai-sse": {
       "url": "http://localhost:8765/sse"
     },
-    "agv-test": {
+    "ai-test": {
       "command": "uv",
       "args": [
         "run",
-        "agv",
+        "ai",
         "--config", "config/test-lancedb.yaml",
         "--project-id", "test",
         "--transport", "stdio"
       ]
     },
-    "agv-test-postgres": {
+    "ai-test-postgres": {
       "command": "uv",
       "args": [
         "run",
-        "agv",
+        "ai",
         "--config", "config/test-postgresql.yaml",
         "--project-id", "test",
         "--transport", "stdio"

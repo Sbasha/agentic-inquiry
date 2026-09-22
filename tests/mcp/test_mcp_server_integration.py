@@ -13,8 +13,8 @@ import pytest
 pytestmark = pytest.mark.integration
 from unittest.mock import Mock, MagicMock, AsyncMock, patch
 
-from agent_vault.config import Config
-from agent_vault.mcp.server import MCPServer
+from agentic_inquiry.config import Config
+from agentic_inquiry.mcp.server import MCPServer
 
 
 @pytest.fixture
@@ -121,8 +121,8 @@ class TestMCPServerStartup:
     @pytest.mark.asyncio
     async def test_server_starts_without_import_errors(self, mock_config, mcp_services):
         """Test MCP server can start without any import errors."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services), \
-             patch('agent_vault.mcp.server.FastMCP') as mock_fastmcp:
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services), \
+             patch('agentic_inquiry.mcp.server.FastMCP') as mock_fastmcp:
             
             # Mock FastMCP to avoid actual initialization
             mock_app = Mock()
@@ -140,8 +140,8 @@ class TestMCPServerStartup:
     @pytest.mark.asyncio
     async def test_server_initializes_all_services(self, mock_config, mcp_services):
         """Test server initializes all required services."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services), \
-             patch('agent_vault.mcp.server.FastMCP'):
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services), \
+             patch('agentic_inquiry.mcp.server.FastMCP'):
             
             server = MCPServer(config=mock_config, project_id="test_project")
             await server.initialize()
@@ -166,21 +166,21 @@ class TestToolRegistration:
     @pytest.mark.asyncio
     async def test_all_cognitive_tools_register(self, mock_config, mcp_services):
         """Test all cognitive tools register successfully."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services), \
-             patch('agent_vault.mcp.server.FastMCP'):
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services), \
+             patch('agentic_inquiry.mcp.server.FastMCP'):
             
             server = MCPServer(config=mock_config, project_id="test_project")
             await server.initialize()
             
             # Import all cognitive tool modules to verify they can be imported
             # Current architecture uses function-based tools, not classes
-            from agent_vault.mcp.tools import search
-            from agent_vault.mcp.tools import knowledge
-            from agent_vault.mcp.tools import context
-            from agent_vault.mcp.tools import analysis
-            from agent_vault.mcp.tools import memory
-            from agent_vault.mcp.tools import info
-            from agent_vault.mcp.tools import session
+            from agentic_inquiry.mcp.tools import search
+            from agentic_inquiry.mcp.tools import knowledge
+            from agentic_inquiry.mcp.tools import context
+            from agentic_inquiry.mcp.tools import analysis
+            from agentic_inquiry.mcp.tools import memory
+            from agentic_inquiry.mcp.tools import info
+            from agentic_inquiry.mcp.tools import session
             
             # Verify each module has the expected tool functions
             assert hasattr(search, 'search_knowledge')
@@ -202,17 +202,17 @@ class TestToolRegistration:
     @pytest.mark.asyncio
     async def test_tools_have_required_attributes(self, mock_config, mcp_services):
         """Test all tools have required attributes for registration."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services), \
-             patch('agent_vault.mcp.server.FastMCP'):
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services), \
+             patch('agentic_inquiry.mcp.server.FastMCP'):
             
             server = MCPServer(config=mock_config, project_id="test_project")
             await server.initialize()
             
             # Import tool functions (current architecture uses functions, not classes)
-            from agent_vault.mcp.tools.search import search_knowledge
-            from agent_vault.mcp.tools.knowledge import add_knowledge
-            from agent_vault.mcp.tools.context import build_context
-            from agent_vault.mcp.tools.analysis import understand_entity, analyze_impact, find_patterns
+            from agentic_inquiry.mcp.tools.search import search_knowledge
+            from agentic_inquiry.mcp.tools.knowledge import add_knowledge
+            from agentic_inquiry.mcp.tools.context import build_context
+            from agentic_inquiry.mcp.tools.analysis import understand_entity, analyze_impact, find_patterns
             
             # Check that tool functions are callable and have docstrings
             tool_functions = [
@@ -241,8 +241,8 @@ class TestRequestValidation:
     @pytest.mark.asyncio
     async def test_search_tool_validates_request(self, mock_config, mcp_services):
         """Test search_knowledge validates request parameters."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
-            from agent_vault.mcp.tools.search import search_knowledge
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
+            from agentic_inquiry.mcp.tools.search import search_knowledge
             import inspect
             
             # Verify function signature has required parameters
@@ -260,8 +260,8 @@ class TestRequestValidation:
     @pytest.mark.asyncio
     async def test_search_tool_executes_with_valid_params(self, mock_config, mcp_services):
         """Test search_knowledge executes with valid parameters."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
-            from agent_vault.mcp.tools.search import search_knowledge
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
+            from agentic_inquiry.mcp.tools.search import search_knowledge
             
             # Execute with valid parameters
             result = await search_knowledge(
@@ -279,8 +279,8 @@ class TestRequestValidation:
     @pytest.mark.asyncio
     async def test_add_knowledge_tool_validates_request(self, mock_config, mcp_services):
         """Test add_knowledge validates request parameters."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
-            from agent_vault.mcp.tools.knowledge import add_knowledge
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
+            from agentic_inquiry.mcp.tools.knowledge import add_knowledge
             import inspect
             
             # Verify function signature has required parameters
@@ -296,8 +296,8 @@ class TestRequestValidation:
     @pytest.mark.asyncio
     async def test_memory_tool_validates_request(self, mock_config, mcp_services):
         """Test save_memory validates request parameters."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
-            from agent_vault.mcp.tools.memory import save_memory
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
+            from agentic_inquiry.mcp.tools.memory import save_memory
             import inspect
             
             # Verify function signature has required parameters
@@ -320,8 +320,8 @@ class TestResponseValidation:
     @pytest.mark.asyncio
     async def test_search_response_structure(self, mock_config, mcp_services):
         """Test search response has correct structure."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
-            from agent_vault.mcp.tools.search import search_knowledge
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
+            from agentic_inquiry.mcp.tools.search import search_knowledge
             
             # Execute search
             result = await search_knowledge(
@@ -356,8 +356,8 @@ class TestResponseValidation:
         }
         mcp_services["session_manager"].create_session = AsyncMock(return_value=mock_session_result)
         
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
-            from agent_vault.mcp.tools.session import create_session
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
+            from agentic_inquiry.mcp.tools.session import create_session
             
             # Execute session creation
             result = await create_session(
@@ -376,8 +376,8 @@ class TestResponseValidation:
     @pytest.mark.asyncio
     async def test_memory_response_structure(self, mock_config, mcp_services):
         """Test memory save response has correct structure."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
-            from agent_vault.mcp.tools.memory import save_memory
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
+            from agentic_inquiry.mcp.tools.memory import save_memory
             
             # Create a mock memory item
             mock_memory_item = Mock()
@@ -409,8 +409,8 @@ class TestToolErrorHandling:
     @pytest.mark.asyncio
     async def test_search_tool_handles_execution_errors(self, mock_config, mcp_services):
         """Test search_knowledge handles execution errors gracefully."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
-            from agent_vault.mcp.tools.search import search_knowledge
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
+            from agentic_inquiry.mcp.tools.search import search_knowledge
             
             # Make search service raise an error
             mcp_services["search_service"].hybrid_search = AsyncMock(
@@ -432,8 +432,8 @@ class TestToolErrorHandling:
     @pytest.mark.asyncio
     async def test_add_knowledge_handles_invalid_path(self, mock_config, mcp_services):
         """Test add_knowledge handles invalid file paths gracefully."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
-            from agent_vault.mcp.tools.knowledge import add_knowledge
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
+            from agentic_inquiry.mcp.tools.knowledge import add_knowledge
             
             # Execute with non-existent file
             result = await add_knowledge(
@@ -450,8 +450,8 @@ class TestToolErrorHandling:
     @pytest.mark.asyncio
     async def test_session_tool_handles_invalid_session(self, mock_config, mcp_services):
         """Test tools handle invalid session IDs gracefully."""
-        with patch('agent_vault.mcp.server.create_mcp_services', return_value=mcp_services):
-            from agent_vault.mcp.tools.info import get_project_info
+        with patch('agentic_inquiry.mcp.server.create_mcp_services', return_value=mcp_services):
+            from agentic_inquiry.mcp.tools.info import get_project_info
             
             # Make session validation fail
             mcp_services["session_manager"].validate_session = AsyncMock(return_value=False)

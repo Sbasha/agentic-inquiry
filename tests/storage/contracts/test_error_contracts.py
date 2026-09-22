@@ -12,8 +12,8 @@ import pytest
 import pytest_asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agent_vault.models.graph_entity import EntityType, GraphEntity
-from agent_vault.models.graph_relationship import GraphRelationship, RelationshipType
+from agentic_inquiry.models.graph_entity import EntityType, GraphEntity
+from agentic_inquiry.models.graph_relationship import GraphRelationship, RelationshipType
 
 pytestmark = [pytest.mark.unit, pytest.mark.contracts]
 

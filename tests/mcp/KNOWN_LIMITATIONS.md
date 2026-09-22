@@ -53,9 +53,9 @@ Mismatch between:
 
 #### Files Requiring Changes
 
-- `agent_vault/models/graph_entity.py` (or equivalent)
-- `agent_vault/database/lancedb_manager.py` (schema definition)
-- `agent_vault/indexing/graph_builder.py` (entity creation)
+- `agentic_inquiry/models/graph_entity.py` (or equivalent)
+- `agentic_inquiry/database/lancedb_manager.py` (schema definition)
+- `agentic_inquiry/indexing/graph_builder.py` (entity creation)
 - Migration script (if needed)
 
 #### Estimated Fix Effort
@@ -117,7 +117,7 @@ Tests in `test_add_knowledge_integration.py`:
 
 #### Files Requiring Changes
 
-- `agent_vault/mcp/tools/knowledge.py` (if adding field)
+- `agentic_inquiry/mcp/tools/knowledge.py` (if adding field)
 - `tests/mcp/test_add_knowledge_integration.py` (if updating tests)
 - `docs/mcp/tools/README.md` (documentation)
 
@@ -247,9 +247,9 @@ def mock_graph_builder(mocker):
 ### Recently Removed
 
 The following modules were removed during refactoring (November 2025):
-- `agent_vault.mcp.models.requests` - Replaced by tool-specific models
-- `agent_vault.mcp.tools.base` - Replaced by FastMCP decorators
-- `agent_vault.mcp.tools.cognitive` - Split into specific tool modules
+- `agentic_inquiry.mcp.models.requests` - Replaced by tool-specific models
+- `agentic_inquiry.mcp.tools.base` - Replaced by FastMCP decorators
+- `agentic_inquiry.mcp.tools.cognitive` - Split into specific tool modules
 
 ### Migration Guide
 
@@ -257,13 +257,13 @@ If you have tests that import from removed modules:
 
 **Old**:
 ```python
-from agent_vault.mcp.tools.cognitive.search import SearchKnowledgeTool
-from agent_vault.mcp.models.requests import SearchRequest
+from agentic_inquiry.mcp.tools.cognitive.search import SearchKnowledgeTool
+from agentic_inquiry.mcp.models.requests import SearchRequest
 ```
 
 **New**:
 ```python
-from agent_vault.mcp.tools.search import search_knowledge
+from agentic_inquiry.mcp.tools.search import search_knowledge
 # Request models are now defined inline or in tool modules
 ```
 

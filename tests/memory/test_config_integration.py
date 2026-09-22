@@ -10,8 +10,8 @@ from pathlib import Path
 
 import yaml
 
-from agent_vault.config import Config
-from agent_vault.memory import MemorySystem
+from agentic_inquiry.config import Config
+from agentic_inquiry.memory import MemorySystem
 
 
 class TestConfigLoading:
@@ -112,9 +112,9 @@ class TestEnvironmentVariableOverrides:
     def test_memory_capacity_override(self, monkeypatch):
         """Test overriding memory capacity via environment variables."""
         # Set environment variables
-        monkeypatch.setenv("AGV_MEMORY_WORKING_MEMORY_CAPACITY", "100")
-        monkeypatch.setenv("AGV_MEMORY_EPISODIC_MEMORY_CAPACITY", "5000")
-        monkeypatch.setenv("AGV_MEMORY_SEMANTIC_MEMORY_CAPACITY", "2500")
+        monkeypatch.setenv("AI_MEMORY_WORKING_MEMORY_CAPACITY", "100")
+        monkeypatch.setenv("AI_MEMORY_EPISODIC_MEMORY_CAPACITY", "5000")
+        monkeypatch.setenv("AI_MEMORY_SEMANTIC_MEMORY_CAPACITY", "2500")
 
         config = Config.load()
 
@@ -125,10 +125,10 @@ class TestEnvironmentVariableOverrides:
 
     def test_consolidation_override(self, monkeypatch):
         """Test overriding consolidation settings via environment variables."""
-        monkeypatch.setenv("AGV_MEMORY_CONSOLIDATION_ENABLED", "false")
-        monkeypatch.setenv("AGV_MEMORY_CONSOLIDATION_INTERVAL_SECONDS", "600")
+        monkeypatch.setenv("AI_MEMORY_CONSOLIDATION_ENABLED", "false")
+        monkeypatch.setenv("AI_MEMORY_CONSOLIDATION_INTERVAL_SECONDS", "600")
         monkeypatch.setenv(
-            "AGV_MEMORY_CONSOLIDATION_EPISODIC_THRESHOLD", "0.75"
+            "AI_MEMORY_CONSOLIDATION_EPISODIC_THRESHOLD", "0.75"
         )
 
         config = Config.load()
@@ -141,10 +141,10 @@ class TestEnvironmentVariableOverrides:
     def test_retrieval_override(self, monkeypatch):
         """Test overriding retrieval settings via environment variables."""
         monkeypatch.setenv(
-            "AGV_MEMORY_RETRIEVAL_DEFAULT_STRATEGY", "importance"
+            "AI_MEMORY_RETRIEVAL_DEFAULT_STRATEGY", "importance"
         )
-        monkeypatch.setenv("AGV_MEMORY_RETRIEVAL_CACHE_ENABLED", "false")
-        monkeypatch.setenv("AGV_MEMORY_RETRIEVAL_CACHE_TTL_SECONDS", "600")
+        monkeypatch.setenv("AI_MEMORY_RETRIEVAL_CACHE_ENABLED", "false")
+        monkeypatch.setenv("AI_MEMORY_RETRIEVAL_CACHE_TTL_SECONDS", "600")
 
         config = Config.load()
 
@@ -162,7 +162,7 @@ class TestConfigValidation:
         """Test that ranking weights that don't sum to 1.0 raise ConfigurationError."""
         # Load default config as base
         import yaml as yaml_lib
-        from agent_vault.exceptions import ConfigurationError
+        from agentic_inquiry.exceptions import ConfigurationError
         
         default_config_path = Path(__file__).parent.parent.parent / "config" / "default.yaml"
         with open(default_config_path, 'r') as f:
@@ -192,7 +192,7 @@ class TestConfigValidation:
         """Test that threshold values must be between 0.0 and 1.0."""
         # Load default config as base
         import yaml as yaml_lib
-        from agent_vault.exceptions import ConfigurationError
+        from agentic_inquiry.exceptions import ConfigurationError
         
         default_config_path = Path(__file__).parent.parent.parent / "config" / "default.yaml"
         with open(default_config_path, 'r') as f:
@@ -273,7 +273,7 @@ class TestConfigIntegrationWithMemorySystem:
         config = Config.load()
 
         # Create memory system (don't initialize to avoid DB setup)
-        from agent_vault.embeddings import EmbeddingService
+        from agentic_inquiry.embeddings import EmbeddingService
 
         embedding_service = EmbeddingService(config)
 
@@ -313,7 +313,7 @@ class TestConfigIntegrationWithMemorySystem:
             # Verify config has the custom value
             assert config.memory.working_memory.capacity == 5
 
-            from agent_vault.embeddings import EmbeddingService
+            from agentic_inquiry.embeddings import EmbeddingService
 
             embedding_service = EmbeddingService(config)
 

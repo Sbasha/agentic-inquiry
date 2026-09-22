@@ -6,7 +6,7 @@ explaining which file failed and why.
 **Validates: Requirements 9.3**
 """
 
-from agent_vault.indexing.models import IndexingError
+from agentic_inquiry.indexing.models import IndexingError
 
 
 class TestIndexingErrorMessages:

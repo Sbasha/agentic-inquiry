@@ -26,8 +26,8 @@ import uuid
 import pytest
 import pytest_asyncio
 
-from agent_vault.config import Config, StorageConfig
-from agent_vault.storage.providers import InMemoryProvider, LanceDBProvider
+from agentic_inquiry.config import Config, StorageConfig
+from agentic_inquiry.storage.providers import InMemoryProvider, LanceDBProvider
 
 
 def generate_project_id() -> str:
@@ -102,7 +102,7 @@ def _get_postgres_url() -> str:
     port = os.environ.get("POSTGRES_PORT", "5432")
     user = os.environ.get("POSTGRES_USER", "dev")
     password = os.environ.get("POSTGRES_PASSWORD", "dev")
-    database = os.environ.get("POSTGRES_DB", "agent-vault")
+    database = os.environ.get("POSTGRES_DB", "agentic-inquiry")
 
     return f"postgresql://{user}:{password}@{host}:{port}/{database}"
 
@@ -114,7 +114,7 @@ async def postgres_connection_manager():
     Skips tests if PostgreSQL is not available.
     """
     try:
-        from agent_vault.storage.providers.postgresql import PostgresConnectionManager
+        from agentic_inquiry.storage.providers.postgresql import PostgresConnectionManager
     except ImportError:
         pytest.skip("asyncpg not installed")
         return
@@ -122,7 +122,7 @@ async def postgres_connection_manager():
     # Use unique table prefix for contract tests to avoid conflicts
     manager = PostgresConnectionManager(
         connection_string=_get_postgres_url(),
-        table_prefix="agv_contract_",
+        table_prefix="ai_contract_",
         pool_size=5,
     )
 
@@ -140,7 +140,7 @@ async def postgres_connection_manager():
 @pytest_asyncio.fixture
 async def postgres_provider(postgres_connection_manager, project_id):
     """Create and initialize a PostgreSQL vector provider."""
-    from agent_vault.storage.providers.postgresql import PostgresVectorProvider
+    from agentic_inquiry.storage.providers.postgresql import PostgresVectorProvider
 
     provider = PostgresVectorProvider(
         connection_manager=postgres_connection_manager,
@@ -178,7 +178,7 @@ async def alloydb_provider(project_id):
         return
 
     try:
-        from agent_vault.storage.providers.postgresql import (
+        from agentic_inquiry.storage.providers.postgresql import (
             PostgresConnectionManager,
             PostgresVectorProvider,
         )
@@ -186,7 +186,7 @@ async def alloydb_provider(project_id):
         pytest.skip("asyncpg not installed")
         return
 
-    prefix = f"agv_alloydb_ct_{project_id[:8]}_"
+    prefix = f"ai_alloydb_ct_{project_id[:8]}_"
     manager = PostgresConnectionManager(
         connection_string=url,
         table_prefix=prefix,
@@ -275,7 +275,7 @@ async def vector_provider(provider_type, test_config, project_id):
     elif provider_type == "postgres":
         # Check if asyncpg is available
         try:
-            from agent_vault.storage.providers.postgresql import (
+            from agentic_inquiry.storage.providers.postgresql import (
                 PostgresConnectionManager,
                 PostgresVectorProvider,
             )
@@ -286,7 +286,7 @@ async def vector_provider(provider_type, test_config, project_id):
         # Create connection manager
         manager = PostgresConnectionManager(
             connection_string=_get_postgres_url(),
-            table_prefix=f"agv_ct_{project_id[:8]}_",  # Unique prefix per test
+            table_prefix=f"ai_ct_{project_id[:8]}_",  # Unique prefix per test
             pool_size=5,
         )
 
@@ -310,7 +310,7 @@ async def vector_provider(provider_type, test_config, project_id):
             try:
                 async with manager.acquire() as conn:
                     # Drop all tables with this test's prefix
-                    prefix = f"agv_ct_{project_id[:8]}_"
+                    prefix = f"ai_ct_{project_id[:8]}_"
                     result = await conn.fetch(
                         """
                         SELECT tablename FROM pg_tables
@@ -334,7 +334,7 @@ async def vector_provider(provider_type, test_config, project_id):
             return
 
         try:
-            from agent_vault.storage.providers.postgresql import (
+            from agentic_inquiry.storage.providers.postgresql import (
                 PostgresConnectionManager,
                 PostgresVectorProvider,
             )
@@ -342,7 +342,7 @@ async def vector_provider(provider_type, test_config, project_id):
             pytest.skip("asyncpg not installed")
             return
 
-        prefix = f"agv_ct_alloy_{project_id[:8]}_"
+        prefix = f"ai_ct_alloy_{project_id[:8]}_"
         manager = PostgresConnectionManager(
             connection_string=url,
             table_prefix=prefix,
@@ -394,7 +394,7 @@ async def vector_provider(provider_type, test_config, project_id):
 @pytest.fixture
 def chunk_factory():
     """Factory for creating test DocumentChunks."""
-    from agent_vault.models.document_chunk import DocumentChunk
+    from agentic_inquiry.models.document_chunk import DocumentChunk
 
     def _create_chunk(
         chunk_id: str = None,
@@ -429,7 +429,7 @@ def chunk_factory():
 @pytest.fixture
 def entity_factory():
     """Factory for creating test GraphEntities."""
-    from agent_vault.models.graph_entity import EntityType, GraphEntity
+    from agentic_inquiry.models.graph_entity import EntityType, GraphEntity
 
     def _create_entity(
         entity_id: str = None,
@@ -460,7 +460,7 @@ def entity_factory():
 @pytest.fixture
 def relationship_factory():
     """Factory for creating test GraphRelationships."""
-    from agent_vault.models.graph_relationship import (
+    from agentic_inquiry.models.graph_relationship import (
         GraphRelationship,
         RelationshipType,
     )

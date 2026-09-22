@@ -14,13 +14,13 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config, EventsConfig, EventStoreConfig, StorageConfig
-from agent_vault.correlation import correlation_context
-from agent_vault.events import EventSystem
-from agent_vault.events.context_managers import track_operation
-from agent_vault.events.models import Event, EventStatus
-from agent_vault.events.store import EventStore
-from agent_vault.events.types import EventTypes
+from agentic_inquiry.config import Config, EventsConfig, EventStoreConfig, StorageConfig
+from agentic_inquiry.correlation import correlation_context
+from agentic_inquiry.events import EventSystem
+from agentic_inquiry.events.context_managers import track_operation
+from agentic_inquiry.events.models import Event, EventStatus
+from agentic_inquiry.events.store import EventStore
+from agentic_inquiry.events.types import EventTypes
 from tests.helpers.async_utils import AsyncTestHelper
 
 
@@ -732,7 +732,7 @@ async def test_mcp_server_event_persistence_end_to_end(tmp_path: Path):
     
     Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 2.4, 2.5
     """
-    from agent_vault.mcp.factories import create_mcp_services
+    from agentic_inquiry.mcp.factories import create_mcp_services
     
     # Create config with temp storage
     config = Config()
@@ -902,7 +902,7 @@ async def test_mcp_server_multiple_operations_event_isolation(tmp_path: Path):
     
     Requirements: 2.1, 2.2, 2.3, 2.4, 2.5
     """
-    from agent_vault.mcp.factories import create_mcp_services
+    from agentic_inquiry.mcp.factories import create_mcp_services
     
     # Create config with temp storage
     config = Config()

@@ -36,8 +36,8 @@ async def stress_test_storage(mock_db_manager, mock_temp_config):
     This fixture creates an isolated storage instance that can
     handle concurrent operations without affecting other tests.
     """
-    from agent_vault.storage.facade import StorageFacade
-    from agent_vault.database.adapters.lancedb_adapter import LanceDBAdapter
+    from agentic_inquiry.storage.facade import StorageFacade
+    from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
 
     adapter = LanceDBAdapter(mock_db_manager)
     facade = StorageFacade(

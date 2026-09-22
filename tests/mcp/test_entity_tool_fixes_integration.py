@@ -1,4 +1,4 @@
-"""Integration tests for agv Entity Tool Fixes (ISS-001, ISS-002, ISS-003/004).
+"""Integration tests for ai Entity Tool Fixes (ISS-001, ISS-002, ISS-003/004).
 
 These tests verify the fixes implemented for:
 - ISS-001: Entity Type System - type/domain separation
@@ -22,7 +22,7 @@ class TestEntityTypeSystemFix:
 
     def test_entity_type_enum_values(self):
         """EntityType enum values should be plain types without code_ prefix."""
-        from agent_vault.models.graph_entity import EntityType
+        from agentic_inquiry.models.graph_entity import EntityType
 
         # Verify plain type values
         assert EntityType.CODE_FUNCTION.value == "function"
@@ -37,7 +37,7 @@ class TestEntityTypeSystemFix:
 
     def test_entity_type_normalize_plain_types(self):
         """EntityType.normalize() should pass through plain types."""
-        from agent_vault.models.graph_entity import EntityType
+        from agentic_inquiry.models.graph_entity import EntityType
 
         assert EntityType.normalize("function") == "function"
         assert EntityType.normalize("class") == "class"
@@ -46,7 +46,7 @@ class TestEntityTypeSystemFix:
 
     def test_entity_type_normalize_legacy_prefix(self):
         """EntityType.normalize() should strip code_ prefix for legacy types."""
-        from agent_vault.models.graph_entity import EntityType
+        from agentic_inquiry.models.graph_entity import EntityType
 
         # Legacy code_* prefixed types should be normalized
         assert EntityType.normalize("code_function") == "function"
@@ -56,7 +56,7 @@ class TestEntityTypeSystemFix:
 
     def test_entity_type_normalize_aliases(self):
         """EntityType.normalize() should handle type aliases."""
-        from agent_vault.models.graph_entity import EntityType
+        from agentic_inquiry.models.graph_entity import EntityType
 
         # Constant -> variable alias
         assert EntityType.normalize("constant") == "variable"
@@ -65,7 +65,7 @@ class TestEntityTypeSystemFix:
 
     def test_graph_entity_has_domain_field(self):
         """GraphEntity should have domain field with default 'code'."""
-        from agent_vault.models.graph_entity import GraphEntity
+        from agentic_inquiry.models.graph_entity import GraphEntity
 
         entity = GraphEntity(
             id="test-1",
@@ -95,7 +95,7 @@ class TestEntityTypeSystemFix:
 
     def test_code_entity_types_set(self):
         """CODE_ENTITY_TYPES should contain plain types."""
-        from agent_vault.mcp.tools.search import CODE_ENTITY_TYPES
+        from agentic_inquiry.mcp.tools.search import CODE_ENTITY_TYPES
 
         # Should have plain types, not code_ prefixed
         assert "class" in CODE_ENTITY_TYPES
@@ -108,7 +108,7 @@ class TestEntityTypeSystemFix:
 
     def test_parser_type_mapping(self):
         """Parser type mapping should return plain types."""
-        from agent_vault.parsers.implementations.unified_code import CodeUtilities
+        from agentic_inquiry.parsers.implementations.unified_code import CodeUtilities
 
         mapping = CodeUtilities.get_element_type_mapping()
 
@@ -129,12 +129,12 @@ class TestFindSimilarDiversity:
 
     def test_diversify_function_exists(self):
         """diversify_entity_results function should be importable."""
-        from agent_vault.mcp.tools.search import diversify_entity_results
+        from agentic_inquiry.mcp.tools.search import diversify_entity_results
         assert callable(diversify_entity_results)
 
     def test_diversify_limits_per_file(self):
         """diversify_entity_results should limit entities per file."""
-        from agent_vault.mcp.tools.search import diversify_entity_results
+        from agentic_inquiry.mcp.tools.search import diversify_entity_results
 
         # Create 5 entities from same file
         entities = [
@@ -149,7 +149,7 @@ class TestFindSimilarDiversity:
 
     def test_diversify_interleaves_files(self):
         """diversify_entity_results should interleave results from different files."""
-        from agent_vault.mcp.tools.search import diversify_entity_results
+        from agentic_inquiry.mcp.tools.search import diversify_entity_results
 
         # Create entities from different files
         entities = [
@@ -178,7 +178,7 @@ class TestFindSimilarDiversity:
 
     def test_diversify_respects_limit(self):
         """diversify_entity_results should respect the limit parameter."""
-        from agent_vault.mcp.tools.search import diversify_entity_results
+        from agentic_inquiry.mcp.tools.search import diversify_entity_results
 
         # Create 10 entities across 5 files
         entities = []
@@ -197,14 +197,14 @@ class TestFindSimilarDiversity:
 
     def test_diversify_empty_input(self):
         """diversify_entity_results should handle empty input."""
-        from agent_vault.mcp.tools.search import diversify_entity_results
+        from agentic_inquiry.mcp.tools.search import diversify_entity_results
 
         result = diversify_entity_results([], limit=10, max_per_file=2)
         assert result == []
 
     def test_diversify_preserves_order_within_file(self):
         """diversify_entity_results should preserve ranking order within each file."""
-        from agent_vault.mcp.tools.search import diversify_entity_results
+        from agentic_inquiry.mcp.tools.search import diversify_entity_results
 
         entities = [
             {"name": "BestA", "file_path": "/a.py", "similarity": 0.99},
@@ -227,7 +227,7 @@ class TestProjectIdPropagation:
 
     def test_lancedb_manager_from_config_accepts_project_id(self):
         """LanceDBManager.from_config() should accept project_id parameter."""
-        from agent_vault.database.lancedb_manager import LanceDBManager
+        from agentic_inquiry.database.lancedb_manager import LanceDBManager
         import inspect
 
         sig = inspect.signature(LanceDBManager.from_config)
@@ -238,8 +238,8 @@ class TestProjectIdPropagation:
     @pytest.mark.asyncio
     async def test_lancedb_provider_from_config_stores_project_id(self, tmp_path):
         """LanceDBProvider.from_config() should store and propagate project_id."""
-        from agent_vault.storage.providers.lancedb import LanceDBProvider
-        from agent_vault.config import Config
+        from agentic_inquiry.storage.providers.lancedb import LanceDBProvider
+        from agentic_inquiry.config import Config
 
         # Create a minimal config for testing
         config = Config.load()
@@ -258,8 +258,8 @@ class TestProjectIdPropagation:
 
     def test_lancedb_provider_init_stores_project_id(self):
         """LanceDBProvider.__init__() should store project_id for lazy init."""
-        from agent_vault.storage.providers.lancedb import LanceDBProvider
-        from agent_vault.config import Config
+        from agentic_inquiry.storage.providers.lancedb import LanceDBProvider
+        from agentic_inquiry.config import Config
 
         config = Config.load()
         test_project_id = "lazy_init_project"
@@ -282,7 +282,7 @@ class TestEndToEndIntegration:
 
     def test_list_entities_accepts_plain_types(self):
         """list_entities MCP tool should accept plain type names."""
-        from agent_vault.mcp.tools.info import list_entities
+        from agentic_inquiry.mcp.tools.info import list_entities
         import inspect
 
         sig = inspect.signature(list_entities)
@@ -293,7 +293,7 @@ class TestEndToEndIntegration:
 
     def test_find_similar_has_diversity_integration(self):
         """find_similar should integrate diversify_entity_results for entities."""
-        from agent_vault.mcp.tools.search import find_similar
+        from agentic_inquiry.mcp.tools.search import find_similar
         import inspect
 
         source = inspect.getsource(find_similar)
@@ -304,8 +304,8 @@ class TestEndToEndIntegration:
 
     def test_entity_type_normalization_in_filters(self):
         """Filter helpers should use EntityType.normalize for type filtering."""
-        from agent_vault.database.filter_helpers import by_type
-        from agent_vault.models.graph_entity import EntityType
+        from agentic_inquiry.database.filter_helpers import by_type
+        from agentic_inquiry.models.graph_entity import EntityType
 
         # Create filter with plain type
         filter_obj = by_type("function")

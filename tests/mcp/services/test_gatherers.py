@@ -5,7 +5,7 @@ import pytest
 pytestmark = pytest.mark.unit
 from unittest.mock import AsyncMock, MagicMock
 
-from agent_vault.mcp.services.gatherers import (
+from agentic_inquiry.mcp.services.gatherers import (
     ContextGathererProtocol,
     GatherContext,
     CodeGatherer,
@@ -13,7 +13,7 @@ from agent_vault.mcp.services.gatherers import (
     MemoryGatherer,
     GraphGatherer,
 )
-from agent_vault.mcp.services.token_optimizer import TokenBudget, TokenOptimizer
+from agentic_inquiry.mcp.services.token_optimizer import TokenBudget, TokenOptimizer
 
 
 class TestGatherContext:

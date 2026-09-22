@@ -1,6 +1,6 @@
 # Connector Development Guide
 
-This guide explains how to implement a content source connector for Agent-Vault.
+This guide explains how to implement a content source connector for Agentic Inquiry.
 
 ## Implementation Status
 
@@ -29,12 +29,12 @@ The indexing pipeline's `connector` parameter is optional. When `None`, the pipe
 Connectors abstract content sources (filesystem, S3, GitHub, SaaS APIs) into a consistent interface for enumeration and retrieval. The indexing pipeline can optionally use connectors to discover and fetch content without knowing the source details.
 
 **Key files:**
-- `agent_vault/connectors/types.py` - SourceItem, SourceContent types
-- `agent_vault/connectors/protocols.py` - ConnectorProtocol, capabilities
-- `agent_vault/connectors/filesystem.py` - Reference implementation
-- `agent_vault/connectors/base.py` - FsspecConnector base class
-- `agent_vault/connectors/s3.py` - S3 implementation example
-- `agent_vault/connectors/gcs.py` - GCS implementation example
+- `agentic_inquiry/connectors/types.py` - SourceItem, SourceContent types
+- `agentic_inquiry/connectors/protocols.py` - ConnectorProtocol, capabilities
+- `agentic_inquiry/connectors/filesystem.py` - Reference implementation
+- `agentic_inquiry/connectors/base.py` - FsspecConnector base class
+- `agentic_inquiry/connectors/s3.py` - S3 implementation example
+- `agentic_inquiry/connectors/gcs.py` - GCS implementation example
 
 ## When to Use Connectors
 
@@ -236,7 +236,7 @@ Detection: `has_auth_capability(connector)`
 The `FsspecConnector` base class provides fsspec integration:
 
 ```python
-from agent_vault.connectors.base import FsspecConnector
+from agentic_inquiry.connectors.base import FsspecConnector
 
 class S3Connector(FsspecConnector):
     def __init__(self, bucket: str, prefix: str = "", **storage_options):
@@ -306,7 +306,7 @@ async def open(self, item: SourceItem) -> SourceContent:
 Parsers are currently path-based. Remote content must be materialized to local paths:
 
 ```python
-from agent_vault.connectors.cache import ContentMaterializer
+from agentic_inquiry.connectors.cache import ContentMaterializer
 
 class RemoteConnector:
     def __init__(self, cache_dir: str):
@@ -366,8 +366,8 @@ from typing import Any, AsyncIterator, Dict, Optional
 
 import httpx
 
-from agent_vault.connectors.protocols import AuthCapability, ConnectorProtocol
-from agent_vault.connectors.types import SourceContent, SourceItem
+from agentic_inquiry.connectors.protocols import AuthCapability, ConnectorProtocol
+from agentic_inquiry.connectors.types import SourceContent, SourceItem
 
 
 class NotionConnector(ConnectorProtocol, AuthCapability):
@@ -597,9 +597,9 @@ class NotionConnector(ConnectorProtocol, AuthCapability):
 
 ## See Also
 
-- `agent_vault/connectors/filesystem.py` - Production FileSystemConnector implementation
-- `agent_vault/connectors/s3.py` - S3 connector example
-- `agent_vault/connectors/protocols.py` - Protocol definitions and capabilities
-- `agent_vault/connectors/base.py` - FsspecConnector base class
+- `agentic_inquiry/connectors/filesystem.py` - Production FileSystemConnector implementation
+- `agentic_inquiry/connectors/s3.py` - S3 connector example
+- `agentic_inquiry/connectors/protocols.py` - Protocol definitions and capabilities
+- `agentic_inquiry/connectors/base.py` - FsspecConnector base class
 - `docs/design/ownership-and-extension-points.md` - Ownership boundaries
 - `tests/connectors/` - Test patterns

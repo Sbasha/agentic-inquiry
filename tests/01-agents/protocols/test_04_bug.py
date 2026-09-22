@@ -32,7 +32,7 @@ BUG_REPORT = {
         "camelCase tokens but may silently fail or produce empty results."
     ),
     "reproduction_steps": [
-        "Index the Agent-Vault codebase",
+        "Index the Agentic Inquiry codebase",
         "Run hybrid search with query 'SearchService'",
         "Run hybrid search with query 'StorageFacade'",
         "Observe empty or poorly ranked results",
@@ -50,9 +50,9 @@ async def run(
     run_id: str,
     output_dir: Path,
 ) -> Dict[str, Any]:
-    from agent_vault.mcp.tools.search import search_knowledge
-    from agent_vault.mcp.tools.info import get_project_info
-    from agent_vault.mcp.tools.info import list_entities
+    from agentic_inquiry.mcp.tools.search import search_knowledge
+    from agentic_inquiry.mcp.tools.info import get_project_info
+    from agentic_inquiry.mcp.tools.info import list_entities
 
     results: Dict[str, Any] = {}
     issues: list = []
@@ -474,7 +474,7 @@ async def run(
     elapsed = time.time() - t_start
     note_adoption(journal,
         f"full bug investigation took {elapsed:.0f}s including indexing — for a known bug with a specific file, "
-        f"'grep -rn camelCase agent_vault/search/' would give actionable results in <1s",
+        f"'grep -rn camelCase agentic_inquiry/search/' would give actionable results in <1s",
         "neutral")
 
     summary = summarize(test_id, slug, results, issues, elapsed, project_id, adoption_journal=journal)

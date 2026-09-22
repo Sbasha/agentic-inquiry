@@ -1,12 +1,12 @@
-# Presentation Outline: Agent-Vault (Executive Version)
+# Presentation Outline: Agentic Inquiry (Executive Version)
 
 ## Slide 1: Title
 
-**Title:** Agent-Vault: The "Brain" That Makes AI Agents Work
+**Title:** Agentic Inquiry: The "Brain" That Makes AI Agents Work
 
-**Subtitle:** Stop wasting tokens and start getting results. Agent-Vault is the essential control plane for deploying safe, efficient, and truly intelligent AI agents.
+**Subtitle:** Stop wasting tokens and start getting results. Agentic Inquiry is the essential control plane for deploying safe, efficient, and truly intelligent AI agents.
 
-**Visual:** A graphic showing a large, powerful "LLM Engine" icon. A second, smaller "Agent-Vault" brain icon connects to it, providing a focused beam of light (context) to the engine, which is now successfully performing a complex task on a codebase.
+**Visual:** A graphic showing a large, powerful "LLM Engine" icon. A second, smaller "Agentic Inquiry" brain icon connects to it, providing a focused beam of light (context) to the engine, which is now successfully performing a complex task on a codebase.
 
 ---
 
@@ -32,9 +32,9 @@
 
 ## Slide 3: The Solution: Four Breakthrough Capabilities
 
-**Title:** Agent-Vault: Not Just Search—A Complete Cognitive System
+**Title:** Agentic Inquiry: Not Just Search—A Complete Cognitive System
 
-**Key Point:** While competitors offer "search," Agent-Vault gives agents four cognitive capabilities that transform them from tools into teammates.
+**Key Point:** While competitors offer "search," Agentic Inquiry gives agents four cognitive capabilities that transform them from tools into teammates.
 
 ---
 
@@ -45,7 +45,7 @@
 - GitHub Copilot: Sends code to external APIs
 - Security review: 3-6 months before you can even start
 
-**Agent-Vault difference:**
+**Agentic Inquiry difference:**
 - Everything runs on your machine (embedded databases)
 - Zero external API calls (verified by network monitoring)
 - 5-minute setup (no cloud accounts, no infrastructure)
@@ -62,7 +62,7 @@
 - Agents repeat the same mistakes
 - Knowledge walks out the door when people leave
 
-**Agent-Vault difference:**
+**Agentic Inquiry difference:**
 - **Working Memory**: Current task context (hours) - high precision
 - **Episodic Memory**: Recent learnings (days) - session knowledge
 - **Semantic Memory**: Permanent expertise (forever) - institutional knowledge
@@ -88,7 +88,7 @@ Result: Instant recall in 2ms (vs. 15 minutes of re-investigation)
 - One-shot answers, no exploration or refinement
 - Agents can answer questions but can't solve complex problems
 
-**Agent-Vault difference:**
+**Agentic Inquiry difference:**
 
 **A. Explore** - Discover patterns across your codebase
 ```
@@ -120,7 +120,7 @@ Agent: Follows established patterns, safe change
 
 **Real workflow:**
 - Traditional RAG: "What does this code do?" ✅ (answers questions)
-- Agent-Vault: "Refactor error handling across 87 endpoints" ✅ (solves problems)
+- Agentic Inquiry: "Refactor error handling across 87 endpoints" ✅ (solves problems)
 
 ---
 
@@ -131,7 +131,7 @@ Agent: Follows established patterns, safe change
 - Semantic search: Understands meaning (misses dependencies)
 - Result: Agents break things they didn't know were connected
 
-**Agent-Vault difference:**
+**Agentic Inquiry difference:**
 - Maps your entire system (entities + relationships)
 - Shows what calls what, what depends on what
 - Reveals hidden dependencies before agent acts
@@ -173,7 +173,7 @@ Agent: Follows established patterns, safe change
 - "Architecture Understanding"
 - "Prevents Breaking Changes"
 
-**Center:** "Agent-Vault = Complete Cognitive System"
+**Center:** "Agentic Inquiry = Complete Cognitive System"
 
 ---
 
@@ -181,7 +181,7 @@ Agent: Follows established patterns, safe change
 
 **Title:** From Goldfish Memory to Institutional Expertise
 
-**Key Point:** Most AI agents forget everything between conversations. Agent-Vault's three-tier memory system means your organization gets smarter every single day.
+**Key Point:** Most AI agents forget everything between conversations. Agentic Inquiry's three-tier memory system means your organization gets smarter every single day.
 
 ---
 
@@ -202,7 +202,7 @@ Session 3: Same issue, same investigation, same waste
 
 ---
 
-### **Agent-Vault's Three-Tier Memory: How Humans Actually Think**
+### **Agentic Inquiry's Three-Tier Memory: How Humans Actually Think**
 
 **Working Memory (Current Task - Hours)**
 - **Analog**: Your RAM—what you're actively thinking about right now
@@ -316,7 +316,7 @@ Week 2: New agents start projects
 
 ### **Comparison: Memory vs. No Memory**
 
-| Scenario | Without Memory | With Agent-Vault |
+| Scenario | Without Memory | With Agentic Inquiry |
 |----------|---------------|-------------------|
 | **Bug Investigation** | 15 min search every time | 2ms recall if seen before |
 | **Architecture Questions** | Read 20 files each time | Instant from semantic memory |
@@ -336,7 +336,7 @@ Agent 3 productivity: 100% (starts fresh)
 Total knowledge: Each agent's individual learnings (lost after session)
 ```
 
-**Agent-Vault (Exponential):**
+**Agentic Inquiry (Exponential):**
 ```
 Agent 1 productivity: 100% (builds foundation)
 Agent 2 productivity: 130% (learns from Agent 1)
@@ -346,7 +346,7 @@ Total knowledge: Compounds every day (permanent semantic memory)
 
 **After 6 months:**
 - Traditional: Same productivity as Day 1
-- Agent-Vault: 3-5x productivity improvement from accumulated knowledge
+- Agentic Inquiry: 3-5x productivity improvement from accumulated knowledge
 
 ---
 
@@ -365,7 +365,7 @@ Traditional approach:
 - 2 weeks avg onboarding time
 - Knowledge lost when employees leave
 
-With Agent-Vault:
+With Agentic Inquiry:
 - 5% time on re-investigation (15% saved → ~$200K/year)
 - 2 days avg onboarding (10 days saved × 3 new hires = $30K/year)
 - Knowledge preserved forever (unmeasurable value)
@@ -407,7 +407,7 @@ Total annual value: $230K+ for 10-person team
 
 **Title:** The Right Search for the Right Question—Every Time
 
-**Key Point:** Agent-Vault combines three complementary types of intelligence to find exactly what your agents need. It automatically picks the best approach for each question.
+**Key Point:** Agentic Inquiry combines three complementary types of intelligence to find exactly what your agents need. It automatically picks the best approach for each question.
 
 **The Three Types of Intelligence:**
 
@@ -468,12 +468,12 @@ Total annual value: $230K+ for 10-person team
 - 100% relevant, zero wasted tokens
 - Has full context to fix safely without breaking dependencies
 
-**Without Agent-Vault:**
+**Without Agentic Inquiry:**
 - Agent searches for "auth" → gets 500 files (97% irrelevant)
 - Spends 50,000 tokens wading through noise
 - Misses the dependency in Payment Service → breaks production
 
-**The Magic:** Agent-Vault picks and combines these approaches automatically. Agents don't need to know *how* to search—they just get the right answer.
+**The Magic:** Agentic Inquiry picks and combines these approaches automatically. Agents don't need to know *how* to search—they just get the right answer.
 
 **Visual:** Three icons representing each search type (magnifying glass for keyword, brain for meaning, network diagram for relationships). Show them converging on a small, focused result. Include the real example as a flowchart showing the three steps leading to "3 files, 100% relevant."
 
@@ -483,7 +483,7 @@ Total annual value: $230K+ for 10-person team
 
 **Title:** From One-Shot Search to Iterative Understanding
 
-**Key Point:** Traditional search is a dead-end: ask a question, get an answer, done. Agent-Vault enables agents to explore, learn, and refine—just like human experts do.
+**Key Point:** Traditional search is a dead-end: ask a question, get an answer, done. Agentic Inquiry enables agents to explore, learn, and refine—just like human experts do.
 
 **The Problem with Traditional Search:**
 
@@ -496,14 +496,14 @@ Most AI tools treat search as a single action:
 
 ---
 
-**Agent-Vault's Iterative Learning Loop:**
+**Agentic Inquiry's Iterative Learning Loop:**
 
 ### **Phase 1: Explore**
 "Cast a wide net to find relevant areas"
 
 **Example:**
 - Agent: "How does our authentication work?"
-- Agent-Vault: Returns 20 diverse results (login flow, JWT handling, session management, tests, configs)
+- Agentic Inquiry: Returns 20 diverse results (login flow, JWT handling, session management, tests, configs)
 - **Like:** A senior engineer skimming docs to get oriented
 
 ---
@@ -513,7 +513,7 @@ Most AI tools treat search as a single action:
 
 **Example:**
 - Agent: "More like JWT validation, less like tests"
-- Agent-Vault: Re-ranks results based on feedback → now returns 5 core auth files
+- Agentic Inquiry: Re-ranks results based on feedback → now returns 5 core auth files
 - **Like:** An expert saying "show me more like this"
 
 **Technical detail for credibility:** Uses Rocchio feedback algorithm (proven information retrieval technique from academia)
@@ -525,7 +525,7 @@ Most AI tools treat search as a single action:
 
 **Example:**
 - Agent: "What do these files have in common?"
-- Agent-Vault: Identifies the pattern (all auth flows validate tokens in the same middleware)
+- Agentic Inquiry: Identifies the pattern (all auth flows validate tokens in the same middleware)
 - **Like:** Writing a design doc after researching a complex system
 
 ---
@@ -538,7 +538,7 @@ Most AI tools treat search as a single action:
 |----------|----------|-------------|------|----------|
 | **Raw LLM** (no context) | 15 tries | 800K tokens | 4 hours | ❌ Broke production |
 | **Traditional RAG** (one-shot search) | 8 tries | 300K tokens | 2 hours | ⚠️ Missed 3 services |
-| **Agent-Vault** (iterative learning) | 2 tries | 12K tokens | 20 min | ✅ Complete & correct |
+| **Agentic Inquiry** (iterative learning) | 2 tries | 12K tokens | 20 min | ✅ Complete & correct |
 
 **What Made the Difference:**
 1. **Explore**: Found all 8 services with rate limiting
@@ -581,7 +581,7 @@ Every exploration teaches the system permanently:
 
 We don't use estimates—we measure with the actual tokenizer (tiktoken) that LLMs use:
 
-| Scenario | Baseline Tokens | Agent-Vault Tokens | Reduction | Validated? |
+| Scenario | Baseline Tokens | Agentic Inquiry Tokens | Reduction | Validated? |
 |----------|-----------------|---------------------|-----------|------------|
 | **Standard Search** | 10,000 | 2,000 | 80% | ✅ Tiktoken |
 | **Exploration Mode** | 50,000 | 6,000 | 88% | ✅ Tiktoken |
@@ -591,7 +591,7 @@ We don't use estimates—we measure with the actual tokenizer (tiktoken) that LL
 **What "Baseline" Means:**
 - Not comparing to "dump entire codebase" (that's a strawman)
 - Baseline = smart manual approach (grep, read 5-10 relevant files)
-- Agent-Vault beats even the smart approach by 70-96%
+- Agentic Inquiry beats even the smart approach by 70-96%
 
 ---
 
@@ -623,7 +623,7 @@ No cloud accounts, no infrastructure, no IT involvement needed.
 
 **Offline Capability: 100% Validated**
 
-Set `agv_OFFLINE=1` environment variable:
+Set `AI_OFFLINE=1` environment variable:
 - ✅ No network calls (verified by network monitoring)
 - ✅ All models cached locally
 - ✅ Works in air-gapped environments
@@ -635,7 +635,7 @@ Set `agv_OFFLINE=1` environment variable:
 
 **For a team of 10 developers using AI agents daily:**
 
-| Metric | Before Agent-Vault | After Agent-Vault | Annual Savings |
+| Metric | Before Agentic Inquiry | After Agentic Inquiry | Annual Savings |
 |--------|---------------------|--------------------|-----------------|
 | **LLM Tokens** | 50M tokens/month | 10M tokens/month | $48K |
 | **Agent Success Rate** | 40% tasks succeed | 85% tasks succeed | ~2,000 dev hours saved |
@@ -644,7 +644,7 @@ Set `agv_OFFLINE=1` environment variable:
 
 **Total First-Year Value:** ~$100K for a 10-person team
 
-**ROI:** 50x-100x (cost of Agent-Vault vs. value delivered)
+**ROI:** 50x-100x (cost of Agentic Inquiry vs. value delivered)
 
 ---
 
@@ -656,7 +656,7 @@ Set `agv_OFFLINE=1` environment variable:
 - ✅ **Conservative claims** (we say "33+ languages" when we support 44)
 - ✅ **Reproducible benchmarks** (test suite publicly available)
 
-**Visual:** A bar chart comparing token usage across scenarios (baseline vs. Agent-Vault). Include a callout box: "Validated with tiktoken—not estimates." Add a table showing the business value calculation with actual dollar amounts.
+**Visual:** A bar chart comparing token usage across scenarios (baseline vs. Agentic Inquiry). Include a callout box: "Validated with tiktoken—not estimates." Add a table showing the business value calculation with actual dollar amounts.
 
 ---
 
@@ -664,7 +664,7 @@ Set `agv_OFFLINE=1` environment variable:
 
 **Title:** Stop Experimenting, Start Deploying
 
-**Key Point:** Agent-Vault is the foundational investment that de-risks and unlocks the full potential of all your other AI initiatives.
+**Key Point:** Agentic Inquiry is the foundational investment that de-risks and unlocks the full potential of all your other AI initiatives.
 
 **Three Strategic Imperatives:**
 
@@ -676,7 +676,7 @@ Most companies have tried AI agents and hit the wall:
 - They hallucinate because they lack context
 - They break production because they don't understand dependencies
 
-**With Agent-Vault:**
+**With Agentic Inquiry:**
 - Agents get exactly the context they need (70-96% less waste)
 - Memory system prevents repeated mistakes
 - Architecture mapping prevents breaking changes
@@ -693,7 +693,7 @@ Every time a developer leaves, you lose tribal knowledge:
 - "What did we try that didn't work?"
 - "Where are the hidden dependencies?"
 
-**With Agent-Vault:**
+**With Agentic Inquiry:**
 - Every bug fix, pattern, and decision is saved to Semantic Memory
 - Knowledge compounds over time (every agent teaches future agents)
 - New developers (human or AI) get instant access to institutional expertise
@@ -712,7 +712,7 @@ Most AI solutions require a painful security review:
 - IT review: What's the attack surface?
 - **Timeline:** 4-12 weeks before you can even start
 
-**With Agent-Vault:**
+**With Agentic Inquiry:**
 
 No security review needed because:
 - ✅ Code never leaves your machine (zero data exfiltration)
@@ -768,10 +768,10 @@ Target a high-value, complex task that unassisted agents fail at today:
 ---
 
 ### **Option 2: Mandate for New AI Projects**
-Position Agent-Vault as required infrastructure:
+Position Agentic Inquiry as required infrastructure:
 
 **Policy:**
-"Any new AI agent project must use Agent-Vault as the cognitive layer"
+"Any new AI agent project must use Agentic Inquiry as the cognitive layer"
 
 **Rationale:**
 - Prevents wasted spend on context overload
@@ -802,7 +802,7 @@ Deploy to human developers using Claude Code, Cursor, Cline:
 **What Success Looks Like (90 Days):**
 
 **Month 1:**
-- Install and configure Agent-Vault (5 minutes)
+- Install and configure Agentic Inquiry (5 minutes)
 - Index 3-5 key repositories
 - Train 2-3 agent workflows on pilot task
 
@@ -827,7 +827,7 @@ Deploy to human developers using Claude Code, Cursor, Cline:
 **Visual:** A simple, powerful statement in large text:
 
 **"An AI Agent without a Brain is a Liability.**
-**An AI Agent with Agent-Vault is a Competitive Advantage."**
+**An AI Agent with Agentic Inquiry is a Competitive Advantage."**
 
 Below it, three boxes showing the three options (Pilot, Mandate, Productivity) with timeline and expected outcomes for each.
 
@@ -848,7 +848,7 @@ Below it, three boxes showing the three options (Pilot, Mandate, Productivity) w
 └────────────────────┬────────────────────────────────────────┘
                      │
 ┌────────────────────▼────────────────────────────────────────┐
-│                  Agent-Vault Core                           │
+│                  Agentic Inquiry Core                           │
 ├─────────────────────────────────────────────────────────────┤
 │  Unified Search Engine                                       │
 │  ├─ Strategy Selection (FTS/Vector/Hybrid)                  │
@@ -1416,7 +1416,7 @@ Background: Consolidation loop will promote to Semantic Memory if important
 | **Backup** | Database-specific tools | cp/rsync (just copy files) |
 | **Version Control** | Complex migration scripts | Files can be versioned |
 
-**Why Embedded Works for Agent-Vault:**
+**Why Embedded Works for Agentic Inquiry:**
 
 **1. Workload Characteristics**
 - **Single user**: Developer or single agent workflow
@@ -1441,7 +1441,7 @@ docker-compose up -d redis
 # Hope nothing conflicts on ports...
 
 # Embedded approach
-agent-vault
+agentic-inquiry
 # Done. Databases are just files in workspace/
 ```
 
@@ -1457,7 +1457,7 @@ agent-vault
 - ❌ Horizontal scaling (need multiple instances)
 - ❌ Real-time replication (need distributed consensus)
 
-**Agent-Vault's Use Case:**
+**Agentic Inquiry's Use Case:**
 - ✅ Single developer or single agent workflow
 - ✅ Local-first by design
 - ✅ No need for sharing across network
@@ -1509,7 +1509,7 @@ agent-vault
 
 | Component | Idle | Active Search | Peak |
 |-----------|------|---------------|------|
-| Agent-Vault Core | 150MB | 300MB | 500MB |
+| Agentic Inquiry Core | 150MB | 300MB | 500MB |
 | LanceDB (mapped) | 200MB | 400MB | 800MB |
 | CozoDB | 50MB | 100MB | 150MB |
 | Models (loaded) | 300MB | 300MB | 300MB |
@@ -1585,7 +1585,7 @@ If you have 100K+ files:
 3. **Use sampling** for exploration (don't index tests/generated code)
 4. **Incremental mode only** (stop re-indexing entire codebase)
 
-**Bottom Line:** Agent-Vault scales to 50K files comfortably on consumer hardware. Beyond that, you need optimization—but most projects are well under this limit.
+**Bottom Line:** Agentic Inquiry scales to 50K files comfortably on consumer hardware. Beyond that, you need optimization—but most projects are well under this limit.
 
 ---
 
@@ -1603,7 +1603,7 @@ If you have 100K+ files:
 
 **Attack Vectors:**
 
-| Vector | Server-Based Tools | Agent-Vault (Embedded) |
+| Vector | Server-Based Tools | Agentic Inquiry (Embedded) |
 |--------|-------------------|------------------------|
 | **Network Attacks** | ⚠️ Exposed ports | ✅ No network ports |
 | **Credential Theft** | ⚠️ API keys, passwords | ✅ No credentials |
@@ -1619,7 +1619,7 @@ If you have 100K+ files:
 │  ┌───────────────────────────────────────────┐  │
 │  │       workspace/ (user-owned directory)    │  │
 │  │  ┌─────────────────────────────────────┐  │  │
-│  │  │  Agent-Vault Process (user perms)  │  │  │
+│  │  │  Agentic Inquiry Process (user perms)  │  │  │
 │  │  │  ├─ LanceDB (local files)           │  │  │
 │  │  │  ├─ CozoDB (local files)            │  │  │
 │  │  │  └─ Models (local files)            │  │  │
@@ -1686,14 +1686,14 @@ chown $USER workspace/
 
 **3. Offline Mode** (Regulated Environments)
 ```bash
-export agv_OFFLINE=1  # No model downloads
+export AI_OFFLINE=1  # No model downloads
 # Pre-download models before air-gapping
 ```
 
 **4. Audit Logging** (Enterprise)
 ```bash
 # Enable event logging
-export agv_LOG_LEVEL=INFO
+export AI_LOG_LEVEL=INFO
 
 # Events logged to workspace/logs/events.db
 # - Indexing operations
@@ -1735,7 +1735,7 @@ sha256sum workspace/models/*.m2v
 
 **Comparison to Cloud RAG:**
 
-| Security Aspect | Cloud RAG | Agent-Vault |
+| Security Aspect | Cloud RAG | Agentic Inquiry |
 |-----------------|-----------|--------------|
 | Data at rest | Vendor cloud | Your disk |
 | Data in transit | TLS to vendor | N/A |
@@ -1745,7 +1745,7 @@ sha256sum workspace/models/*.m2v
 | Compliance scope | Full architecture | Single machine |
 | Security review | 4-12 weeks | 1-2 weeks |
 
-**Bottom Line:** Agent-Vault's local-first architecture **reduces** attack surface compared to cloud alternatives. The primary risk is local file access—same as reading source code directly.
+**Bottom Line:** Agentic Inquiry's local-first architecture **reduces** attack surface compared to cloud alternatives. The primary risk is local file access—same as reading source code directly.
 
 ---
 
@@ -1759,7 +1759,7 @@ Most RAG systems offer one tool: `search(query)` → get results → done.
 
 **Result:** Agents can only answer questions, not solve problems.
 
-**Agent-Vault's Approach:** A suite of MCP tools that enable **multi-step reasoning workflows**
+**Agentic Inquiry's Approach:** A suite of MCP tools that enable **multi-step reasoning workflows**
 
 ---
 
@@ -2127,7 +2127,7 @@ await memory_store(
 
 **Token usage:**
 - Traditional approach: ~800K tokens (reading all 87 files repeatedly)
-- Agent-Vault approach: ~25K tokens (focused context at each step)
+- Agentic Inquiry approach: ~25K tokens (focused context at each step)
 - **Reduction: 97%**
 
 ---
@@ -2184,7 +2184,7 @@ memory_store: [saves approach for next time]
 
 ### **Comparison: RAG vs. Cognitive Workflows**
 
-| Capability | Traditional RAG | Agent-Vault |
+| Capability | Traditional RAG | Agentic Inquiry |
 |------------|----------------|--------------|
 | **Search** | ✅ Yes (one-shot) | ✅ Yes (iterative) |
 | **Exploration** | ❌ No | ✅ Yes (diversity mode) |
@@ -2197,13 +2197,13 @@ memory_store: [saves approach for next time]
 
 **What this enables:**
 - Traditional RAG: "What does this code do?" ✅
-- Agent-Vault: "Refactor this pattern across the entire codebase correctly" ✅
+- Agentic Inquiry: "Refactor this pattern across the entire codebase correctly" ✅
 
 ---
 
 ### **Comparison to Alternatives**
 
-| Feature | Cloud RAG | GitHub Copilot | Agent-Vault |
+| Feature | Cloud RAG | GitHub Copilot | Agentic Inquiry |
 |---------|-----------|----------------|--------------|
 | **Data Privacy** | ⚠️ Uploads to vendor | ⚠️ Sends to cloud | ✅ 100% local |
 | **Setup Time** | 2-4 weeks (IT project) | 5 minutes | 5 minutes |
@@ -2220,7 +2220,7 @@ memory_store: [saves approach for next time]
 **Financial Services - Trading Platform**
 - **Challenge**: Refactor risk calculation engine across 12 microservices
 - **Risk**: $10M+ on the line if algo breaks
-- **Solution**: Agent-Vault mapped all dependencies before any changes
+- **Solution**: Agentic Inquiry mapped all dependencies before any changes
 - **Outcome**: Zero production issues, 4 weeks ahead of schedule
 
 **Healthcare - EHR System**
@@ -2230,7 +2230,7 @@ memory_store: [saves approach for next time]
 
 **Government - Classified Network**
 - **Challenge**: Air-gapped environment, no external connectivity
-- **Solution**: Agent-Vault works 100% offline after model download
+- **Solution**: Agentic Inquiry works 100% offline after model download
 - **Outcome**: First AI assistant approved for classified work
 
 ---

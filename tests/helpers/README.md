@@ -1,6 +1,6 @@
 # Test Helpers
 
-This directory contains reusable test utilities for the Agent-Vault test suite.
+This directory contains reusable test utilities for the Agentic Inquiry test suite.
 
 ## Modules
 

@@ -38,12 +38,12 @@ async def run(
     output_dir: Path,
     target_codebase: str = TARGET_CODEBASE,
 ) -> Dict[str, Any]:
-    from agent_vault.mcp.tools.session import create_session, get_session
-    from agent_vault.mcp.tools.knowledge import add_knowledge
-    from agent_vault.mcp.tools.search import search_knowledge
-    from agent_vault.mcp.tools.memory import save_memory, recall_memories
-    from agent_vault.mcp.tools.info import get_project_info, get_server_info
-    from agent_vault.mcp.tools.context import build_context
+    from agentic_inquiry.mcp.tools.session import create_session, get_session
+    from agentic_inquiry.mcp.tools.knowledge import add_knowledge
+    from agentic_inquiry.mcp.tools.search import search_knowledge
+    from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
+    from agentic_inquiry.mcp.tools.info import get_project_info, get_server_info
+    from agentic_inquiry.mcp.tools.context import build_context
 
     results: Dict[str, Any] = {}
     issues: list = []
@@ -51,7 +51,7 @@ async def run(
     t_start = time.time()
     t_phase_start = t_start
 
-    project_id = f"agv_test{test_id}_{slug}_{run_id}"
+    project_id = f"ai_test{test_id}_{slug}_{run_id}"
 
     # ── SETUP: Create Session ──────────────────────────────────────
     log(test_id, "SETUP: Creating fresh session (cold start)")
@@ -825,7 +825,7 @@ async def run(
     total_elapsed = time.time() - t_start
     note_adoption(journal,
         f"total onboarding protocol took {total_elapsed:.0f}s — for a one-time codebase review, "
-        f"reading README + directory listing is faster; agv value comes from repeated queries across sessions",
+        f"reading README + directory listing is faster; ai value comes from repeated queries across sessions",
         "neutral")
 
     # ── Finalize ────────────────────────────────────────────────────

@@ -4,7 +4,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.config import Config, ConfigurationError
+from agentic_inquiry.config import Config, ConfigurationError
 
 
 class TestRerankerConfiguration:
@@ -132,7 +132,7 @@ class TestRerankerConfiguration:
     
     def test_environment_variable_reranker_type(self, monkeypatch):
         """Test setting reranker type via environment variable."""
-        monkeypatch.setenv('AGV_SEARCH_HYBRID_SEARCH_RERANKER_TYPE', 'rrf')
+        monkeypatch.setenv('AI_SEARCH_HYBRID_SEARCH_RERANKER_TYPE', 'rrf')
         
         config = Config.load()
         assert config.search.hybrid_search.reranker_type == 'rrf'
@@ -140,7 +140,7 @@ class TestRerankerConfiguration:
     def test_environment_variable_reranker_params(self, monkeypatch):
         """Test setting reranker params via environment variable."""
         # Note: Complex nested params may need special handling
-        monkeypatch.setenv('AGV_SEARCH_HYBRID_SEARCH_RERANKER_TYPE', 'rrf')
+        monkeypatch.setenv('AI_SEARCH_HYBRID_SEARCH_RERANKER_TYPE', 'rrf')
         
         config = Config.load()
         assert config.search.hybrid_search.reranker_type == 'rrf'

@@ -16,7 +16,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agent_vault.connectors import (
+from agentic_inquiry.connectors import (
     ContentMaterializer,
     SourceContent,
     SourceItem,
