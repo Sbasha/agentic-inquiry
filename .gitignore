@@ -238,3 +238,4 @@ results/
 .afp-bundle-*.toml
 .sf/
 .sf/**
+.sf/orgs/00DjW0000009VEUUA2/metadata-catalog/catalog.json
