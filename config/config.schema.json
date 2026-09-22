@@ -1,0 +1,2026 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Agent-Vault Configuration",
+    "description": "Configuration schema for Agent-Vault document parsing and knowledge graph system",
+    "type": "object",
+    "properties": {
+        "storage": {
+            "type": "object",
+            "description": "Storage configuration with unified root and project isolation",
+            "required": [
+                "root"
+            ],
+            "properties": {
+                "root": {
+                    "type": "string",
+                    "description": "Root directory for all persistent data (absolute or relative path)",
+                    "default": "./.agv",
+                    "minLength": 1,
+                    "pattern": "^[^\\0]+$"
+                },
+                "default_project_id": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Default project identifier used when no explicit project_id is provided to Config.for_project(). Must contain only alphanumeric characters, underscores, and hyphens.",
+                    "pattern": "^[a-zA-Z0-9_-]+$",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "default": "default"
+                },
+                "project_id": {
+                    "type": [
+                        "string",
+                        "null"
+                    ],
+                    "description": "Project identifier for data isolation (deprecated, use default_project_id). Must contain only alphanumeric characters, underscores, and hyphens.",
+                    "pattern": "^[a-zA-Z0-9_-]+$",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "default": null
+                },
+                "backend": {
+                    "type": "string",
+                    "description": "Vector storage backend selection. Empty string means unconfigured — run 'agv setup' to set.",
+                    "enum": [
+                        "",
+                        "lancedb",
+                        "postgresql",
+                        "cloudsql",
+                        "alloydb",
+                        "memory"
+                    ],
+                    "default": ""
+                },
+                "event_store_backend": {
+                    "type": "string",
+                    "description": "Event store backend selection",
+                    "enum": [
+                        "sqlite",
+                        "postgresql",
+                        "cloudsql",
+                        "alloydb",
+                        "memory"
+                    ],
+                    "default": "sqlite"
+                },
+                "file_tracker_backend": {
+                    "type": "string",
+                    "description": "File tracker backend selection",
+                    "enum": [
+                        "sqlite",
+                        "postgresql",
+                        "cloudsql",
+                        "alloydb",
+                        "memory"
+                    ],
+                    "default": "sqlite"
+                },
+                "lancedb": {
+                    "type": "object",
+                    "description": "LanceDB-specific storage configuration",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Path relative to storage.root",
+                            "default": "lancedb",
+                            "minLength": 1,
+                            "pattern": "^[^\\0]+$"
+                        }
+                    },
+                    "required": [
+                        "path"
+                    ],
+                    "additionalProperties": false
+                },
+                "file_tracker": {
+                    "type": "object",
+                    "description": "FileTracker-specific storage configuration",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Path relative to storage.root",
+                            "default": "file_tracker.db",
+                            "minLength": 1,
+                            "pattern": "^[^\\0]+$"
+                        }
+                    },
+                    "required": [
+                        "path"
+                    ],
+                    "additionalProperties": false
+                },
+                "document_cache": {
+                    "type": "object",
+                    "description": "DocumentCache disk persistence configuration",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable disk persistence for cache",
+                            "default": false
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "Path relative to storage.root",
+                            "default": "document_cache",
+                            "minLength": 1,
+                            "pattern": "^[^\\0]+$"
+                        }
+                    },
+                    "required": [
+                        "enabled",
+                        "path"
+                    ],
+                    "additionalProperties": false
+                },
+                "uri": {
+                    "type": "string",
+                    "description": "Legacy: Path or URI to LanceDB storage location (deprecated, use lancedb.path instead)",
+                    "default": "./vector_db"
+                },
+                "event_store": {
+                    "type": "object",
+                    "description": "EventStore-specific storage configuration",
+                    "properties": {
+                        "path": {
+                            "type": "string",
+                            "description": "Path relative to storage.root",
+                            "default": "events.db",
+                            "minLength": 1,
+                            "pattern": "^[^\\0]+$"
+                        }
+                    },
+                    "required": [
+                        "path"
+                    ],
+                    "additionalProperties": false
+                },
+                "tables": {
+                    "type": "object",
+                    "description": "Table name mappings",
+                    "properties": {
+                        "document_chunks": {
+                            "type": "string",
+                            "default": "document_chunks"
+                        },
+                        "graph_entities": {
+                            "type": "string",
+                            "default": "graph_entities"
+                        },
+                        "graph_relationships": {
+                            "type": "string",
+                            "default": "graph_relationships"
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "vector": {
+                    "type": "object",
+                    "description": "Vector storage provider configuration (Provider Framework v2.4)",
+                    "properties": {
+                        "provider": {
+                            "type": "string",
+                            "description": "Vector storage backend: lancedb (production), memory (testing)",
+                            "enum": ["lancedb", "memory"],
+                            "default": "lancedb"
+                        },
+                        "lancedb": {
+                            "type": "object",
+                            "description": "LanceDB-specific vector storage configuration",
+                            "properties": {
+                                "path": {
+                                    "type": "string",
+                                    "description": "Path to LanceDB data directory (supports environment variable expansion)",
+                                    "default": "${AGV_STORAGE_ROOT:-./.agv}/lancedb"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "graph": {
+                    "type": "object",
+                    "description": "Graph storage provider configuration (Provider Framework v2.4)",
+                    "properties": {
+                        "provider": {
+                            "type": "string",
+                            "description": "Graph storage backend: lancedb (production), memory (testing)",
+                            "enum": ["lancedb", "memory"],
+                            "default": "lancedb"
+                        },
+                        "lancedb": {
+                            "type": "object",
+                            "description": "LanceDB-specific graph storage configuration",
+                            "properties": {
+                                "entities_table": {
+                                    "type": "string",
+                                    "description": "Table name for graph entities",
+                                    "default": "graph_entities"
+                                },
+                                "relationships_table": {
+                                    "type": "string",
+                                    "description": "Table name for graph relationships",
+                                    "default": "graph_relationships"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "relational": {
+                    "type": "object",
+                    "description": "Relational storage provider configuration (Provider Framework v2.4)",
+                    "properties": {
+                        "provider": {
+                            "type": "string",
+                            "description": "Relational storage backend: sqlite (default), spanner (Phase 2 - future)",
+                            "enum": ["sqlite", "spanner"],
+                            "default": "sqlite"
+                        },
+                        "sqlite": {
+                            "type": "object",
+                            "description": "SQLite-specific relational storage configuration",
+                            "properties": {
+                                "path": {
+                                    "type": "string",
+                                    "description": "Path to SQLite database file (supports environment variable expansion)",
+                                    "default": "${AGV_STORAGE_ROOT:-./.agv}/agent-vault.db"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "use_facade": {
+                    "type": "boolean",
+                    "description": "Feature flag for StorageFacade migration. When true, internal services use the new StorageFacade abstraction. When false (default), services continue using LanceDBManager directly. Enables gradual migration and easy rollback.",
+                    "default": false
+                },
+                "backends": {
+                    "type": "object",
+                    "description": "Named backend configurations. Each key is a backend name that can be referenced by role assignments.",
+                    "additionalProperties": {
+                        "type": "object",
+                        "properties": {
+                            "type": { "type": "string" },
+                            "connection_string": { "type": "string" }
+                        },
+                        "additionalProperties": true
+                    }
+                },
+                "vector_backend": {
+                    "type": "string",
+                    "description": "Name of the backend to use for vector storage"
+                },
+                "graph_backend": {
+                    "type": "string",
+                    "description": "Name of the backend to use for graph storage"
+                },
+                "events_backend": {
+                    "type": "string",
+                    "description": "Name of the backend to use for event storage"
+                },
+                "file_tracker_backend_v2": {
+                    "type": "string",
+                    "description": "Name of the backend to use for file tracking (v2 naming to avoid conflict)"
+                },
+                "table_prefix": {
+                    "type": "string",
+                    "description": "Global prefix for table names (useful for multi-tenant deployments)",
+                    "pattern": "^[a-zA-Z0-9_]*$"
+                },
+                "backend_timeouts": {
+                    "type": "object",
+                    "description": "Timeout configuration for backend operations",
+                    "properties": {
+                        "transaction_timeout": {
+                            "type": "number",
+                            "description": "Connection acquisition timeout for transactions in seconds",
+                            "default": 30.0,
+                            "minimum": 1.0,
+                            "maximum": 300.0
+                        },
+                        "migration_lock_timeout": {
+                            "type": "integer",
+                            "description": "Timeout for acquiring advisory locks during schema migrations in seconds",
+                            "default": 30,
+                            "minimum": 5,
+                            "maximum": 300
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "cache": {
+            "type": "object",
+            "description": "Document cache configuration",
+            "properties": {
+                "document_cache": {
+                    "type": "object",
+                    "properties": {
+                        "max_size": {
+                            "type": "integer",
+                            "description": "Maximum number of documents to cache",
+                            "minimum": 1,
+                            "default": 1000
+                        },
+                        "ttl_seconds": {
+                            "type": "integer",
+                            "description": "Time-to-live for cache entries in seconds (0 = no expiration)",
+                            "minimum": 0,
+                            "default": 3600
+                        },
+                        "eviction_policy": {
+                            "type": "string",
+                            "description": "Cache eviction policy",
+                            "enum": [
+                                "lru",
+                                "lfu",
+                                "fifo"
+                            ],
+                            "default": "lru"
+                        }
+                    },
+                    "required": [
+                        "max_size"
+                    ],
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "document_cache"
+            ],
+            "additionalProperties": false
+        },
+        "search": {
+            "type": "object",
+            "description": "Search configuration",
+            "properties": {
+                "default_limit": {
+                    "type": "integer",
+                    "description": "Default number of search results to return",
+                    "minimum": 1,
+                    "default": 10
+                },
+                "max_limit": {
+                    "type": "integer",
+                    "description": "Maximum number of search results allowed",
+                    "minimum": 1,
+                    "default": 100
+                },
+                "deduplication": {
+                    "type": "object",
+                    "description": "Search result deduplication configuration",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable deduplication of search results by file path",
+                            "default": true
+                        },
+                        "max_results_per_file": {
+                            "type": "integer",
+                            "description": "Maximum number of results to keep per file (1 = keep only highest-scoring chunk)",
+                            "minimum": 1,
+                            "default": 1
+                        },
+                        "min_diversity_ratio": {
+                            "type": "number",
+                            "description": "Minimum diversity ratio (0.0-1.0) - ratio of unique files to total results",
+                            "minimum": 0.0,
+                            "maximum": 1.0,
+                            "default": 0.7
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "hybrid_search": {
+                    "type": "object",
+                    "description": "Hybrid search configuration",
+                    "properties": {
+                        "vector_weight": {
+                            "type": "number",
+                            "description": "Weight for vector search results (0.0-1.0)",
+                            "minimum": 0.0,
+                            "maximum": 1.0,
+                            "default": 0.7
+                        },
+                        "fts_weight": {
+                            "type": "number",
+                            "description": "Weight for full-text search results (0.0-1.0)",
+                            "minimum": 0.0,
+                            "maximum": 1.0,
+                            "default": 0.3
+                        },
+                        "rerank_by_graph": {
+                            "type": "boolean",
+                            "description": "Enable graph-based reranking of results",
+                            "default": true
+                        },
+                        "reranker_type": {
+                            "type": "string",
+                            "description": "Reranking strategy to use for hybrid search. Options: rrf (recommended, lightweight), linear_combination (weighted scores), cross_encoder (requires sentence-transformers), colbert (requires colbert-ai), cohere (requires API key)",
+                            "enum": [
+                                "rrf",
+                                "linear_combination",
+                                "cross_encoder",
+                                "colbert",
+                                "cohere"
+                            ],
+                            "default": "rrf"
+                        },
+                        "reranker_params": {
+                            "type": "object",
+                            "description": "Parameters for the selected reranker (e.g., k for RRF, api_key for API-based rerankers)",
+                            "additionalProperties": true,
+                            "default": {}
+                        },
+                        "fallback_to_vector": {
+                            "type": "boolean",
+                            "description": "Fallback to vector-only search when hybrid search fails or returns no results",
+                            "default": true
+                        },
+                        "log_diagnostics": {
+                            "type": "boolean",
+                            "description": "Enable diagnostic logging for hybrid search (useful for debugging)",
+                            "default": false
+                        },
+                        "overview_boost_factor": {
+                            "type": "number",
+                            "description": "Boost factor for overview/documentation files in search results",
+                            "minimum": 1.0,
+                            "default": 1.5
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "overview_boost": {
+                    "type": "object",
+                    "description": "Overview/documentation boosting configuration",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable automatic boosting of documentation content",
+                            "default": true
+                        },
+                        "auto_detect": {
+                            "type": "boolean",
+                            "description": "Auto-detect overview queries based on patterns",
+                            "default": true
+                        },
+                        "weights": {
+                            "type": "object",
+                            "description": "Boost weights for different content types",
+                            "properties": {
+                                "readme": {"type": "number", "default": 0.35},
+                                "docs_directory": {"type": "number", "default": 0.25},
+                                "markdown": {"type": "number", "default": 0.15},
+                                "early_chunk": {"type": "number", "default": 0.15},
+                                "heading_title": {"type": "number", "default": 0.20},
+                                "code_penalty": {"type": "number", "default": -0.10}
+                            },
+                            "additionalProperties": false
+                        },
+                        "overview_keywords": {
+                            "type": "array",
+                            "description": "Patterns for detecting overview queries",
+                            "items": {"type": "string"},
+                            "default": ["readme", "overview", "architecture"]
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "entity_matching": {
+                    "type": "object",
+                    "description": "Entity matching configuration for find_similar",
+                    "properties": {
+                        "semantic_bridge_enabled": {
+                            "type": "boolean",
+                            "description": "Enable semantic bridge for entity discovery",
+                            "default": true
+                        },
+                        "thresholds": {
+                            "type": "object",
+                            "description": "Multi-pass search thresholds",
+                            "properties": {
+                                "high": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.5},
+                                "medium": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.35},
+                                "low": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.2}
+                            },
+                            "additionalProperties": false
+                        },
+                        "weights": {
+                            "type": "object",
+                            "description": "Weight distribution for similarity scoring",
+                            "properties": {
+                                "vector": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.7},
+                                "name": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.3},
+                                "semantic_bridge": {"type": "number", "minimum": 0, "maximum": 1, "default": 0.7}
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "graph_search": {
+                    "type": "object",
+                    "description": "Graph search configuration",
+                    "properties": {
+                        "max_depth": {
+                            "type": "integer",
+                            "description": "Maximum depth for graph traversal",
+                            "minimum": 1,
+                            "default": 3
+                        },
+                        "relationship_types": {
+                            "type": "array",
+                            "description": "Relationship types to follow during graph traversal",
+                            "items": {
+                                "type": "string"
+                            },
+                            "default": [
+                                "calls",
+                                "imports",
+                                "contains",
+                                "references"
+                            ]
+                        },
+                        "timeouts": {
+                            "type": "object",
+                            "description": "Timeout configuration for graph operations in milliseconds",
+                            "properties": {
+                                "find_similar_small_ms": {
+                                    "type": "integer",
+                                    "description": "Timeout for find_similar with limit <= 10",
+                                    "minimum": 100,
+                                    "default": 500
+                                },
+                                "find_similar_medium_ms": {
+                                    "type": "integer",
+                                    "description": "Timeout for find_similar with limit <= 50",
+                                    "minimum": 100,
+                                    "default": 1000
+                                },
+                                "find_similar_large_ms": {
+                                    "type": "integer",
+                                    "description": "Timeout for find_similar with limit > 50",
+                                    "minimum": 100,
+                                    "default": 2000
+                                },
+                                "understand_entity_ms": {
+                                    "type": "integer",
+                                    "description": "Timeout for understand_entity operations",
+                                    "minimum": 100,
+                                    "default": 5000
+                                },
+                                "analyze_impact_ms": {
+                                    "type": "integer",
+                                    "description": "Timeout for analyze_impact operations",
+                                    "minimum": 100,
+                                    "default": 10000
+                                },
+                                "find_patterns_ms": {
+                                    "type": "integer",
+                                    "description": "Timeout for find_patterns operations",
+                                    "minimum": 100,
+                                    "default": 10000
+                                },
+                                "graph_traverse_ms": {
+                                    "type": "integer",
+                                    "description": "Timeout for graph_traverse operations",
+                                    "minimum": 100,
+                                    "default": 5000
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "query_sanitization": {
+                    "type": "object",
+                    "description": "Query sanitization configuration for FTS",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable query sanitization for full-text search",
+                            "default": true
+                        },
+                        "escape_special_chars": {
+                            "type": "boolean",
+                            "description": "Escape special characters that could cause FTS syntax errors",
+                            "default": true
+                        },
+                        "preserve_wildcards": {
+                            "type": "boolean",
+                            "description": "Preserve wildcards (* and ?) for pattern matching",
+                            "default": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "sparse_index": {
+                    "type": "object",
+                    "description": "Sparse index detection configuration for identifying when index has too few documents",
+                    "properties": {
+                        "threshold": {
+                            "type": "integer",
+                            "description": "Minimum chunks for index to be considered 'ready'. Below this, searches may return limited results.",
+                            "minimum": 1,
+                            "default": 50
+                        },
+                        "enable_fallback": {
+                            "type": "boolean",
+                            "description": "Enable fallback search behavior when index is sparse",
+                            "default": true
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "default_limit",
+                "max_limit"
+            ],
+            "additionalProperties": false
+        },
+        "embeddings": {
+            "type": "object",
+            "description": "Embedding configuration",
+            "properties": {
+                "default_provider": {
+                    "type": "string",
+                    "description": "Default embedding provider to use. Use 'none' for AlloyDB server-side embeddings; 'bedrock' for Amazon Titan v2 (see embeddings.bedrock). 'local' and 'local_model' are aliases for LocalModelEmbedder.",
+                    "enum": [
+                        "sentence_transformer",
+                        "sentence_transformers",
+                        "hashing",
+                        "local",
+                        "local_model",
+                        "bedrock",
+                        "none"
+                    ],
+                    "default": "sentence_transformer"
+                },
+                "default_dimensions": {
+                    "type": "integer",
+                    "description": "Default embedding dimensions for all components",
+                    "minimum": 1,
+                    "default": 384
+                },
+                "sentence_transformer": {
+                    "type": "object",
+                    "description": "Sentence transformer embedding configuration",
+                    "properties": {
+                        "model_name": {
+                            "type": "string",
+                            "description": "HuggingFace model name",
+                            "default": "all-MiniLM-L6-v2"
+                        },
+                        "ndims": {
+                            "type": "integer",
+                            "description": "Embedding dimensionality (must match default_dimensions)",
+                            "minimum": 1,
+                            "default": 384
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "hashing": {
+                    "type": "object",
+                    "description": "Hashing-based embedding configuration",
+                    "properties": {
+                        "ndims": {
+                            "type": "integer",
+                            "description": "Embedding dimensionality",
+                            "minimum": 1,
+                            "default": 128
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "local_model": {
+                    "type": "object",
+                    "description": "Local model embedding configuration for offline operation",
+                    "properties": {
+                        "model_path": {
+                            "type": "string",
+                            "description": "Path to local model directory (workspace-relative or absolute)",
+                            "default": "models/default-embedding-model",
+                            "minLength": 1
+                        },
+                        "normalize": {
+                            "type": "boolean",
+                            "description": "Whether to normalize embeddings to unit length",
+                            "default": true
+                        },
+                        "batch_size": {
+                            "type": "integer",
+                            "description": "Maximum batch size for inference",
+                            "minimum": 1,
+                            "default": 32
+                        },
+                        "ndims": {
+                            "type": [
+                                "integer",
+                                "null"
+                            ],
+                            "description": "Embedding dimensionality (auto-detected from model if null)",
+                            "minimum": 1,
+                            "default": null
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "bedrock": {
+                    "type": "object",
+                    "description": "Amazon Bedrock embedder configuration (Titan v2 by default). Selected when default_provider == 'bedrock'. See RFC 0003.",
+                    "properties": {
+                        "model_id": {
+                            "type": "string",
+                            "description": "Bedrock model id",
+                            "default": "amazon.titan-embed-text-v2:0",
+                            "minLength": 1
+                        },
+                        "region": {
+                            "type": ["string", "null"],
+                            "description": "AWS region for the Bedrock endpoint. Required when default_provider == 'bedrock'; null otherwise.",
+                            "default": null
+                        },
+                        "output_dim": {
+                            "type": "integer",
+                            "description": "Output dimension. Titan v2 supports 256, 512, or 1024. Note: this enum is Titan-specific; if non-Titan Bedrock embedding models are added later (e.g. Cohere Embed-v3 via Bedrock at 1024 dims), broaden this enum or move dim validation into the BedrockEmbedder per-model logic.",
+                            "enum": [256, 512, 1024],
+                            "default": 1024
+                        },
+                        "normalize": {
+                            "type": "boolean",
+                            "description": "Request L2-normalized vectors. Default matches what pgvector cosine distance expects.",
+                            "default": true
+                        },
+                        "batch_size": {
+                            "type": "integer",
+                            "description": "User-facing chunk size. Effective per-call batch is min(batch_size, _max_inputs_per_request); for Titan v2 (one input per call) this knob shapes fan-out granularity.",
+                            "minimum": 1,
+                            "default": 16
+                        },
+                        "max_retries": {
+                            "type": "integer",
+                            "description": "Retries on Bedrock ThrottlingException / ServiceQuotaExceededException.",
+                            "minimum": 0,
+                            "default": 3
+                        },
+                        "timeout_seconds": {
+                            "type": "number",
+                            "description": "boto3 read/connect timeout per InvokeModel call.",
+                            "exclusiveMinimum": 0,
+                            "default": 30.0
+                        },
+                        "request_concurrency": {
+                            "type": "integer",
+                            "description": "Parallel InvokeModel calls. Bound by Bedrock RPM quota (Titan v2 default 2000 RPM in us-east-1). Single biggest throughput knob given Titan's one-input-per-call constraint.",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "cache": {
+                    "type": "object",
+                    "description": "Content-hash LRU cache for local embedders. Skips the model forward pass on duplicate embedding text (generated files, vendored deps, near-identical chunks across branches). Disabled automatically for server-side backends (AlloyDB / RDS) since embeddings run in-database there.",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable the content-hash embedding cache",
+                            "default": true
+                        },
+                        "max_entries": {
+                            "type": "integer",
+                            "description": "Cache capacity in unique entries. Vectors are stored as numpy float32 (~1.5 KB per 384-dim entry); 10k entries ≈ 15 MB. Raise for giant monorepos with high duplication; lower on memory-constrained hosts. Set to 0 to disable (same as enabled=false).",
+                            "minimum": 0,
+                            "default": 10000
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "required": [
+                "default_provider"
+            ],
+            "additionalProperties": false
+        },
+        "indexing": {
+            "type": "object",
+            "description": "Indexing pipeline configuration",
+            "properties": {
+                "timeouts": {
+                    "type": "object",
+                    "description": "Timeout configuration for indexing operations",
+                    "properties": {
+                        "total": {
+                            "type": "integer",
+                            "description": "Fixed timeout in seconds (used if > 0, otherwise dynamic)",
+                            "minimum": 0,
+                            "default": 300
+                        },
+                        "per_file": {
+                            "type": "integer",
+                            "description": "Seconds allowed per file for dynamic timeout calculation",
+                            "minimum": 1,
+                            "default": 5
+                        },
+                        "base": {
+                            "type": "integer",
+                            "description": "Base seconds for setup/flush in dynamic timeout calculation",
+                            "minimum": 1,
+                            "default": 60
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "schema_mapping": {
+                    "type": "object",
+                    "description": "Schema mapping configuration for field name transformations",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable schema mapping (for future compatibility if field names change)",
+                            "default": true
+                        },
+                        "field_mappings": {
+                            "type": "object",
+                            "description": "Field name mappings from ParserChunk to database schema (parser_field: db_field)",
+                            "additionalProperties": {
+                                "type": "string"
+                            },
+                            "default": {}
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "schema_validation": {
+                    "type": "object",
+                    "description": "Schema validation configuration for pre-flight checks",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable pre-flight schema validation before database writes",
+                            "default": true
+                        },
+                        "strict_mode": {
+                            "type": "boolean",
+                            "description": "Strict mode: fail on extra fields not in schema",
+                            "default": false
+                        },
+                        "cache_schemas": {
+                            "type": "boolean",
+                            "description": "Cache table schemas to avoid repeated lookups",
+                            "default": true
+                        },
+                        "cache_ttl_seconds": {
+                            "type": "integer",
+                            "description": "Schema cache TTL in seconds",
+                            "minimum": 0,
+                            "default": 300
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "impact_default_depth": {
+                    "type": "integer",
+                    "description": "Default traversal depth for relationship analysis",
+                    "minimum": 1,
+                    "default": 2
+                },
+                "impact_max_depth": {
+                    "type": "integer",
+                    "description": "Maximum traversal depth allowed",
+                    "minimum": 1,
+                    "default": 5
+                },
+                "impact_include_indirect": {
+                    "type": "boolean",
+                    "description": "Include indirect dependencies in analysis",
+                    "default": true
+                },
+                "processing_semaphore_limit": {
+                    "type": "integer",
+                    "description": "Maximum number of concurrent document processing operations. Lower values reduce memory usage, higher values increase throughput. Recommended: 5-10 for development, 10-20 for CI/CD, 20-50 for production. Raised from 10 → 20 after PR #134 batched per-file embedding; the embedding executor now releases fast enough that file-level concurrency is usable rather than queuing on a starved executor.",
+                    "minimum": 1,
+                    "maximum": 100,
+                    "default": 20
+                },
+                "max_chunk_content_size": {
+                    "type": "integer",
+                    "description": "Maximum chunk content size in characters. Oversized chunks are split into sub-chunks. 0 = no limit. Must be >= 100 when enabled.",
+                    "minimum": 0,
+                    "default": 50000
+                },
+                "relationship_flush": {
+                    "type": "object",
+                    "description": "Relationship flush configuration for batched relationship resolution",
+                    "properties": {
+                        "batch_size": {
+                            "type": "integer",
+                            "description": "Number of relationships to process per batch",
+                            "minimum": 1,
+                            "maximum": 10000,
+                            "default": 100
+                        },
+                        "max_concurrent_batches": {
+                            "type": "integer",
+                            "description": "Maximum number of concurrent batch operations (semaphore limit)",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 10
+                        },
+                        "progress_log_interval": {
+                            "type": "integer",
+                            "description": "Log progress every N relationships processed",
+                            "minimum": 1,
+                            "default": 1000
+                        },
+                        "batch_commit_interval": {
+                            "type": "integer",
+                            "description": "Commit to database every N relationships",
+                            "minimum": 1,
+                            "default": 100
+                        },
+                        "auto_flush_threshold": {
+                            "type": "integer",
+                            "description": "Trigger automatic flush when pending relationships exceed this threshold",
+                            "minimum": 1,
+                            "default": 50000
+                        },
+                        "flush_timeout_seconds": {
+                            "type": "integer",
+                            "description": "Maximum time for flush operation in seconds",
+                            "minimum": 1,
+                            "default": 3600
+                        },
+                        "external_entity_flush_threshold": {
+                            "type": "integer",
+                            "description": "Flush external entities when queue exceeds this threshold",
+                            "minimum": 1,
+                            "default": 10000
+                        },
+                        "enable_cache_prewarming": {
+                            "type": "boolean",
+                            "description": "Pre-populate cache with common stdlib/builtin imports",
+                            "default": true
+                        },
+                        "enable_performance_monitoring": {
+                            "type": "boolean",
+                            "description": "Track and log slow operations",
+                            "default": true
+                        },
+                        "slow_operation_threshold_ms": {
+                            "type": "number",
+                            "description": "Log warning if operation exceeds this threshold (milliseconds)",
+                            "minimum": 0,
+                            "default": 500.0
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "parsers": {
+            "type": "object",
+            "description": "Parser configuration",
+            "properties": {
+                "unified_code": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "priority": {
+                            "type": "integer",
+                            "description": "Parser priority (higher = tried first)",
+                            "default": 100
+                        },
+                        "max_file_size": {
+                            "type": "integer",
+                            "description": "Maximum file size in bytes (files larger than this are skipped)",
+                            "minimum": 1,
+                            "default": 10485760
+                        },
+                        "chunk_size": {
+                            "type": "integer",
+                            "description": "Target chunk size in characters",
+                            "minimum": 1,
+                            "default": 1000
+                        },
+                        "chunk_overlap": {
+                            "type": "integer",
+                            "description": "Overlap between chunks in characters",
+                            "minimum": 0,
+                            "default": 200
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "salesforce_metadata": {
+                    "type": "object",
+                    "description": "Salesforce source-format metadata allowlist parser",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "priority": {
+                            "type": "integer",
+                            "description": "Parser priority (higher = tried first)",
+                            "default": 75
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "document": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "priority": {
+                            "type": "integer",
+                            "description": "Parser priority (higher = tried first)",
+                            "default": 50
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "fallback_text": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "priority": {
+                            "type": "integer",
+                            "description": "Parser priority (higher = tried first)",
+                            "default": 0
+                        },
+                        "max_chunk_size": {
+                            "type": "integer",
+                            "description": "Maximum chunk size in characters",
+                            "minimum": 1,
+                            "default": 1000
+                        },
+                        "chunk_overlap": {
+                            "type": "integer",
+                            "description": "Overlap between chunks in characters",
+                            "minimum": 0,
+                            "default": 100
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "memory": {
+            "type": "object",
+            "description": "Memory system configuration",
+            "properties": {
+                "context_manager": {
+                    "type": "object",
+                    "description": "Context manager configuration (manages memory contexts lifecycle)",
+                    "properties": {
+                        "max_concurrent_contexts": {
+                            "type": "integer",
+                            "description": "Maximum number of concurrent memory contexts",
+                            "minimum": 1,
+                            "default": 100
+                        },
+                        "cleanup_interval": {
+                            "type": "integer",
+                            "description": "Interval in seconds between context cleanup runs",
+                            "minimum": 1,
+                            "default": 300
+                        },
+                        "context_ttl": {
+                            "type": "integer",
+                            "description": "Time-to-live for contexts in seconds (idle contexts are cleaned up)",
+                            "minimum": 1,
+                            "default": 3600
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "working_memory": {
+                    "type": "object",
+                    "description": "Working memory configuration (in-memory session cache)",
+                    "properties": {
+                        "capacity": {
+                            "type": "integer",
+                            "description": "Maximum number of items to keep in working memory",
+                            "minimum": 1,
+                            "default": 20
+                        },
+                        "eviction_policy": {
+                            "type": "string",
+                            "description": "Eviction policy when capacity is reached",
+                            "enum": [
+                                "lru",
+                                "lfu",
+                                "fifo"
+                            ],
+                            "default": "lru"
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "episodic_memory": {
+                    "type": "object",
+                    "description": "Episodic memory configuration (time-series event log)",
+                    "properties": {
+                        "capacity": {
+                            "type": "integer",
+                            "description": "Maximum number of events per agent",
+                            "minimum": 1,
+                            "default": 1000
+                        },
+                        "table_name": {
+                            "type": "string",
+                            "description": "LanceDB table name for episodic memories",
+                            "default": "memory_episodic_medium"
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "semantic_memory": {
+                    "type": "object",
+                    "description": "Semantic memory configuration (knowledge graph)",
+                    "properties": {
+                        "capacity": {
+                            "type": "integer",
+                            "description": "Maximum number of facts per agent",
+                            "minimum": 1,
+                            "default": 500
+                        },
+                        "table_name": {
+                            "type": "string",
+                            "description": "LanceDB table name for semantic memories",
+                            "default": "memory_semantic_high"
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "consolidation": {
+                    "type": "object",
+                    "description": "Consolidation configuration (memory tier promotion)",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable automatic consolidation",
+                            "default": true
+                        },
+                        "interval_seconds": {
+                            "type": "integer",
+                            "description": "Interval between consolidation runs (seconds)",
+                            "minimum": 1,
+                            "default": 300
+                        },
+                        "episodic_threshold": {
+                            "type": "number",
+                            "description": "Importance threshold for working → episodic promotion",
+                            "minimum": 0.0,
+                            "maximum": 1.0,
+                            "default": 0.8
+                        },
+                        "semantic_threshold": {
+                            "type": "number",
+                            "description": "Importance threshold for episodic → semantic promotion",
+                            "minimum": 0.0,
+                            "maximum": 1.0,
+                            "default": 0.9
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "retrieval": {
+                    "type": "object",
+                    "description": "Retrieval configuration (unified search)",
+                    "properties": {
+                        "default_strategy": {
+                            "type": "string",
+                            "description": "Default search strategy",
+                            "enum": [
+                                "relevance",
+                                "recency",
+                                "importance",
+                                "adaptive"
+                            ],
+                            "default": "adaptive"
+                        },
+                        "cache_enabled": {
+                            "type": "boolean",
+                            "description": "Enable query result caching",
+                            "default": true
+                        },
+                        "cache_ttl_seconds": {
+                            "type": "integer",
+                            "description": "Cache time-to-live (seconds)",
+                            "minimum": 1,
+                            "default": 300
+                        },
+                        "cache_size": {
+                            "type": "integer",
+                            "description": "Maximum number of cached queries",
+                            "minimum": 1,
+                            "default": 1000
+                        },
+                        "ranking_weights": {
+                            "type": "object",
+                            "description": "Ranking weights for adaptive strategy (must sum to 1.0)",
+                            "properties": {
+                                "relevance": {
+                                    "type": "number",
+                                    "description": "Vector similarity weight",
+                                    "minimum": 0.0,
+                                    "maximum": 1.0,
+                                    "default": 0.5
+                                },
+                                "recency": {
+                                    "type": "number",
+                                    "description": "Time-based weight",
+                                    "minimum": 0.0,
+                                    "maximum": 1.0,
+                                    "default": 0.3
+                                },
+                                "importance": {
+                                    "type": "number",
+                                    "description": "Importance score weight",
+                                    "minimum": 0.0,
+                                    "maximum": 1.0,
+                                    "default": 0.2
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "summary": {
+                    "type": "object",
+                    "description": "Summary configuration",
+                    "properties": {
+                        "auto_threshold": {
+                            "type": "integer",
+                            "description": "Auto-use content as summary if below this character count",
+                            "minimum": 1,
+                            "default": 150
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "events": {
+            "type": "object",
+            "description": "Event tracking system configuration",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable event tracking system",
+                    "default": true
+                },
+                "queue_max_size": {
+                    "type": "integer",
+                    "description": "Maximum number of events to queue in memory before applying backpressure",
+                    "minimum": 1,
+                    "default": 1000
+                },
+                "batch_size": {
+                    "type": "integer",
+                    "description": "Number of events to batch together for database writes",
+                    "minimum": 1,
+                    "default": 100
+                },
+                "flush_interval_seconds": {
+                    "type": "number",
+                    "description": "Maximum time (seconds) to wait before flushing a partial batch",
+                    "minimum": 0.1,
+                    "default": 1.0
+                },
+                "retention_days": {
+                    "type": "integer",
+                    "description": "Number of days to retain events before cleanup",
+                    "minimum": 1,
+                    "default": 30
+                },
+                "cleanup_interval_hours": {
+                    "type": "number",
+                    "description": "Interval in hours between automatic cleanup operations",
+                    "minimum": 1,
+                    "default": 24
+                },
+                "sampling_enabled": {
+                    "type": "boolean",
+                    "description": "Enable sampling when queue is full (preserves failed events, samples routine progress)",
+                    "default": false
+                },
+                "sampling_ratio": {
+                    "type": "integer",
+                    "description": "Sampling ratio when enabled (keep 1 in N events)",
+                    "minimum": 1,
+                    "default": 10
+                },
+                "retry_max_attempts": {
+                    "type": "integer",
+                    "description": "Maximum number of retry attempts for failed EventStore writes",
+                    "minimum": 1,
+                    "default": 5
+                },
+                "retry_base_delay_seconds": {
+                    "type": "number",
+                    "description": "Base delay in seconds for exponential backoff (delay = base_delay * 2^(retry_count - 1))",
+                    "minimum": 0.01,
+                    "default": 0.1
+                },
+                "drop_alert_threshold": {
+                    "type": "integer",
+                    "description": "Alert threshold for dropped events - log error when dropped event count exceeds this threshold",
+                    "minimum": 1,
+                    "default": 100
+                }
+            },
+            "additionalProperties": false
+        },
+        "progress": {
+            "type": "object",
+            "description": "Progress indicator configuration for long-running operations",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable progress event emission during long-running operations",
+                    "default": true
+                },
+                "emit_interval": {
+                    "type": "integer",
+                    "description": "Emit progress events every N files during indexing",
+                    "minimum": 1,
+                    "default": 10
+                },
+                "min_duration": {
+                    "type": "number",
+                    "description": "Minimum operation duration (seconds) to emit progress events",
+                    "minimum": 0,
+                    "default": 5
+                }
+            },
+            "additionalProperties": false
+        },
+        "context": {
+            "type": "object",
+            "description": "Context building configuration",
+            "properties": {
+                "token_budget": {
+                    "type": "object",
+                    "description": "Token budget management for context building",
+                    "properties": {
+                        "default_budget": {
+                            "type": "integer",
+                            "description": "Default token budget for context building",
+                            "minimum": 1000,
+                            "default": 50000
+                        },
+                        "min_budget": {
+                            "type": "integer",
+                            "description": "Minimum token budget allowed",
+                            "minimum": 1000,
+                            "default": 10000
+                        },
+                        "max_budget": {
+                            "type": "integer",
+                            "description": "Maximum token budget allowed",
+                            "minimum": 1000,
+                            "default": 100000
+                        },
+                        "focus_allocations": {
+                            "type": "object",
+                            "description": "Focus allocation strategies for distributing tokens between code and documentation",
+                            "properties": {
+                                "code": {
+                                    "type": "object",
+                                    "description": "Code-focused allocation",
+                                    "properties": {
+                                        "code_weight": {
+                                            "type": "number",
+                                            "minimum": 0.0,
+                                            "maximum": 1.0,
+                                            "default": 0.7
+                                        },
+                                        "docs_weight": {
+                                            "type": "number",
+                                            "minimum": 0.0,
+                                            "maximum": 1.0,
+                                            "default": 0.3
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "docs": {
+                                    "type": "object",
+                                    "description": "Documentation-focused allocation",
+                                    "properties": {
+                                        "code_weight": {
+                                            "type": "number",
+                                            "minimum": 0.0,
+                                            "maximum": 1.0,
+                                            "default": 0.3
+                                        },
+                                        "docs_weight": {
+                                            "type": "number",
+                                            "minimum": 0.0,
+                                            "maximum": 1.0,
+                                            "default": 0.7
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                },
+                                "balanced": {
+                                    "type": "object",
+                                    "description": "Balanced allocation",
+                                    "properties": {
+                                        "code_weight": {
+                                            "type": "number",
+                                            "minimum": 0.0,
+                                            "maximum": 1.0,
+                                            "default": 0.5
+                                        },
+                                        "docs_weight": {
+                                            "type": "number",
+                                            "minimum": 0.0,
+                                            "maximum": 1.0,
+                                            "default": 0.5
+                                        }
+                                    },
+                                    "additionalProperties": false
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "logging": {
+            "type": "object",
+            "description": "File-based logging configuration",
+            "properties": {
+                "directory": {
+                    "type": "string",
+                    "description": "Directory for log files (workspace-relative or absolute)",
+                    "default": "logs",
+                    "minLength": 1,
+                    "pattern": "^[^\\0]+$"
+                },
+                "level": {
+                    "type": "string",
+                    "description": "Main log level",
+                    "enum": [
+                        "DEBUG",
+                        "INFO",
+                        "WARNING",
+                        "ERROR",
+                        "CRITICAL"
+                    ],
+                    "default": "INFO"
+                },
+                "max_bytes": {
+                    "type": "integer",
+                    "description": "Maximum size per log file in bytes",
+                    "minimum": 1024,
+                    "default": 10485760
+                },
+                "backup_count": {
+                    "type": "integer",
+                    "description": "Number of backup files to keep during rotation",
+                    "minimum": 0,
+                    "default": 5
+                },
+                "retention_hours": {
+                    "type": "integer",
+                    "description": "Retention period in hours (files older than this are deleted)",
+                    "minimum": 1,
+                    "default": 24
+                },
+                "service_levels": {
+                    "type": "object",
+                    "description": "Per-service log levels (overrides main level)",
+                    "additionalProperties": {
+                        "type": "string",
+                        "enum": [
+                            "DEBUG",
+                            "INFO",
+                            "WARNING",
+                            "ERROR",
+                            "CRITICAL"
+                        ]
+                    },
+                    "default": {}
+                },
+                "format": {
+                    "type": "string",
+                    "description": "Log message format string",
+                    "default": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+                    "minLength": 1
+                },
+                "date_format": {
+                    "type": "string",
+                    "description": "Date format for timestamps",
+                    "default": "%Y-%m-%d %H:%M:%S",
+                    "minLength": 1
+                }
+            },
+            "additionalProperties": false
+        },
+        "entity_resolution": {
+            "type": "object",
+            "description": "Entity resolution configuration",
+            "properties": {
+                "case_insensitive": {
+                    "type": "boolean",
+                    "description": "Enable case-insensitive matching",
+                    "default": true
+                },
+                "fuzzy_matching": {
+                    "type": "object",
+                    "description": "Fuzzy matching configuration",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable fuzzy matching",
+                            "default": true
+                        },
+                        "threshold": {
+                            "type": "number",
+                            "description": "Similarity threshold for fuzzy matching (0.0-1.0)",
+                            "minimum": 0.0,
+                            "maximum": 1.0,
+                            "default": 0.8
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "cache_enabled": {
+                    "type": "boolean",
+                    "description": "Enable caching of resolved entities",
+                    "default": true
+                },
+                "cache_ttl_seconds": {
+                    "type": "integer",
+                    "description": "Cache time-to-live in seconds",
+                    "minimum": 1,
+                    "default": 3600
+                }
+            },
+            "additionalProperties": false
+        },
+        "impact_analysis": {
+            "type": "object",
+            "description": "Impact analysis configuration",
+            "properties": {
+                "default_depth": {
+                    "type": "integer",
+                    "description": "Default traversal depth for relationship analysis",
+                    "minimum": 1,
+                    "default": 2
+                },
+                "max_depth": {
+                    "type": "integer",
+                    "description": "Maximum traversal depth allowed",
+                    "minimum": 1,
+                    "default": 5
+                },
+                "include_indirect": {
+                    "type": "boolean",
+                    "description": "Include indirect dependencies in analysis",
+                    "default": true
+                }
+            },
+            "additionalProperties": false
+        },
+        "connectors": {
+            "type": "object",
+            "description": "Connectors configuration for content source abstraction",
+            "properties": {
+                "default_connector": {
+                    "type": "string",
+                    "description": "Default connector type",
+                    "default": "filesystem",
+                    "enum": ["filesystem", "s3", "gcs", "github"]
+                },
+                "filesystem": {
+                    "type": "object",
+                    "description": "Local filesystem connector configuration",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable the filesystem connector",
+                            "default": true
+                        },
+                        "root": {
+                            "type": ["string", "null"],
+                            "description": "Root directory for file enumeration (null = cwd)",
+                            "default": null
+                        },
+                        "ignore_patterns": {
+                            "type": "array",
+                            "description": "Glob patterns for files to ignore",
+                            "items": {"type": "string"},
+                            "default": ["*.pyc", "__pycache__", ".git"]
+                        },
+                        "binary_extensions": {
+                            "type": "array",
+                            "description": "File extensions to treat as binary",
+                            "items": {"type": "string"},
+                            "default": [".exe", ".dll", ".so", ".bin"]
+                        },
+                        "change_detection_enabled": {
+                            "type": "boolean",
+                            "description": "Enable FileTracker change detection",
+                            "default": true
+                        },
+                        "watch_enabled": {
+                            "type": "boolean",
+                            "description": "Enable real-time file watching",
+                            "default": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "remote_cache": {
+                    "type": "object",
+                    "description": "Content caching for remote connectors",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "description": "Enable remote content caching",
+                            "default": true
+                        },
+                        "path": {
+                            "type": "string",
+                            "description": "Cache directory relative to storage.root",
+                            "default": "connector_cache"
+                        },
+                        "max_size": {
+                            "type": "integer",
+                            "description": "Maximum cache size in bytes (0 = unlimited)",
+                            "minimum": 0,
+                            "default": 0
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "maintenance": {
+            "type": "object",
+            "description": "Automatic maintenance configuration for LanceDB storage optimization",
+            "properties": {
+                "trigger": {
+                    "type": "string",
+                    "description": "When to trigger maintenance",
+                    "enum": ["project.closed", "indexing.completed", "disabled"],
+                    "default": "project.closed"
+                },
+                "cleanup_retention_minutes": {
+                    "type": "integer",
+                    "description": "How long to keep old MVCC versions (5 minutes to 24 hours)",
+                    "minimum": 5,
+                    "maximum": 1440,
+                    "default": 60
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable automatic maintenance",
+                    "default": true
+                }
+            },
+            "additionalProperties": false
+        },
+        "mcp": {
+            "type": "object",
+            "description": "MCP (Model Context Protocol) server configuration",
+            "properties": {
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable MCP server",
+                    "default": true
+                },
+                "server": {
+                    "type": "object",
+                    "description": "MCP server settings",
+                    "properties": {
+                        "name": {
+                            "type": "string",
+                            "default": "Agent-Vault"
+                        },
+                        "version": {
+                            "type": "string",
+                            "default": "1.0.0"
+                        },
+                        "description": {
+                            "type": "string",
+                            "default": "AI-powered code and knowledge search"
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "tools": {
+                    "type": "object",
+                    "description": "MCP tools configuration",
+                    "properties": {
+                        "cognitive": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": true
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "direct_access": {
+                            "type": "object",
+                            "properties": {
+                                "enabled": {
+                                    "type": "boolean",
+                                    "default": true
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "api": {
+                    "type": "object",
+                    "description": "FastMCP API configuration",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "host": {
+                            "type": "string",
+                            "default": "localhost"
+                        },
+                        "port": {
+                            "type": "integer",
+                            "default": 8765
+                        },
+                        "cors": {
+                            "type": "object",
+                            "additionalProperties": true
+                        },
+                        "auth": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "session": {
+                    "type": "object",
+                    "description": "Session configuration",
+                    "properties": {
+                        "ttl_hours": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 48
+                        },
+                        "cleanup_interval_hours": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 24
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "query": {
+                    "type": "object",
+                    "description": "Query configuration",
+                    "properties": {
+                        "default_limit": {
+                            "type": "integer",
+                            "description": "Default query result limit",
+                            "minimum": 1,
+                            "default": 1000
+                        },
+                        "max_limit": {
+                            "type": "integer",
+                            "description": "Maximum query result limit",
+                            "minimum": 1,
+                            "default": 10000
+                        },
+                        "traversal_limit": {
+                            "type": "integer",
+                            "description": "Maximum entities in relationship traversal",
+                            "minimum": 100,
+                            "maximum": 2000,
+                            "default": 500
+                        },
+                        "batch_size": {
+                            "type": "integer",
+                            "description": "Batch size for query operations",
+                            "minimum": 10,
+                            "maximum": 500,
+                            "default": 100
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "relationships": {
+                    "type": "object",
+                    "description": "Relationships configuration",
+                    "additionalProperties": false
+                },
+                "tokens": {
+                    "type": "object",
+                    "description": "Token configuration",
+                    "additionalProperties": false
+                },
+                "defaults": {
+                    "type": "object",
+                    "description": "Default behavior settings",
+                    "additionalProperties": false
+                },
+                "behavior": {
+                    "type": "object",
+                    "description": "Behavior flags",
+                    "additionalProperties": false
+                },
+                "logging": {
+                    "type": "object",
+                    "description": "Logging configuration",
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "services": {
+            "type": "object",
+            "description": "Service auto-start configuration",
+            "properties": {
+                "auto_start_proxy": {
+                    "type": "boolean",
+                    "description": "Enable automatic Cloud SQL Proxy startup",
+                    "default": false
+                },
+                "startup_timeout": {
+                    "type": "integer",
+                    "description": "Max seconds to wait for proxy startup",
+                    "minimum": 5,
+                    "maximum": 120,
+                    "default": 30
+                },
+                "proxy": {
+                    "type": "object",
+                    "description": "Cloud SQL or AlloyDB Proxy configuration",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "Proxy type: cloudsql or alloydb",
+                            "enum": ["cloudsql", "alloydb"],
+                            "default": "cloudsql"
+                        },
+                        "connection_name": {
+                            "type": "string",
+                            "description": "Cloud SQL instance connection name (project:region:instance) or AlloyDB instance path"
+                        },
+                        "port": {
+                            "type": "integer",
+                            "description": "Local port for proxy",
+                            "minimum": 1024,
+                            "maximum": 65535,
+                            "default": 5433
+                        },
+                        "use_public_ip": {
+                            "type": "boolean",
+                            "description": "Whether to use public IP for connection",
+                            "default": false
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "onboard": {
+            "type": "object",
+            "description": "Onboard documentation lifecycle configuration",
+            "properties": {
+                "gate_enabled": {
+                    "type": "boolean",
+                    "description": "Enable the onboard gate that blocks indexing without completed onboard documentation",
+                    "default": true
+                },
+                "staleness": {
+                    "type": "object",
+                    "description": "Staleness detection thresholds",
+                    "properties": {
+                        "days_threshold": {
+                            "type": "integer",
+                            "description": "Number of days before onboard documentation is considered stale",
+                            "minimum": 1,
+                            "default": 7
+                        },
+                        "files_threshold": {
+                            "type": "integer",
+                            "description": "Number of changed files before onboard documentation is considered stale",
+                            "minimum": 1,
+                            "default": 10
+                        },
+                        "commits_threshold": {
+                            "type": "integer",
+                            "description": "Number of commits before onboard documentation is considered stale",
+                            "minimum": 1,
+                            "default": 5
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "artifact_storage": {
+                    "type": "object",
+                    "description": "Artifact storage configuration for onboard reports and documentation",
+                    "properties": {
+                        "type": {
+                            "type": "string",
+                            "description": "Storage type for onboard artifacts",
+                            "enum": ["local", "gcs"],
+                            "default": "local"
+                        },
+                        "gcs_bucket": {
+                            "type": ["string", "null"],
+                            "description": "GCS bucket name when type is 'gcs'",
+                            "default": null
+                        },
+                        "gcs_prefix": {
+                            "type": "string",
+                            "description": "GCS key prefix for onboard artifacts",
+                            "default": "onboard/"
+                        },
+                        "local_path": {
+                            "type": "string",
+                            "description": "Local directory for onboard artifacts (relative to workspace)",
+                            "default": "test_results/onboard"
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            },
+            "additionalProperties": false
+        },
+        "maintenance": {
+            "type": "object",
+            "description": "Automatic maintenance configuration for storage optimization",
+            "properties": {
+                "trigger": {
+                    "type": "string",
+                    "description": "When to trigger maintenance",
+                    "enum": ["project.closed", "indexing.completed", "disabled"],
+                    "default": "project.closed"
+                },
+                "cleanup_retention_minutes": {
+                    "type": "integer",
+                    "description": "How long to keep old versions (minutes)",
+                    "minimum": 5,
+                    "maximum": 1440,
+                    "default": 60
+                },
+                "enabled": {
+                    "type": "boolean",
+                    "description": "Enable automatic maintenance",
+                    "default": true
+                }
+            },
+            "additionalProperties": false
+        }
+    },
+    "required": [
+        "storage",
+        "cache",
+        "search",
+        "embeddings",
+        "parsers"
+    ],
+    "additionalProperties": false
+}

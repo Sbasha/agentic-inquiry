@@ -1,0 +1,72 @@
+description = "Trace data lineage from source to sink"
+prompt = """
+Trace data lineage from source to sink
+
+Usage: /agv:lineage <entity> [trace|gaps]
+
+# /agv:lineage
+
+Trace how data flows through your codebase.
+
+## Quick Start
+
+```bash
+/agv:lineage User                   # Trace User data flow
+/agv:lineage trace request_data     # Full lineage trace
+/agv:lineage gaps                   # Find lineage gaps
+```
+
+## Subcommands
+
+| Subcommand | Description |
+|------------|-------------|
+| (none) | Basic lineage for entity |
+| `trace` | Full trace from source to sink |
+| `gaps` | Find entities without full traceability |
+
+## Lineage Trace
+
+Track data from input to output:
+```bash
+/agv:lineage trace user_input
+```
+
+Returns:
+```
+user_input (API endpoint)
+  → validate_input() (validation layer)
+    → process_request() (business logic)
+      → save_to_db() (persistence)
+        → database.users (sink)
+```
+
+## Lineage Gaps
+
+Find entities that lack full traceability:
+```bash
+/agv:lineage gaps
+```
+
+Identifies:
+- Data with unknown sources
+- Data that disappears (no sink)
+- Broken lineage chains
+
+## CLI Equivalent
+
+```bash
+uv run --env-file .env agv lineage trace user_input --project-id myproject
+uv run --env-file .env agv lineage gaps --project-id myproject
+```
+
+## Use Cases
+
+1. **Compliance**: GDPR data flow documentation
+2. **Debugging**: Track where data transforms incorrectly
+3. **Security**: Ensure sensitive data is handled properly
+4. **Refactoring**: Understand data dependencies before changes
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `agv` CLI command(s) using the available tools.
+"""

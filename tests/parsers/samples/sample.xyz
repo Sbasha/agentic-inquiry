@@ -1,0 +1,5 @@
+This is a file with an unusual extension.
+
+The unified_code parser won't recognize it.
+The document parser won't recognize it.
+But the text parser will handle it!

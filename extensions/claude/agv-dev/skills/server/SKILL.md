@@ -1,0 +1,46 @@
+---
+name: server
+description: Manage the Agent-Vault MCP server (start, stop, status, restart). Use when working with the agv MCP server lifecycle.
+argument-hint: "[start|stop|status|restart]"
+allowed-tools: Bash, Read
+---
+
+# /agv-dev:server
+
+Manage the Agent-Vault MCP server lifecycle.
+
+## Commands
+
+```bash
+/agv-dev:server start     # Start server in background
+/agv-dev:server stop      # Stop running server
+/agv-dev:server status    # Check if server is running
+/agv-dev:server restart   # Restart server
+```
+
+## Server Details
+
+The MCP server provides:
+- Semantic search tools
+- Entity understanding
+- Memory operations
+- Pattern discovery
+
+## Start Server
+
+```bash
+uv run --env-file .env agv serve &
+```
+
+## Check Status
+
+```bash
+pgrep -f "agv serve" && echo "Running" || echo "Stopped"
+```
+
+## Environment
+
+Requires:
+- `OPENAI_API_KEY` for embeddings
+- `agv_CONFIG` or default config at `config/default.yaml`
+- `agv_PROJECT_ID` for project isolation

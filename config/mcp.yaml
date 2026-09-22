@@ -1,0 +1,103 @@
+# MCP (Model Context Protocol) Server Configuration
+# This file contains default configuration for the MCP server
+
+mcp:
+  enabled: true
+
+  # Server settings
+  server:
+    name: "Agent-Vault"
+    version: "1.0.0"
+    description: "AI-powered code and knowledge search"
+
+  # Tool configuration
+  tools:
+    cognitive:
+      enabled: true  # High-level, intelligent tools (default ON)
+    
+    direct_access:
+      enabled: true  # Lower-level tools for granular control (now default ON)
+
+  # API configuration (FastMCP)
+  api:
+    enabled: true
+    host: "localhost"
+    port: 8765
+    cors:
+      enabled: true
+      origins: ["*"]
+    auth:
+      enabled: false
+      api_key: null
+
+  # Session configuration
+  session:
+    ttl_hours: 48  # Session expiry time in hours
+    cleanup_interval_hours: 24  # How often to run cleanup
+
+  # Query configuration
+  query:
+    default_limit: 1000  # Default query result limit
+    max_limit: 10000  # Maximum query result limit
+    traversal_limit: 500  # Maximum entities in relationship traversal (range: 100-2000)
+    batch_size: 100  # Batch size for query operations (range: 10-500)
+
+  # Relationships configuration
+  relationships:
+    max_depth: 3  # Maximum relationship traversal depth
+    max_per_node: 10000  # Maximum relationships per node
+
+  # Token configuration
+  tokens:
+    estimation_model: "cl100k_base"  # tiktoken model for token estimation
+    default_budget: 4000  # Default token budget for responses
+
+  # Default behavior
+  defaults:
+    search:
+      limit: 20
+      hybrid_weight: 0.7
+      min_relevance: 0.3
+
+    context:
+      max_tokens: 4000
+      depth: "broad"  # Options: focused, broad, comprehensive
+      include_relationships: true
+
+    impact:
+      max_depth: 2
+      include_tests: true
+
+    memory:
+      default_importance: "medium"  # Options: low, medium, high
+      auto_tag: true
+
+    events:
+      retention_days: 7
+      max_per_query: 50
+
+    patterns:
+      max_clusters: 5
+      examples_per_cluster: 3
+
+    temporal:
+      default_time_range_days: 7
+    
+    session_ttl_hours: 48  # Deprecated: use session.ttl_hours instead
+
+  # Behavior flags
+  behavior:
+    suggest_on_empty: true  # Provide suggestions when no results found
+    include_alternatives: true  # Include alternative suggestions
+    log_all_requests: true  # Log all tool requests
+    track_performance: true  # Track tool execution metrics
+    cache_responses: true  # Cache tool responses
+    cache_ttl_seconds: 300  # Cache TTL (5 minutes)
+
+  # Logging
+  logging:
+    level: "INFO"
+    format: "json"
+    log_dir: "${HOME}/.AGV/logs"
+    max_size_mb: 100
+    retention_days: 30

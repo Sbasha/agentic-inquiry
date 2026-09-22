@@ -1,0 +1,19 @@
+{
+  "name": "agent-vault",
+  "description": "Agent-Vault plugins for Claude Code",
+  "owner": {
+    "name": "Agent-Vault Team"
+  },
+  "plugins": [
+    {
+      "name": "agv",
+      "source": "./agv",
+      "description": "Semantic code search, memory, impact analysis, and AI-powered code understanding"
+    },
+    {
+      "name": "agv-dev",
+      "source": "./agv-dev",
+      "description": "Development tools - coding guidelines, testing, quality, and contributor workflows"
+    }
+  ]
+}

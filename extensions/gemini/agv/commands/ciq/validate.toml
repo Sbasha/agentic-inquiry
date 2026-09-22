@@ -1,0 +1,68 @@
+description = "Validate index accuracy and completeness"
+prompt = """
+Validate index accuracy and completeness
+
+Usage: /agv:validate [--deep]
+
+# /agv:validate
+
+Verify your agv index is accurate and complete.
+
+## Quick Start
+
+```bash
+/agv:validate               # Quick validation
+/agv:validate --deep        # Comprehensive validation
+```
+
+## Validation Checks
+
+### Quick Validation
+- Index exists and is readable
+- Basic schema integrity
+- Sample query returns results
+
+### Deep Validation (`--deep`)
+- All files in project are indexed
+- Entity relationships are consistent
+- Embeddings are valid
+- No orphaned references
+- Search quality spot checks
+
+## Example Output
+
+```
+Index Validation: myproject
+
+Quick Checks:
+✓ Index accessible
+✓ Schema valid
+✓ 1,247 entities indexed
+✓ Sample search returned results
+
+Deep Checks:
+✓ All 89 Python files indexed
+✓ 156/156 function relationships valid
+✓ No orphaned references
+⚠ 3 files modified since last index
+
+Recommendation: Run /agv:index to update modified files
+```
+
+## CLI Equivalent
+
+```bash
+uv run --env-file .env agv validate --project-id myproject
+```
+
+## When to Validate
+
+- After large refactoring
+- Before important searches
+- When search results seem off
+- After upgrading agv version
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `agv` CLI command(s) using the available tools.
+"""

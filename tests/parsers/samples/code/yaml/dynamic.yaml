@@ -1,0 +1,6 @@
+
+loader:
+  entry: dynamic_summary
+  imports:
+    - complex.yaml
+    - simple.yaml

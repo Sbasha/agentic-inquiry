@@ -1,0 +1,79 @@
+description = "Configure Agent-Vault storage backend (LanceDB, PostgreSQL, GCP, AWS, or Azure)"
+prompt = """
+Configure Agent-Vault storage backend (LanceDB, PostgreSQL, GCP, AWS, or Azure)
+
+Usage: /agv:setup [local|postgres|gcp|aws|azure] [project-name]
+
+# /agv:setup
+
+Configure Agent-Vault storage and create a new project.
+
+## Quick Start
+
+```bash
+/agv:setup local myproject      # Local LanceDB (recommended for dev)
+/agv:setup gcp production       # Cloud PostgreSQL (GCP)
+/agv:setup aws production       # RDS PostgreSQL (AWS)
+```
+
+## Storage Options
+
+| Option | Backend | Best For | Setup Time |
+|--------|---------|----------|------------|
+| `local` | LanceDB | Development, testing | Instant |
+| `postgres` | PostgreSQL | Self-managed DB | 2-5 min |
+| `gcp` | Cloud SQL | GCP Production | 5-10 min |
+| `aws` | RDS | AWS Production | 5-10 min |
+| `azure` | Azure DB | Azure Production | 5-10 min |
+
+## Selection Requirement
+
+**CRITICAL:** If the user has not specified a backend in their request, you MUST use the `AskUserQuestion` tool to let them choose from the available options. Do NOT assume a default backend.
+
+## What Gets Created
+
+**Local Setup:**
+```
+config/local.yaml           # Storage configuration
+.env                        # API keys template
+.agv/         # Storage directory
+```
+
+**Cloud Setup:**
+- Managed Database instance configuration
+- Cloud Proxy configuration (if applicable)
+- `config/postgresql.yaml` or equivalent
+
+## Environment Variables
+
+Required in `.env`:
+```bash
+OPENAI_API_KEY=sk-...           # Required for embeddings
+
+# Database settings (for non-local)
+POSTGRES_HOST=localhost
+POSTGRES_DB=agent-vault
+POSTGRES_USER=agv
+POSTGRES_PASSWORD=<generated>
+```
+
+## After Setup
+
+```bash
+# /agv:setup
+uv run --env-file .env agv index . --project-id <project-name>
+
+# /agv:setup
+uv run --env-file .env agv search "main entry point" --project-id <project-name>
+```
+
+## Troubleshooting
+
+- **Config not loading**: Check `agv_CONFIG` env var
+- **OpenAI errors**: Verify `OPENAI_API_KEY` is valid
+- **Connection errors**: Verify database is reachable and credentials are correct
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `agv` CLI command(s) using the available tools.
+"""

@@ -1,0 +1,709 @@
+# Agent-Vault Default Configuration
+# This file contains sensible defaults for all configuration options.
+# To customize settings, create a agent-vault.yaml file in your project root.
+
+# Storage configuration
+storage:
+  # Root directory for all persistent data
+  # All storage components will store data under this directory
+  root: "./.agv"
+
+  # Default project identifier for data isolation
+  # Used when no explicit project_id is provided to Config.for_project()
+  # This ensures data from different projects doesn't mix
+  default_project_id: "default"
+
+  # Project identifier for data isolation (deprecated, use default_project_id)
+  # This ensures data from different projects doesn't mix
+  project_id: "changeme"
+
+  # Backend selection for database components
+  # Defaults to LanceDB for local development. Options: lancedb, postgresql, cloudsql, alloydb
+  backend: "lancedb"
+
+  # Event store backend: sqlite (default), postgresql
+  event_store_backend: "sqlite"
+
+  # File tracker backend: sqlite (default), postgresql
+  file_tracker_backend: "sqlite"
+
+  # LanceDB configuration (vector database)
+  lancedb:
+    # Path relative to storage.root
+    path: "lancedb"
+
+  # FileTracker configuration (file change tracking)
+  file_tracker:
+    # Path relative to storage.root
+    path: "file_tracker.db"
+
+  # DocumentCache configuration (parsed document caching)
+  document_cache:
+    # Enable disk persistence (disabled by default for memory-only mode)
+    enabled: false
+    # Path relative to storage.root
+    path: "document_cache"
+
+  # EventStore configuration (event tracking database)
+  event_store:
+    # Path relative to storage.root
+    path: "events.db"
+  
+  # Table name mappings (for LanceDB tables)
+  tables:
+    document_chunks: "document_chunks"
+    graph_entities: "graph_entities"
+    graph_relationships: "graph_relationships"
+
+  # Storage provider configuration (Provider Framework v2.4)
+  # Enables pluggable storage backends with protocol-based abstractions
+
+  # Vector storage provider configuration
+  vector:
+    # Provider selection: lancedb (production), memory (testing)
+    provider: "lancedb"
+    # LanceDB-specific configuration (used when provider is "lancedb")
+    lancedb:
+      # Path relative to storage.root (inherits from storage.lancedb.path if not set)
+      path: "${AGV_STORAGE_ROOT:-./.agv}/lancedb"
+
+  # Graph storage provider configuration
+  graph:
+    # Provider selection: lancedb (production), memory (testing)
+    provider: "lancedb"
+    # LanceDB-specific configuration (used when provider is "lancedb")
+    lancedb:
+      # Table name for graph entities
+      entities_table: "graph_entities"
+      # Table name for graph relationships
+      relationships_table: "graph_relationships"
+
+  # Relational storage provider configuration
+  relational:
+    # Provider selection: sqlite (default), spanner (Phase 2 - future)
+    provider: "sqlite"
+    # SQLite-specific configuration (used when provider is "sqlite")
+    sqlite:
+      # Path relative to storage.root
+      path: "${AGV_STORAGE_ROOT:-./.agv}/agent-vault.db"
+
+  # Feature flag for StorageFacade migration
+  # When true, internal services use the new StorageFacade abstraction
+  # When false (default), services continue using LanceDBManager directly
+  # This enables gradual migration and easy rollback
+  use_facade: false
+
+# Maintenance configuration
+# Automatic maintenance for LanceDB storage optimization
+maintenance:
+  # When to trigger maintenance: "project.closed", "indexing.completed", "disabled"
+  trigger: "project.closed"
+
+  # How long to keep old MVCC versions (5-1440 minutes)
+  cleanup_retention_minutes: 60
+
+  # Enable automatic maintenance
+  enabled: true
+
+# Cache configuration
+cache:
+  document_cache:
+    # Maximum number of documents to cache in memory
+    max_size: 1000
+    
+    # Time-to-live for cache entries in seconds (0 = no expiration)
+    ttl_seconds: 3600
+    
+    # Cache eviction policy: lru (least recently used), lfu (least frequently used), fifo
+    eviction_policy: "lru"
+
+# Search configuration
+search:
+  # Default number of search results to return
+  default_limit: 10
+  
+  # Maximum number of search results allowed
+  max_limit: 100
+  
+  # Search result deduplication configuration
+  deduplication:
+    # Enable deduplication of search results by file path
+    enabled: true
+    
+    # Maximum number of results to keep per file (1 = keep only highest-scoring chunk)
+    max_results_per_file: 1
+    
+    # Minimum diversity ratio (0.0-1.0) - ratio of unique files to total results
+    # If diversity falls below this threshold, a warning is logged
+    min_diversity_ratio: 0.7
+  
+  # Hybrid search configuration (combines vector and full-text search)
+  hybrid_search:
+    # Weight for vector search results (0.0-1.0)
+    vector_weight: 0.7
+    
+    # Weight for full-text search results (0.0-1.0)
+    fts_weight: 0.3
+    
+    # Enable graph-based reranking of results using PageRank
+    rerank_by_graph: true
+    
+    # Reranking strategy for hybrid search
+    # Options: rrf (recommended), linear_combination, cross_encoder, colbert
+    # RRF (Reciprocal Rank Fusion) is the standard for hybrid search
+    reranker_type: "rrf"
+    
+    # Parameters for the selected reranker
+    # For RRF: k controls the ranking fusion (default: 60)
+    # For linear_combination: weight controls vector vs FTS balance (default: 0.7)
+    # For cross_encoder/colbert: model_name optional
+    reranker_params:
+      k: 60  # RRF constant
+    
+    # Fallback to vector-only search when hybrid search fails or returns no results
+    fallback_to_vector: true
+
+    # Enable diagnostic logging for hybrid search (useful for debugging)
+    log_diagnostics: false
+
+    # Boost factor for overview/documentation files in search results
+    overview_boost_factor: 1.5
+
+  # Overview/documentation boosting configuration
+  overview_boost:
+    # Enable automatic boosting of documentation content
+    enabled: true
+
+    # Auto-detect overview queries (readme, what is, how to, etc.)
+    auto_detect: true
+
+    # Boost weights for different content types (positive = boost, negative = penalize)
+    # These values are subtracted from distance scores (lower distance = better match)
+    weights:
+      readme: 0.35          # README files (README.md, README.txt, etc.)
+      docs_directory: 0.25  # Files in docs/, documentation/, wiki/ directories
+      markdown: 0.15        # Any .md file
+      early_chunk: 0.15     # First 3 chunks in a file (chunk_index < 3)
+      heading_title: 0.20   # HEADING or TITLE content types
+      code_penalty: -0.10   # CODE content type (de-boost)
+
+    # Patterns for detecting overview queries (regex, case-insensitive)
+    # If any pattern matches, the query is treated as an overview query
+    overview_keywords:
+      - "readme"
+      - "overview"
+      - "architecture"
+      - "getting.?started"
+      - "what.*(does|is)"
+      - "how.*(does|to|do)"
+      - "purpose"
+      - "intro"
+      - "documentation"
+      - "guide"
+      - "tutorial"
+
+  # Entity matching configuration (for find_similar tool)
+  entity_matching:
+    # Enable semantic bridge for entity discovery
+    # When enabled, searches code chunks semantically and extracts entities
+    semantic_bridge_enabled: true
+
+    # Multi-pass search thresholds (similarity scores 0.0-1.0)
+    thresholds:
+      high: 0.5       # High confidence matches
+      medium: 0.35    # Medium confidence matches
+      low: 0.2        # Minimum acceptable match
+
+    # Weight distribution for combined similarity scoring
+    weights:
+      vector: 0.7     # Weight for vector similarity
+      name: 0.3       # Weight for name similarity
+      semantic_bridge: 0.7  # Weight for semantic bridge score (vs name)
+
+  # Graph search configuration
+  graph_search:
+    # Maximum depth for graph traversal
+    max_depth: 3
+    
+    # Relationship types to follow during graph traversal
+    relationship_types:
+      - "calls"
+      - "imports"
+      - "contains"
+      - "references"
+  
+  # Query sanitization configuration (prevents FTS syntax errors)
+  query_sanitization:
+    # Enable query sanitization for full-text search
+    enabled: true
+
+    # Escape special characters that could cause FTS syntax errors
+    # Special characters: ? * [ ] ( ) { } \ + . ^ $ |
+    escape_special_chars: true
+
+    # Preserve wildcards (* and ?) for pattern matching
+    # If false, wildcards are escaped for literal matching
+    # If true, wildcards are preserved for pattern matching
+    preserve_wildcards: false
+
+  # Sparse index detection configuration
+  # Helps identify when the index has too few documents for reliable search results
+  sparse_index:
+    # Minimum chunks for index to be considered "ready"
+    # Below this threshold, searches may return limited or unreliable results
+    threshold: 50
+
+    # Enable fallback search behavior when index is sparse
+    # When enabled, uses more lenient search parameters for sparse indexes
+    enable_fallback: true
+
+# Embedding configuration
+embeddings:
+  # Default embedding provider: sentence_transformer, hashing, or local
+  default_provider: "sentence_transformer"
+  
+  # Default embedding dimensions for all components
+  # Using 384 dimensions provides a good balance of accuracy and performance
+  default_dimensions: 384
+  
+  # Sentence transformer configuration (uses HuggingFace models)
+  sentence_transformer:
+    # Model name from HuggingFace
+    model_name: "all-MiniLM-L6-v2"
+    
+    # Embedding dimensionality (must match default_dimensions)
+    ndims: 384
+  
+  # Hashing-based embedding configuration (fast, deterministic)
+  hashing:
+    # Embedding dimensionality
+    ndims: 128
+  
+  # Local model configuration (for offline operation with ONNX/safetensors models)
+  # Uncomment and configure to use local models instead of online APIs
+  # local_model:
+  #   # Path to local model directory (workspace-relative or absolute)
+  #   # Use scripts/convert_model.py to download and convert models
+  #   model_path: "models/all-MiniLM-L6-v2-onnx"
+  #   
+  #   # Whether to normalize embeddings to unit length
+  #   normalize: true
+  #   
+  #   # Maximum batch size for inference
+  #   batch_size: 32
+  #   
+  #   # Embedding dimensionality (auto-detected from model if not specified)
+  #   # ndims: 384
+
+# Indexing configuration
+indexing:
+  # Timeout configuration for indexing operations
+  timeouts:
+    # Fixed timeout in seconds (used if > 0, otherwise dynamic)
+    total: 300
+
+    # Seconds allowed per file for dynamic timeout calculation
+    per_file: 5
+
+    # Base seconds for setup/flush in dynamic timeout calculation
+    base: 60
+
+  # Schema mapping configuration
+  schema_mapping:
+    # Enable schema mapping (for future compatibility if field names change)
+    enabled: true
+    
+    # Field name mappings from ParserChunk to database schema
+    # Currently no mappings needed as field names match
+    # Format: parser_field_name: database_field_name
+    field_mappings: {}
+  
+  # Schema validation configuration
+  schema_validation:
+    # Enable pre-flight schema validation before database writes
+    enabled: true
+    
+    # Strict mode: fail on extra fields not in schema
+    strict_mode: false
+    
+    # Cache table schemas to avoid repeated lookups
+    cache_schemas: true
+    
+    # Schema cache TTL in seconds
+    cache_ttl_seconds: 300
+  
+  # Impact analysis settings (flattened from impact_analysis section)
+  # Default traversal depth for relationship analysis
+  impact_default_depth: 2
+  
+  # Maximum traversal depth allowed
+  impact_max_depth: 5
+  
+  # Include indirect dependencies in analysis
+  impact_include_indirect: true
+  
+  # Concurrency control
+  # Maximum number of concurrent document processing operations
+  # Lower values reduce memory usage, higher values increase throughput
+  # Recommended: 5-10 for development, 10-20 for CI/CD, 20-50 for production
+  # Raised from 10 → 20 after PR #134 batched per-file embedding; the
+  # embedding executor now releases fast enough that the extra file-level
+  # concurrency is usable rather than just queuing up on a starved executor.
+  processing_semaphore_limit: 20
+
+  # Relationship flush configuration
+  # Controls batched relationship resolution and creation
+  relationship_flush:
+    # Batch processing
+    # Number of relationships to process per batch
+    # Higher values reduce commit overhead but increase memory usage
+    batch_size: 500
+
+    # Maximum number of concurrent batch operations (semaphore limit)
+    max_concurrent_batches: 20
+
+    # Progress tracking
+    # Log progress every N relationships processed
+    progress_log_interval: 1000
+
+    # Incremental commits
+    # Commit to database every N relationships
+    batch_commit_interval: 100
+
+    # Trigger automatic flush when pending relationships exceed this threshold
+    auto_flush_threshold: 50000
+
+    # Timeouts
+    # Maximum time for flush operation in seconds (default: 1 hour)
+    flush_timeout_seconds: 3600
+
+    # Memory management
+    # Flush external entities when queue exceeds this threshold
+    external_entity_flush_threshold: 10000
+
+    # Performance monitoring
+    # Pre-populate cache with common stdlib/builtin imports
+    enable_cache_prewarming: true
+
+    # Track and log slow operations
+    enable_performance_monitoring: true
+
+    # Log warning if operation exceeds this threshold (milliseconds)
+    slow_operation_threshold_ms: 500.0
+
+# Parser configuration
+parsers:
+  # Unified code parser (handles Python, JavaScript, TypeScript, etc.)
+  unified_code:
+    enabled: true
+    priority: 100  # Higher priority = tried first
+    # Maximum file size in bytes (files larger than this are skipped)
+    max_file_size: 10485760  # 10MB
+    # Target chunk size in characters
+    chunk_size: 1000
+    # Overlap between chunks in characters
+    chunk_overlap: 200
+
+  # Salesforce source-format metadata (object, field, flow, flexipage, layout)
+  salesforce_metadata:
+    enabled: true
+    priority: 75
+
+  # Document parser (handles Markdown, PDF, DOCX, etc.)
+  document:
+    enabled: true
+    priority: 50
+
+  # Fallback text parser (handles any text file)
+  fallback_text:
+    enabled: true
+    priority: 0  # Lowest priority = last resort
+    # Maximum chunk size in characters
+    max_chunk_size: 1000
+    # Overlap between chunks in characters
+    chunk_overlap: 100
+
+# Memory system configuration
+memory:
+  # Context manager configuration (manages memory contexts lifecycle)
+  context_manager:
+    # Maximum number of concurrent memory contexts
+    max_concurrent_contexts: 100
+
+    # Interval in seconds between context cleanup runs
+    cleanup_interval: 300
+
+    # Time-to-live for contexts in seconds (idle contexts are cleaned up)
+    context_ttl: 3600
+
+  # Working memory configuration (in-memory session cache)
+  working_memory:
+    # Maximum number of items to keep in working memory
+    capacity: 20
+    
+    # Eviction policy when capacity is reached
+    eviction_policy: "lru"  # least recently used
+  
+  # Episodic memory configuration (time-series event log)
+  episodic_memory:
+    # Maximum number of events per agent
+    capacity: 1000
+    
+    # LanceDB table name for episodic memories
+    # Uses MEDIUM density embeddings (384 dims)
+    table_name: "memory_episodic_medium"
+  
+  # Semantic memory configuration (knowledge graph)
+  semantic_memory:
+    # Maximum number of facts per agent
+    capacity: 500
+    
+    # LanceDB table name for semantic memories
+    # Uses HIGH density embeddings (768 dims)
+    table_name: "memory_semantic_high"
+  
+  # Consolidation configuration (memory tier promotion)
+  consolidation:
+    # Enable automatic consolidation
+    enabled: true
+    
+    # Interval between consolidation runs (seconds)
+    interval_seconds: 300
+    
+    # Importance threshold for working → episodic promotion
+    episodic_threshold: 0.8
+    
+    # Importance threshold for episodic → semantic promotion
+    semantic_threshold: 0.9
+  
+  # Retrieval configuration (unified search)
+  retrieval:
+    # Default search strategy: relevance, recency, importance, or adaptive
+    default_strategy: "adaptive"
+    
+    # Enable query result caching
+    cache_enabled: true
+    
+    # Cache time-to-live (seconds)
+    cache_ttl_seconds: 300
+    
+    # Maximum number of cached queries
+    cache_size: 1000
+    
+    # Ranking weights for adaptive strategy (must sum to 1.0)
+    ranking_weights:
+      relevance: 0.5   # Vector similarity weight
+      recency: 0.3     # Time-based weight
+      importance: 0.2  # Importance score weight
+  
+  # Summary configuration
+  summary:
+    # Auto-use content as summary if below this character count
+    auto_threshold: 150
+
+# Event tracking system configuration
+events:
+  # Enable event tracking system
+  enabled: true
+  
+  # Maximum number of events to queue in memory before applying backpressure
+  queue_max_size: 1000
+  
+  # Number of events to batch together for database writes
+  batch_size: 100
+  
+  # Maximum time (seconds) to wait before flushing a partial batch
+  flush_interval_seconds: 1.0
+  
+  # Number of days to retain events before cleanup
+  retention_days: 30
+  
+  # Interval in hours between automatic cleanup operations
+  cleanup_interval_hours: 24
+  
+  # Enable sampling when queue is full (preserves failed events, samples routine progress)
+  sampling_enabled: false
+  
+  # Sampling ratio when enabled (keep 1 in N events)
+  sampling_ratio: 10
+  
+  # Retry configuration for failed event writes
+  # Maximum number of retry attempts for failed EventStore writes
+  retry_max_attempts: 5
+  
+  # Base delay in seconds for exponential backoff (delay = base_delay * 2^(retry_count - 1))
+  retry_base_delay_seconds: 0.1
+  
+  # Alert threshold for dropped events
+  # Log error when dropped event count exceeds this threshold
+  drop_alert_threshold: 100
+
+# Entity resolution configuration
+entity_resolution:
+  # Enable case-insensitive matching
+  case_insensitive: true
+  
+  # Enable fuzzy matching with similarity threshold
+  fuzzy_matching:
+    enabled: true
+    threshold: 0.8
+  
+  # Cache resolved entities per session
+  cache_enabled: true
+  cache_ttl_seconds: 3600
+
+# Progress indicator configuration
+progress:
+  # Enable progress event emission during long-running operations
+  enabled: true
+  
+  # Emit progress events every N files during indexing
+  emit_interval: 10
+  
+  # Minimum operation duration (seconds) to emit progress events
+  # Operations shorter than this won't emit progress to reduce noise
+  min_duration: 5
+
+# Context building configuration
+context:
+  # Token budget management for context building
+  token_budget:
+    # Default token budget for context building
+    default_budget: 50000
+    
+    # Minimum token budget allowed
+    min_budget: 10000
+    
+    # Maximum token budget allowed
+    max_budget: 100000
+    
+    # Focus allocation strategies for distributing tokens
+    # Each strategy defines how to split the budget between code and documentation
+    focus_allocations:
+      # Code-focused: prioritize code files over documentation
+      code:
+        code_weight: 0.7
+        docs_weight: 0.3
+      
+      # Documentation-focused: prioritize documentation over code
+      docs:
+        code_weight: 0.3
+        docs_weight: 0.7
+      
+      # Balanced: equal weight to code and documentation
+      balanced:
+        code_weight: 0.5
+        docs_weight: 0.5
+
+# Logging configuration
+logging:
+  # Directory for log files (workspace-relative or absolute)
+  directory: "logs"
+  
+  # Main log level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  level: "INFO"
+  
+  # Maximum size per log file in bytes (10MB default)
+  max_bytes: 10485760
+  
+  # Number of backup files to keep during rotation
+  backup_count: 5
+  
+  # Retention period in hours (files older than this are deleted)
+  retention_hours: 24
+  
+  # Per-service log levels (optional, overrides main level)
+  service_levels: {}
+    # Example:
+    # parsers: "DEBUG"
+    # database: "WARNING"
+  
+  # Log message format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  
+  # Date format for timestamps
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+# Connectors configuration
+# Connectors provide a unified interface for accessing content from various sources
+connectors:
+  # Default connector type: filesystem, s3, gcs, github (future)
+  default_connector: "filesystem"
+
+  # Local filesystem connector
+  filesystem:
+    # Enable the filesystem connector
+    enabled: true
+
+    # Root directory for file enumeration (null = current working directory)
+    root: null
+
+    # Ignore patterns for file discovery (glob patterns)
+    # Files matching these patterns will be skipped during indexing
+    # NOTE: tests/ directories are NOT excluded by default and WILL be indexed.
+    # To exclude tests, add "tests/" or "test_*.py" to this list.
+    # All non-ignored files matching supported extensions are indexed automatically.
+    ignore_patterns:
+      - "*.pyc"
+      - "__pycache__"
+      - ".git"
+      - ".hg"
+      - ".svn"
+      - ".DS_Store"
+      - "*.egg-info"
+      - ".venv"
+      - "venv"
+      - "node_modules"
+      - ".tox"
+      - ".nox"
+      - ".pytest_cache"
+      - ".mypy_cache"
+      - ".ruff_cache"
+      - "*.lock"
+
+    # File extensions to treat as binary (skip for text processing)
+    binary_extensions:
+      - ".exe"
+      - ".dll"
+      - ".so"
+      - ".bin"
+      - ".zip"
+      - ".tar"
+      - ".gz"
+      - ".bz2"
+      - ".png"
+      - ".jpg"
+      - ".jpeg"
+      - ".gif"
+      - ".ico"
+      - ".webp"
+      - ".svg"
+      - ".mp3"
+      - ".mp4"
+      - ".avi"
+      - ".mov"
+      - ".wav"
+      # Note: .pdf, .doc, .docx are NOT included - they have dedicated parsers
+      - ".woff"
+      - ".woff2"
+      - ".ttf"
+      - ".eot"
+      - ".otf"
+
+    # Enable change detection via FileTracker (hash-based)
+    change_detection_enabled: true
+
+    # Enable real-time file watching for incremental indexing
+    # Set AGV_CONNECTORS_FILESYSTEM_WATCH_ENABLED=false to disable for CI/CD
+    watch_enabled: true
+
+  # Remote connector content caching (for S3, GCS, GitHub, etc.)
+  remote_cache:
+    # Enable caching of remote content
+    enabled: true
+
+    # Cache directory (relative to storage.root)
+    path: "connector_cache"
+
+    # Maximum cache size in bytes (0 = unlimited)
+    max_size: 0

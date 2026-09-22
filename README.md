@@ -1,176 +1,553 @@
-# Agentic Inquiry
+# Agent-Vault
 
-A local library for searching documents and code with source citations, remembering selected observations and maintaining authored knowledge pages. The command is `ai`. Embeddings, optional reranking, document extraction and storage run locally; the CLI does not call a generative-model API or upload source files.
+**Semantic code search and codebase intelligence for Claude Code.**
 
-Version 0.1.0 is a public preview. The interfaces and stored schema may change before a stable release. See the [architecture](ARCHITECTURE.md), [contribution guide](CONTRIBUTING.md), [security policy](SECURITY.md), [design contract](DESIGN.md) and [remaining implementation plan](IMPLEMENTATION_PLAN.md).
+Agent-Vault gives AI coding assistants deep understanding of your codebase. It parses source code and documentation, builds a searchable knowledge graph of entities and relationships, and exposes everything through slash commands in Claude Code. Instead of relying on grep and file reads, your AI assistant can semantically search across hundreds of thousands of code chunks, trace data lineage, assess change impact, and recall project context across sessions.
 
-## Install and search
-
-Requires Python 3.11 or newer, Git and [uv](https://docs.astral.sh/uv/). Install the tagged source release with uv. The package is not published to a registry:
-
-```sh
-uv tool install "git+https://github.com/Sbasha/agentic-inquiry.git@v0.1.0"
-ai --help
+```
+/agv:search "how does authentication work"    # Semantic search across code + docs
+/agv:onboard /path/to/project                 # AI-powered codebase onboarding
+/agv:entity UserService                       # Understand any code entity
+/agv:impact handleLogin                       # What breaks if I change this?
 ```
 
-Replace the paths below with an existing source directory and your chosen library directory. These examples register the source as collection `code` in project `work`. If that root is already registered, use its returned `name` and `project_id` instead.
+---
 
-```sh
-inquiry_root=/absolute/project
-inquiry_db=/absolute/library
+## Why Agent-Vault?
 
-ai setup "$inquiry_root" --db "$inquiry_db" --name code --project work
-ai index --collection code --db "$inquiry_db"
-ai search "How is authentication handled?" --collection code --db "$inquiry_db" --limit 5
-ai context "authentication" --project work --collection code --db "$inquiry_db" --budget 4096
-ai status --db "$inquiry_db"
-ai doctor --db "$inquiry_db"
+Standard AI code assistants search your codebase by pattern matching — grep, file globs, reading files one at a time. This breaks down on large codebases:
+
+- **Grep can't find concepts.** Searching for "authentication" won't find `validateJWT()` or `SessionManager`.
+- **Context windows overflow.** Reading every file isn't feasible at 16K+ files.
+- **No memory between sessions.** Every conversation starts from scratch.
+
+Agent-Vault solves this by building a persistent, searchable index of your codebase:
+
+| Capability | What You Get |
+|------------|-------------|
+| **Semantic Search** | Find code by concept, not just keywords. Hybrid vector + full-text search with IDF-weighted reranking |
+| **Code + Docs** | Unified index across source code, DOCX, PDF, DOC files |
+| **Entity Graph** | Classes, methods, imports mapped with relationships |
+| **Impact Analysis** | "What breaks if I change X?" with dependency traversal |
+| **Lineage Tracing** | Follow data from UI to database and back |
+| **Memory System** | Three-tier memory (working/episodic/semantic) persists across sessions |
+| **Onboarding** | Auto-generated architecture reports for new codebases |
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.10–3.13
+- [uv](https://docs.astral.sh/uv/) package manager
+- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI
+
+### 1. Clone and Install
+
+```bash
+git clone https://github.com/sbasha/agent-vault.git
+cd agent-vault
+uv sync                 # set up the project environment
+uv tool install .       # install the `agv` command globally, on your PATH
 ```
 
-Pass a result's `id` to `ai read CHUNK_ID --db "$inquiry_db"` to retrieve its cited passage. Search defaults to hybrid keyword and vector retrieval; `--mode lexical` and `--mode vector` select either method. Scope results with `--project`, `--collection`, `--language`, `--path` or `--type`. Context includes evidence and, with an explicit project, relevant memory. Its reported budget uses UTF-8 bytes as a conservative token upper bound, including citation metadata, rather than a provider tokenizer.
+`uv tool install .` puts a single `agv` command on your PATH so the plugin
+skills can run it from any project. If you already installed `agv` earlier,
+run `uv tool install . --reinstall` so PATH picks up the current env-file
+loader. If uv reports that its tool directory isn't on your PATH, run
+`uv tool update-shell` once and restart your shell. Installing the command
+does **not** turn Agent-Vault on anywhere — the `/agv:*` skills and hooks
+only activate in projects where you enable the plugin (next step).
 
-`--db` names the whole library directory, containing durable SQLite records, `knowledge/`, derived `index/` generations and a `models/` cache. Without it, `index` and `setup` use `SOURCE/.agentic-inquiry`; other ordinary commands use the current directory's `.agentic-inquiry`. Use the same explicit library from other directories. Exclude `.agentic-inquiry/` from source control when storing it inside a project.
+On macOS, two embedding processes using Metal/MPS at once can abort. If
+that happens, uncomment `AGV_EMBEDDING_DEVICE=cpu` in
+`.agv/envs/<name>/.env`.
 
-CLI operations return JSON with `schema_version: 1`; `--json` is optional. Structured fields come from `--input FILE` or `--input -` for stdin, limited to a 1 MiB JSON object. Command-line fields override input fields. Exit codes are `0` for success, `1` for partial, unsupported or failed work, and `2` for errors. Reduced extraction coverage, including explicitly omitted Office content, produces `complete: false`. Search and context retain this coverage signal while returning available evidence. Inspect partial reports before relying on their coverage.
+### 2. Enable the Plugins
 
-## Sources and local models
+Add Agent-Vault to `.claude/settings.json` **in the project you want to analyze** (not in the Agent-Vault repo itself). The `path` should point to where you cloned the repo:
 
-Supported extraction includes UTF-8 text, Markdown, HTML, JSON, YAML, XML, CSV/TSV, PDF, DOCX, PPTX and XLSX. Citations retain source identity, version and hash, with locations such as code spans, PDF pages, document paragraphs, slides and spreadsheet cells. Structural indexing covers Python, JavaScript, TypeScript/TSX, Java, Go, Rust, C, C++/C# and Apex; other supported code files use text extraction.
-
-Git roots use tracked and non-ignored files. Source files are read-only. Collection policies exclude symlinks, common credential filenames and dependency directories; filename exclusions are not a content-based secret scanner. Extraction has bounded file size, time, memory, archive expansion and output. The default file limit is 32 MiB. Encrypted, malformed, unsupported or resource-limited sources have explicit diagnostics. Changed, deleted and unresolved evidence remains distinguishable from current evidence; default retrieval excludes stale material, with `--include-stale` available for inspection. Run `index` again to reconcile source changes.
-
-First indexing downloads the public `BAAI/bge-small-en-v1.5` embedding model, approximately 67 MB. Later use is local. Hybrid/vector search requires cached embeddings and never downloads a missing model; lexical search does not initialize a model. For optional local reranking, explicitly prepare its approximately 80 MB model, then select it at search time:
-
-```sh
-ai setup "$inquiry_root" --db "$inquiry_db" --name code --project work --rerank
-ai search "authentication" --db "$inquiry_db" --rerank
-HF_HUB_OFFLINE=1 ai search "authentication" --db "$inquiry_db"
+```json
+{
+  "extraKnownMarketplaces": {
+    "agent-vault": {
+      "source": {
+        "source": "directory",
+        "path": "/path/to/agent-vault/extensions/claude"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "agv@agent-vault": true,
+    "agv-dev@agent-vault": true
+  }
+}
 ```
 
-Reranking uses `Xenova/ms-marco-MiniLM-L-6-v2` on CPU. Offline indexing also needs the embedding cache. Help, capabilities, doctor and status do not download models.
+The Claude Code marketplace stays the canonical source. For GitHub Copilot
+app or Codex, use the repo-local `.github/` and `.codex/` mirrors, which
+point back to the same `.claude/` skill and agent tree.
 
-OCR is opt-in and requires a separately installed local Tesseract executable and the selected language data. It supports images and PDF pages that need OCR. First register a collection with `ai collection register /absolute/documents --name documents --project work --db "$inquiry_db"`, then enable English OCR:
+### 3. Configure Storage
 
-```sh
-ai collection configure documents --db "$inquiry_db" --input - <<'JSON'
-{"settings":{"parser":{"ocr":true,"ocr_language":"eng"}}}
-JSON
-ai index --collection documents --db "$inquiry_db"
+Start Claude Code in your target project and run:
+
+```
+/agv:setup
 ```
 
-Configuration replaces the collection's settings object; include existing `include`/`exclude` patterns and parser settings you want to retain. `doctor` reports local parser and OCR availability. OCR-derived locations identify their provenance; extraction does not establish recognition accuracy.
+This walks you through choosing a storage backend. For most users, **LanceDB** (the default) works out of the box with zero configuration. For teams or large codebases, PostgreSQL or AlloyDB provide better scalability.
 
-## Memory and knowledge
+| Backend | Best For | Setup |
+|---------|----------|-------|
+| **LanceDB** | Local development, solo use | Zero config — files stored in `.agv/` |
+| **PostgreSQL** | Self-hosted or GCP production | Any PostgreSQL-compatible database with pgvector. AlloyDB adds server-side embedding at ~400/sec |
 
-Memory requires an explicit project. Records preserve origin, revisions, source citations and capture receipts. Shared writes and shared recall require separate explicit opt-ins (`--shared` and `--include-shared`). An authored preference can be stored without a source citation:
+See [Storage Backends](#storage-backends) below for full details on all four backends.
 
-```sh
-ai memory add --project work --db "$inquiry_db" --input - <<'JSON'
-{"content":"Use English for project documentation.","kind":"preference","origin":"user","provenance":{"source":"explicit project preference"}}
-JSON
-ai memory recall "documentation" --project work --db "$inquiry_db"
-ai memory export --project work --db "$inquiry_db"
+### 4. Index Your Codebase
+
+```
+/agv:index /path/to/your/project
 ```
 
-Use `inspect` to obtain a memory's ID and revision before `correct`, `supersede` or `retract`; these operations require `--expected-revision` and `--reason`. `contradictions` lists or explicitly records conflicting memory claims. `forget` accepts `{"memory_ids":["ID"]}` through `--input`, previews by default and requires `--apply` to remove those records from recall. History and existing backups are retained; forgetting is not secure erasure.
+This parses all source files (10+ languages via [tree-sitter](https://tree-sitter.github.io/tree-sitter/) AST parsing) and documents (DOCX, PDF, DOC), extracts entities and relationships, generates embeddings, and stores everything in your chosen backend. Indexing speed depends on backend — LanceDB runs locally, AlloyDB can index 16K files in ~17 minutes with server-side embedding.
 
-Knowledge pages are Markdown in the library with separately recorded citations and dependencies. This creates an uncited operator note:
+### 5. Start Searching
 
-```sh
-ai knowledge write --project work --db "$inquiry_db" --input - <<'JSON'
-{"page_id":"work-notes","body":"# Project notes\n\nDocumentation language: English.\n","expected_hash":null,"citations":[],"dependencies":[]}
-JSON
-ai knowledge inspect work-notes --project work --db "$inquiry_db"
-ai knowledge validate work-notes --project work --db "$inquiry_db"
-ai knowledge stale --project work --db "$inquiry_db"
+```
+/agv:search "database connection pooling"
+/agv:entity ConnectionPool
+/agv:status
 ```
 
-For source-backed memory or pages, supply complete `citation` objects returned by search/read in the `citations` array. The library checks their identity, scope, location and current source hash. Page updates require the current `content_hash` as `expected_hash`; `null` is only for a new file. Manual edits are preserved on conflicts. Dependencies are page IDs, checked transitively for changed or unresolved support and cycles. Validation reports stale pages without rewriting them. `knowledge export` returns Markdown and citations, optionally writing new files to a JSON `destination`. `discard-pending` explicitly dismisses a conflicting draft with the expected current file hash.
+You're set. Everything below is reference and advanced usage.
 
-Capture is disabled until explicitly enabled. `capture enable`, `submit`, `status`, `retry`, `recall` and `disable` operate within a project. Submission requires a stable `event_id` and selected structured `observations`; duplicate delivery returns the existing receipt, while changed content under that ID is rejected. Failures remain pending for retry. Raw transcripts and hidden reasoning are not accepted by the native integration boundary.
+---
 
-## Codex and Pi
+## Usage
 
-The standalone integration and AFP's native registration are alternative owners. Choose one owner per project/client. Installing files, enabling project behavior and observing a live client are separate steps.
+### Search
 
-From the registered project root, preview the standalone Codex installation, then apply it explicitly:
+Semantic search finds code by meaning, not just keywords:
 
-```sh
-cd "$inquiry_root"
-ai integration install --client codex --root "$PWD" --db "$inquiry_db"
-ai integration install --client codex --root "$PWD" --db "$inquiry_db" --apply
-ai integration inspect --client codex --root "$PWD" --db "$inquiry_db"
+```
+/agv:search "how are users authenticated"     # Conceptual query
+/agv:search "Spring @Transactional usage"      # Framework-specific
+/agv:search "error handling in payment flow"   # Cross-cutting concern
 ```
 
-The installer projects the `ai` skill, explorer/command-guide/setup-helper roles and native hooks into the project's `.agents/` and `.codex/` directories. The package also contains a Codex plugin bundle; avoid loading both registrations. Use `--client pi` for the project `.pi/extensions/agentic-inquiry/` extension. Install and uninstall preview by default, preserve unrelated configuration, record ownership receipts and refuse collisions or modified owned files. They do not install global client configuration or enable recall/capture.
+Search combines vector similarity (understands meaning) with full-text search (catches exact terms), then applies IDF-weighted reranking to ensure rare, distinctive terms in your query dominate the results.
 
-Enable policy explicitly after reviewing the installed files. This command writes policy immediately; it does not have an enable preview:
+### Entity Analysis
 
-```sh
-python3 -c 'import json,os; print(json.dumps({"project_root":os.path.realpath(os.getcwd()),"recall":True,"capture":True,"refresh":True}))' |
-  ai integration enable --client codex --owner standalone --db "$inquiry_db" --input -
-ai integration library --client codex --root "$PWD"
+Understand any code entity — its purpose, who calls it, what it depends on:
+
+```
+/agv:entity UserService              # What does this class do?
+/agv:entity handleLogin              # Function analysis with callers
 ```
 
-Use `--client pi` in both commands for Pi. The runtime owns the selected-library pointer in the project's `.agentic-inquiry/clients.json`; native hooks resolve it through `ai` rather than keeping their own database setting. Explicitly disable the current owner before changing owners or library selection. For AFP, its pack owns native registration; enable with `--owner afp` through that setup instead of installing standalone assets. Installation does not override an enabled owner.
+### Impact Analysis
 
-Start or reload the client in the project, complete any native trust review and ensure `ai` is on its PATH. In Codex, invoke `$ai`. In Pi, use `/ai status`, `/ai search authentication`, `/ai context authentication`, or a JSON argv array such as `/ai ["memory","recall","--project","work"]`. Pi's `ai_remember` tool submits a selected observation using its native tool-call ID.
+Before changing code, understand the blast radius:
 
-Lifecycle adapters support startup/prompt recall, selected capture, edited-artifact refresh, compaction and shutdown where their native client provides the event. Pre-compaction does not scrape transcripts; recall is delivered on continuation. There is no claimed `TaskCompleted` parity. Without a native stable mutation ID, capture is refused or left for explicit submission. Check `capture status`, `status` and `integration reconcile` for pending work. `integration disable` uses the same project-root/client/owner fields as enable. `integration uninstall --client CLIENT --root ROOT` previews removal; add `--apply` to remove unchanged owned files.
-
-`ai capabilities --json` reports supported contracts, not proof of a live session. Pi source-extension discovery and direct `/ai` command execution have been observed separately from lifecycle acceptance. Installed-client recall, capture, compaction and recovery require their own native evidence; installation and component tests do not establish them.
-
-## Command reference
-
-Use `ai COMMAND --help` for argument syntax. Family operations accept structured fields through `--input`.
-
-| Commands | Purpose |
-| --- | --- |
-| `setup`, `index`, `search`, `read`, `context` | Register sources, index and retrieve cited evidence within a budget. |
-| `collection register/list/inspect/configure/relocate/detach` | Manage multiple roots and policies in one library. Relocation preserves identity; detach previews unless applied. |
-| `symbols`, `entity`, `relations`, `impact`, `lineage` | Navigate static definitions, references and bounded dependency paths with source citations and resolution limits. |
-| `patterns`, `services` | Retrieve evidence for host-authored analysis; results do not establish runtime architecture. |
-| `memory add/recall/inspect/correct/supersede/retract/forget/export/contradictions` | Manage scoped, revisable observations and explicit conflicts. |
-| `knowledge write/inspect/validate/stale/export/discard-pending` | Maintain pages while preserving manual edits and stale evidence. |
-| `capture enable/disable/status/submit/retry/recall` | Control durable, idempotent capture and pending retries. |
-| `integration install/uninstall/inspect/enable/disable/library/hook/reconcile` | Install client assets, choose policy/ownership and handle bounded native events. |
-| `watch`, `status`, `doctor`, `capabilities` | Reconcile sources and inspect state, local dependencies and supported contracts. |
-| `remove`, `cache clean`, `backup`, `restore` | Remove selected evidence, reclaim derived storage and preserve durable records. |
-| `mcp` | Serve the same local operations over client-owned stdio with a fixed root/project. |
-| `evaluation freeze/trial/judge/cost/close/inspect/report` | Record and replay frozen studies, attempts, independent judgments and cost evidence. No model runs are launched. |
-
-For example, `ai relations Library --type callers --db "$inquiry_db"` returns static callers and unresolved relationships; `ai impact Library --depth 3 --max-nodes 100 --db "$inquiry_db"` bounds traversal. Dynamic dispatch, external dependencies and ambiguous bindings remain explicit limitations.
-
-Start a read-only MCP server with `ai mcp --db "$inquiry_db" --root "$inquiry_root" --project work`. A client launches this command and owns its stdio lifecycle. Add `--allow-write` only when that client should be able to perform the admitted scoped writes. Tools cannot change the configured library, project or source root; shared memory is not enabled by this server.
-
-## Maintenance and recovery
-
-`ai watch --db "$inquiry_db"` runs foreground reconciliation with durable checkpoints; `--once` performs one pass. It does not install a background service. `ai integration reconcile --db "$inquiry_db"` retries pending integration work. `ai remove relative/source.py --collection code --db "$inquiry_db"` removes that source's evidence and preserves the original file.
-
-```sh
-ai backup /absolute/new-backup --db "$inquiry_db"
-ai restore /absolute/new-backup --db /absolute/restored-library
-ai index --collection code --db /absolute/restored-library --rebuild
-ai cache clean --db "$inquiry_db"
-ai cache clean --db "$inquiry_db" --apply
+```
+/agv:impact handleLogin              # What files/entities are affected?
+/agv:impact DatabaseConfig           # Config change ripple effects
 ```
 
-Backups include durable records, knowledge files and identity metadata, with checksums. They exclude original source files, derived vectors and model caches. Keep source originals separately. The backup destination must be new and outside the library. Restore validates the snapshot, preserves a recoverable prior destination and requires an index rebuild before search. A restored library needs access to its registered sources and embedding model; if its path changes, explicitly update the client selection after disabling the old policy.
+### Data Lineage
 
-Cache cleanup previews recognized inactive index generations; `--apply` removes them. Add `--models` to also remove model caches, requiring model preparation before later vector/reranked use. Durable SQLite records, memory, knowledge and the active index are retained. To reclaim orphan rows within the active generation, rebuild first, then clean inactive generations. Cleanup refuses conflicting active readers. Deletion and cleanup do not erase existing backups or storage history.
+Trace how data flows through the system:
 
-## Validation and limits
-
-```sh
-uv sync --locked
-uv run pytest
-uv run ruff check src tests
-uv run ruff format --check src tests
-uv build
+```
+/agv:lineage userId                  # Follow userId from UI to database
+/agv:lineage paymentAmount           # Track payment data through services
 ```
 
-The [design](DESIGN.md) defines behavior and acceptance; the [implementation plan](IMPLEMENTATION_PLAN.md) lists open work. Tests establish checked contracts. Static relationships, retrieval relevance, OCR accuracy and model answers have distinct limits. Comparative answer quality, no-quality-loss claims and cost savings remain unverified without a frozen matched study and independent judgments. The evaluation ledger preserves unknown usage and failed or incomplete attempts rather than treating them as zero cost or successful answers.
+### Architecture Discovery
 
-## License
+Map the structure of an unfamiliar codebase:
 
-Apache-2.0. See [LICENSE](LICENSE). Dependencies and downloaded models retain their own licenses.
+```
+/agv:patterns                        # Discover architectural patterns
+/agv:services                        # Detect and map service boundaries
+```
+
+### Memory
+
+Save and recall project insights across Claude Code sessions:
+
+```
+/agv:memory save "Auth uses JWT with refresh tokens, issued by AuthService"
+/agv:memory recall "authentication"
+```
+
+Memory has three tiers: working (current session), episodic (weeks), and semantic (permanent). Important insights are automatically promoted to longer-lived tiers through a consolidation engine that runs in the background.
+
+### Onboarding
+
+Generate a comprehensive architecture report for a new codebase:
+
+```
+/agv:onboard /path/to/project
+```
+
+This runs indexing, exploration, and validation in parallel, producing reports on architecture layers, key entities, data flows, and potential issues.
+
+---
+
+## Advanced Usage
+
+### Environment Management
+
+Isolate different projects or backends with named environments:
+
+```
+/agv:env create production --profile gcp
+/agv:env create local-test --profile local
+/agv:env list
+```
+
+Switch between environments with `agv_ENV`:
+
+```bash
+agv_ENV=production agv search "query"
+```
+
+### agv Server
+
+Agent-Vault includes a REST + MCP server for integrations beyond Claude Code — other AI assistants, IDEs, or custom tooling:
+
+```
+/agv-dev:server start               # Start on default port 8765
+/agv-dev:server status               # Check running servers
+/agv-dev:server stop                 # Stop
+```
+
+Or via CLI:
+
+```bash
+agv server start --port 8765
+agv server status
+agv server stop
+```
+
+The server exposes:
+- **REST API** at `/api/v1/*` — search, memory, session, context, hooks
+- **MCP endpoint** at `/mcp` — for MCP-compatible AI clients (Gemini, Codex, etc.)
+- **Health** at `/health` — liveness and readiness checks
+
+### CLI
+
+All plugin commands have CLI equivalents:
+
+```bash
+agv index /path/to/project
+agv search "database connection"
+agv entity UserService
+agv serve                # MCP-only server (STDIO)
+agv serve --port 8000    # MCP-only server (HTTP)
+```
+
+### Document Indexing
+
+Agent-Vault indexes documentation alongside code. Supported formats: DOCX, PDF, DOC, XLSX, and Markdown. Enable in your config:
+
+```yaml
+parsers:
+  document:
+    enabled: true
+```
+
+Documents and code share the same search index, so queries like `/agv:search "deployment process"` return results from both source code and documentation.
+
+### Configuration
+
+Configuration loads with precedence: **env vars > YAML > defaults**.
+
+Create `agent-vault.yaml` in your project root to override defaults:
+
+```yaml
+storage:
+  root: "./.agv"
+  backend: lancedb
+
+search:
+  hybrid_search:
+    reranker_type: rrf
+    vector_weight: 0.7
+    fts_weight: 0.3
+    reranker_params:
+      k: 30
+      dual_source_bonus: 1.3
+  deduplication:
+    max_results_per_file: 2
+```
+
+For per-environment config (e.g., different backends for dev vs production), use overlays:
+
+```bash
+# Create overlay at ~/.agv/envs/production/config.yaml
+# Activate with:
+export agv_ENV=production
+```
+
+### Storage Backends
+
+| Backend | Config Type | Embedding Strategy | Notes |
+|---------|-------------|-------------------|-------|
+| **LanceDB** | `lancedb` | Local (SentenceTransformer, 384d) | Zero setup, file-based |
+| **PostgreSQL** | `postgresql` | Local (SentenceTransformer, 384d) | Self-hosted, requires [pgvector](https://github.com/pgvector/pgvector) |
+| **CloudSQL** | `cloudsql` | Local (SentenceTransformer, 384d) | GCP managed, max_connections=25 — see [docs/backends/cloudsql.md](docs/backends/cloudsql.md) |
+| **AlloyDB** | `alloydb` | Server-side (`text-embedding-005`, 768d) | GCP managed, fastest — ~400 embeddings/sec |
+| **AWS RDS / Aurora** | `rds` | Local (SentenceTransformer or Bedrock Titan v2 client-side, see [RFC 0003](docs/rfc/0003-pluggable-embedding-providers.md)) — server-side Bedrock optional, Aurora-only | AWS managed PostgreSQL. The `aws_ml` extension is requested only when `embedding_strategy: server_side` is set, so plain RDS for PostgreSQL with the LOCAL default works out of the box; the server-side path is Aurora-only ([RFC 0002](docs/rfc/0002-aws-support.md) tracks the planned `rds` / `aurora` split). Setup: [docs/backends/rds.md](docs/backends/rds.md) |
+| **Azure Postgres** | `azure` | Server-side (`azure_ai.generate_embeddings`, configurable model) | Azure Database for PostgreSQL Flexible Server with the `azure_ai` extension. Setup: [docs/backends/azure.md](docs/backends/azure.md) |
+
+PostgreSQL, AlloyDB, CloudSQL, RDS, and Azure all use the **unified PostgreSQL provider** (`storage/providers/postgresql/`). The `embedding_strategy` config (`"local"` or `"server_side"`) controls where embeddings are generated; AlloyDB and Azure auto-configure to server-side, plain PostgreSQL / CloudSQL / RDS default to local.
+
+AlloyDB example overlay (`~/.agv/envs/alloydb/config.yaml`):
+
+```yaml
+storage:
+  backend: alloydb
+  postgresql:
+    embedding_strategy: server_side
+    embedding_model: "text-embedding-005"
+    embedding_dim: 768
+    pool_size: 5
+    max_overflow: 2
+```
+
+### Content Sources
+
+Storage backends are *where the index lives*; **content sources** are *where
+the code and docs being indexed are read from*. Local filesystem is built in;
+S3 and GCS are first-class remote sources via [fsspec](https://filesystem-spec.readthedocs.io/),
+installed as optional extras:
+
+| Source | Install | URI scheme | Notes |
+|--------|---------|------------|-------|
+| **Filesystem** | built in | absolute local path | Default; used when no connector is configured |
+| **Amazon S3** | `pip install agent-vault[s3]` | `s3://bucket/key` | Via `s3fs`; AWS env / IAM / `~/.aws` credentials, or explicit `storage_options`. S3-compatible endpoints (MinIO, LocalStack) supported via `endpoint_url` |
+| **Google Cloud Storage** | `pip install agent-vault[gcs]` | `gcs://bucket/object` | Via `gcsfs`; `GOOGLE_APPLICATION_CREDENTIALS`, service account, or ambient GCP credentials |
+
+See [docs/development/connector-guide.md](docs/development/connector-guide.md)
+for the connector protocol and how to add a new source.
+
+### Data Directories
+
+| Path | Purpose |
+|------|---------|
+| `~/.agv/` | Global data (environments, registry, events, logs) |
+| `.agv/` | Project-local data (index, cache — gitignored) |
+| `agv_HOME` env var | Override global data path |
+
+---
+
+## Plugin Reference
+
+### agv (v1.5.0)
+
+User-facing plugin — 14 commands, 3 agents, 8 hook types. All commands shown in the [Usage](#usage) section above.
+
+**Commands**: `search`, `index`, `onboard`, `entity`, `impact`, `lineage`, `patterns`, `services`, `memory`, `validate`, `status`, `setup`, `env`, `help`
+
+**Agents**: `codebase-explorer` (architecture mapping), `command-helper` (command discovery), `env-manager` (environment lifecycle)
+
+**Hooks**: SessionStart, UserPromptSubmit, PreToolUse[Grep], PostToolUse[Write|Edit, Bash, TaskUpdate], PreCompact, Stop — Python scripts for signal analysis, memory capture, and context injection.
+
+### agv-dev (v1.5.0)
+
+Developer plugin — 6 commands, 15 skills, 3 agents.
+
+**Commands**: `dev` (toggle dev mode), `test` (test workflow), `review` (code review), `functional-tests` (UAT suite), `server` (manage agv server), `sync-agents` (sync AGENTS.md with skills)
+
+**Skills**: `coding-guidelines`, `testing`, `quality`, `extending`, `plugins`, `commit`, `code-review`, `test-quality`, `doc-quality`, `rca`, `cleanup`, `agv-dev`, `agv-test`, `agv-functional-tester`, `agv-execute-tests`
+
+**Agents**: `code-reviewer` (multi-phase review), `functional-tester` (UAT execution), `test-reviewer` (test result analysis)
+
+---
+
+## Architecture
+
+```
+agent_vault/
+├── config.py      # Configuration (env vars → yaml → defaults)
+├── cli/           # Command-line interface (agv index, agv search, ...)
+├── server/        # REST + MCP server (FastAPI, dual-surface)
+├── storage/       # Unified storage abstraction
+│   ├── facade.py  #   StorageFacade: vector + graph + events + file tracking
+│   └── providers/ #   LanceDB, PostgreSQL (unified for AlloyDB/CloudSQL), SQLite
+├── search/        # Search engine
+│   ├── service.py       # SearchService entry point
+│   ├── hybrid_search.py # Vector + FTS with IDF-weighted reranking
+│   ├── rerankers/       # RRF, cross-encoder, linear combination
+│   ├── normalization.py # Proportional score normalization
+│   └── deduplicator.py  # Per-file result deduplication
+├── indexing/      # Indexing pipeline
+│   ├── pipeline.py      # IndexingPipeline orchestrator
+│   └── graph_builder.py # Entity/relationship extraction
+├── parsers/       # File parsing
+│   ├── chain.py               # Priority-based parser chain
+│   └── implementations/       # unified_code (tree-sitter), document (DOCX/PDF), fallback_text
+├── embeddings/    # Embedding generation
+│   ├── service.py             # Async embedding with background warmup
+│   ├── sentence_transformer.py # Default: all-MiniLM-L6-v2 (384d)
+│   └── noop.py                # Server-side embedding passthrough
+├── memory/        # Three-tier cognitive memory
+│   ├── system.py        # MemorySystem orchestrator
+│   └── layers/          # working (session), episodic (weeks), semantic (permanent)
+├── discovery/     # Service map detection (Docker, K8s, Terraform, AST-grep)
+├── validation/    # Index accuracy validation
+├── mcp/           # Model Context Protocol server (legacy STDIO/HTTP)
+│   ├── server.py        # FastMCP server
+│   └── tools/           # 9 tool modules (search, context, memory, analysis, ...)
+└── events/        # Observability and audit trails
+
+extensions/claude/
+├── agv/           # User-facing Claude Code plugin (v1.5.0)
+│   ├── commands/  #   14 slash commands
+│   ├── agents/    #   codebase-explorer, command-helper, env-manager
+│   ├── hooks/     #   Python lifecycle hooks (8 event types)
+│   ├── scripts/   #   Shared utilities (socket client)
+│   └── servers/   #   Background daemon (cache, context, memory, version managers)
+└── agv-dev/       # Developer Claude Code plugin (v1.5.0)
+    ├── commands/  #   6 dev commands
+    ├── skills/    #   15 development guidance skills
+    └── agents/    #   code-reviewer, functional-tester, test-reviewer
+
+.github/
+├── copilot-instructions.md  #   Points to AGENTS.md
+├── skills/                  #   Mirrors .claude/skills/
+└── agents/                  #   Mirrors .claude/agents/
+
+.codex/
+├── instructions.md          #   Points to AGENTS.md
+├── skills/                  #   Mirrors .claude/skills/
+└── agents/                  #   Mirrors .claude/agents/
+```
+
+---
+
+## Search Architecture
+
+Hybrid search combines vector similarity and full-text search with innovations that eliminate the "good enough" problem at scale:
+
+```
+Query → [Vector Search] + [Full-Text Search]
+              ↓                    ↓
+        Pre-filter           Two-tier AND+OR
+        (score > 0.15)       (CamelCase split)
+              ↓                    ↓
+         Score-aware RRF (k=30, dual_source_bonus=1.3x)
+              ↓
+         IDF-weighted content boost
+              ↓
+         Proportional normalization
+              ↓
+         Deduplication (max 2/file)
+              ↓
+         Top-K results
+```
+
+Naive vector search scores ~6-7/10 on large codebases due to embedding drift, result dilution, and keyword blindness. Agent-Vault scores **10.0/10** across keyword, conceptual, and structural queries on a 572K-chunk enterprise corpus.
+
+Key innovations:
+- **IDF-weighted content boost**: Rare query terms get up to 20x weight. Rescues results that vector search misses entirely.
+- **Score-aware RRF**: Incorporates raw similarity scores into rank fusion, preventing dilution at scale.
+- **Two-tier FTS**: AND query for precision, OR fallback for recall, with CamelCase/snake_case splitting.
+- **Proportional normalization**: Preserves absolute quality signal (divide by max, not min-max).
+
+---
+
+## Performance
+
+Benchmarked on a Java EE monolith (16,706 source files + 98 documents):
+
+| Metric | Result |
+|--------|--------|
+| **Indexing speed** | 16.6 files/sec avg, 19.7 peak (AlloyDB) |
+| **Total indexed** | 572,457 chunks, 296,880 entities, 70,259 relationships |
+| **Indexing time** | 17 minutes (AlloyDB, server-side embedding) |
+| **Search relevance** | 10.0/10 across keyword, conceptual, structural queries |
+| **Vector search latency** | <100ms (HNSW index, 140K+ chunks) |
+| **FTS latency** | <50ms (GIN index) |
+| **Hybrid search total** | <1s including reranking + content boost |
+
+---
+
+## Development
+
+```bash
+uv sync                                    # Install dependencies
+uv run --env-file .env pytest -x           # Run tests (stop on first failure)
+uv run --env-file .env pytest              # Run all tests
+uv run --env-file .env mypy agent_vault/  # Type checking
+uv run --env-file .env ruff format .       # Format code
+uv run --env-file .env ruff check . --fix  # Lint
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines and contribution workflows, or invoke `/agv-dev:coding-guidelines` in Claude Code.
+
+---
+
+## Documentation
+
+### For agents (Claude Code, Cursor, Codex, Gemini CLI, Copilot)
+
+Read [`AGENTS.md`](AGENTS.md) first. `CLAUDE.md` is a symlink to it. The
+file is kept short on purpose — it points to the skills and specialist
+subagents below, which load on demand. `.github/` and `.codex/` are
+compatibility mirrors that resolve to the same canonical files.
+
+**Skills** ([`.claude/skills/`](.claude/skills/)) — named multi-step
+workflows:
+
+- `work-loop` — plan → execute → gates → review, with explicit stop
+  conditions
+- `new-spec` — open a feature directory with paired spec and plan,
+  assumptions first
+- `bug-fix` — reproduce, root-cause, minimum fix
+- `new-adr` — record an architectural decision in frozen history
+- `new-rfc` — open a cross-cutting proposal
+
+**Specialist subagents** ([`.claude/agents/`](.claude/agents/)) — sharp
+lenses for diff review, plus the executor used by supervisor mode:
+
+- `adversarial-reviewer` — spec drift, missing edge cases, scope creep
+- `security-reviewer` — OWASP Top 10 (web + LLM Apps) and STRIDE
+- `quality-engineer` — testability, observability, reliability,
+  maintainability
+- `implementer` — single-task executor used by `work-loop` in
+  supervisor mode
+
+Governance and process documents:
+
+- [`docs/CHARTER.md`](docs/CHARTER.md) — mission, scope, principles
+- [`docs/CONVENTIONS.md`](docs/CONVENTIONS.md) — how we work in this
+  repo
+
+### Full documentation index
+
+| Document | Purpose |
+|----------|---------|
+| [AGENTS.md](AGENTS.md) | Canonical agent context (CLAUDE.md → symlink) |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Setup, code style, plugin conventions, testing philosophy, PR workflow |
+| [docs/CHARTER.md](docs/CHARTER.md) | Mission, scope, principles |
+| [docs/CONVENTIONS.md](docs/CONVENTIONS.md) | How we work in this repo |
+| [docs/architecture/](docs/architecture/) | Architecture deep-dives (search, indexing, async, parsers, events) |
+| [docs/adr/](docs/adr/) | Architecture Decision Records — see CONVENTIONS § ADR |
+| [docs/rfc/](docs/rfc/) | RFCs — cross-cutting proposals (governance) |
+| [docs/specs/](docs/specs/) | Feature specs and plans (per-feature; see README for layout) |
+| [docs/backends/](docs/backends/) | Storage backend setup (LanceDB, PostgreSQL, CloudSQL, AlloyDB, AWS RDS / Aurora, Azure Database for PostgreSQL) |
+| [docs/design/](docs/design/) | Normative specs (filter AST, query semantics, schema, embedding strategy) |
+| [docs/development/](docs/development/) | Async best practices, parser guidelines, security, adapters |
+| [docs/storage/](docs/storage/) | Index configuration, maintenance, schema migration |
+| [docs/mcp/](docs/mcp/) | MCP server configuration, deployment, troubleshooting |
+| [docs/guides/](docs/guides/) | User docs (Diátaxis-organized; topic dirs above migrate here as touched) |
+| [docs/product/](docs/product/) | Roadmap / changelog hub (empty — root [CHANGELOG.md](CHANGELOG.md) serves this role today) |
+| [docs/api-reference/](docs/api-reference/) | Core API and embedding API reference |
+| [docs/knowledge/](docs/knowledge/) | Practitioner patterns / gotchas / antipatterns (`patterns.jsonl`) |

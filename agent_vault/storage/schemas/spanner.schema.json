@@ -1,0 +1,48 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Spanner Backend Configuration",
+    "description": "Configuration schema for Google Cloud Spanner storage backend",
+    "type": "object",
+    "properties": {
+        "type": {
+            "const": "spanner",
+            "description": "Backend type identifier"
+        },
+        "project_id": {
+            "type": "string",
+            "description": "GCP project ID",
+            "minLength": 1
+        },
+        "instance_id": {
+            "type": "string",
+            "description": "Spanner instance ID",
+            "minLength": 1
+        },
+        "database_id": {
+            "type": "string",
+            "description": "Spanner database ID",
+            "minLength": 1
+        },
+        "pool_size": {
+            "type": "integer",
+            "description": "Base connection pool size",
+            "minimum": 1,
+            "maximum": 100,
+            "default": 10
+        },
+        "max_overflow": {
+            "type": "integer",
+            "description": "Maximum pool overflow connections",
+            "minimum": 0,
+            "maximum": 50,
+            "default": 5
+        },
+        "table_prefix": {
+            "type": "string",
+            "description": "Prefix for table names (useful for multi-tenant deployments)",
+            "pattern": "^[a-zA-Z0-9_]*$"
+        }
+    },
+    "required": ["type", "project_id", "instance_id", "database_id"],
+    "additionalProperties": false
+}

@@ -1,51 +1,179 @@
-# Contributing
+# Contributing to Agent-Vault
 
-Contributions should preserve Agentic Inquiry's local, cited and explicit behavior. Start with `README.md` for public behavior, `ARCHITECTURE.md` for component boundaries and `DESIGN.md` for requirements and acceptance criteria.
+## Getting Started
 
-## Set up the checkout
-
-Agentic Inquiry requires Python 3.11 or newer, Git and [uv](https://docs.astral.sh/uv/).
-
-```sh
-git clone https://github.com/Sbasha/agentic-inquiry.git
-cd agentic-inquiry
-uv sync --locked
+```bash
+git clone https://github.com/sbasha/agent-vault.git
+cd agent-vault
+uv sync
+uv run --env-file .env pytest -x   # Verify setup
 ```
 
-Run commands in the locked environment:
+## Project Structure
 
-```sh
-uv run ai --help
-uv run pytest
-uv run ruff check src tests
-uv run ruff format --check src tests
+| Directory | Purpose |
+|-----------|---------|
+| `agent_vault/` | Core library (config, storage, search, parsers, indexing, memory, MCP, CLI) |
+| `extensions/claude/agv/` | Claude Code plugin — user-facing commands, hooks, agents |
+| `extensions/claude/agv-dev/` | Claude Code plugin — developer commands, skills, agents |
+| `tests/` | Unit and integration tests |
+| `docs/` | Architecture, design, and development guides |
+| `scripts/` | Utility and infrastructure scripts |
+
+## Development Workflow
+
+### Code Quality
+
+```bash
+uv run --env-file .env ruff format .    # Format
+uv run --env-file .env ruff check .     # Lint
+uv run --env-file .env ruff check --fix # Lint + autofix
+uv run --env-file .env mypy agent_vault/  # Type check
 ```
 
-## Make a focused change
+### Before Committing
 
-- Keep registered source roots read-only and write application state only to the selected library.
-- Preserve citation identity, coverage diagnostics and stale evidence state across retrieval paths.
-- Keep destructive operations and client installation preview-first with an explicit apply step.
-- Keep shared memory, capture and MCP writes disabled until explicitly enabled.
-- Use the existing command dispatcher for both CLI and MCP behavior.
-- Add tests at the caller-visible boundary that changes. Use real temporary files, repositories and SQLite state rather than duplicating implementation details in a test harness.
-- Update public documentation when supported behavior, operator steps or limitations change.
+All four must pass:
 
-Do not commit local libraries, model caches, indexes, results, secrets, AFP projections or generated build artifacts. Do not edit `uv.lock` by hand. If dependency metadata changes, run `uv lock` and update `src/agentic_inquiry/DEPENDENCIES.txt` when the shipped dependency or model notice changes.
-
-## Validate
-
-Before opening a pull request, run:
-
-```sh
-uv run pytest
-uv run ruff check src tests
-uv run ruff format --check src tests
-uv build
+```bash
+uv run --env-file .env ruff format . && \
+uv run --env-file .env ruff check . && \
+uv run --env-file .env mypy agent_vault/ && \
+uv run --env-file .env pytest
 ```
 
-Inspect the built source and wheel archives when packaging inputs change. They must contain the declared source, documentation, license and dependency notices, and must exclude local state and client projections.
+## Code Style
 
-## Report security issues
+- **Async-only**: All database and I/O operations use `async def` / `await`
+- **Type hints**: Complete annotations on all functions (`async def search(query: str, limit: int = 10) -> list[SearchResult]`)
+- **Lazy logging**: `logger.info("Processing %s items", count)` — never f-strings
+- **Path validation**: Use `validate_file_path()` for any user-provided paths
+- **Parser metadata**: Only `str`, `int`, `float`, `bool`, `list[str]` (LanceDB compatibility)
+- **Security**: Parameterized SQL queries, never string interpolation. No `pickle.loads()` on untrusted data
 
-Do not open a public issue for a suspected vulnerability. Follow `SECURITY.md` to report it privately.
+## Testing
+
+> We test for confidence, not coverage metrics. Every test must answer: *can we ship this with confidence?*
+
+Before writing a test, answer:
+
+1. **What breaks if it fails?** — If "nothing important," don't write it.
+2. **How fast does it run?** — If > 100ms, justify it.
+3. **Behavior or implementation?** — Implementation tests are brittle.
+
+### Test pyramid
+
+| Layer | Share | Speed |
+|-------|-------|-------|
+| Unit (`tests/unit/`) | 55% | < 100ms each |
+| Integration (`tests/integration/`) | 30% | < 1s each |
+| E2E / Model (`tests/e2e/`) | 10% | < 30s each |
+| Agent UAT (`tests/01-agents/`) | 5% | manual |
+
+Other directories: `tests/golden/` (search quality regression, < 10s total), `tests/stress/` (concurrency, < 60s total), `tests/adapters/` (third-party library assumption checks, < 30s total). Markers are auto-applied by directory via the `pytest_collection_modifyitems` hook in `tests/conftest.py`.
+
+### Running
+
+```bash
+uv run --env-file .env pytest                          # All tests
+uv run --env-file .env pytest tests/path/test_file.py  # Specific file
+uv run --env-file .env pytest -k parser                # By pattern
+uv run --env-file .env pytest -m unit                  # By marker (unit/integration/golden/stress/adapters)
+uv run --env-file .env pytest --cov=agent_vault       # With coverage
+```
+
+### Fixture naming
+
+| Prefix | Use case |
+|--------|----------|
+| `mock_*` | Unit tests — mocked dependencies |
+| `integration_*` | Integration tests — real but lightweight |
+| `real_*` | E2E tests — production-equivalent |
+
+### What we test, what we don't
+
+**Test:** MCP tool contracts, search quality, data integrity, session isolation, error message safety (no leaked paths/IDs).
+
+**Don't test:** library internals (lancedb, sentence-transformers), Python stdlib, mocked-everything pyramids — prefer an in-memory DB to mocking every layer.
+
+### Anti-patterns
+
+1. **Mock everything** — use the in-memory adapter (`memory/adapters/inmemory_adapter.py`) instead of mocking each call site.
+2. **Brittle exact matches** — assert on semantic content, not exact strings.
+3. **Sleep-based waits** — poll with timeouts.
+4. **Testing third-party code** — test our wrappers, not the library.
+
+Cross-tool integration is the highest-yield investment: most bugs we have shipped have been integration-shaped (one tool's output not matching another tool's input expectations), not unit-level. Always test "index → analyze → verify" round-trips.
+
+## Storage Backends
+
+Agent-Vault supports multiple storage backends. When developing:
+
+| Backend | Config `type` | Embedding | Use Case |
+|---------|--------------|-----------|----------|
+| LanceDB | `lancedb` | Local (SentenceTransformer) | Default for development |
+| PostgreSQL | `postgresql` | Local (SentenceTransformer) | Self-hosted production |
+| AlloyDB | `alloydb` | Server-side (`text-embedding-005`) | GCP production |
+
+AlloyDB and CloudSQL use the **unified PostgreSQL provider** at `storage/providers/postgresql/`. The `embedding_strategy` config field controls local vs server-side embedding.
+
+## Plugin System
+
+Agent-Vault is primarily used through Claude Code plugins in `extensions/claude/`:
+
+**agv** — User-facing plugin (`/agv:search`, `/agv:index`, `/agv:entity`, etc.)
+- Commands: `extensions/claude/agv/commands/`
+- Agents: `extensions/claude/agv/agents/`
+- Hooks: `extensions/claude/agv/hooks/`
+- Scripts: `extensions/claude/agv/scripts/`
+- Servers: `extensions/claude/agv/servers/`
+
+**agv-dev** — Developer plugin (`/agv-dev:test`, `/agv-dev:review`, etc.)
+- Commands: `extensions/claude/agv-dev/commands/`
+- Skills: `extensions/claude/agv-dev/skills/`
+- Agents: `extensions/claude/agv-dev/agents/`
+
+### Plugin Conventions
+
+- Hook scripts use `${CLAUDE_PLUGIN_ROOT}` for paths (never hardcoded)
+- Shared utilities live in `scripts/` (imported via `from scripts.socket_client import ...`)
+- Command files use frontmatter: `description`, `argument-hint`, `allowed-tools`
+- Command references use colon syntax: `/agv:search`, `/agv-dev:test`
+- Plugin manifests (`plugin.json`) list explicit file paths for commands/agents
+
+### Running the MCP Server
+
+```bash
+uv run --env-file .env agv serve                              # Default
+uv run --env-file .env agv serve --project-id my_project      # Specific project
+uv run --env-file .env agv serve --transport stdio             # For AI tool integration
+uv run --env-file .env agv --list-tools                        # List available tools
+```
+
+## Environment System
+
+Agent-Vault uses an environment system for isolating configurations:
+
+- Global storage: `~/.agv/` (environments, registry, events, logs)
+- Project-local: `.agv/` (test/dev data, gitignored)
+- `agv_HOME` env var overrides `~/.agv/`
+- Environment configs: `~/.agv/envs/<name>/config.yaml`
+- Active environment tracked in `~/.agv/env-registry.json`
+
+## Pull Requests
+
+1. Create a feature branch from `main`
+2. Make your changes following the code style above
+3. Ensure all checks pass (format, lint, types, tests)
+4. Open a PR against `feature-agent-vault-search-implementation`
+5. Include a clear description of what changed and why
+
+## Additional Resources
+
+- **Quick reference**: [AGENTS.md](AGENTS.md)
+- **Architecture**: [docs/architecture/overview.md](docs/architecture/overview.md)
+- **Design decisions (ADRs)**: [docs/adr/](docs/adr/)
+- **Storage backends**: [docs/storage-backends.md](docs/storage-backends.md)
+- **Parser guidelines**: [docs/development/parser-guidelines.md](docs/development/parser-guidelines.md)
+- **Async patterns**: [docs/development/async-best-practices.md](docs/development/async-best-practices.md)
+- **MCP troubleshooting**: [docs/mcp/troubleshooting.md](docs/mcp/troubleshooting.md)

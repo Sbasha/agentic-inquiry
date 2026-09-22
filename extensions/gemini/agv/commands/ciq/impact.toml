@@ -1,0 +1,77 @@
+description = "Analyze what would be affected by changing an entity"
+prompt = """
+Analyze what would be affected by changing an entity
+
+Usage: /agv:impact <entity>
+
+# /agv:impact
+
+Understand the blast radius of changes before you make them.
+
+## Quick Start
+
+```bash
+/agv:impact User                    # What breaks if User changes?
+/agv:impact authenticate_user       # Impact of modifying auth
+```
+
+## What It Analyzes
+
+**Direct Impact:**
+- Functions that call this entity
+- Classes that inherit from it
+- Modules that import it
+
+**Transitive Impact:**
+- Second-order dependencies
+- Test files affected
+- Documentation to update
+
+**Risk Assessment:**
+- High/Medium/Low risk rating
+- Critical paths affected
+- Suggested review areas
+
+## Example Output
+
+```
+Impact Analysis: User class
+
+Direct Impact (7 files):
+├── auth/service.py - UserAuthService uses User
+├── api/endpoints.py - serializes User
+├── tests/test_user.py - tests User directly
+└── ...
+
+Transitive Impact (12 files):
+├── api/middleware.py - uses UserAuthService
+└── ...
+
+Risk: HIGH
+- User is a core domain model
+- Changes affect authentication flow
+- 3 public API endpoints impacted
+
+Recommended:
+1. Update tests/test_user.py first
+2. Review auth/service.py for compatibility
+3. Check API serialization in api/endpoints.py
+```
+
+## CLI Equivalent
+
+```bash
+uv run --env-file .env agv lineage impact User --project-id myproject
+```
+
+## Use Cases
+
+1. **Before refactoring**: Know what you're getting into
+2. **PR review**: Assess change risk
+3. **Planning**: Estimate effort for modifications
+4. **Documentation**: Understand system coupling
+
+User Arguments: {{args}}
+
+Based on the documentation above and the provided arguments, execute the appropriate `agv` CLI command(s) using the available tools.
+"""

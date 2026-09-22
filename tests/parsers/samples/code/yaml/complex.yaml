@@ -1,0 +1,10 @@
+
+metrics: &metrics
+  distance: 7
+  rms: 1.73
+
+schema:
+  description: Complex analytics definition
+  references:
+    - simple.yaml
+    - dynamic.yaml
