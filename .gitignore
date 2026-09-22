@@ -236,3 +236,5 @@ AGENTS.local.md
 results/
 :memory:.ses
 .afp-bundle-*.toml
+.sf/
+.sf/**

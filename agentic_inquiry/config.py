@@ -1007,7 +1007,7 @@ class MCPConfig:
     logging: Dict[str, Any] = field(default_factory=lambda: {
         "level": "INFO",
         "format": "json",
-        "log_dir": "${HOME}/.AGV/logs",
+        "log_dir": "${HOME}/.agentic-inquiry/logs",
         "max_size_mb": 100,
         "retention_days": 30
     })
@@ -1051,46 +1051,6 @@ class ConnectorsConfig:
     filesystem: FileSystemConnectorConfig = field(default_factory=FileSystemConnectorConfig)
     remote_cache: RemoteConnectorCacheConfig = field(default_factory=RemoteConnectorCacheConfig)
     # Future: s3, gcs, github, etc.
-
-
-@dataclass
-class ProxyConfig:
-    """Cloud SQL or AlloyDB Auth Proxy configuration.
-
-    Attributes:
-        connection_name: Full connection name (project:region:instance or AlloyDB path)
-        port: Local port to listen on (default: 5433)
-        binary_path: Path to proxy binary (auto-detected if None)
-        type: Proxy type: 'cloudsql' or 'alloydb'
-        use_public_ip: Whether to use public IP for connection
-    """
-
-    connection_name: str = ""
-    port: int = 5433
-    binary_path: Optional[str] = None
-    type: str = "cloudsql"
-    use_public_ip: bool = False
-
-
-@dataclass
-class ServicesConfig:
-    """Service auto-start configuration.
-
-    Controls automatic startup of dependent services like Cloud SQL Proxy.
-    Auto-start behavior depends on environment naming convention:
-    - 'ai' (default): Auto-start if CloudSQL configured
-    - 'ai-test': Never auto-start (test isolation)
-    - Other: Based on auto_start_proxy flag
-
-    Attributes:
-        auto_start_proxy: Enable automatic proxy startup
-        proxy: Cloud SQL Proxy configuration
-        startup_timeout: Max seconds to wait for proxy startup
-    """
-
-    auto_start_proxy: bool = False
-    proxy: ProxyConfig = field(default_factory=ProxyConfig)
-    startup_timeout: int = 30
 
 
 @dataclass
@@ -1223,7 +1183,6 @@ class Config:
     mcp: MCPConfig = field(default_factory=MCPConfig)
     connectors: ConnectorsConfig = field(default_factory=ConnectorsConfig)
     maintenance: MaintenanceConfig = field(default_factory=MaintenanceConfig)
-    services: ServicesConfig = field(default_factory=ServicesConfig)
     onboard: OnboardConfig = field(default_factory=OnboardConfig)
     overlay: OverlayConfig = field(default_factory=OverlayConfig)
 
@@ -1808,7 +1767,7 @@ class Config:
         Note: For multi-project workflows, pass project_id explicitly to component
         constructors rather than using default_project_id in configuration.
         """
-        env_prefix = "AI_"
+        env_prefix = "INQUIRY_"
 
         # Special mappings for env vars that don't follow the standard convention
         special_mappings = {
@@ -1824,7 +1783,7 @@ class Config:
         valid_sections = {
             'storage', 'cache', 'search', 'embeddings', 'parsers', 'memory',
             'events', 'logging', 'indexing', 'mcp', 'context', 'entity_resolution',
-            'progress', 'connectors', 'maintenance', 'onboard', 'services'
+            'progress', 'connectors', 'maintenance', 'onboard'
         }
         
         # Handle service_levels separately (INQUIRY_LOGGING_SERVICE_LEVELS_<SERVICE>=<LEVEL>)
@@ -2372,15 +2331,6 @@ class Config:
                 'cleanup_retention_minutes': self.maintenance.cleanup_retention_minutes,
                 'enabled': self.maintenance.enabled,
             },
-            'services': {
-                'auto_start_proxy': self.services.auto_start_proxy,
-                'startup_timeout': self.services.startup_timeout,
-                'proxy': {
-                    'connection_name': self.services.proxy.connection_name,
-                    'port': self.services.proxy.port,
-                    'binary_path': self.services.proxy.binary_path,
-                },
-            },
         }
 
 
@@ -2428,8 +2378,6 @@ __all__ = [
     "FileSystemConnectorConfig",
     "RemoteConnectorCacheConfig",
     "MaintenanceConfig",
-    "ServicesConfig",
-    "ProxyConfig",
     "DEFAULT_IGNORE_PATTERNS",
     "DEFAULT_BINARY_EXTENSIONS",
     "VECTOR_DIMENSION",  # Legacy constant

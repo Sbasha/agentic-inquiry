@@ -101,7 +101,7 @@ class SessionManager:
         self.session_ttl_hours = config.mcp.session.ttl_hours
 
         # Log directory
-        self.log_dir = Path.home() / ".AGV" / "logs" / "sessions"
+        self.log_dir = Path.home() / ".agentic-inquiry" / "logs" / "sessions"
         self.log_dir.mkdir(parents=True, exist_ok=True)
     
     async def create_session(
@@ -1148,7 +1148,7 @@ class SessionCleanupManager:
                 return False
             
             # Create archive directory
-            archive_dir = Path.home() / ".AGV" / "archives" / "sessions"
+            archive_dir = Path.home() / ".agentic-inquiry" / "archives" / "sessions"
             archive_dir.mkdir(parents=True, exist_ok=True)
             
             # Archive file path
@@ -1190,7 +1190,7 @@ class SessionCleanupManager:
             Cleanup summary
         """
         try:
-            archive_dir = Path.home() / ".AGV" / "archives" / "sessions"
+            archive_dir = Path.home() / ".agentic-inquiry" / "archives" / "sessions"
             
             if not archive_dir.exists():
                 return {"removed_count": 0, "errors": []}

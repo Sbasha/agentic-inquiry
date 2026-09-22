@@ -57,7 +57,7 @@ def bare_remote(tmp_path: Path) -> Path:
     """Create a bare git remote repository that acts as origin."""
     remote = tmp_path / "remote.git"
     remote.mkdir()
-    _git(["init", "--bare", str(remote)], cwd=tmp_path)
+    _git(["init", "--bare", "--initial-branch=main", str(remote)], cwd=tmp_path)
     return remote
 
 
@@ -66,6 +66,9 @@ def local_repo(tmp_path: Path, bare_remote: Path) -> Path:
     """Create a local git repo cloned from the bare remote."""
     repo = tmp_path / "repo"
     _git(["clone", str(bare_remote), str(repo)], cwd=tmp_path)
+    # The tests push and discover "main"; do not depend on the
+    # machine's init.defaultBranch for the unborn branch name.
+    _git(["symbolic-ref", "HEAD", "refs/heads/main"], cwd=repo)
     _git(["config", "user.email", "test@example.com"], cwd=repo)
     _git(["config", "user.name", "Test User"], cwd=repo)
     return repo

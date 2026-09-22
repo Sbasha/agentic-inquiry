@@ -37,9 +37,6 @@ LANCEDB_TEMPLATE: dict[str, Any] = {
             "port": 8000,
         },
     },
-    "services": {
-        "auto_start_proxy": False,
-    },
 }
 
 def render_template(template: dict[str, Any], variables: dict[str, str]) -> dict[str, Any]:

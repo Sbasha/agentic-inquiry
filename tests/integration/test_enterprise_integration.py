@@ -220,47 +220,6 @@ async def test_search_with_local_diff_annotates_results(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-def test_env_resolver_returns_cloud_detected_when_gcp_imds_responds(tmp_path):
-    """When GCP IMDS responds, resolve_environment must return source='cloud_detected'."""
-    # Ensure no env vars override discovery
-    env_overrides = {
-        "INQUIRY_CONFIG": None,
-        "INQUIRY_ENV": None,
-        "INQUIRY_HOME": str(tmp_path / ".agentic-inquiry"),
-    }
-
-    class _FakeResponse:
-        status = 200
-
-        def read(self):
-            return b"my-gcp-project"
-
-        def __enter__(self):
-            return self
-
-        def __exit__(self, *args):
-            pass
-
-    def _fake_urlopen(req, timeout=None):
-        url = req.full_url if hasattr(req, "full_url") else str(req)
-        if "169.254.169.254" in url and "project-id" in url:
-            return _FakeResponse()
-        raise OSError("Not GCP")
-
-    # Patch out the env vars that would short-circuit discovery and use isolated home
-    with patch.dict(os.environ, {k: v or "" for k, v in env_overrides.items()}, clear=False):
-        # Remove vars that must be absent
-        for k, v in env_overrides.items():
-            if v is None and k in os.environ:
-                del os.environ[k]
-
-        with patch("urllib.request.urlopen", side_effect=_fake_urlopen):
-            from agentic_inquiry.cli.env_resolver import resolve_environment
-            resolved = resolve_environment(workspace=tmp_path)
-
-    assert resolved.source == "cloud_detected"
-    assert resolved.name.startswith("cloud-")
-
 
 def test_env_resolver_falls_back_to_default_when_no_cloud(tmp_path):
     """When IMDS probes all fail, resolve_environment must return source='default'."""

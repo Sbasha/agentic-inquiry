@@ -67,7 +67,7 @@ class TestLocalSetup:
 
         assert config["storage"]["backends"]["default"]["type"] == "lancedb"
         assert "test-local" in config["storage"]["root"]
-        assert config["services"]["auto_start_proxy"] is False
+        assert "services" not in config
 
         # Verify registry
         registry_path = tmp_path / DATA_DIR_NAME / REGISTRY_FILE_NAME

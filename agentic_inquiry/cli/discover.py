@@ -237,15 +237,10 @@ def get_command_info(command_name: str) -> Optional[CommandInfo]:
     """
     # Normalize name
     name = command_name.lower()
-    if name.startswith("ai:"):
-        name = name[4:]
-    elif name.startswith("/ai:"):
-        name = name[5:]
-    # Legacy hyphen format support
-    elif name.startswith("/ai-"):
-        name = name[5:]
-    elif name.startswith("ai-"):
-        name = name[4:]
+    for prefix in ("/ai:", "/ai-", "ai:", "ai-"):
+        if name.startswith(prefix):
+            name = name[len(prefix):]
+            break
 
     commands = discover_agv_commands()
     for cmd in commands:

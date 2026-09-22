@@ -51,14 +51,12 @@ class ResolvedEnvironment:
         config_path: Path to the config file (may be None if using defaults)
         source: How the environment was resolved ('env_var', 'registry', 'onboarded', 'default')
         is_test: Whether this is a test environment
-        auto_start_proxy: Whether proxy should be auto-started
     """
 
     name: str
     config_path: Optional[Path]
     source: str
     is_test: bool
-    auto_start_proxy: bool
 
 
 def get_global_dir() -> Path:
@@ -214,7 +212,6 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
             config_path=config_path if config_path.exists() else None,
             source="env_var",
             is_test=is_test_environment(env_name),
-            auto_start_proxy=False,
         )
 
     # 2. Named environment via INQUIRY_ENV env var
@@ -228,7 +225,6 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
             config_path=config_path if config_path.exists() else None,
             source="env_var",
             is_test=is_test_environment(env_name),
-            auto_start_proxy=False,
         )
 
     # 3. Check registry (workspace-local .agentic-inquiry/ first, then global ~/.agentic-inquiry/)
@@ -249,7 +245,6 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
                     config_path=config_path,
                     source="registry",
                     is_test=is_test_environment(active_env),
-                    auto_start_proxy=False,
                 )
 
         # 3b. Default to 'ai' environment if onboarded
@@ -262,7 +257,6 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
                 config_path=ai_config,
                 source="onboarded",
                 is_test=False,
-                auto_start_proxy=False,
             )
 
     # 4. Fall back to default (no specific config)
@@ -271,7 +265,6 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
         config_path=None,
         source="default",
         is_test=False,
-        auto_start_proxy=False,
     )
 
 

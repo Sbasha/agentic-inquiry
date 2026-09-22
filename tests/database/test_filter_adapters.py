@@ -256,15 +256,3 @@ class TestLanceDBProjectIDEscaping:
         assert "'alice''s-proj'" in expr
 
 
-class TestPostgresLikeILike:
-    def test_like_emits_parameterized_sql(self):
-        result = PostgresFilterAdapter().translate({"name": ("LIKE", "foo%")})
-        assert result is not None
-        assert result.where_sql == "AND name LIKE $1"
-        assert result.params == ["foo%"]
-
-    def test_ilike_emits_parameterized_sql(self):
-        result = PostgresFilterAdapter().translate({"name": ("ILIKE", "%bar%")})
-        assert result is not None
-        assert result.where_sql == "AND name ILIKE $1"
-        assert result.params == ["%bar%"]

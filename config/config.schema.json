@@ -1902,54 +1902,6 @@
       },
       "additionalProperties": false
     },
-    "services": {
-      "type": "object",
-      "description": "Service auto-start configuration",
-      "properties": {
-        "auto_start_proxy": {
-          "type": "boolean",
-          "description": "Enable automatic Cloud SQL Proxy startup",
-          "default": false
-        },
-        "startup_timeout": {
-          "type": "integer",
-          "description": "Max seconds to wait for proxy startup",
-          "minimum": 5,
-          "maximum": 120,
-          "default": 30
-        },
-        "proxy": {
-          "type": "object",
-          "description": "Cloud SQL or AlloyDB Proxy configuration",
-          "properties": {
-            "type": {
-              "type": "string",
-              "description": "Proxy type: cloudsql or alloydb",
-              "enum": [],
-              "default": "cloudsql"
-            },
-            "connection_name": {
-              "type": "string",
-              "description": "Cloud SQL instance connection name (project:region:instance) or AlloyDB instance path"
-            },
-            "port": {
-              "type": "integer",
-              "description": "Local port for proxy",
-              "minimum": 1024,
-              "maximum": 65535,
-              "default": 5433
-            },
-            "use_public_ip": {
-              "type": "boolean",
-              "description": "Whether to use public IP for connection",
-              "default": false
-            }
-          },
-          "additionalProperties": false
-        }
-      },
-      "additionalProperties": false
-    },
     "onboard": {
       "type": "object",
       "description": "Onboard documentation lifecycle configuration",
