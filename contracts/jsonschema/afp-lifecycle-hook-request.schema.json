@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Sbasha/agentic-inquiry/contracts/jsonschema/afp-lifecycle-hook-request.schema.json",
+  "title": "Agentic Inquiry lifecycle hook request",
+  "description": "One native lifecycle event, delivered by a host adapter to `ai integration hook --client <client> --event <event>` as a single JSON object on stdin. Keys outside this set are refused (unadmitted_fields). Length limits on `query`, `observations[].content`, `observations[].summary` and string values inside `observations[].metadata` are enforced in bytes of UTF-8 by the runtime; the code-point limits here are the schema approximation. Keys inside an observation outside content, summary, importance and metadata are refused (unadmitted_fields). The whole document is limited to 1048576 bytes. A request carries observations or artifacts, never both (invalid_payload).",
+  "x-spec": "docs/specs/afp-lifecycle-contract/spec.md",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "owner",
+    "project_root",
+    "session_id"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "owner": {
+      "description": "The integration owner that registered this project and client. Exactly one owner may be enabled per project and client.",
+      "enum": [
+        "afp",
+        "standalone"
+      ]
+    },
+    "project_root": {
+      "description": "Canonical absolute path of the project. The runtime refuses a relative path, a path with unresolved symlinks or `..`, and a path that is not a directory.",
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^/"
+    },
+    "session_id": {
+      "description": "The native client's session identity. Required and never invented by the adapter. Printable ASCII without spaces or control characters.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "^[\\x21-\\x7e]+(?![\\s\\S])"
+    },
+    "event_id": {
+      "description": "Stable native identity of this event. Required for any request that carries observations or artifacts; a redelivery with the same identity and payload returns the stored receipt. Printable ASCII without spaces or control characters.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "^[\\x21-\\x7e]+(?![\\s\\S])"
+    },
+    "query": {
+      "description": "The user's prompt text, UserPromptSubmit only. At most 16384 bytes.",
+      "type": "string",
+      "maxLength": 16384
+    },
+    "observations": {
+      "description": "Observations the host selected for durable capture. Never raw transcript or tool output.",
+      "type": "array",
+      "maxItems": 32,
+      "items": {
+        "$ref": "#/$defs/observation"
+      }
+    },
+    "artifacts": {
+      "description": "Project files whose content changed, as absolute paths inside `project_root`. A path that resolves outside the project is refused (artifact_escape).",
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "$defs": {
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "content"
+      ],
+      "properties": {
+        "content": {
+          "description": "At most 8192 bytes.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8192
+        },
+        "summary": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "importance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "metadata": {
+          "description": "Flat metadata with LanceDB-compatible value types: at most 16 keys, snake_case keys, string values at most 256 bytes, lists of at most 32 strings. The runtime-owned keys event_key, event, project_identity and observation_index are reserved.",
+          "type": "object",
+          "maxProperties": 16,
+          "propertyNames": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}(?![\\s\\S])"
+          },
+          "properties": {
+            "event_key": false,
+            "event": false,
+            "project_identity": false,
+            "observation_index": false
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "array",
+                "maxItems": 32,
+                "items": {
+                  "type": "string",
+                  "maxLength": 256
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  },
+  "not": {
+    "required": [
+      "observations",
+      "artifacts"
+    ]
+  }
+}

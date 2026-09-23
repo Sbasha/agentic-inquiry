@@ -27,7 +27,9 @@ search layer exposed through Claude Code plugin skills.
   tiers that survive across Claude Code sessions.
 - **Two delivery surfaces.** Claude Code plugins (`ai`, `ai-dev`) are
   the primary interface; the MCP server is the secondary surface for
-  non-Claude or HTTP integrations.
+  non-Claude or HTTP integrations. The lifecycle contract on the `ai`
+  command is a third surface: `ai capabilities` and `ai integration hook`
+  are what an AFP pack calls.
 
 ### Out of scope
 
@@ -59,8 +61,8 @@ search layer exposed through Claude Code plugin skills.
    contract.** Slash commands in `extensions/claude/ai/` are how users
    interact; the Python API in `agentic_inquiry/` is the supported surface
    for tests, integrations, and the MCP server. *Example:* a new
-   capability lands as a Python API change *and* a plugin command in
-   the same PR, not one without the other.
+   capability lands as a Python API change and a plugin command in
+   the same PR, or, under the lifecycle contract, as a CLI verb.
 
 3. **Storage abstractions stay provider-agnostic.** The `StorageFacade`
    never leaks provider-specific concepts to callers. *Example:* where
@@ -68,9 +70,13 @@ search layer exposed through Claude Code plugin skills.
    callers query capabilities and never test a backend type string.
 
 4. **Async-only at the I/O boundary.** Every database, network, and
-   subprocess call is `async def` / `await`. *Example:* a sync helper
-   that performs a blocking `requests.get` is a bug even if it
-   "happens to work" under the current load.
+   subprocess call is `async def` / `await`. The ledger module
+   `agentic_inquiry/integration/state.py` is the exception: it uses
+   synchronous `sqlite3` because a hook is a short-lived process, and a
+   caller that already has an event loop reaches it through
+   `asyncio.to_thread`. *Example:* a sync helper that performs a
+   blocking `requests.get` is a bug even if it happens to work under
+   the current load.
 
 5. **Validate at boundaries, trust internal callers.** Input from
    users, MCP clients, and external APIs goes through

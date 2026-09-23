@@ -79,7 +79,7 @@ def _item_project_id(item: object) -> str:
     return str(getattr(context, "project_id", None) or "")
 
 
-async def _create_memory_system(config, project_id: str):
+async def create_memory_system(config, project_id: str):
     """Create a properly initialized MemorySystem for CLI use.
 
     Args:
@@ -90,13 +90,17 @@ async def _create_memory_system(config, project_id: str):
         Initialized MemorySystem
     """
     from agentic_inquiry.embeddings.registry import embedding_registry
-    from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
     from agentic_inquiry.embeddings.service import EmbeddingService
     from agentic_inquiry.memory.system import MemorySystem
     from agentic_inquiry.storage.facade import StorageFacade
 
-    # Configure embedder if not already configured
-    if not embedding_registry._default_configured:
+    # A hashing provider builds its own embedder inside EmbeddingService.
+    # Registering a sentence-transformer here would override that and pull
+    # the model into a process that asked for the deterministic embedder.
+    provider = getattr(config.embeddings, "default_provider", "")
+    if provider != "hashing" and not embedding_registry._default_configured:
+        from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
+
         model_name = getattr(
             config.embeddings.sentence_transformer, "model_name", "all-MiniLM-L6-v2"
         )
@@ -181,7 +185,7 @@ async def save_command(args: argparse.Namespace) -> int:
         return 1
 
     try:
-        memory_system, storage = await _create_memory_system(config, project_id)
+        memory_system, storage = await create_memory_system(config, project_id)
 
         from agentic_inquiry.memory.adapters.inmemory_adapter import InMemoryMemoryAdapter
         from agentic_inquiry.memory.models import MemoryTier
@@ -271,7 +275,7 @@ async def recall_command(args: argparse.Namespace) -> int:
         return 1
 
     try:
-        memory_system, storage = await _create_memory_system(config, project_id)
+        memory_system, storage = await create_memory_system(config, project_id)
 
         # Create context for retrieval
         context = memory_system.create_agent_context(
@@ -367,7 +371,7 @@ async def list_command(args: argparse.Namespace) -> int:
         return 1
 
     try:
-        memory_system, storage = await _create_memory_system(config, project_id)
+        memory_system, storage = await create_memory_system(config, project_id)
 
         # Create context
         context = memory_system.create_agent_context(

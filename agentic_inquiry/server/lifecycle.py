@@ -15,12 +15,13 @@ import socket
 import subprocess
 import sys
 import time
-from pathlib import Path
+
+from agentic_inquiry.server.bind import bind_host
 
 logger = logging.getLogger("ai.server.lifecycle")
 
-# Defaults
-DEFAULT_HOST = "0.0.0.0"
+# Defaults. Health checks use the same address the server binds.
+DEFAULT_HOST = bind_host(None, auth_enabled=False)
 DEFAULT_PORT = 8765
 TEST_PORT = 8766
 MAX_PORT_RETRIES = 3
@@ -76,7 +77,9 @@ def read_pid_file(env: str = ENV_DEFAULT) -> dict | None:
         return None
 
 
-def write_pid_file(pid: int, port: int, project_id: str, env: str = ENV_DEFAULT) -> None:
+def write_pid_file(
+    pid: int, port: int, project_id: str, env: str = ENV_DEFAULT
+) -> None:
     """Write the PID file atomically."""
     pid_path = get_pid_path(env)
     os.makedirs(os.path.dirname(pid_path), exist_ok=True)
@@ -120,7 +123,9 @@ def is_port_available(port: int, host: str = DEFAULT_HOST) -> bool:
         return False
 
 
-def find_available_port(preferred: int = DEFAULT_PORT, max_retries: int = MAX_PORT_RETRIES) -> int:
+def find_available_port(
+    preferred: int = DEFAULT_PORT, max_retries: int = MAX_PORT_RETRIES
+) -> int:
     """Find an available port starting from preferred.
 
     Args:
@@ -161,6 +166,7 @@ def check_health(port: int, timeout: float = 2.0) -> bool:
     """Check if the server is healthy by hitting the health endpoint."""
     try:
         import urllib.request
+
         url = f"http://{DEFAULT_HOST}:{port}/api/v1/health"
         req = urllib.request.Request(url, method="GET")
         with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -230,10 +236,15 @@ def start_server(
 
         # Start the server process
         cmd = [
-            sys.executable, "-m", "agentic_inquiry.server.run",
-            "--port", str(actual_port),
-            "--project-id", project_id,
-            "--env", env,
+            sys.executable,
+            "-m",
+            "agentic_inquiry.server.run",
+            "--port",
+            str(actual_port),
+            "--project-id",
+            project_id,
+            "--env",
+            env,
         ]
         if workspace:
             cmd.extend(["--workspace", workspace])
@@ -255,7 +266,10 @@ def start_server(
                 if check_health(actual_port, timeout=1.0):
                     logger.info(
                         "ai server started: env=%s pid=%d port=%d project=%s",
-                        env, proc.pid, actual_port, project_id,
+                        env,
+                        proc.pid,
+                        actual_port,
+                        project_id,
                     )
                     return read_pid_file(env)
                 # Check if process died
@@ -379,7 +393,7 @@ def all_servers_status() -> list[dict]:
     Scans for PID files matching server*.pid pattern.
     """
     ai_home = get_ai_home()
-    results = []
+    results: list[dict[str, object]] = []
     if not os.path.isdir(ai_home):
         return results
 

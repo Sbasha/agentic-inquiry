@@ -1786,6 +1786,7 @@ class LanceDBManager:
         self,
         table_names: Optional[List[str]] = None,
         older_than: timedelta = timedelta(minutes=5),
+        delete_unverified: bool = False,
     ) -> Dict[str, Dict[str, Any]]:
         """Remove old table versions to reclaim disk space.
 
@@ -1837,9 +1838,9 @@ class LanceDBManager:
                     # ``Table.optimize`` compacts, refreshes indexes, and
                     # prunes versions older than the window in one call.
                     await self._run_sync(
-                        lambda t=table, d=older_than: t.optimize(
+                        lambda t=table, d=older_than, unverified=delete_unverified: t.optimize(
                             cleanup_older_than=d,
-                            delete_unverified=False,  # Safe default
+                            delete_unverified=unverified,
                         )
                     )
                     versions_after = await self._run_sync(

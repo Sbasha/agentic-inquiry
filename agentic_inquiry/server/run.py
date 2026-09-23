@@ -8,8 +8,6 @@ Usage:
 import argparse
 import asyncio
 import logging
-import signal
-import sys
 
 import uvicorn
 
@@ -31,9 +29,10 @@ def parse_args():
 
 async def _start_server():
     args = parse_args()
-    
+
     # Create app via async factory
     from agentic_inquiry.server.app import create_app
+
     app = await create_app(
         project_id=args.project_id,
         workspace=args.workspace,
@@ -42,14 +41,20 @@ async def _start_server():
     # Write PID file
     from agentic_inquiry.server.lifecycle import write_pid_file, remove_pid_file
     import os
+
     write_pid_file(os.getpid(), args.port, args.project_id, env=args.env)
 
-    logger.info("Starting ai server on 0.0.0.0:%d (env=%s)", args.port, args.env)
+    from agentic_inquiry.server.bind import bind_host, rest_auth_enabled
+
+    host = bind_host(
+        os.environ.get("INQUIRY_SERVER_HOST"), rest_auth_enabled(app.state.config)
+    )
+    logger.info("Starting ai server on %s:%d (env=%s)", host, args.port, args.env)
 
     # We use uvicorn directly but make sure we don't block the loop incorrectly
     config = uvicorn.Config(
         app,
-        host="0.0.0.0",
+        host=host,
         port=args.port,
         log_level="info",
         ws_ping_interval=30,

@@ -200,7 +200,7 @@ async def test_missing_readback_exits_1(
     # STUB: AC4
     _ = hashing_embedder
     _ = memory_config
-    original_create = memory_cli._create_memory_system
+    original_create = memory_cli.create_memory_system
 
     async def _create_then_hide_row(config: Any, project_id: str) -> Any:
         memory_system, storage = await original_create(config, project_id)
@@ -208,7 +208,7 @@ async def test_missing_readback_exits_1(
         memory_system.semantic_memory.get_by_id = AsyncMock(return_value=None)
         return memory_system, storage
 
-    monkeypatch.setattr(memory_cli, "_create_memory_system", _create_then_hide_row)
+    monkeypatch.setattr(memory_cli, "create_memory_system", _create_then_hide_row)
     code = await memory_cli.save_command(
         _save_args("row vanishes on read-back", importance=0.85, project="demo")
     )

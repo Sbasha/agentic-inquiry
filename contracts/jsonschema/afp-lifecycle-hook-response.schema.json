@@ -1,0 +1,373 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Sbasha/agentic-inquiry/contracts/jsonschema/afp-lifecycle-hook-response.schema.json",
+  "title": "Agentic Inquiry lifecycle hook response",
+  "description": "The single JSON object `ai integration hook` prints on stdout for every invocation, including refusals. Exit code: 0 for ok and inert, 1 for partial and unsupported, 2 for error. A zero exit is never success by itself; every durable claim is a receipt with a nonempty durable_id. The serialised response never exceeds 32768 bytes. Length limits here are code-point approximations of byte bounds the runtime enforces on UTF-8 (`data` strings, `error.path`, `message`, which is ASCII).",
+  "x-spec": "docs/specs/afp-lifecycle-contract/spec.md",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "status",
+    "runtime",
+    "context",
+    "receipts",
+    "pending",
+    "pending_total",
+    "errors"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "status": {
+      "description": "inert: integration not enabled for this project and client, nothing happened. ok: processed, every claim durable. partial: processed with queued, pending, failed or skipped work. error: refused, nothing mutated. unsupported: client or event not supported, evaluated before payload validation.",
+      "enum": [
+        "inert",
+        "ok",
+        "partial",
+        "error",
+        "unsupported"
+      ]
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "product",
+        "version",
+        "hook_schema_version"
+      ],
+      "properties": {
+        "product": {
+          "const": "Agentic Inquiry"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "hook_schema_version": {
+          "const": 1
+        }
+      }
+    },
+    "context": {
+      "$ref": "#/$defs/context"
+    },
+    "receipts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/receipt"
+      },
+      "maxItems": 8
+    },
+    "pending": {
+      "type": "array",
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/$defs/pending"
+      }
+    },
+    "pending_total": {
+      "description": "Total rows in state pending, committing (reported as pending) or failed with fewer than 3 attempts for this project identity and client; an exhausted row (failed at 3 attempts) is excluded here and counted by `ai integration status` as `events.exhausted`; `pending` lists at most 50 of them, newest first.",
+      "type": "integer",
+      "minimum": 0
+    },
+    "errors": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/error"
+      },
+      "maxItems": 16
+    }
+  },
+  "$defs": {
+    "context": {
+      "description": "Rendered evidence for the host. `text` is what an adapter injects; `used` is the UTF-8 byte length of `text` and never exceeds `budget`; `omitted` names the entries dropped to stay within budget.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "text",
+        "entries",
+        "used",
+        "budget",
+        "omitted",
+        "accounting"
+      ],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entry"
+          },
+          "maxItems": 32
+        },
+        "used": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "budget": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "omitted": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])"
+          }
+        },
+        "accounting": {
+          "const": "UTF-8 bytes as conservative token upper bound"
+        }
+      }
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "type",
+        "data"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256,
+          "pattern": "^[A-Za-z0-9._:-]+(?![\\s\\S])",
+          "description": "Entry identifier from the safe header charset: `<durable_id>.<observation index>` for a memory, the store's chunk identifier for evidence, both sanitised and cut to 256 bytes (AC22)."
+        },
+        "type": {
+          "enum": [
+            "memory",
+            "evidence"
+          ]
+        },
+        "data": {
+          "description": "Structured fields of the entry; at most 16 keys; string values are cut to 256 bytes; any path is relative to project_root.",
+          "type": "object",
+          "maxProperties": 16,
+          "properties": {
+            "file_path": {
+              "type": "string",
+              "pattern": "^(?!\\.\\.(/|$))(?!.*/\\.\\.(/|$))[^/\\u0000-\\u001f\\u007f\\u202a-\\u202e\\u2066-\\u2069][^\\u0000-\\u001f\\u007f\\u202a-\\u202e\\u2066-\\u2069]*(?![\\s\\S])",
+              "maxLength": 256
+            },
+            "created": {
+              "type": "string"
+            },
+            "owner": {
+              "type": "string"
+            },
+            "summary": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "snippet": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "importance": {
+              "type": "number"
+            },
+            "score": {
+              "type": "number"
+            },
+            "start_line": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "end_line": {
+              "type": "integer",
+              "minimum": 0
+            }
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 256
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "memory"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "required": [
+                  "created",
+                  "owner"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "evidence"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "required": [
+                  "file_path"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "receipt": {
+      "description": "queued: recorded in the ledger, not yet committed. remembered: committed as a memory item. indexed: committed as re-indexed or removed file data. `duplicate` and `deliveries` describe a redelivery of the same event identity.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "durable_id"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "indexed",
+            "remembered",
+            "queued"
+          ]
+        },
+        "durable_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "duplicate": {
+          "type": "boolean"
+        },
+        "deliveries": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "pending": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "durable_id",
+        "kind",
+        "state",
+        "attempts"
+      ],
+      "properties": {
+        "durable_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "enum": [
+            "capture",
+            "refresh"
+          ]
+        },
+        "state": {
+          "enum": [
+            "pending",
+            "failed"
+          ]
+        },
+        "attempts": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "error": {
+      "description": "`notify` is true the first time this code occurs for the project, client and session, and false afterwards, so an adapter can message once. No message or path field names a location outside project_root. No string in the response is an absolute path.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code",
+        "message",
+        "notify"
+      ],
+      "properties": {
+        "code": {
+          "enum": [
+            "unsupported_event",
+            "unsupported_client",
+            "invalid_payload",
+            "payload_too_large",
+            "unadmitted_fields",
+            "project_root_not_canonical",
+            "session_id_required",
+            "artifact_escape",
+            "artifact_ignored",
+            "project_identity_invalid",
+            "owner_conflict",
+            "event_id_required",
+            "event_id_conflict",
+            "durable_store_absent",
+            "capture_disabled",
+            "refresh_disabled",
+            "budget_exhausted",
+            "ledger_unavailable",
+            "event_purged",
+            "capture_exhausted",
+            "internal_error"
+          ],
+          "description": "The closed hook error-code set. CLI verbs (enable, disable, purge, reconcile) use a separate closed set documented in the spec."
+        },
+        "message": {
+          "type": "string",
+          "maxLength": 512,
+          "description": "Runtime-constructed ASCII text, at most 512 bytes, never interpolating request or configuration content."
+        },
+        "notify": {
+          "type": "boolean"
+        },
+        "stage": {
+          "type": "string"
+        },
+        "configured_owner": {
+          "type": "string"
+        },
+        "requested_owner": {
+          "type": "string"
+        },
+        "path": {
+          "description": "A path relative to project_root; never an absolute path.",
+          "type": "string",
+          "pattern": "^(?!\\.\\.(/|$))(?!.*/\\.\\.(/|$))[^/\\u0000-\\u001f\\u007f\\u202a-\\u202e\\u2066-\\u2069][^\\u0000-\\u001f\\u007f\\u202a-\\u202e\\u2066-\\u2069]*(?![\\s\\S])",
+          "maxLength": 256
+        }
+      }
+    }
+  }
+}

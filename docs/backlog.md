@@ -30,6 +30,55 @@ rots. See `CONVENTIONS.md` § 4 (Spec metadata contract).
 
 ---
 
+## afp-lifecycle-contract
+
+Open items from [`specs/afp-lifecycle-contract/spec.md`](specs/afp-lifecycle-contract/spec.md).
+
+- **Rebuild memory rows from the ledger:** deferred from the spec. The ledger
+  under `INQUIRY_HOME/projects/<project_id>/records.sqlite3` keeps every
+  captured observation payload, so LanceDB memory rows are rebuildable,
+  but no command performs the rebuild. Unblocked by an
+  `ai integration reconcile --replay` that re-stores committed capture rows
+  whose memory item is missing from the bound environment.
+- **Config loader warns about control variables:** `Config.load()` prints
+  "Ignoring invalid environment variable INQUIRY_HOME" (and "unknown" for
+  multi-segment names such as `INQUIRY_HOOK_DEADLINE_SECONDS`) because the
+  environment-override parser has no allowlist for the documented control
+  variables (`agentic_inquiry/config.py` around line 1838). Operator-visible
+  noise on every command; the lifecycle contract keeps its own stderr silent
+  with a `NullHandler`, so this is a separate fix.
+- **`hybrid_search` passes a raw full-text query:** `agentic_inquiry/database/query_builder.py`
+  sanitises the FTS query on the `fts_search` path (primary branch and, after this
+  change, the stale-table retry) but `hybrid_search` calls `.text(query)` unsanitised
+  on both of its branches. The hook path never reaches it; the MCP and CLI search
+  paths do. Unblocked by routing every `.text(...)` call through `_fts_sanitizer`.
+- **Authenticated non-loopback MCP:** AC30 makes the MCP http and sse transports
+  loopback-only because `/mcp` is exempt from the REST API-key middleware and the
+  MCP server has no authentication of its own, which withdraws the containerised
+  and orchestrated MCP recipes at 0.3.0. Unblocked by an MCP-side bearer-token
+  check (or the middleware covering `/mcp`) so `bind_host(..., auth_enabled=True)`
+  can admit a non-loopback bind for the transports too.
+- **Release note for 0.3.0:** `docs/CONVENTIONS.md` asks for a `CHANGELOG.md`
+  entry on user-visible changes while the owner's standing rule forbids hand
+  edits to changelog files, so this change leaves the file untouched. The
+  owner settles it: write the entry, or amend the convention through
+  `update-conventions`.
+- **Framing in the standalone skills:** `/ai:memory` and `/ai:search` read the
+  same storage namespace the lifecycle contract commits into, and render
+  recalled content without the AC21 frames. Unblocked by the standalone
+  plugin migration, which should adopt `render_text`.
+- **Native qualification on Codex and Pi:** the Claude Code replay through the
+  AFP bridge is recorded in
+  [`specs/afp-lifecycle-contract/notes/afp-pack-journey.md`](specs/afp-lifecycle-contract/notes/afp-pack-journey.md).
+  Live Codex and Pi sessions, including native compaction, stay deferred.
+  The pack's `native-qualification` field records a run once it exists.
+- **Standalone Claude plugin as a translator:** the scripts under
+  `extensions/claude/ai/hooks/scripts/` import the package from the ambient
+  interpreter, start the REST server on demand and inject a prompt on every
+  Stop. Unblocked by a spec that routes them through
+  `ai integration hook --client claude-code` with `owner: standalone` and
+  removes the server start and the prompt hooks.
+
 ## index-memory-reliability
 
 Open items from [`specs/index-memory-reliability/spec.md`](specs/index-memory-reliability/spec.md).

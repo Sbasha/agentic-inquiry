@@ -86,6 +86,20 @@ Add Agentic Inquiry to `.claude/settings.json` **in the project you want to anal
 }
 ```
 
+### Option B: the AFP pack
+
+Install the `agentic-inquiry` pack from the AFP catalogue instead of editing
+`settings.json` by hand:
+
+```bash
+afp bundle install --pack agentic-inquiry --adapter claude-code --scope repo
+```
+
+The pack calls `ai capabilities --json` and `ai integration hook`. The
+standalone plugin and the AFP pack are never both enabled for one project
+and client. `ai integration enable` refuses while `ai@agentic-inquiry` is
+enabled in `.claude/settings.json`.
+
 The Claude Code marketplace stays the canonical source. For GitHub Copilot
 app or Codex, use the repo-local `.github/` and `.codex/` mirrors, which
 point back to the same `.claude/` skill and agent tree.

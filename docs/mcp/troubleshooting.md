@@ -1,5 +1,9 @@
 # Troubleshooting Guide
 
+## Bind address (0.3.0)
+
+The server binds to 127.0.0.1 by default. In short, a non-loopback bind requires an API key. MCP http and sse bind loopback only in 0.3.0.
+
 > Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
 
 > **Note:** The MCP server is a secondary/advanced interface. **Most users should use the [Claude Code plugins](../../README.md) as the primary interface.** This troubleshooting guide applies to all usage modes (CLI, plugins, MCP server). MCP-specific issues are clearly marked.
@@ -287,8 +291,8 @@ async def search_with_fallback(session_id: str, query: str):
 
 **Solution:**
 ```bash
-# Bind to 0.0.0.0 instead of 127.0.0.1
-uv run ai --transport http --host 0.0.0.0 --port 8000
+# Bind to 127.0.0.1 instead of 127.0.0.1
+uv run ai --transport http --host 127.0.0.1 --port 8000
 ```
 
 **Note:** This only applies to MCP server HTTP mode. Most users should use Claude Code plugins instead.

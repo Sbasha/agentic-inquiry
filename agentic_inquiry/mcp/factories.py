@@ -32,17 +32,56 @@ from agentic_inquiry.mcp.utils.cache import MCPCacheManager
 logger = logging.getLogger(__name__)
 
 
-async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]:
+async def _maintenance_tick(
+    memory_system: Any,
+    storage: Any,
+    project_root: str | None,
+) -> None:
+    """One maintenance pass: memory consolidation, queued integration rows, storage.
+
+    The integration reconcile takes the project lock itself with no wait. A busy
+    lock is logged and skipped; this function does not take a lock of its own.
+    """
+    if memory_system is not None:
+        try:
+            await memory_system.consolidate()
+        except Exception:
+            logger.exception("Periodic memory consolidation failed")
+    if project_root:
+        from agentic_inquiry.integration.reconcile import reconcile
+        from agentic_inquiry.integration.state import StateError
+
+        try:
+            await reconcile(project_root, lock_timeout=0)
+        except StateError as exc:
+            if exc.code == "environment_busy":
+                logger.warning("integration reconcile skipped: %s", exc.message)
+            else:
+                logger.exception("integration reconcile failed")
+        except Exception:
+            logger.exception("integration reconcile failed")
+    if storage is not None and hasattr(storage, "run_maintenance"):
+        try:
+            await storage.run_maintenance()
+        except Exception:
+            logger.exception("Periodic storage maintenance failed")
+
+
+async def create_mcp_services(
+    config: Config,
+    project_id: str,
+    project_root: str | None = None,
+) -> Dict[str, Any]:
     """Create all MCP services with dependencies.
-    
+
     This factory function creates both core Agentic Inquiry services and
     MCP-specific orchestration services. It handles dependency injection
     and ensures all services are properly configured.
-    
+
     Args:
         config: Configuration object
         project_id: Project identifier for service initialization
-        
+
     Returns:
         Dictionary of service instances with keys:
         - config: Configuration object
@@ -64,19 +103,19 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
             - pattern_analyzer: PatternAnalyzer instance
             - temporal_analyzer: TemporalAnalyzer instance
             - token_optimizer: TokenOptimizer instance
-    
+
     Example:
         >>> from agentic_inquiry.config import Config
         >>> from agentic_inquiry.mcp.factories import create_mcp_services
-        >>> 
+        >>>
         >>> config = Config.load()
         >>> services = create_mcp_services(config, "my_project")
-        >>> 
+        >>>
         >>> # Access services
         >>> config = services["config"]
         >>> session_manager = services["session_manager"]
         >>> search_service = services["search_service"]
-    
+
     Raises:
         Exception: If service creation fails
     """
@@ -85,11 +124,17 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
     # Configure default embedder if not already configured
     if not embedding_registry._default_configured:
         # Use SentenceTransformerEmbedder with config settings for semantic search
-        model_name = getattr(config.embeddings.sentence_transformer, 'model_name', 'all-MiniLM-L6-v2')
-        ndims = getattr(config.embeddings, 'default_dimensions', 384)
+        model_name = getattr(
+            config.embeddings.sentence_transformer, "model_name", "all-MiniLM-L6-v2"
+        )
+        ndims = getattr(config.embeddings, "default_dimensions", 384)
         embedder = SentenceTransformerEmbedder(model_name=model_name)
         embedding_registry.configure_default_embedder(embedder, ndims=ndims)
-        logger.info("Configured default SentenceTransformerEmbedder (model=%s, ndims=%d) for MCP services", model_name, ndims)
+        logger.info(
+            "Configured default SentenceTransformerEmbedder (model=%s, ndims=%d) for MCP services",
+            model_name,
+            ndims,
+        )
 
     # Initialize service references for cleanup on failure
     storage: StorageFacade | None = None
@@ -106,9 +151,7 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
             except asyncio.CancelledError:
                 pass  # Expected: we just cancelled it.
             except Exception as cleanup_err:
-                logger.debug(
-                    "Maintenance task raised during shutdown: %s", cleanup_err
-                )
+                logger.debug("Maintenance task raised during shutdown: %s", cleanup_err)
         if memory_system is not None:
             try:
                 await memory_system.shutdown()
@@ -133,16 +176,20 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
         # This creates and initializes LanceDB provider internally
         storage = await StorageFacade.from_config(config, project_id)
         backend_type = storage.get_backend_type()
-        logger.debug("StorageFacade created and initialized for project %s (backend: %s)", project_id, backend_type)
+        logger.debug(
+            "StorageFacade created and initialized for project %s (backend: %s)",
+            project_id,
+            backend_type,
+        )
 
         # Resolve provider capabilities once at startup.
         # All downstream consumers query this object instead of
         # checking embedding_strategy / backend_type strings.
         from agentic_inquiry.storage.capabilities import (
             get_capabilities_for_backend,
-            ProviderCapabilities,
             EmbeddingStrategy,
         )
+
         capabilities = get_capabilities_for_backend(backend_type)
 
         # Override from explicit config if the user set embedding_strategy
@@ -154,9 +201,12 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
                     explicit_dim = backend_cfg.get("embedding_dim")
                     if explicit_strategy or explicit_model or explicit_dim:
                         from dataclasses import replace as dc_replace
+
                         overrides: dict = {}
                         if explicit_strategy:
-                            overrides["embedding_strategy"] = EmbeddingStrategy(explicit_strategy)
+                            overrides["embedding_strategy"] = EmbeddingStrategy(
+                                explicit_strategy
+                            )
                         if explicit_model:
                             overrides["embedding_model"] = explicit_model
                         if explicit_dim:
@@ -178,6 +228,7 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
 
         # Create event system with config and project_id
         from agentic_inquiry.events.system import EventSystem
+
         event_system = await EventSystem.from_config(config, project_id)
         # Initialize EventSystem (required before use)
         await event_system.start()
@@ -188,9 +239,9 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
             storage=storage,
             config=config,
             event_system=event_system,
-            project_id=project_id
+            project_id=project_id,
         )
-        
+
         # IndexingPipeline works with any backend via StorageFacade
         indexing_pipeline = IndexingPipeline(
             db_manager=storage,
@@ -206,10 +257,12 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
         # Without this, find_similar/find_patterns generate 384-dim local vectors
         # that mismatch AlloyDB's 768-dim server-side embeddings.
         from agentic_inquiry.embeddings.factory import configure_embedder_for_backend
+
         configure_embedder_for_backend(config, quiet=True)
 
         # Create embedding service for memory system
         from agentic_inquiry.embeddings.service import EmbeddingService
+
         embedding_service = EmbeddingService(config=config)
 
         # Start loading embedding model in background (non-blocking)
@@ -227,10 +280,12 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
         embedding_dims = capabilities.embedding_dimensions
         logger.info(
             "Using embedding_dims=%d from capabilities (backend=%s)",
-            embedding_dims, backend_type,
+            embedding_dims,
+            backend_type,
         )
 
         from agentic_inquiry.memory.protocols import MemoryStorageProtocol
+
         episodic_storage: MemoryStorageProtocol
         semantic_storage: MemoryStorageProtocol
         if backend_type == "lancedb":
@@ -266,29 +321,22 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
         )
         # Initialize memory system (required before use)
         await memory_system.initialize()
-        
+
         logger.debug("Core services created successfully")
-        
+
         # Create MCP-specific orchestration services
         logger.debug("Creating MCP orchestration services")
 
         # MCP services accept StorageFacade and internally extract LanceDBManager
         # for database operations via get_db_manager() (deprecated but functional).
         session_manager = SessionManager(
-            db_manager=storage,
-            config=config,
-            event_system=event_system
+            db_manager=storage, config=config, event_system=event_system
         )
 
-        entity_resolver = EntityResolver(
-            db_manager=storage,
-            config=config
-        )
+        entity_resolver = EntityResolver(db_manager=storage, config=config)
 
         impact_analyzer = ImpactAnalyzer(
-            db_manager=storage,
-            entity_resolver=entity_resolver,
-            config=config
+            db_manager=storage, entity_resolver=entity_resolver, config=config
         )
 
         context_builder = ContextBuilder(
@@ -297,26 +345,23 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
             db_manager=storage,
             session_manager=session_manager,
             config=config,
-            event_system=event_system
+            event_system=event_system,
         )
 
         pattern_analyzer = PatternAnalyzer(
             search_service=search_service,
             db_manager=storage,
-            embedding_service=embedding_service
+            embedding_service=embedding_service,
         )
 
-        temporal_analyzer = TemporalAnalyzer(
-            db_manager=storage,
-            config=config
-        )
-        
+        temporal_analyzer = TemporalAnalyzer(db_manager=storage, config=config)
+
         # Create token optimizer without config parameter
         token_optimizer = TokenOptimizer()
-        
+
         # Create cache manager with 5 minute TTL (300 seconds)
         cache_manager = MCPCacheManager(ttl_seconds=300)
-        
+
         # Health and performance tracking (kept; not part of the deleted executive package).
         from agentic_inquiry.metrics.health import HealthTracker
         from agentic_inquiry.metrics import get_metrics_tracker
@@ -335,23 +380,16 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
         maintenance_interval = 60.0
 
         async def _periodic_maintenance() -> None:
-            # Work first, then sleep — so a server restarted faster than the
+            # Work first, then sleep, so a server restarted faster than the
             # interval still gets a maintenance pass.
             while True:
-                if memory_system is not None:
-                    try:
-                        await memory_system.consolidate()
-                    except Exception:
-                        logger.exception("Periodic memory consolidation failed")
-                if storage is not None and hasattr(storage, "run_maintenance"):
-                    try:
-                        await storage.run_maintenance()
-                    except Exception:
-                        logger.exception("Periodic storage maintenance failed")
+                await _maintenance_tick(memory_system, storage, project_root)
                 await asyncio.sleep(maintenance_interval)
 
         maintenance_task = asyncio.create_task(_periodic_maintenance())
-        logger.info("Background maintenance task started (interval=%.0fs)", maintenance_interval)
+        logger.info(
+            "Background maintenance task started (interval=%.0fs)", maintenance_interval
+        )
 
         logger.debug("MCP orchestration services created successfully")
 
@@ -359,7 +397,6 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
         services = {
             # Configuration
             "config": config,
-            
             # Server configuration
             "server_config": {
                 "default_project_id": project_id,
@@ -367,10 +404,8 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
                 "server_version": config.mcp.server.version,
                 "server_description": config.mcp.server.description,
             },
-            
             # Provider capabilities (single source of truth)
             "capabilities": capabilities,
-
             # Core services
             "storage": storage,
             "search_service": search_service,
@@ -378,7 +413,6 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
             "memory_system": memory_system,
             "event_system": event_system,
             "embedding_service": embedding_service,
-            
             # MCP services
             "session_manager": session_manager,
             "entity_resolver": entity_resolver,
@@ -388,20 +422,19 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
             "temporal_analyzer": temporal_analyzer,
             "token_optimizer": token_optimizer,
             "cache_manager": cache_manager,
-
             # Health and maintenance
             "health_tracker": health_tracker,
             "perf_monitor": perf_monitor,
             "maintenance_task": maintenance_task,
         }
-        
+
         logger.info(
             "MCP services created successfully",
-            extra={"service_count": len(services), "project_id": project_id}
+            extra={"service_count": len(services), "project_id": project_id},
         )
-        
+
         return services
-        
+
     except TypeError as e:
         # Clean up any services that were created before the failure
         await cleanup_on_failure()
@@ -414,13 +447,20 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
         tb = traceback.extract_tb(e.__traceback__)
         failed_service = "unknown"
         failed_function = None
-        
+
         for frame in reversed(tb):
-            if "create_" in frame.name or frame.name in ["__init__", "SessionManager", "ContextBuilder", "PatternAnalyzer", "TemporalAnalyzer", "TokenOptimizer"]:
+            if "create_" in frame.name or frame.name in [
+                "__init__",
+                "SessionManager",
+                "ContextBuilder",
+                "PatternAnalyzer",
+                "TemporalAnalyzer",
+                "TokenOptimizer",
+            ]:
                 failed_service = frame.name
                 failed_function = frame.name
                 break
-        
+
         # Get signature information if possible
         signature_info = ""
         if failed_function:
@@ -438,14 +478,16 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
                     sig = inspect.signature(TokenOptimizer.__init__)
                 else:
                     sig = None
-                
+
                 if sig:
-                    params = [p for p in sig.parameters.keys() if p != 'self']
+                    params = [p for p in sig.parameters.keys() if p != "self"]
                     signature_info = f"\nExpected parameters: {', '.join(params)}"
             except Exception as sig_err:
                 # S5-002: Log signature inspection failure (non-critical)
-                logger.debug("Could not inspect signature of %s: %s", failed_service, sig_err)
-        
+                logger.debug(
+                    "Could not inspect signature of %s: %s", failed_service, sig_err
+                )
+
         logger.error(
             "Failed to create MCP services due to parameter mismatch in %s: %s%s",
             failed_service,
@@ -455,10 +497,10 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
             extra={
                 "failed_service": failed_service,
                 "error_type": "TypeError",
-                "error_message": str(e)
-            }
+                "error_message": str(e),
+            },
         )
-        
+
         raise TypeError(
             f"Service initialization failed for {failed_service}: {str(e)}{signature_info}\n\n"
             f"This usually indicates a parameter mismatch. Check that:\n"
@@ -467,7 +509,7 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
             f"3. Parameter types are correct\n\n"
             f"See the service class definition for the correct signature."
         ) from e
-        
+
     except Exception as e:
         # Clean up any services that were created before the failure
         await cleanup_on_failure()
@@ -479,8 +521,8 @@ async def create_mcp_services(config: Config, project_id: str) -> Dict[str, Any]
             extra={
                 "error_type": type(e).__name__,
                 "error_message": str(e),
-                "project_id": project_id
-            }
+                "project_id": project_id,
+            },
         )
         raise
 

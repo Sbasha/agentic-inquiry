@@ -100,6 +100,7 @@ canonical `.claude/` tree for Copilot and Codex compatibility.
 | Indexing | `agentic_inquiry/indexing/pipeline.py` | Parse → embed → store |
 | Memory | `agentic_inquiry/memory/system.py` | Three-tier memory (working / episodic / semantic) |
 | MCP | `agentic_inquiry/mcp/` | Model Context Protocol server (secondary to plugins) |
+| Integration | `agentic_inquiry/integration/` | AFP lifecycle contract: capabilities, hooks, ledger, reconcile |
 | CLI | `agentic_inquiry/cli/` | `ai index`, `ai search`, … |
 
 Storage is local only: LanceDB for vectors and graph, SQLite for events,
@@ -159,7 +160,10 @@ Run lint / typecheck (see [Commands](#commands-youll-need)) and follow what
 they tell you. The non-negotiables not covered by a linter:
 
 - **Async-only at the I/O boundary.** Every database, network, and
-  subprocess call is `async def` / `await`.
+  subprocess call is `async def` / `await`. The lifecycle ledger
+  (`agentic_inquiry/integration/state.py`) uses synchronous `sqlite3`;
+  a caller that already has an event loop reaches it through
+  `asyncio.to_thread`.
 - **Validate at boundaries** (user input, MCP clients, external APIs) with
   `agentic_inquiry.mcp.utils.validation`. Trust internal callers.
 - **Never `pickle.loads()` untrusted data.** Use parameterized queries,

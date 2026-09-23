@@ -7,6 +7,7 @@
 | # | Title | Status |
 |---|-------|--------|
 | [0001](0001-golden-bench.md) | Golden bench: pin recall@10 + latency | accepted |
+| [0002](0002-afp-lifecycle-contract.md) | AFP lifecycle contract: capabilities, integration hook, mcp | accepted |
 
 ## Adding a new RFC
 

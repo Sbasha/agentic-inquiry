@@ -17,15 +17,26 @@ Commands:
     ai agent-test          Execute agent test scenarios
 """
 
+import logging
 import os
 import sys
-import logging
+from pathlib import Path
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
 logger = logging.getLogger(__name__)
+
+
+def _quiet() -> None:
+    """Contract verbs stay silent. A NullHandler keeps lastResort off stderr."""
+    root = logging.getLogger()
+    if not root.handlers:
+        root.addHandler(logging.NullHandler())
+    root.setLevel(logging.WARNING)
+
+
+def _interactive_logging() -> None:
+    from agentic_inquiry.utils.logging_setup import LoggingConfigurator
+
+    LoggingConfigurator.setup()
 
 
 def _should_skip_auto_start() -> bool:
@@ -103,6 +114,12 @@ Commands:
     agent-test <ID>     Run a specific agent test (01-15)
     agent-test --all    Run all agent tests
     agent-test status   Show test run status
+
+  Integration:
+    capabilities        Report the lifecycle contract
+    integration         Enable, hook, reconcile, purge
+    mcp                 Start the MCP server for this project
+    status              Show project and index status
 
   Interactive:
     (no command)        Connect to running server
@@ -240,10 +257,11 @@ def _handle_server_command() -> None:
 
 def main():
     """Main CLI entry point."""
-    from agentic_inquiry.cli.client import connect_or_setup
-
     # No args -> help or client
     if len(sys.argv) == 1:
+        _interactive_logging()
+        from agentic_inquiry.cli.client import connect_or_setup
+
         connect_or_setup()
         return
 
@@ -254,12 +272,44 @@ def main():
         print_help()
         return
 
+    if command in ("--version", "-V"):
+        _quiet()
+        from importlib.metadata import version
+
+        print(version("agentic-inquiry"))
+        return
+
+    if command == "capabilities":
+        _quiet()
+        from agentic_inquiry.integration.capabilities import main as capabilities_main
+
+        sys.exit(capabilities_main(sys.argv[2:]))
+
+    if command == "integration":
+        _quiet()
+        from agentic_inquiry.cli.integration import main as integration_main
+
+        sys.exit(integration_main(sys.argv[2:]))
+
+    if command == "status":
+        _quiet()
+        from agentic_inquiry.cli.status import main as status_main
+
+        sys.exit(status_main(sys.argv[2:]))
+
+    if command == "mcp":
+        _quiet()
+        _dispatch_mcp(sys.argv[2:])
+        return
+
     # Setup wizard - no services needed
     if command == "setup":
         from agentic_inquiry.cli.setup_wizard import run_setup
 
         success = run_setup(sys.argv[2:])
         sys.exit(0 if success else 1)
+
+    _interactive_logging()
 
     # For all other commands, ensure required services are running
     # (e.g., Cloud SQL Proxy for PostgreSQL backends)
@@ -350,6 +400,8 @@ def main():
 
     # Shell
     if command == "shell":
+        from agentic_inquiry.cli.client import connect_or_setup
+
         connect_or_setup()
         return
 
@@ -365,6 +417,44 @@ def main():
     print(f"Unknown command: {command}")
     print("Run 'ai --help' for usage information.")
     sys.exit(1)
+
+
+def _dispatch_mcp(argv: list[str]) -> None:
+    """Resolve the cwd binding and hand the MCP server a project id and root."""
+    root = Path.cwd().resolve()
+    extra: list[str] = []
+    if "--project-id" not in argv:
+        project_id = _storage_project_id(root)
+        if project_id is not None:
+            extra.extend(["--project-id", project_id])
+            if "--project-root" not in argv:
+                extra.extend(["--project-root", str(root)])
+    elif "--project-root" not in argv:
+        extra.extend(["--project-root", str(root)])
+    if "--transport" not in argv and "--help" not in argv and "-h" not in argv:
+        extra.extend(["--transport", "stdio"])
+    sys.argv = ["ai", *extra, *argv]
+    from agentic_inquiry.mcp.cli import main as mcp_main
+
+    mcp_main()
+
+
+def _storage_project_id(root: Path) -> str | None:
+    from agentic_inquiry.integration.state import StateError, read_identity
+    from agentic_inquiry.integration.verbs import status
+
+    try:
+        identity = read_identity(root)
+    except StateError:
+        return None
+    if identity is None:
+        return None
+    try:
+        report = status(str(root))
+    except StateError:
+        return None
+    namespace = report.get("storage_project_id")
+    return str(namespace) if namespace else None
 
 
 if __name__ == "__main__":

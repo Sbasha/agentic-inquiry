@@ -1,5 +1,9 @@
 # MCP Server Deployment Guide
 
+## Bind address (0.3.0)
+
+The REST server binds to 127.0.0.1 by default. In short, a non-loopback bind requires an API key. MCP http and sse bind loopback only in 0.3.0. The previous LAN bind is withdrawn. Put a reverse-proxy sidecar in front of the process. The container image sets `INQUIRY_SERVER_HOST=0.0.0.0` because the platform requires a non-loopback listen address, and the process serves nothing without both that variable and `INQUIRY_MCP_API_AUTH_API_KEY`.
+
 > **Note:** The MCP server is a secondary interface. Most users should use the [Claude Code plugins](../../README.md) instead.
 
 This guide covers deploying the Agentic Inquiry MCP Server for advanced use cases requiring direct MCP access.
@@ -173,7 +177,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD python -c "import requests; requests.get('http://localhost:8765/health')"
 
 # Run MCP server with HTTP transport for health checks
-CMD ["uv", "run", "python", "-m", "agentic_inquiry.mcp.cli", "--transport", "http", "--host", "0.0.0.0"]
+CMD ["uv", "run", "python", "-m", "agentic_inquiry.mcp.cli", "--transport", "http", "--host", "127.0.0.1"]
 ```
 
 ### Build and Run
@@ -218,7 +222,7 @@ services:
     environment:
       - INQUIRY_DEFAULT_PROJECT=my_project
       - INQUIRY_MCP_ENABLED=true
-      - INQUIRY_MCP_API_HOST=0.0.0.0
+      - INQUIRY_MCP_API_HOST=127.0.0.1
       - INQUIRY_MCP_API_PORT=8765
     restart: unless-stopped
     healthcheck:
@@ -318,7 +322,7 @@ export INQUIRY_MCP_ENABLED=true
 export INQUIRY_MCP_SERVER_NAME="My MCP Server"
 
 # API settings
-export INQUIRY_MCP_API_HOST=0.0.0.0
+export INQUIRY_MCP_API_HOST=127.0.0.1
 export INQUIRY_MCP_API_PORT=8765
 export INQUIRY_MCP_API_AUTH_ENABLED=true
 export INQUIRY_MCP_API_AUTH_API_KEY=your-secret-key
@@ -720,7 +724,7 @@ All inputs are validated via Pydantic models:
 export INQUIRY_MCP_API_HOST=127.0.0.1
 
 # Bind to all interfaces (production with firewall)
-export INQUIRY_MCP_API_HOST=0.0.0.0
+export INQUIRY_MCP_API_HOST=127.0.0.1
 
 # Use reverse proxy (recommended)
 # nginx configuration:
@@ -796,7 +800,7 @@ autorestart=true
 redirect_stderr=true
 stdout_logfile=/var/log/agentic-inquiry-mcp/stdout.log
 stderr_logfile=/var/log/agentic-inquiry-mcp/stderr.log
-environment=INQUIRY_MCP_API_HOST="0.0.0.0",INQUIRY_MCP_API_PORT="8765"
+environment=INQUIRY_MCP_API_HOST="127.0.0.1",INQUIRY_MCP_API_PORT="8765"
 ```
 
 ```bash
@@ -836,7 +840,7 @@ spec:
         - containerPort: 8765
         env:
         - name: INQUIRY_MCP_API_HOST
-          value: "0.0.0.0"
+          value: "127.0.0.1"
         - name: INQUIRY_MCP_API_PORT
           value: "8765"
         volumeMounts:

@@ -18,7 +18,8 @@
 1. [Architecture Overview](overview.md#extension-points) - Extension mechanisms
 2. [Parsers](parsers.md) - Parser system and custom parsers
 3. [Search](search.md) - Search strategies and configuration
-4. [Development Guides](../development/README.md) - Contributing and extending
+4. [Integration](integration.md) - AFP lifecycle contract and the ledger
+5. [Development Guides](../development/README.md) - Contributing and extending
 
 ### ⚡ Performance Engineers
 **Optimizing performance and concurrency:**

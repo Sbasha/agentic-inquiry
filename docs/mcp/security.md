@@ -1,5 +1,9 @@
 # MCP Server Security Guide
 
+## Bind address (0.3.0)
+
+The server binds to 127.0.0.1 by default. In short, a non-loopback bind requires an API key. MCP http and sse bind loopback only in 0.3.0. A non-loopback MCP bind without authentication is withdrawn; use a reverse proxy.
+
 > Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
 
 ## Overview
@@ -491,7 +495,7 @@ aws secretsmanager get-secret-value --secret-id mcp-api-key
 
 ```bash
 # Allow only specific IPs
-iptables -A INPUT -p tcp --dport 8765 -s 10.0.0.0/8 -j ACCEPT
+iptables -A INPUT -p tcp --dport 8765 -s 1127.0.0.1/8 -j ACCEPT
 iptables -A INPUT -p tcp --dport 8765 -j DROP
 ```
 

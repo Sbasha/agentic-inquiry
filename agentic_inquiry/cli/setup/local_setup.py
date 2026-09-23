@@ -53,7 +53,7 @@ class LocalSetup(BaseSetup):
         """
         super().__init__(env_name=env_name, is_dev=is_dev, workspace=workspace)
 
-    def run(self) -> bool:
+    def run(self, *, announce: bool = True) -> bool:
         """Run the local setup wizard.
 
         Steps:
@@ -128,13 +128,14 @@ class LocalSetup(BaseSetup):
             # Step 6: Set as active
             self.set_active()
 
-            # Print success
+            # Print success. The wizard prints the same steps once, after enable.
             print_success(f"Environment '{name}' created successfully!")
-            print("\nNext steps:")
-            print("  1. Index your codebase: ai index .")
-            print("  2. Start the server: ai serve")
-            print("  3. Search: ai search 'your query'")
-            print(f"\nConfiguration: {self.config_path}")
+            if announce:
+                print("\nNext steps:")
+                print("  1. Index your codebase: ai index .")
+                print("  2. Start the server: ai serve")
+                print("  3. Search: ai search 'your query'")
+                print(f"\nConfiguration: {self.config_path}")
 
             return True
 

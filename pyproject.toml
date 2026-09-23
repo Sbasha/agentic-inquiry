@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "agentic-inquiry"
-version = "0.2.0"
+version = "0.3.0"
 description = "Local cited evidence, scoped memory and codebase intelligence for coding agents."
 readme = "README.md"
 requires-python = ">=3.10,<3.14"
@@ -22,7 +22,7 @@ dependencies = [
     "fastmcp>=0.1.0",
     "fsspec>=2024.1.0",
     "jsonschema>=4.0.0",
-    "lancedb>=0.8.0",
+    "lancedb>=0.8.0,<0.26",
     "mypy>=1.18.2",
     "onnxruntime>=1.16.0",
     "optimum>=1.16.0",

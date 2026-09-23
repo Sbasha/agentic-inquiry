@@ -224,7 +224,7 @@ class LanceDBQueryBuilder:
                     return []
 
                 def _retry_search() -> List[Dict[str, Any]]:
-                    qb = table.search(query, query_type="fts")
+                    qb = table.search(safe_query, query_type="fts")
                     if filter_expression:
                         qb = qb.where(filter_expression)
                     return qb.limit(limit).to_list()

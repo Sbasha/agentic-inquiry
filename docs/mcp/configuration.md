@@ -1,5 +1,9 @@
 # MCP Server Configuration Guide
 
+## Bind address (0.3.0)
+
+The server binds to 127.0.0.1 by default. In short, a non-loopback bind requires an API key. MCP http and sse bind loopback only in 0.3.0. The previous non-loopback recipe is withdrawn.
+
 > **Note:** The MCP server is a secondary interface. Most users should use the [Claude Code plugins](../../README.md) instead.
 
 Complete guide to configuring the Agentic Inquiry MCP Server for advanced use cases.
@@ -89,7 +93,7 @@ uv run ai my_project
 uv run ai --transport http --port 8000
 
 # All options combined
-uv run ai my_project --transport http --host 0.0.0.0 --port 8000
+uv run ai my_project --transport http --host 127.0.0.1 --port 8000
 ```
 
 ### Project ID
@@ -206,7 +210,7 @@ uv run ai --transport http --host 127.0.0.1 --port 8000
 uv run ai my_project --transport http --port 8000
 
 # Accessible from network
-uv run ai --transport http --host 0.0.0.0 --port 8000
+uv run ai --transport http --host 127.0.0.1 --port 8000
 ```
 
 **Server endpoint:** `http://host:port/mcp`
@@ -216,7 +220,7 @@ uv run ai --transport http --host 0.0.0.0 --port 8000
 uv run python -m agentic_inquiry.mcp.cli \
   --project-id my_project \
   --transport http \
-  --host 0.0.0.0 \
+  --host 127.0.0.1 \
   --port 8000
 ```
 
@@ -231,7 +235,7 @@ uv run python -m agentic_inquiry.mcp.cli \
 mcp:
   api:
     enabled: true
-    host: "0.0.0.0"
+    host: "127.0.0.1"
     port: 8000
     cors:
       enabled: true
@@ -1094,7 +1098,7 @@ search:
 mcp:
   enabled: true
   api:
-    host: "0.0.0.0"
+    host: "127.0.0.1"
     port: 8765
     cors:
       enabled: true

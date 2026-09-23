@@ -18,12 +18,11 @@ from agentic_inquiry.mcp.utils.rate_limiter import get_rate_limiter
 logger = logging.getLogger(__name__)
 
 # Type variable for generic function wrapping
-F = TypeVar('F', bound=Callable[..., Any])
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def create_service_bound_wrapper(
-    tool_func: Callable[..., Any],
-    services: Dict[str, Any]
+    tool_func: Callable[..., Any], services: Dict[str, Any]
 ) -> Callable[..., Any]:
     """Create a wrapper function that binds services parameter without using exec().
 
@@ -46,15 +45,11 @@ def create_service_bound_wrapper(
     sig = inspect.signature(tool_func)
 
     # Build new parameters list without 'services'
-    new_params = [
-        param for name, param in sig.parameters.items()
-        if name != "services"
-    ]
+    new_params = [param for name, param in sig.parameters.items() if name != "services"]
 
     # Build new annotations without 'services'
     new_annotations = {
-        k: v for k, v in tool_func.__annotations__.items()
-        if k != "services"
+        k: v for k, v in tool_func.__annotations__.items() if k != "services"
     }
 
     # Create wrapper using functools to preserve metadata
@@ -67,8 +62,7 @@ def create_service_bound_wrapper(
             rate_limiter = get_rate_limiter()
             # Pass tool name for tool-specific rate limits
             result = await rate_limiter.check_rate_limit(
-                session_id,
-                tool_name=tool_func.__name__
+                session_id, tool_name=tool_func.__name__
             )
             if not result.allowed:
                 logger.warning(
@@ -92,7 +86,7 @@ def create_service_bound_wrapper(
 
 class MCPServer:
     """Main MCP server orchestrator.
-    
+
     Responsibilities:
     - Initialize FastMCP application
     - Register tools based on configuration
@@ -100,35 +94,39 @@ class MCPServer:
     - Manage API endpoints (if enabled)
     - Lifecycle management (startup/shutdown)
     """
-    
-    def __init__(self, config: Config, project_id: Optional[str] = None):
+
+    def __init__(
+        self,
+        config: Config,
+        project_id: Optional[str] = None,
+        project_root: Optional[str] = None,
+    ):
         """Initialize MCP server.
-        
+
         Args:
             config: Configuration object
             project_id: Optional default project ID for service initialization
+            project_root: Project whose integration ledger the maintenance tick drains
         """
         self.config = config
         self.project_id = project_id
+        self.project_root = project_root
         self.app: Optional[FastMCP] = None
         self.services: Dict[str, Any] = {}
         self._initialized = False
-        
+
         logger.info(
             "MCPServer created",
-            extra={
-                "mcp_enabled": config.mcp.enabled,
-                "project_id": project_id
-            }
+            extra={"mcp_enabled": config.mcp.enabled, "project_id": project_id},
         )
-    
+
     async def initialize(self, project_id: Optional[str] = None):
         """Initialize server and register tools.
-        
+
         Args:
             project_id: Optional project ID to initialize services for.
                        If None, uses the project_id from constructor.
-        
+
         Raises:
             RuntimeError: If MCP is not enabled in configuration
             ValueError: If no project_id is provided
@@ -136,39 +134,41 @@ class MCPServer:
         if self._initialized:
             logger.warning("MCPServer already initialized, skipping")
             return
-        
+
         if not self.config.mcp.enabled:
             raise RuntimeError("MCP is not enabled in configuration")
-        
+
         # Determine project_id
         pid = project_id or self.project_id
         if not pid:
-            raise ValueError("project_id must be provided either in constructor or initialize()")
-        
+            raise ValueError(
+                "project_id must be provided either in constructor or initialize()"
+            )
+
         self.project_id = pid
-        
+
         logger.info("Initializing MCP server for project: %s", self.project_id)
-        
+
         # Create FastMCP application
         self.app = FastMCP(
             name=self.config.mcp.server.name,
             version=self.config.mcp.server.version,
-            instructions=self.config.mcp.server.description
+            instructions=self.config.mcp.server.description,
         )
-        
+
         # Create service instances
         await self._create_services()
-        
+
         # Register cognitive tools (always enabled)
         await self._register_cognitive_tools()
-        
+
         # Register direct access tools (if enabled)
         if self.config.mcp.tools.direct_access.get("enabled", False):
             logger.info("Direct access tools enabled")
             await self._register_direct_tools()
         else:
             logger.info("Direct access tools disabled")
-        
+
         self._initialized = True
         logger.info("MCP server initialized successfully")
 
@@ -180,16 +180,28 @@ class MCPServer:
         try:
             storage = self.services.get("storage")
             if not storage:
-                logger.warning("Storage service not available, cannot check project indexing status.")
+                logger.warning(
+                    "Storage service not available, cannot check project indexing status."
+                )
                 return
 
             tables = await storage.list_tables()
-            chunk_count = await storage.count_chunks() if "document_chunks" in tables else 0
+            chunk_count = (
+                await storage.count_chunks() if "document_chunks" in tables else 0
+            )
 
             if chunk_count == 0:
-                logger.info("Project is unindexed. Automatically starting @project-learner agent.")
-                print("\n[Agentic Inquiry] This project has not been indexed yet.", file=sys.stderr)
-                print("[Agentic Inquiry] Automatically starting the @project-learner agent to build the knowledge base...\n", file=sys.stderr)
+                logger.info(
+                    "Project is unindexed. Automatically starting @project-learner agent."
+                )
+                print(
+                    "\n[Agentic Inquiry] This project has not been indexed yet.",
+                    file=sys.stderr,
+                )
+                print(
+                    "[Agentic Inquiry] Automatically starting the @project-learner agent to build the knowledge base...\n",
+                    file=sys.stderr,
+                )
 
                 if not self.app:
                     logger.error("FastMCP app not initialized, cannot start agent.")
@@ -200,28 +212,47 @@ class MCPServer:
                     # This simulates the user typing "@project-learner"
                     # --- Task Execution ---
                     pass
-                    
+
                     # We need to process this request through the app's entry point.
                     # As we are inside the server, we can directly call the handler.
                     # This is a simplified approach. A more robust solution might involve
                     # a dedicated internal API for triggering agents.
-                    
+
                     # Since we can't directly call the agent, we will notify the user
                     # and provide the command to run. This is a temporary measure until
                     # direct agent invocation from the server is implemented.
-                    print("---------------------------------------------------------", file=sys.stderr)
+                    print(
+                        "---------------------------------------------------------",
+                        file=sys.stderr,
+                    )
                     print("ACTION REQUIRED:", file=sys.stderr)
-                    print("  Run the following command to start the learning process:", file=sys.stderr)
+                    print(
+                        "  Run the following command to start the learning process:",
+                        file=sys.stderr,
+                    )
                     print("  @project-learner learn this project", file=sys.stderr)
-                    print("---------------------------------------------------------", file=sys.stderr)
+                    print(
+                        "---------------------------------------------------------",
+                        file=sys.stderr,
+                    )
 
                 except Exception as e:
-                    logger.error(f"Failed to start @project-learner agent: {e}", exc_info=True)
-                    print(f"\n[Agentic Inquiry] Error: Could not automatically start the project learner agent: {e}", file=sys.stderr)
-                    print("[Agentic Inquiry] Please run '@project-learner' manually.", file=sys.stderr)
+                    logger.error(
+                        f"Failed to start @project-learner agent: {e}", exc_info=True
+                    )
+                    print(
+                        f"\n[Agentic Inquiry] Error: Could not automatically start the project learner agent: {e}",
+                        file=sys.stderr,
+                    )
+                    print(
+                        "[Agentic Inquiry] Please run '@project-learner' manually.",
+                        file=sys.stderr,
+                    )
 
         except Exception as e:
-            logger.warning(f"Could not perform project learner check: {e}", exc_info=True)
+            logger.warning(
+                f"Could not perform project learner check: {e}", exc_info=True
+            )
 
     async def _check_and_suggest_onboarding(self):
         """Checks if the project is unindexed and suggests the onboarding tool."""
@@ -237,7 +268,7 @@ class MCPServer:
                 print(
                     "\n[Agentic Inquiry] This project has not been indexed yet."
                     "\n[Agentic Inquiry] To get started, run the project learner agent: @project-learner\n",
-                    file=sys.stderr
+                    file=sys.stderr,
                 )
                 return
 
@@ -248,73 +279,139 @@ class MCPServer:
                 print(
                     "\n[Agentic Inquiry] This project has no indexed content."
                     "\n[Agentic Inquiry] To build the knowledge base, run the project learner agent: @project-learner\n",
-                    file=sys.stderr
+                    file=sys.stderr,
                 )
         except Exception as e:
             # S5-001: Log onboarding check failure (non-critical)
-            logger.warning(f"Could not perform project onboarding check: {e}", exc_info=True)
-    
+            logger.warning(
+                f"Could not perform project onboarding check: {e}", exc_info=True
+            )
+
     async def _create_services(self):
         """Create all MCP services with dependencies."""
         logger.info("Creating MCP services")
-        
+
         try:
             self.services = await create_mcp_services(
                 config=self.config,
-                project_id=self.project_id
+                project_id=self.project_id,
+                project_root=self.project_root,
             )
-            
+
             logger.info(
-                "MCP services created",
-                extra={"service_count": len(self.services)}
+                "MCP services created", extra={"service_count": len(self.services)}
             )
         except Exception:
             logger.error("Failed to create MCP services", exc_info=True)
             raise
-    
+
     async def _register_cognitive_tools(self):
         """Register cognitive tools (default enabled)."""
         logger.info("Registering cognitive tools")
 
         # Import all tool functions
         from agentic_inquiry.mcp.tools import (
-            session, memory, search, analysis, context, knowledge, info
+            session,
+            memory,
+            search,
+            analysis,
+            context,
+            knowledge,
+            info,
         )
 
         # Define tools with (function, name, description) tuples
         tools = [
             # Session tools
-            (session.create_session, "create_session", "Create a new work session for a project"),
+            (
+                session.create_session,
+                "create_session",
+                "Create a new work session for a project",
+            ),
             (session.get_session, "get_session", "Retrieve details about a session"),
-            (session.list_sessions, "list_sessions", "List all sessions with optional filtering"),
+            (
+                session.list_sessions,
+                "list_sessions",
+                "List all sessions with optional filtering",
+            ),
             (session.resume_session, "resume_session", "Resume an existing session"),
-
             # Memory tools
-            (memory.save_memory, "save_memory", "Save an observation or insight to memory"),
-            (memory.recall_memories, "recall_memories", "Recall relevant memories based on semantic similarity"),
-
+            (
+                memory.save_memory,
+                "save_memory",
+                "Save an observation or insight to memory",
+            ),
+            (
+                memory.recall_memories,
+                "recall_memories",
+                "Recall relevant memories based on semantic similarity",
+            ),
             # Search tools
-            (search.search_knowledge, "search_knowledge", "Search across all indexed content in the project"),
-            (search.find_similar, "find_similar", "Find entities or content semantically similar to a query. Use search_scope='content' for document chunks, 'entities' for code symbols, or 'all' for both."),
-            (search.fetch_content, "fetch_content", "Fetch full content for specific chunk IDs. Use after search_knowledge(preview_only=True) to retrieve selected results."),
-
+            (
+                search.search_knowledge,
+                "search_knowledge",
+                "Search across all indexed content in the project",
+            ),
+            (
+                search.find_similar,
+                "find_similar",
+                "Find entities or content semantically similar to a query. Use search_scope='content' for document chunks, 'entities' for code symbols, or 'all' for both.",
+            ),
+            (
+                search.fetch_content,
+                "fetch_content",
+                "Fetch full content for specific chunk IDs. Use after search_knowledge(preview_only=True) to retrieve selected results.",
+            ),
             # Analysis tools
-            (analysis.understand_entity, "understand_entity", "Deep dive into a code entity (class, function, module)"),
-            (analysis.analyze_impact, "analyze_impact", "Analyze the impact of changing a code entity"),
-            (analysis.find_patterns, "find_patterns", "Find recurring patterns in the codebase"),
-
+            (
+                analysis.understand_entity,
+                "understand_entity",
+                "Deep dive into a code entity (class, function, module)",
+            ),
+            (
+                analysis.analyze_impact,
+                "analyze_impact",
+                "Analyze the impact of changing a code entity",
+            ),
+            (
+                analysis.find_patterns,
+                "find_patterns",
+                "Find recurring patterns in the codebase",
+            ),
             # Context tools
-            (context.build_context, "build_context", "Build focused context for a task or query"),
-
+            (
+                context.build_context,
+                "build_context",
+                "Build focused context for a task or query",
+            ),
             # Knowledge tools
-            (knowledge.add_knowledge, "add_knowledge", "Add content to the knowledge base by indexing files or text"),
-
+            (
+                knowledge.add_knowledge,
+                "add_knowledge",
+                "Add content to the knowledge base by indexing files or text",
+            ),
             # Info tools
-            (info.get_server_info, "get_server_info", "Get comprehensive server configuration and available projects"),
+            (
+                info.get_server_info,
+                "get_server_info",
+                "Get comprehensive server configuration and available projects",
+            ),
             (info.get_events, "get_events", "Retrieve event log for a session"),
-            (info.get_project_info, "get_project_info", "Get comprehensive project information and statistics"),
-            (info.list_entities, "list_entities", "List indexed entities with optional filtering by type, file, or pattern"),
-            (info.run_maintenance, "run_maintenance", "Run database maintenance to compact files and reclaim disk space"),
+            (
+                info.get_project_info,
+                "get_project_info",
+                "Get comprehensive project information and statistics",
+            ),
+            (
+                info.list_entities,
+                "list_entities",
+                "List indexed entities with optional filtering by type, file, or pattern",
+            ),
+            (
+                info.run_maintenance,
+                "run_maintenance",
+                "Run database maintenance to compact files and reclaim disk space",
+            ),
         ]
 
         # Register each tool with services injected using safe wrapper pattern
@@ -327,7 +424,7 @@ class MCPServer:
             logger.debug("Registered tool: %s", name)
 
         logger.info("Registered %d cognitive tools", len(tools))
-    
+
     async def _register_direct_tools(self):
         """Register direct access tools (default disabled)."""
         logger.info("Registering direct access tools")
@@ -336,12 +433,28 @@ class MCPServer:
 
         # Define direct access tools with (function, name, description) tuples
         tools = [
-            (direct_access.index_files, "index_files", "Index specific files with granular control"),
-            (direct_access.search_code, "search_code", "Code-only search with syntax awareness"),
+            (
+                direct_access.index_files,
+                "index_files",
+                "Index specific files with granular control",
+            ),
+            (
+                direct_access.search_code,
+                "search_code",
+                "Code-only search with syntax awareness",
+            ),
             (direct_access.search_docs, "search_docs", "Documentation-only search"),
-            (direct_access.graph_traverse, "graph_traverse", "Custom graph navigation and relationship traversal"),
+            (
+                direct_access.graph_traverse,
+                "graph_traverse",
+                "Custom graph navigation and relationship traversal",
+            ),
             (direct_access.get_by_id, "get_by_id", "Bulk entity retrieval by ID"),
-            (direct_access.get_recent_activity, "get_recent_activity", "Get recent project activity and changes"),
+            (
+                direct_access.get_recent_activity,
+                "get_recent_activity",
+                "Get recent project activity and changes",
+            ),
         ]
 
         # Register each tool with services injected using safe wrapper pattern
@@ -354,7 +467,7 @@ class MCPServer:
             logger.debug("Registered direct access tool: %s", name)
 
         logger.info("Registered %d direct access tools", len(tools))
-    
+
     async def start(self):
         """Start MCP server.
 
@@ -378,8 +491,8 @@ class MCPServer:
             extra={
                 "host": self.config.mcp.api.host,
                 "port": self.config.mcp.api.port,
-                "api_enabled": self.config.mcp.api.enabled
-            }
+                "api_enabled": self.config.mcp.api.enabled,
+            },
         )
 
     def run(
@@ -397,10 +510,8 @@ class MCPServer:
                 - stdio: Standard input/output for local/CLI use
                 - http: HTTP-based web service (recommended for production)
                 - sse: Server-Sent Events (legacy, not recommended)
-            host: Network interface to bind to (for http/sse transports)
-                - "127.0.0.1" for localhost only
-                - "0.0.0.0" for all interfaces
-                Defaults to config.mcp.api.host if not specified
+            host: Network interface to bind to (for http/sse transports).
+                Loopback only. Defaults to config.mcp.api.host if not specified.
             port: Port number (for http/sse transports)
                 Defaults to config.mcp.api.port if not specified
 
@@ -414,8 +525,8 @@ class MCPServer:
             # HTTP - for web deployments
             server.run(transport="http", host="127.0.0.1", port=8000)
 
-            # HTTP - accessible from network
-            server.run(transport="http", host="0.0.0.0", port=8000)
+            # HTTP on loopback
+            server.run(transport="http", host="127.0.0.1", port=8000)
 
         Notes:
             - For STDIO transport, host and port are ignored
@@ -424,12 +535,11 @@ class MCPServer:
             - This method cannot be called from inside an async function
               (use run_async() instead)
         """
+        if transport != "stdio":
+            host = self._loopback_host(host)
         if not self._initialized or not self.app:
             raise RuntimeError("Server must be initialized first")
 
-        # Use config defaults if not specified
-        if host is None:
-            host = self.config.mcp.api.host
         if port is None:
             port = self.config.mcp.api.port
 
@@ -443,8 +553,10 @@ class MCPServer:
                     "transport": transport,
                     "host": host,
                     "port": port,
-                    "endpoint": f"http://{host}:{port}/mcp" if transport == "http" else f"http://{host}:{port}/sse"
-                }
+                    "endpoint": f"http://{host}:{port}/mcp"
+                    if transport == "http"
+                    else f"http://{host}:{port}/sse",
+                },
             )
 
         # Run the FastMCP server
@@ -479,12 +591,11 @@ class MCPServer:
             - Use this method when calling from within an async function
             - Use run() when calling from synchronous code
         """
+        if transport != "stdio":
+            host = self._loopback_host(host)
         if not self._initialized or not self.app:
             raise RuntimeError("Server must be initialized first")
 
-        # Use config defaults if not specified
-        if host is None:
-            host = self.config.mcp.api.host
         if port is None:
             port = self.config.mcp.api.port
 
@@ -498,8 +609,10 @@ class MCPServer:
                     "transport": transport,
                     "host": host,
                     "port": port,
-                    "endpoint": f"http://{host}:{port}/mcp" if transport == "http" else f"http://{host}:{port}/sse"
-                }
+                    "endpoint": f"http://{host}:{port}/mcp"
+                    if transport == "http"
+                    else f"http://{host}:{port}/sse",
+                },
             )
 
         # Run the FastMCP server asynchronously
@@ -507,7 +620,21 @@ class MCPServer:
             await self.app.run_async(transport="stdio")
         else:
             await self.app.run_async(transport=transport, host=host, port=port)  # type: ignore[arg-type]
-    
+
+    def _loopback_host(self, host: Optional[str]) -> str:
+        """Bind http and sse on loopback. MCP has no API key of its own."""
+        from agentic_inquiry.server.bind import bind_host
+
+        requested = host if host is not None else self.config.mcp.api.host
+        try:
+            return bind_host(requested, auth_enabled=False)
+        except ValueError as exc:
+            if "API key" in str(exc):
+                raise ValueError(
+                    "MCP http and sse transports bind loopback only; use a reverse proxy for any other address"
+                ) from exc
+            raise
+
     async def shutdown(self):
         """Graceful shutdown."""
         logger.info("Shutting down MCP server")
@@ -542,12 +669,9 @@ class MCPServer:
                         "Error stopping EventSystem: %s",
                         str(e),
                         exc_info=True,
-                        extra={
-                            "error_type": type(e).__name__,
-                            "error_message": str(e)
-                        }
+                        extra={"error_type": type(e).__name__, "error_message": str(e)},
                     )
-            
+
             # Close database connections
             if "db_manager" in self.services:
                 try:
@@ -559,10 +683,7 @@ class MCPServer:
                         "Error closing database: %s",
                         str(e),
                         exc_info=True,
-                        extra={
-                            "error_type": type(e).__name__,
-                            "error_message": str(e)
-                        }
+                        extra={"error_type": type(e).__name__, "error_message": str(e)},
                     )
 
             # Shutdown thread pool executors
@@ -575,28 +696,25 @@ class MCPServer:
                     "Error shutting down executors: %s",
                     str(e),
                     exc_info=True,
-                    extra={
-                        "error_type": type(e).__name__,
-                        "error_message": str(e)
-                    }
+                    extra={"error_type": type(e).__name__, "error_message": str(e)},
                 )
 
             # Clear services
             self.services.clear()
-        
+
         self._initialized = False
         logger.info("MCP server shutdown complete")
-    
+
     def get_app(self) -> FastMCP:
         """Get the FastMCP application instance.
-        
+
         Returns:
             FastMCP application instance
-        
+
         Raises:
             RuntimeError: If server is not initialized
         """
         if not self._initialized or not self.app:
             raise RuntimeError("Server must be initialized first")
-        
+
         return self.app

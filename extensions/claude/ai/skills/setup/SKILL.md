@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Configure the local Agentic Inquiry storage environment (LanceDB). Use when setting up ai for the first time in a project.
+description: Configure the local Agentic Inquiry storage environment and enable lifecycle hooks. Use when setting up ai for the first time in a project.
 argument-hint: "[local] [project-name]"
 disable-model-invocation: true
 allowed-tools: Bash, Read, Write, AskUserQuestion
@@ -17,7 +17,9 @@ the workspace should live - it is the current project.
 
 ## Your Task
 
-Set up ai with: **$ARGUMENTS**
+Run `ai setup` in this project. With no arguments it creates the local LanceDB environment when one is missing, then asks before enabling lifecycle hooks for each AFP client installed here. Pass `--client claude-code` when the person already confirmed that client. Pass `--no-enable` only when they want storage and no hooks.
+
+If `$ARGUMENTS` is set, append it: **$ARGUMENTS**
 
 ## Current State
 
@@ -49,7 +51,12 @@ OPENAI_API_KEY=sk-...           # Not needed for the local default
 
 ## After Setup
 
+The wizard prints the next commands. They match a local Agent Vault setup:
+
 ```bash
-ai index . --project-id <project-name>
-ai search "main entry point" --project-id <project-name>
+ai index .
+ai serve
+ai search "main entry point"
 ```
+
+When lifecycle enable succeeds, commit `.agentic-inquiry/project.toml` and start a new client session. `integration.json` stays on this machine. Hooks stay inert until that enable step has run.

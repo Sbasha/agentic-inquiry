@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Sbasha/agentic-inquiry/contracts/jsonschema/afp-lifecycle-capabilities.schema.json",
+  "title": "Agentic Inquiry capability report",
+  "description": "The JSON object `ai capabilities --json` prints. A host adapter reads it before its first hook call and treats it as the truth about this executable; a matching command name or version number is never sufficient.",
+  "x-spec": "docs/specs/afp-lifecycle-contract/spec.md",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "product",
+    "version",
+    "contract_versions",
+    "hook_schema_version",
+    "runtime",
+    "clients",
+    "generative_model_calls",
+    "capture_default",
+    "max_hook_input_bytes"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "product": {
+      "const": "Agentic Inquiry"
+    },
+    "version": {
+      "type": "string",
+      "minLength": 1
+    },
+    "contract_versions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cli", "mcp", "hook"],
+      "properties": {
+        "cli": {
+          "const": 1
+        },
+        "mcp": {
+          "const": 1
+        },
+        "hook": {
+          "const": 1
+        }
+      }
+    },
+    "hook_schema_version": {
+      "const": 1
+    },
+    "runtime": {
+      "description": "Which operation families this runtime actually provides. A false value is a truthful absence, not a degraded mode.",
+      "type": "object",
+      "additionalProperties": {
+        "type": "boolean"
+      },
+      "required": [
+        "collection",
+        "index",
+        "search",
+        "context",
+        "symbols",
+        "relations",
+        "memory",
+        "knowledge",
+        "capture",
+        "backup",
+        "evaluation_recording"
+      ]
+    },
+    "clients": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claude-code", "codex", "pi"],
+      "properties": {
+        "claude-code": {
+          "$ref": "#/$defs/client"
+        },
+        "codex": {
+          "$ref": "#/$defs/client"
+        },
+        "pi": {
+          "$ref": "#/$defs/client"
+        }
+      }
+    },
+    "generative_model_calls": {
+      "const": false
+    },
+    "capture_default": {
+      "const": "inert"
+    },
+    "max_hook_input_bytes": {
+      "const": 1048576
+    }
+  },
+  "$defs": {
+    "client": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supported_events", "unsupported_events", "activation", "native_observed"],
+      "properties": {
+        "supported_events": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unsupported_events": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "activation": {
+          "type": "string"
+        },
+        "native_observed": {
+          "description": "True only after an observed native session on this client is recorded in the repository.",
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

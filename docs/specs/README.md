@@ -22,6 +22,8 @@ feature directory.
 files inside any feature dir are gitignored — see
 [`../CONVENTIONS.md § Work-loop state`](../CONVENTIONS.md#work-loop-state).
 
+[`afp-lifecycle-contract`](afp-lifecycle-contract/spec.md) - The `ai capabilities` and `ai integration hook` contract for host adapters (AFP pack), SQLite ledger, queued-then-reconciled capture, `ai mcp`, `ai status`.
+
 [`index-memory-reliability`](index-memory-reliability/spec.md) - Graph-relationship merge honesty, memory-save verify-on-write, Darwin CPU-hatch hint.
 
 [`first-run-reliability`](first-run-reliability/spec.md) - First-run onboard gate, index exit codes, LanceDB retry, env-file bootstrap.

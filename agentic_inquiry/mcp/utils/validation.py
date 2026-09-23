@@ -529,7 +529,7 @@ def validate_project_id(
     
     # Check character pattern
     pattern = r'^[a-zA-Z0-9_-]+$'
-    if not re.match(pattern, project_id):
+    if not re.fullmatch(pattern, project_id):
         # Identify invalid characters for better error message
         valid_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-')
         invalid_chars = set(project_id) - valid_chars

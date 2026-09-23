@@ -14,7 +14,7 @@ Usage:
     python -m agentic_inquiry.mcp.cli --project-id my_project --enable-direct-tools
     
     # Specify host and port
-    python -m agentic_inquiry.mcp.cli --project-id my_project --host 0.0.0.0 --port 9000
+    python -m agentic_inquiry.mcp.cli --project-id my_project --host 127.0.0.1 --port 9000
 """
 
 import asyncio
@@ -56,8 +56,8 @@ Examples:
   # Start with HTTP transport (for web service)
   %(prog)s --project-id my_project --transport http --host 127.0.0.1 --port 8000
 
-  # HTTP transport accessible from network
-  %(prog)s --project-id my_project --transport http --host 0.0.0.0 --port 8000
+  # HTTP transport on loopback
+  %(prog)s --project-id my_project --transport http --host 127.0.0.1 --port 8000
 
   # SSE transport (legacy, not recommended)
   %(prog)s --project-id my_project --transport sse --port 8000
@@ -86,6 +86,13 @@ Examples:
         type=str,
         required=True,
         help="Project identifier (required)"
+    )
+
+    parser.add_argument(
+        "--project-root",
+        type=str,
+        default=None,
+        help="Project root whose integration ledger the maintenance tick drains",
     )
     
     # Tool configuration
@@ -257,7 +264,14 @@ def apply_cli_overrides(config: Config, args: argparse.Namespace) -> Config:
     return config
 
 
-async def run_server(config: Config, project_id: str, transport: str, host: Optional[str], port: Optional[int]):
+async def run_server(
+    config: Config,
+    project_id: str,
+    transport: str,
+    host: Optional[str],
+    port: Optional[int],
+    project_root: Optional[str] = None,
+):
     """Run the MCP server.
 
     Args:
@@ -272,7 +286,7 @@ async def run_server(config: Config, project_id: str, transport: str, host: Opti
     try:
         # Create server
         logger.info("Creating MCP server")
-        server = MCPServer(config=config, project_id=project_id)
+        server = MCPServer(config=config, project_id=project_id, project_root=project_root)
 
         # Initialize server
         logger.info("Initializing MCP server")
@@ -339,7 +353,9 @@ async def async_main():
             sys.exit(1)
 
         # Run server
-        result = await run_server(config, args.project_id, args.transport, args.host, args.port)
+        result = await run_server(
+            config, args.project_id, args.transport, args.host, args.port, args.project_root
+        )
 
         # If stdio transport, we need to handle it specially
         if result and args.transport == "stdio":

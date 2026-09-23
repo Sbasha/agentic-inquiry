@@ -13,6 +13,7 @@ How Agentic Inquiry is built — components, data flows, and design rationale.
 | [README.md](architecture/README.md) | Architecture section overview and quick navigation by role |
 | [overview.md](architecture/overview.md) | System architecture — components, layers, plugin system, storage providers |
 | [search.md](architecture/search.md) | Search pipeline — hybrid vector+FTS, RRF reranking, IDF-weighted content boost |
+| [integration.md](architecture/integration.md) | Lifecycle contract - hook, ledger, and reconcile |
 | [indexing.md](architecture/indexing.md) | Indexing pipeline — parsing, chunking, embedding |
 | [storage-adapters.md](architecture/storage-adapters.md) | Storage adapter layer — registry and config-driven routing (historical reference for the removed PostgreSQL provider) |
 | [event-system.md](architecture/event-system.md) | Event system — EventSystem (queue+batching), EventBus (pub/sub), EventStore (SQLite) |
@@ -28,6 +29,8 @@ How Agentic Inquiry is built — components, data flows, and design rationale.
 | [0001-protocol-based-storage.md](adr/0001-protocol-based-storage.md) | Protocol-based storage abstraction |
 | [0002-storage-facade-pattern.md](adr/0002-storage-facade-pattern.md) | StorageFacade as unified entry point |
 | [0003-filter-ast-consolidation.md](adr/0003-filter-ast-consolidation.md) | Filter AST replacing FilterBuilder |
+| [0004-agent-vault-base-as-product-lineage.md](adr/0004-agent-vault-base-as-product-lineage.md) | Agent Vault base adopted as the product lineage |
+| [0005-afp-lifecycle-contract-public-surface.md](adr/0005-afp-lifecycle-contract-public-surface.md) | AFP lifecycle contract as a public surface |
 
 ---
 

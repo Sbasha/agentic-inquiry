@@ -26,8 +26,10 @@ RUN uv sync --frozen --no-dev
 # This avoids HuggingFace rate limits and slow cold starts
 RUN uv run python -c "from sentence_transformers import SentenceTransformer; SentenceTransformer('all-MiniLM-L6-v2')"
 
-# Server port
+# Server port. Cloud Run requires a non-loopback listen address. The process
+# serves nothing without both INQUIRY_SERVER_HOST and an API key.
 ENV PORT=8080
+ENV INQUIRY_SERVER_HOST=0.0.0.0
 EXPOSE 8080
 
 CMD ["uv", "run", "python", "entrypoint.py"]
