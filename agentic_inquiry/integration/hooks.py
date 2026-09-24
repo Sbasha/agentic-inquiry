@@ -41,6 +41,7 @@ from agentic_inquiry.integration.state import (
     Binding,
     Ledger,
     StateError,
+    inquiry_home,
     marker_claims_enabled,
     read_identity,
     stored_namespace_ok,
@@ -581,17 +582,6 @@ def _read_stage(
     budget = int(binding.policy.get("context_budget") or 0)
     if event == "UserPromptSubmit":
         budget = 3 * budget // 4
-    if event == "UserPromptSubmit" and _remaining(limit, started) < _EVIDENCE_RESERVE:
-        response["context"] = empty_context(budget)
-        response["errors"].append(
-            error_object(
-                "budget_exhausted",
-                "the evidence stage was skipped",
-                notify=False,
-                stage="evidence",
-            )
-        )
-        return True
     if event == "SessionStart":
         try:
             entries = _recall(ledger, binding)
@@ -608,7 +598,26 @@ def _read_stage(
             return True
         apply_context(response, entries, budget)
         return False
-    entries, dropped = _evidence(binding, query or "", Path(binding.project_root))
+    from agentic_inquiry.integration.session_recall import has_question
+
+    if not isinstance(query, str) or not has_question(query):
+        apply_context(response, [], budget)
+        return False
+    if _remaining(limit, started) < _EVIDENCE_RESERVE:
+        entries = _lexical_entries(ledger, binding, query)
+        apply_context(response, entries, budget)
+        response["errors"].append(
+            error_object(
+                "budget_exhausted",
+                "the evidence stage was skipped",
+                notify=False,
+                stage="evidence",
+            )
+        )
+        return True
+    entries, dropped, embedded_down = _prompt_entries(
+        ledger, binding, query, Path(binding.project_root), limit, started
+    )
     apply_context(response, entries, budget)
     if dropped:
         from agentic_inquiry.integration.contract import sanitize_header
@@ -616,7 +625,157 @@ def _read_stage(
         response["context"]["omitted"].extend(
             sanitize_header(item) for item in dropped if item
         )
+    if embedded_down:
+        response["errors"].append(
+            error_object(
+                "embedded_unavailable",
+                "the embedded half did not run",
+                notify=False,
+                stage="embedded",
+            )
+        )
     return False
+
+
+def _lexical_entries(
+    ledger: Ledger, binding: Binding, query: str
+) -> list[dict[str, Any]]:
+    from agentic_inquiry.integration.session_recall import (
+        items_from_captures,
+        select_items,
+    )
+
+    try:
+        rows = ledger.capture_rows(binding.owner, ledger.enabled_clients(binding.owner))
+    except sqlite3.OperationalError:
+        return []
+    chosen = select_items(query, items_from_captures(rows))
+    return [item.entry for item in chosen if item.entry and item.kind == "memory"]
+
+
+def _prompt_entries(
+    ledger: Ledger,
+    binding: Binding,
+    query: str,
+    root: Path,
+    limit: float,
+    started: float,
+) -> tuple[list[dict[str, Any]], list[str], bool]:
+    """Union ledger captures with hybrid search.
+
+    Full-text runs only when the warm service does not answer, and the
+    response then carries ``embedded_unavailable``. A repeated question
+    against the same stamp is the cached ranked list.
+    """
+    from agentic_inquiry.integration.session_recall import (
+        Item,
+        index_stamp,
+        items_from_captures,
+        prompt_stamp,
+        read_cache,
+        select_items,
+        server_marker,
+        warm_search,
+        write_cache,
+    )
+
+    try:
+        rows = ledger.capture_rows(binding.owner, ledger.enabled_clients(binding.owner))
+    except sqlite3.OperationalError:
+        rows = []
+    index = index_stamp(root)
+    stamp = prompt_stamp(query, rows, index, server_marker())
+    cached = read_cache(inquiry_home(), stamp)
+    if cached is not None:
+        return _cached_entries(cached, root)
+    memories = items_from_captures(rows)
+    remaining = _remaining(limit, started)
+    raw = warm_search(query, timeout=min(1.0, remaining))
+    dropped: list[str] = []
+    embedded_down = raw is None
+    if raw is None:
+        evidence, dropped = _evidence(binding, query, root)
+    else:
+        evidence, dropped = _warm_entries(raw, root)
+    evidence_items = [
+        Item(
+            id=str(entry["id"]),
+            text=str(entry.get("body") or ""),
+            created="",
+            kind="evidence",
+            score=float((entry.get("data") or {}).get("score") or 0.0),
+            entry=entry,
+        )
+        for entry in evidence
+    ]
+    chosen = select_items(query, [*memories, *evidence_items])
+    entries = [item.entry for item in chosen if item.entry]
+    write_cache(inquiry_home(), stamp, entries, dropped, embedded_down, index=index)
+    return entries, dropped, embedded_down
+
+
+def _cached_entries(
+    cached: tuple[list[dict[str, Any]], list[str], bool], root: Path
+) -> tuple[list[dict[str, Any]], list[str], bool]:
+    """Reuse the ranked list, dropping an evidence file that is no longer there."""
+    entries, dropped, embedded_down = cached
+    kept: list[dict[str, Any]] = []
+    extra: list[str] = []
+    for entry in entries:
+        if entry.get("type") != "evidence":
+            kept.append(entry)
+            continue
+        raw_data = entry.get("data")
+        data = raw_data if isinstance(raw_data, dict) else {}
+        relative = str(data.get("file_path") or entry.get("file") or "")
+        if safe_relative(relative) is None or not _regular_inside(root, relative):
+            extra.append(str(entry.get("id") or ""))
+            continue
+        kept.append(entry)
+    return kept, [*dropped, *[item for item in extra if item]], embedded_down
+
+
+def _warm_entries(
+    results: list[dict[str, Any]], root: Path
+) -> tuple[list[dict[str, Any]], list[str]]:
+    from agentic_inquiry.integration.session_recall import (
+        evidence_item,
+        warm_identifier,
+    )
+
+    entries: list[dict[str, Any]] = []
+    dropped: list[str] = []
+    for result in results:
+        raw_path = str(result.get("file_path") or result.get("path") or "")
+        relative = _relativize(raw_path, root)
+        snippet = prepare_body(
+            None, str(result.get("content") or result.get("text") or "")
+        )
+        identifier = warm_identifier(relative, snippet)
+        if safe_relative(relative) is None or not _regular_inside(root, relative):
+            dropped.append(identifier)
+            continue
+        score = result.get("score")
+        numeric = (
+            float(score)
+            if isinstance(score, (int, float)) and not isinstance(score, bool)
+            else 0.0
+        )
+        extra: dict[str, Any] = {}
+        for field in ("start_line", "end_line"):
+            value = result.get(field)
+            if isinstance(value, int) and not isinstance(value, bool):
+                extra[field] = value
+        entries.append(
+            evidence_item(
+                identifier,
+                relative=relative,
+                snippet=snippet,
+                score=numeric,
+                extra=extra,
+            ).entry
+        )
+    return entries, dropped
 
 
 def _recall(ledger: Ledger, binding: Binding) -> list[dict[str, Any]]:

@@ -1,0 +1,133 @@
+{
+  "schema": "InquirySessionGolden/v1",
+  "sessions": [
+    {
+      "id": "later-fact",
+      "setting": "code",
+      "turns": [
+        {
+          "id": "later-fact.ledger-key",
+          "subject": "ledger-key",
+          "content": "The ledger key is a hex digest of owner, client, project, session, event, and event id."
+        },
+        {
+          "id": "later-fact.stop",
+          "subject": "stop-context",
+          "content": "Stop events do not inject additional context into the model."
+        },
+        {
+          "role": "question",
+          "query": "How is the ledger key formed?",
+          "relevant": ["later-fact.ledger-key"]
+        }
+      ]
+    },
+    {
+      "id": "correction",
+      "setting": "code",
+      "turns": [
+        {
+          "id": "correction.old",
+          "subject": "bind-host",
+          "content": "The hook binds on all interfaces."
+        },
+        {
+          "id": "correction.new",
+          "subject": "bind-host",
+          "content": "The hook binds on 127.0.0.1 only."
+        },
+        {
+          "role": "question",
+          "query": "Which address does the hook bind?",
+          "relevant": ["correction.new"],
+          "must_omit": ["correction.old"]
+        }
+      ]
+    },
+    {
+      "id": "buried",
+      "setting": "conversation",
+      "turns": [
+        {
+          "id": "buried.codename",
+          "subject": "codename",
+          "content": "The release codename is harbor."
+        },
+        {
+          "id": "buried.noise-1",
+          "subject": "lint",
+          "content": "The linter runs on the pre-push hook."
+        },
+        {
+          "id": "buried.noise-2",
+          "subject": "docs",
+          "content": "The charter is the scope document."
+        },
+        {
+          "role": "question",
+          "query": "What is the release codename?",
+          "relevant": ["buried.codename"]
+        }
+      ]
+    },
+    {
+      "id": "document",
+      "setting": "document",
+      "turns": [
+        {
+          "id": "document.spec",
+          "subject": "harbor-spec",
+          "content": "docs/specs/harbor.md states the release codename."
+        },
+        {
+          "id": "document.readme",
+          "subject": "readme",
+          "content": "README.md explains how to install the plugin."
+        },
+        {
+          "role": "question",
+          "query": "Which document states the release codename?",
+          "relevant": ["document.spec"]
+        }
+      ]
+    },
+    {
+      "id": "code-location",
+      "setting": "code",
+      "turns": [
+        {
+          "id": "code.bind",
+          "subject": "bind-site",
+          "content": "agentic_inquiry/integration/hooks.py is where the hook reads the prompt."
+        },
+        {
+          "id": "code.cli",
+          "subject": "cli",
+          "content": "agentic_inquiry/cli/main.py parses command line arguments."
+        },
+        {
+          "role": "question",
+          "query": "Which file reads the prompt?",
+          "relevant": ["code.bind"]
+        }
+      ]
+    },
+    {
+      "id": "abstain",
+      "setting": "conversation",
+      "turns": [
+        {
+          "id": "abstain.store",
+          "subject": "store",
+          "content": "The local index uses LanceDB."
+        },
+        {
+          "role": "question",
+          "query": "What is the production database password?",
+          "relevant": [],
+          "abstain": true
+        }
+      ]
+    }
+  ]
+}

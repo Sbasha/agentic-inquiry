@@ -71,7 +71,7 @@
     "clients": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["claude-code", "codex", "pi"],
+      "required": ["claude-code", "codex", "pi", "cursor"],
       "properties": {
         "claude-code": {
           "$ref": "#/$defs/client"
@@ -80,6 +80,9 @@
           "$ref": "#/$defs/client"
         },
         "pi": {
+          "$ref": "#/$defs/client"
+        },
+        "cursor": {
           "$ref": "#/$defs/client"
         }
       }

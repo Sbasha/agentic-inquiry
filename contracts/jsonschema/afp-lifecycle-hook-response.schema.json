@@ -340,6 +340,7 @@
             "ledger_unavailable",
             "event_purged",
             "capture_exhausted",
+            "embedded_unavailable",
             "internal_error"
           ],
           "description": "The closed hook error-code set. CLI verbs (enable, disable, purge, reconcile) use a separate closed set documented in the spec."

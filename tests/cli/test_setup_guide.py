@@ -44,6 +44,29 @@ def test_setup_client_enables_hooks(tmp_path: Path, monkeypatch) -> None:
     assert response["status"] in {"ok", "partial"}
 
 
+def test_setup_cursor_client_enables_the_same_binding(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("INQUIRY_HOME", str(tmp_path / "inquiry-home"))
+    project = tmp_path / "project"
+    project.mkdir()
+    assert LocalSetup(env_name="ai", workspace=project).run(announce=False) is True
+    assert (
+        run_setup(["local", "ai", "--workspace", str(project), "--client", "cursor"])
+        is True
+    )
+    marker = json.loads((project / ".agentic-inquiry" / "integration.json").read_text())
+    assert marker["clients"]["cursor"] == {"owner": "afp", "enabled": True}
+    payload = json.dumps(
+        {
+            "schema_version": 1,
+            "owner": "afp",
+            "project_root": str(project.resolve()),
+            "session_id": "setup-guide",
+        }
+    ).encode()
+    response, _code = hook("cursor", "SessionStart", payload)
+    assert response["status"] in {"ok", "partial"}
+
+
 def test_discovered_client_stays_off_without_a_prompt(
     tmp_path: Path, monkeypatch
 ) -> None:

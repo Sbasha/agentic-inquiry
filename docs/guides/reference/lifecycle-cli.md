@@ -28,7 +28,7 @@ Events: `SessionStart`, `UserPromptSubmit`, `PostToolUse`, `PreCompact`, `Stop`,
 
 ## Two code sets
 
-Hook responses use the closed set in `contracts/jsonschema/afp-lifecycle-hook-response.schema.json`. Codes an operator sees there include `ledger_unavailable`, `capture_exhausted`, `event_id_conflict`, `artifact_ignored`, `durable_store_absent`, and `budget_exhausted`.
+Hook responses use the closed set in `contracts/jsonschema/afp-lifecycle-hook-response.schema.json`. Codes an operator sees there include `ledger_unavailable`, `capture_exhausted`, `event_id_conflict`, `artifact_ignored`, `durable_store_absent`, `budget_exhausted`, and `embedded_unavailable`.
 
 CLI verbs use `project_not_onboarded`, `storage_namespace_invalid`, `standalone_plugin_enabled`, `settings_unreadable`, `owner_conflict`, `owner_mismatch`, `project_identity_invalid`, `project_files_invalid`, `policy_invalid`, `memories_failed`, `environment_busy`, `confirmation_declined`, and `internal_error`.
 
@@ -46,7 +46,7 @@ Exit 0 is ok or inert. Exit 1 is partial, unsupported, or a CLI refusal. Exit 2 
 
 ## Deadlines
 
-`SessionStart` and `UserPromptSubmit` have 6.0 seconds. `SessionEnd` has 0.5 seconds. Every other event has 3.0 seconds. `INQUIRY_HOOK_DEADLINE_SECONDS` overrides a deadline when it is a float in `(0, 600]`. Evidence is skipped when fewer than 2.5 seconds remain. SessionStart recall is never skipped for budget.
+`SessionStart` and `UserPromptSubmit` have 6.0 seconds. `SessionEnd` has 0.5 seconds. Every other event has 3.0 seconds. `INQUIRY_HOOK_DEADLINE_SECONDS` overrides a deadline when it is a float in `(0, 600]`. Evidence is skipped when fewer than 2.5 seconds remain. SessionStart recall is never skipped for budget. A UserPromptSubmit with no content token injects nothing and does not search. A repeated question against the same ledger rows and the same index manifest reuses the ranked list. When the warm service does not answer, the hook still returns ledger matches and full-text hits and reports `embedded_unavailable`.
 
 ## Capture, retry, purge
 

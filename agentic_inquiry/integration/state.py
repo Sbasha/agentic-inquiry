@@ -659,6 +659,32 @@ class Ledger:
             ).fetchall()
         )
 
+    def capture_rows(
+        self, owner: str, enabled_clients: list[str], *, rows: int = 200
+    ) -> list[sqlite3.Row]:
+        """Newest non-purged captures, committed and still queued.
+
+        The prompt unions these with hybrid search so a row that has not been
+        embedded yet is still findable, and a committed row is still findable
+        when the warm ranker is down.
+        """
+        if not enabled_clients:
+            return []
+        placeholders = ",".join("?" for _ in enabled_clients)
+        query = f"""
+            SELECT key, kind, client, owner, payload, created_at, state FROM integration_events
+            WHERE project_id = ? AND kind = 'capture' AND owner = ?
+              AND client IN ({placeholders}) AND payload IS NOT NULL
+              AND state != 'purged'
+            ORDER BY created_at DESC, rowid DESC
+            LIMIT ?
+        """
+        return list(
+            self._conn.execute(
+                query, (self.identity, owner, *enabled_clients, rows)
+            ).fetchall()
+        )
+
     def enabled_clients(self, owner: str) -> list[str]:
         rows = self._conn.execute(
             """

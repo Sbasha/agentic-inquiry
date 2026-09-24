@@ -23,6 +23,7 @@ make bench-clean   # drop the cached corpus + index
 - `baseline.json` — pinned recall@10 + latency at the last `bench-pin` (committed).
 - `bench.py` — canonical entry point. `python tests/golden/bench.py --help`.
 - `test_search_quality.py` — thin pytest wrapper (slow, marked `golden`).
+- `sessions.json` — labelled multi-turn sessions. `make session-bench` replays them and reports evidence recall@10, plus injected bytes against stuffing that same history. It does not download a model, it does not replace `make bench`, and an arm it did not run stays `not_measured`.
 
 Bench artifacts (corpus mirror + LanceDB index + last results) live at
 `$TMPDIR/ai-golden-bench/` — outside the repo so the indexer's

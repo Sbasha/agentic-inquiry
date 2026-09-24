@@ -32,7 +32,7 @@ REPO = Path(__file__).resolve().parents[2]
 SCHEMAS = REPO / "contracts" / "jsonschema"
 HEAVY = {"torch", "lancedb", "sentence_transformers", "fastmcp", "fastapi", "pandas", "pyarrow", "fsspec"}
 EVENTS = ["SessionStart", "UserPromptSubmit", "PostToolUse", "PreCompact", "Stop", "SessionEnd"]
-CLIENTS = ["claude-code", "codex", "pi"]
+CLIENTS = ["claude-code", "codex", "pi", "cursor"]
 ACCOUNTING = "UTF-8 bytes as conservative token upper bound"
 
 PROBE = textwrap.dedent(
@@ -336,10 +336,25 @@ def test_malformed_hook_invocations_answer_unsupported_on_stdout(enabled: Harnes
 
 
 def test_unsupported_client_is_reported(harness: Harness) -> None:
-    completed, body = harness.hook("SessionStart", client="cursor")
+    completed, body = harness.hook("SessionStart", client="gemini")
     assert completed.returncode == 1
     assert body["status"] == "unsupported"
     assert body["errors"][0]["code"] == "unsupported_client"
+
+
+def test_cursor_uses_the_same_enable_and_owner_rules(onboarded: Harness) -> None:
+    completed, body = onboarded.hook("SessionStart", client="cursor")
+    assert completed.returncode == 0
+    assert body["status"] == "inert"
+    assert all(error["code"] != "unsupported_client" for error in body["errors"])
+    enabled = onboarded.enable("--json", client="cursor")
+    assert enabled.returncode == 0, enabled.stdout + enabled.stderr
+    marker = onboarded.project / ".agentic-inquiry" / "integration.json"
+    state = json.loads(marker.read_text(encoding="utf-8"))
+    assert state["clients"]["cursor"] == {"owner": "afp", "enabled": True}
+    conflict = onboarded.enable("--json", client="cursor", owner="standalone")
+    assert conflict.returncode == 1
+    assert json.loads(conflict.stdout)["errors"][0]["code"] == "owner_conflict"
 
 
 @pytest.mark.parametrize(
@@ -1036,6 +1051,59 @@ def test_user_prompt_submit_returns_evidence_inside_the_project(enabled: Harness
 def test_write_side_events_carry_no_context(enabled: Harness, event: str) -> None:
     _, body = enabled.hook(event, enabled.payload(event_id=f"{event}-1"))
     assert body["context"]["text"] == "" and body["context"]["budget"] == 0
+
+
+def test_a_correction_is_the_row_a_later_question_retrieves(enabled: Harness) -> None:
+    enabled.hook(
+        "Stop",
+        enabled.payload(
+            observations=[
+                {
+                    "content": "The release codename is kettle.",
+                    "metadata": {"subject": "codename"},
+                }
+            ],
+            event_id="corr-old",
+        ),
+    )
+    enabled.hook(
+        "Stop",
+        enabled.payload(
+            observations=[
+                {
+                    "content": "The release codename is harbor.",
+                    "metadata": {"subject": "codename"},
+                }
+            ],
+            event_id="corr-new",
+        ),
+    )
+    completed, body = enabled.hook(
+        "UserPromptSubmit", enabled.payload(query="What is the release codename?")
+    )
+    assert completed.returncode == 1, body  # the captures are still queued
+    text = body["context"]["text"]
+    assert "harbor" in text and "kettle" not in text
+    assert any(item["code"] == "embedded_unavailable" for item in body["errors"])
+    _code, _out, heavy = enabled.probe(
+        "integration",
+        "hook",
+        "--client",
+        "claude-code",
+        "--event",
+        "UserPromptSubmit",
+        stdin=json.dumps(enabled.payload(query="What is the release codename?")).encode("utf-8"),
+    )
+    assert "sentence_transformers" not in heavy and "torch" not in heavy
+
+
+def test_a_prompt_with_no_content_token_injects_nothing(enabled: Harness) -> None:
+    completed, body = enabled.hook("UserPromptSubmit", enabled.payload(query="ok"))
+    assert completed.returncode == 0, body
+    assert body["status"] == "ok"
+    assert body["context"]["text"] == ""
+    assert body["context"]["entries"] == []
+    assert all(item["code"] != "embedded_unavailable" for item in body["errors"])
 
 
 def test_read_stage_is_skipped_when_the_deadline_is_short(enabled: Harness) -> None:
