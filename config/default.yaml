@@ -351,10 +351,8 @@ parsers:
     priority: 100  # Higher priority = tried first
     # Maximum file size in bytes (files larger than this are skipped)
     max_file_size: 10485760  # 10MB
-    # Target chunk size in characters
-    chunk_size: 1000
-    # Overlap between chunks in characters
-    chunk_overlap: 200
+    # Code chunks follow definition boundaries; at most this many characters
+    max_chunk_chars: 1500
 
   # Salesforce source-format metadata (object, field, flow, flexipage, layout)
   salesforce_metadata:
@@ -370,12 +368,8 @@ parsers:
   fallback_text:
     enabled: true
     priority: 0  # Lowest priority = last resort
-    # Maximum chunk size in characters when a file is larger than whole_file_max_chars
+    # Text chunks follow line boundaries; at most this many characters
     max_chunk_size: 1000
-    # Overlap between chunks in characters
-    chunk_overlap: 100
-    # Files at or under this size stay one chunk (sessions, abstracts)
-    whole_file_max_chars: 8192
 
 # Memory system configuration
 memory:

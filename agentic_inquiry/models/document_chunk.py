@@ -1,9 +1,11 @@
 """Data model representing an indexed document chunk."""
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field, fields
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional
+
+import numpy as np
 
 
 _ALLOWED_CONTENT_TYPES = {
@@ -19,6 +21,14 @@ _ALLOWED_CONTENT_TYPES = {
 
 # Fields added for branch-scoped indexing that must be stripped before LanceDB schema validation.
 BRANCH_INDEXING_FIELDS: frozenset[str] = frozenset({"branch", "is_active", "expired_at"})
+
+
+def _numeric(values: List[Any]) -> bool:
+    """True when every element is a number (checked in numpy, not per element in Python)."""
+    try:
+        return values == [] or np.issubdtype(np.asarray(values).dtype, np.number)
+    except (TypeError, ValueError):
+        return False
 
 
 @dataclass(slots=True)
@@ -82,7 +92,7 @@ class DocumentChunk:
         if not isinstance(self.fts_text, str):
             raise ValueError("fts_text must be a string")
 
-        if not isinstance(self.vector, list) or not all(isinstance(v, (int, float)) for v in self.vector):
+        if not isinstance(self.vector, list) or not _numeric(self.vector):
             raise ValueError("vector must be a list of numbers")
 
         if self.content_type not in _ALLOWED_CONTENT_TYPES:
@@ -126,8 +136,16 @@ class DocumentChunk:
         return "fts_text"
 
     def to_dict(self) -> dict:
-        """Serialise the dataclass to a plain dictionary."""
-        data = asdict(self)
+        """Serialise the dataclass to a plain dictionary.
+
+        Copies container fields one level deep. ``dataclasses.asdict`` would
+        deep-copy the vector element by element, which dominated indexing time.
+        """
+        data = {f.name: getattr(self, f.name) for f in fields(self)}
+        for key in ("vector", "child_ids", "symbols"):
+            data[key] = list(data[key])
+        for key in ("metadata", "ranking_signals"):
+            data[key] = dict(data[key])
         for key in ("indexed_at", "source_modified_at"):
             value = data.get(key)
             if isinstance(value, datetime):

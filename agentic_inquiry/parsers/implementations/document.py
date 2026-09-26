@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import logging
 import hashlib
-import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from unstructured.partition.auto import partition

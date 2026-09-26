@@ -872,7 +872,10 @@ class GraphBuilder:
                         line_end = int(symbol_end_line)
                     else:
                         line_end = chunk.line_end if chunk.line_end is not None else -1
-                    parent_scope = chunk.parent_id if chunk.parent_id else None
+                    # The code partition records each symbol's own scope; the
+                    # chunk's parent_id describes the chunk, not the symbol.
+                    scope = symbol_metadata.get("parent_scope", chunk.parent_id)
+                    parent_scope = scope if scope else None
                     is_exported = symbol_metadata.get("is_exported", True)
                     
                     # Register symbol with rich metadata

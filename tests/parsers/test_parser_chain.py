@@ -366,10 +366,8 @@ async def test_parser_chain_honors_fallback_text_config(tmp_path):
 
     config = Config()
     config.parsers.fallback_text.max_chunk_size = 80
-    config.parsers.fallback_text.chunk_overlap = 0
-    config.parsers.fallback_text.whole_file_max_chars = 80
     text_file = tmp_path / "forced-split.txt"
-    text_file.write_text("Paragraph one is long enough. " * 12, encoding="utf-8")
+    text_file.write_text("Paragraph one is long enough.\n" * 12, encoding="utf-8")
 
     chain = ParserChain(
         parser_names=["fallback_text"],
@@ -382,4 +380,3 @@ async def test_parser_chain_honors_fallback_text_config(tmp_path):
     registered = get_parser_instance("fallback_text")
     assert isinstance(registered, FallbackTextParser)
     assert registered.max_chunk_size == 1000
-    assert registered.whole_file_max_chars == 8192

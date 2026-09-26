@@ -324,6 +324,10 @@ class CacheConfig:
 
 # Keys the retrieval-core change removed; still accepted so old configs load.
 _REMOVED_HYBRID_KEYS = ("rerank_by_graph", "rrf_k", "fallback_to_vector", "log_diagnostics", "overview_boost_factor")
+_REMOVED_PARSER_KEYS = {
+    "unified_code": ("chunk_size", "chunk_overlap"),
+    "fallback_text": ("chunk_overlap", "whole_file_max_chars"),
+}
 
 
 @dataclass
@@ -653,8 +657,9 @@ class UnifiedCodeParserConfig(ParserConfig):
     enabled: bool = True
     priority: int = 100
     max_file_size: int = 10485760  # 10MB
-    chunk_size: int = 1000
-    chunk_overlap: int = 200
+    # Code chunks follow definition boundaries and hold at most this many
+    # characters, unless one line is longer.
+    max_chunk_chars: int = 1500
 
 
 @dataclass
@@ -663,10 +668,8 @@ class FallbackTextParserConfig(ParserConfig):
 
     enabled: bool = True
     priority: int = 0
+    # Text chunks follow line boundaries and hold at most this many characters.
     max_chunk_size: int = 1000
-    chunk_overlap: int = 100
-    # Files at or under this size stay one chunk. Zero disables whole-file mode.
-    whole_file_max_chars: int = 8192
 
 
 @dataclass
@@ -2064,8 +2067,11 @@ class Config:
         ignored = [f"search.hybrid_search.{key}" for key in _REMOVED_HYBRID_KEYS if key in hybrid]
         if 'overview_boost' in search:
             ignored.append("search.overview_boost")
+        parsers = data.get('parsers') or {}
+        for section, keys in _REMOVED_PARSER_KEYS.items():
+            ignored += [f"parsers.{section}.{key}" for key in keys if key in (parsers.get(section) or {})]
         if ignored:
-            logger.warning("Ignoring removed search settings: %s", ", ".join(ignored))
+            logger.warning("Ignoring removed settings: %s", ", ".join(ignored))
         return data
 
     @classmethod
@@ -2185,8 +2191,6 @@ class Config:
                     'enabled': self.parsers.fallback_text.enabled,
                     'priority': self.parsers.fallback_text.priority,
                     'max_chunk_size': self.parsers.fallback_text.max_chunk_size,
-                    'chunk_overlap': self.parsers.fallback_text.chunk_overlap,
-                    'whole_file_max_chars': self.parsers.fallback_text.whole_file_max_chars,
                 },
             },
             'memory': {

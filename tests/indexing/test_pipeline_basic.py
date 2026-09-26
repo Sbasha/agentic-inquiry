@@ -37,9 +37,6 @@ class _DummyEmbedder(Embedder):
         return self._ndims
 
 
-class _FallbackEmbedder(_DummyEmbedder):
-    def get_fallback_text(self, chunk: ParserChunk):
-        return (chunk.metadata or {}).get("fallback")
 
 
 def test_pipeline_skips_chunks_without_text(caplog):
@@ -78,33 +75,3 @@ def test_pipeline_skips_chunks_without_text(caplog):
     asyncio.run(run())
 
 
-def test_pipeline_uses_fallback_text_when_available():
-    async def run():
-        import uuid
-        config = Config.load()
-        registry = EmbeddingRegistry(default_embedder=_FallbackEmbedder())
-        mock_db_manager = InMemoryLanceDBManager(uri="memory://test-fallback")
-        await mock_db_manager.create_tables_and_indexes()
-        await mock_db_manager.connect()
-
-        project_id = f"test_{uuid.uuid4().hex[:8]}"
-        mock_event_system = _create_mock_event_system()
-        pipeline = IndexingPipeline(db_manager=mock_db_manager, config=config, project_id=project_id, event_system=mock_event_system, registry=registry)
-
-        doc = ParsedDocument(
-            doc_id="doc-2",
-            file_path="file.py",
-            chunks=[
-                ParserChunk(content=None, metadata={"fallback": "generated fallback"}),
-            ],
-        )
-
-        await pipeline.process_document(doc)
-
-        rows = await mock_db_manager.advanced_filter("document_chunks", {"doc_id": "doc-2"})
-        assert len(rows) == 1
-        assert rows[0]["content"] == "generated fallback"
-        assert rows[0]["project_id"] == pipeline.project_hash
-        assert rows[0]["chunk_index"] == 0
-
-    asyncio.run(run())

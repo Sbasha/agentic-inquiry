@@ -1,160 +1,34 @@
-"""Text chunking utilities for parsers.
+"""Line-aligned chunk packing shared by the text and code parsers."""
+from __future__ import annotations
 
-This module provides stateless functions for chunking text content using various
-strategies, reducing duplication across parser modules.
-
-Copied from akb_iq and adapted for the new parser registry system.
-"""
-
-import re
-from typing import List
+from typing import List, Sequence, Tuple
 
 
-def chunk_text_by_tokens(text: str, max_tokens: int = 500, overlap: int = 50) -> List[str]:
-    """Chunk text by approximate token count.
+def pack_lines(lines: Sequence[str], first_line: int, budget: int) -> List[Tuple[int, int]]:
+    """Partition consecutive lines into ``(start, end)`` spans of at most ``budget`` characters.
 
-    Args:
-        text: Text to chunk
-        max_tokens: Maximum tokens per chunk (approximate)
-        overlap: Number of tokens to overlap between chunks
-
-    Returns:
-        List of text chunks
+    Every line lands in exactly one span and spans never overlap, so a chunk's
+    content is always exactly its source lines. A span closes before the line
+    that would exceed the budget; when the open span contains a blank line, it
+    closes after the last blank line instead, so paragraphs and blocks stay
+    whole. A single line longer than the budget forms a span of its own.
+    Character counts include one newline per line.
     """
-    if not text.strip():
-        return []
-
-    # Rough approximation: 1 token ≈ 4 characters
-    chars_per_token = 4
-    max_chars = max_tokens * chars_per_token
-    overlap_chars = overlap * chars_per_token
-
-    chunks = []
-    start = 0
-
-    while start < len(text):
-        # Find chunk end
-        end = start + max_chars
-
-        if end >= len(text):
-            # Last chunk
-            chunks.append(text[start:])
-            break
-
-        # Try to break at word boundary
-        chunk_end = _find_word_boundary(text, end, start)
-        chunks.append(text[start:chunk_end])
-
-        # Move start with overlap
-        start = max(start + 1, chunk_end - overlap_chars)
-
-    return [chunk for chunk in chunks if chunk.strip()]
-
-
-def chunk_text_by_lines(text: str, max_lines: int = 50, overlap: int = 5) -> List[str]:
-    """Chunk text by line count with overlap.
-
-    Args:
-        text: Text to chunk
-        max_lines: Maximum lines per chunk
-        overlap: Number of lines to overlap between chunks
-
-    Returns:
-        List of text chunks
-    """
-    if not text.strip():
-        return []
-
-    lines = text.split("\n")
-    if len(lines) <= max_lines:
-        return [text]
-
-    chunks = []
-    start = 0
-
-    while start < len(lines):
-        end = min(start + max_lines, len(lines))
-        chunk_lines = lines[start:end]
-        chunks.append("\n".join(chunk_lines))
-
-        if end >= len(lines):
-            break
-
-        # Move start with overlap
-        start = end - overlap
-
-    return [chunk for chunk in chunks if chunk.strip()]
-
-
-def merge_small_chunks(chunks: List[str], min_size: int = 100) -> List[str]:
-    """Merge chunks that are smaller than minimum size.
-
-    Args:
-        chunks: List of text chunks
-        min_size: Minimum character count for chunks
-
-    Returns:
-        List of merged chunks
-    """
-    if not chunks:
-        return []
-
-    merged = []
-    current_chunk = ""
-
-    for chunk in chunks:
-        if not chunk.strip():
-            continue
-
-        # If current chunk + new chunk is still reasonable size
-        combined = current_chunk + "\n\n" + chunk if current_chunk else chunk
-
-        if len(current_chunk) < min_size or len(combined) < min_size * 2:
-            current_chunk = combined
-        else:
-            # Save current chunk and start new one
-            if current_chunk:
-                merged.append(current_chunk)
-            current_chunk = chunk
-
-    # Add final chunk
-    if current_chunk:
-        merged.append(current_chunk)
-
-    return merged
-
-
-def _find_word_boundary(text: str, preferred_end: int, min_pos: int) -> int:
-    """Find nearest word boundary before preferred_end position.
-
-    Args:
-        text: Text to search in
-        preferred_end: Preferred ending position
-        min_pos: Minimum position to consider
-
-    Returns:
-        Position of word boundary
-    """
-    if preferred_end >= len(text):
-        return len(text)
-
-    # Look backward for word boundaries
-    search_start = max(min_pos, preferred_end - 100)
-    search_text = text[search_start:preferred_end]
-
-    # Try different boundary patterns in order of preference
-    patterns = [
-        r"\n\n",  # Paragraph breaks
-        r"\.\s+",  # Sentence endings
-        r"\n",  # Line breaks
-        r"\s+",  # Any whitespace
-    ]
-
-    for pattern in patterns:
-        matches = list(re.finditer(pattern, search_text))
-        if matches:
-            last_match = matches[-1]
-            return search_start + last_match.end()
-
-    # Fallback to preferred end
-    return preferred_end
+    spans: List[Tuple[int, int]] = []
+    start = 0  # index of the open span's first line
+    size = 0  # characters in lines[start:index]
+    for index, line in enumerate(lines):
+        cost = len(line) + 1
+        if index > start and size + cost > budget:
+            blanks = [i for i in range(start + 1, index - 1) if not lines[i].strip()]
+            cut = blanks[-1] + 1 if blanks else index
+            spans.append((first_line + start, first_line + cut - 1))
+            start = cut
+            size = sum(len(lines[i]) + 1 for i in range(start, index))
+            if index > start and size + cost > budget:
+                spans.append((first_line + start, first_line + index - 1))
+                start, size = index, 0
+        size += cost
+    if start < len(lines):
+        spans.append((first_line + start, first_line + len(lines) - 1))
+    return spans

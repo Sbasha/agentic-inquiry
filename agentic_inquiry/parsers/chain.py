@@ -22,6 +22,7 @@ from .executor import (
     execute_parser,
     get_parser_instance,
 )
+from .code_chunks import partition_code_document
 from .recognizers import apply_recognizers
 
 # Import implementations to trigger parser registration
@@ -143,8 +144,6 @@ class ParserChain:
         cfg = self.config.parsers.fallback_text
         self._bound_parsers["fallback_text"] = FallbackTextParser(
             max_chunk_size=cfg.max_chunk_size,
-            chunk_overlap=cfg.chunk_overlap,
-            whole_file_max_chars=cfg.whole_file_max_chars,
         )
 
     @classmethod
@@ -275,6 +274,10 @@ class ParserChain:
                         # ``apply_recognizers`` so the base parse still
                         # reaches the indexing pipeline.
                         result = await apply_recognizers(result)
+                        if name == "unified_code":
+                            result = partition_code_document(
+                                result, self.config.parsers.unified_code.max_chunk_chars
+                            )
 
                         # Emit progress with parsing stats
                         await op.progress(

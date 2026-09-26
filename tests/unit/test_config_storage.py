@@ -624,7 +624,7 @@ class TestHybridSearchFallbackConfig:
             config = Config._from_dict(minimal_config_base)
 
         assert config.search.hybrid_search.reranker_type == "rrf"
-        assert "Ignoring removed search settings" in caplog.text
+        assert "Ignoring removed settings" in caplog.text
         assert "search.hybrid_search.rerank_by_graph" in caplog.text
 
     @pytest.mark.parametrize(

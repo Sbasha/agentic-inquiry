@@ -21,6 +21,12 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Salts every stored file hash with the shape of what indexing produces from a
+# file (chunk boundaries, index text). Changing it makes every tracked file
+# read as changed, so the next ``ai index`` rebuilds chunks written by an
+# older chunker instead of leaving them beside new ones.
+INDEX_FORMAT = "chunks:definition-partition-v1|lines-v1;index-text:path-scope-v1"
+
 
 class FileTracker:
     """Track file states using SQLite database with SHA256 hashing.
@@ -228,7 +234,7 @@ class FileTracker:
         """
         def _hash_file(path: str) -> str:
             """Synchronous hash computation to run in executor."""
-            sha256 = hashlib.sha256()
+            sha256 = hashlib.sha256(INDEX_FORMAT.encode())
             with open(path, 'rb') as f:
                 # Read in chunks to handle large files efficiently
                 while chunk := f.read(8192):

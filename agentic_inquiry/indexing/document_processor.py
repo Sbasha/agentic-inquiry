@@ -8,11 +8,26 @@ This module only contains utility methods that are still needed.
 """
 
 import logging
+import re
 from typing import Any, Optional, Tuple
 
 from agentic_inquiry.exceptions import StorageError
 
 logger = logging.getLogger(__name__)
+
+_IDENTIFIER = re.compile(r"[A-Za-z][A-Za-z0-9]*")
+_CAMEL_BOUNDARY = re.compile(r"(?<=[a-z0-9])(?=[A-Z])|(?<=[A-Z])(?=[A-Z][a-z])")
+
+
+def _camel_words(text: str) -> str:
+    """Distinct words from camelCase and PascalCase identifiers, in first-seen order."""
+    seen: dict = {}
+    for identifier in _IDENTIFIER.findall(text):
+        parts = _CAMEL_BOUNDARY.split(identifier)
+        if len(parts) > 1:
+            for part in parts:
+                seen.setdefault(part.lower(), None)
+    return " ".join(seen)
 
 
 class DocumentProcessor:
@@ -35,45 +50,27 @@ class DocumentProcessor:
         self.project_hash = project_hash
         self.project_id = project_id
 
-    def _resolve_embedding_text(
-        self,
-        chunk: Any,
-        embedder: Any,
-    ) -> Tuple[Optional[str], bool]:
-        """Resolve embedding text from a parser chunk.
-        
-        This method determines what text should be used for generating embeddings,
-        with fallback logic if the preferred text is not available.
-        
-        Args:
-            chunk: Parser chunk to extract text from
-            embedder: Embedder instance (used to check for fallback hooks)
-            
-        Returns:
-            Tuple of (embedding_text, used_fallback):
-            - embedding_text: Text to use for embedding, or None if no text available
-            - used_fallback: True if fallback logic was used
+    def index_texts(self, chunk: Any, relative_path: str) -> Optional[Tuple[str, str]]:
+        """Embedding text and full-text field for a chunk, or None when it has no text.
+
+        Both start with a header: the project-relative path, then the chunk's
+        scope (enclosing definitions) when it has one, so a chunk carries the
+        context an isolated body lacks. The full-text field also lists the
+        words inside camelCase identifiers, which the BM25 tokenizer does not
+        split (it already splits snake_case on the underscore).
         """
-        # Try fts_text first (preferred for search)
-        if chunk.fts_text:
-            return chunk.fts_text, False
-        
-        # Fall back to content
-        if chunk.content:
-            return chunk.content, False
-        
-        # Try embedder-specific fallback if available
-        if hasattr(embedder, 'get_fallback_text'):
-            fallback_text = embedder.get_fallback_text(chunk)
-            if fallback_text:
-                return fallback_text, True
-        
-        # Last resort: use symbols if available
-        if chunk.symbols:
-            return " ".join(chunk.symbols), True
-        
-        # No text available
-        return None, False
+        body = chunk.content or chunk.fts_text or " ".join(chunk.symbols or [])
+        if not body.strip():
+            return None
+        scope = (chunk.metadata or {}).get("scope") or ""
+        header = f"{relative_path}\n{scope}" if scope else relative_path
+        embed = f"{header}\n{body}"
+        fts = embed
+        if (chunk.content_type or "").upper() == "CODE":
+            words = _camel_words(body)
+            if words:
+                fts = f"{embed}\n{words}"
+        return embed, fts
 
     def _validate_vector(
         self,

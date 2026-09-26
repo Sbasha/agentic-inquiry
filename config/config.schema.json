@@ -1018,15 +1018,20 @@
             },
             "chunk_size": {
               "type": "integer",
-              "description": "Target chunk size in characters",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 1,
               "default": 1000
             },
             "chunk_overlap": {
               "type": "integer",
-              "description": "Overlap between chunks in characters",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 0,
               "default": 200
+            },
+            "max_chunk_chars": {
+              "type": "integer",
+              "minimum": 200,
+              "description": "Maximum characters per code chunk; chunks follow definition boundaries."
             }
           },
           "additionalProperties": false
@@ -1082,13 +1087,13 @@
             },
             "chunk_overlap": {
               "type": "integer",
-              "description": "Overlap between chunks in characters",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 0,
               "default": 100
             },
             "whole_file_max_chars": {
               "type": "integer",
-              "description": "Files at or under this size stay one chunk. Zero disables whole-file mode.",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 0,
               "default": 8192
             }

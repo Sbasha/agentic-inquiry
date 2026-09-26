@@ -23,11 +23,7 @@ from .query_loader import (
     get_query_loader,
     load_query,
 )
-from .chunking import (
-    chunk_text_by_tokens,
-    chunk_text_by_lines,
-    merge_small_chunks,
-)
+from .chunking import pack_lines
 
 __all__ = [
     # Languages
@@ -45,7 +41,5 @@ __all__ = [
     'get_query_loader',
     'load_query',
     # Chunking
-    'chunk_text_by_tokens',
-    'chunk_text_by_lines',
-    'merge_small_chunks',
+    'pack_lines',
 ]
