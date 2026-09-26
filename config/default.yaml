@@ -131,7 +131,7 @@ search:
     enabled: true
     
     # Maximum number of results to keep per file (1 = keep only highest-scoring chunk)
-    max_results_per_file: 1
+    max_results_per_file: 3
     
     # Minimum diversity ratio (0.0-1.0) - ratio of unique files to total results
     # If diversity falls below this threshold, a warning is logged
@@ -155,7 +155,7 @@ search:
     reranker_params:
       k: 60  # RRF constant
     # Optional cross-encoder second stage over the fused top results ("" = off)
-    rerank_model: ""
+    rerank_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
     rerank_top_n: 30
     rerank_mode: "fuse"  # fuse: RRF with the fused order; replace: cross-encoder order alone
     # Optional graph channel: neighbours of the fused top N definitions (0 = off)
@@ -227,7 +227,7 @@ embeddings:
   # Sentence transformer configuration (uses HuggingFace models)
   sentence_transformer:
     # Model name from HuggingFace
-    model_name: "all-MiniLM-L6-v2"
+    model_name: "BAAI/bge-small-en-v1.5"
     
     # Embedding dimensionality (must match default_dimensions)
     ndims: 384

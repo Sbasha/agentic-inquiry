@@ -2302,7 +2302,7 @@ storage:
 
 embeddings:
   provider: "sentence_transformer"
-  model: "all-MiniLM-L6-v2"
+  model: "BAAI/bge-small-en-v1.5"
 
 search:
   default_limit: 10

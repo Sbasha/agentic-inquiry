@@ -390,7 +390,7 @@
               "type": "integer",
               "description": "Maximum number of results to keep per file (1 = keep only highest-scoring chunk)",
               "minimum": 1,
-              "default": 1
+              "default": 3
             },
             "min_diversity_ratio": {
               "type": "number",
@@ -461,7 +461,8 @@
             },
             "rerank_model": {
               "type": "string",
-              "description": "Cross-encoder that rescores the fused top rerank_top_n results; empty disables the second stage."
+              "description": "Cross-encoder that rescores the fused top rerank_top_n results; empty disables the second stage.",
+              "default": "cross-encoder/ms-marco-MiniLM-L-6-v2"
             },
             "rerank_top_n": {
               "type": "integer",
@@ -760,7 +761,7 @@
             "model_name": {
               "type": "string",
               "description": "HuggingFace model name",
-              "default": "all-MiniLM-L6-v2"
+              "default": "BAAI/bge-small-en-v1.5"
             },
             "ndims": {
               "type": "integer",

@@ -341,7 +341,7 @@ graph TB
 **Trade-offs:**
 - **Pro**: Flexible, future-proof
 - **Con**: Users must choose model
-- **Mitigation**: Sensible default (all-MiniLM-L6-v2)
+- **Mitigation**: Sensible default (BAAI/bge-small-en-v1.5)
 
 #### Embedding Provider Trade-offs
 

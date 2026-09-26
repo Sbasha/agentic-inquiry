@@ -63,7 +63,7 @@ def _select_device(preferred: Optional[str] = None) -> str:
 class SentenceTransformerEmbedder(Embedder):
     """Embedder using sentence-transformers library for semantic embeddings."""
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2", ndims: int = 384):
+    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5", ndims: int = 384):
         self.model_name = model_name
         self._ndims = ndims
         self._metrics = get_metrics_tracker()

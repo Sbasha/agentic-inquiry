@@ -374,7 +374,7 @@ agentic_inquiry/
 │   └── implementations/       # unified_code (tree-sitter), document (DOCX/PDF), fallback_text
 ├── embeddings/    # Embedding generation
 │   ├── service.py             # Async embedding with background warmup
-│   ├── sentence_transformer.py # Default: all-MiniLM-L6-v2 (384d)
+│   ├── sentence_transformer.py # Default: BAAI/bge-small-en-v1.5 (384d)
 │   └── noop.py                # Server-side embedding passthrough
 ├── memory/        # Three-tier cognitive memory
 │   ├── system.py        # MemorySystem orchestrator

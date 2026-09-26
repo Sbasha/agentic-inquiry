@@ -102,7 +102,7 @@ async def create_memory_system(config, project_id: str):
         from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
 
         model_name = getattr(
-            config.embeddings.sentence_transformer, "model_name", "all-MiniLM-L6-v2"
+            config.embeddings.sentence_transformer, "model_name", "BAAI/bge-small-en-v1.5"
         )
         ndims = getattr(config.embeddings, "default_dimensions", 384)
         embedder = SentenceTransformerEmbedder(model_name=model_name)

@@ -533,7 +533,7 @@ Agentic Inquiry supports multiple storage backends for different deployment scen
 | **AlloyDB** | GCP managed | Server-side (Vertex AI text-embedding-005) | GCP production, fastest indexing |
 
 **Embedding Strategies:**
-- **Local**: Uses SentenceTransformer `all-MiniLM-L6-v2` model (384 dimensions) on client side
+- **Local**: Uses SentenceTransformer `BAAI/bge-small-en-v1.5` model (384 dimensions) on client side
 - **Server-side**: Uses Vertex AI `text-embedding-005` (768 dimensions) via database extension (AlloyDB only)
 
 **Unified PostgreSQL Provider**: CloudSQL and AlloyDB use the same provider implementation (`storage/providers/postgresql/`) with different configuration. The `embedding_strategy` setting determines whether embeddings are generated locally or server-side.

@@ -39,7 +39,7 @@ Only the keys LanceDB actually consumes — the rest are pooled-backend leftover
 **What's sensible:**
 
 - `batch_size = 1000` — LanceDB is file-backed; large batches amortise disk writes. Good default.
-- `embeddings.default_dimensions = 384` — matches `all-MiniLM-L6-v2` (the default sentence-transformer). Consistent with the LanceDB-canonical 384-dim world.
+- `embeddings.default_dimensions = 384` — matches `BAAI/bge-small-en-v1.5` (the default sentence-transformer). Consistent with the LanceDB-canonical 384-dim world.
 - `similarity_metric = cosine` — correct default for sentence-transformer embeddings (they're pre-normalised).
 - Single-node, single-writer assumption — correct for LanceDB's design.
 

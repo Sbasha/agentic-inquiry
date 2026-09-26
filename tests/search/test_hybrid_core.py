@@ -36,6 +36,7 @@ def service(max_per_file: int) -> HybridSearchService:
     config = Config()
     config.search.hybrid_search.reranker_type = "rrf"
     config.search.hybrid_search.reranker_params = {"k": 60}
+    config.search.hybrid_search.rerank_model = ""  # fusion and cap only; the second stage has its own tests
     return HybridSearchService(storage=None, config=config,  # type: ignore[arg-type]
                                deduplicator=SearchDeduplicator(max_results_per_file=max_per_file))
 

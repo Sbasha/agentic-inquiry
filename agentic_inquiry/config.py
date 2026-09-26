@@ -352,7 +352,7 @@ class HybridSearchConfig:
 
     # Optional second stage: a cross-encoder rescores the fused top
     # rerank_top_n results and reorders only those. Empty disables it.
-    rerank_model: str = ""
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     rerank_top_n: int = 30
     # "fuse" combines the cross-encoder order with the fused order by RRF, so
     # it adds an opinion; "replace" lets the cross-encoder order stand alone.
@@ -419,7 +419,7 @@ class DeduplicationConfig:
     """Search result deduplication configuration."""
     
     enabled: bool = True
-    max_results_per_file: int = 1
+    max_results_per_file: int = 3
     min_diversity_ratio: float = 0.7
 
 
@@ -466,7 +466,7 @@ class SearchConfig:
 class SentenceTransformerConfig:
     """Sentence transformer embedding configuration."""
     
-    model_name: str = "all-MiniLM-L6-v2"
+    model_name: str = "BAAI/bge-small-en-v1.5"
     ndims: int = 384
 
 
