@@ -34,8 +34,9 @@ that omit columns; the spec pins it as an acceptance criterion.
 ## Construction tests
 
 **Integration tests:** `tests/database/test_lancedb_upsert_atomicity.py` (T1,
-T2) and `tests/memory/test_memory_row_replace_atomicity.py` (T3, T4), both on
-on-disk LanceDB, seeded before the hook is armed.
+T2), `tests/mcp/services/test_lancedb_session_storage_disk.py` (T2) and
+`tests/memory/test_memory_row_replace_atomicity.py` (T3, T4), all on on-disk
+LanceDB, seeded before the hook is armed.
 
 **Manual verification:** none; no user-invoked artifact changes beyond the
 methods under test.
@@ -111,7 +112,7 @@ manager patches `manager._locked` on the instance and restores it on exit.
 
 **Mode:** TDD (integration, on-disk LanceDB)
 **Depends on:** T1
-**Touches:** agentic_inquiry/database/lancedb_manager.py, tests/utils/in_memory_lancedb_manager.py, tests/database/test_lancedb_upsert_atomicity.py
+**Touches:** agentic_inquiry/database/lancedb_manager.py, tests/utils/in_memory_lancedb_manager.py, tests/database/test_lancedb_upsert_atomicity.py, tests/mcp/services/test_lancedb_session_storage_disk.py
 **Tests:**
 - T1's tests pass.
 - `test_upsert_is_one_commit`: seeded table; one `upsert()` of an existing
@@ -125,6 +126,9 @@ manager patches `manager._locked` on the instance and restores it on exit.
   `""`: `ValueError` naming the key field; row count and version unchanged.
 - `test_upsert_rejects_mixed_field_sets` in both record orders: `ValueError`;
   nothing written.
+- `test_persist_changed_session_keeps_one_row`: `LanceDBSessionStorage`
+  persists a session, persists it again changed, and `load_session` reads the
+  change back from the one row for the id.
 **Approach:** Replace the body of `upsert()` with the two checks and a call to
 `_upsert_rows`; rewrite its docstring. Make the in-memory manager's `upsert`
 apply the same checks and keep omitted columns.

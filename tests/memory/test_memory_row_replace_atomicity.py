@@ -269,7 +269,9 @@ async def test_supersede_keeps_concurrent_access_count(
     assert new_item is not None
     stored = await layer.get_by_id(item.id, update_access=False)
     assert stored is not None
-    # The bumper fires once per commit on the item's table: one write.
+    # The bumper fires once per commit on the item's table. The new item
+    # (importance 0.5) goes to working memory, so the only such commit is
+    # supersede's own write.
     assert bumper.writes == 1
     assert stored.access_count == bumper.writes
     assert stored.status == MemoryStatus.SUPERSEDED
