@@ -125,6 +125,41 @@ a defect found while qualifying and left for its own change.
 - **`tantivy` dependency:** no code imports it after the native FTS
   switch. Remove it from `pyproject.toml` with an ADR.
 
+## clean-process-exit
+
+Open items from [`specs/clean-process-exit/spec.md`](specs/clean-process-exit/spec.md).
+None is a deferred acceptance criterion; each is a leak outside the
+owners that spec covers.
+
+- **Other CLI commands leave storage open:** `ai entity`, `ai search`,
+  `ai lineage`, `ai patterns`, `ai validate` and `ai agent-test` open a
+  `StorageFacade` (and `search/service.py`, `search/hybrid_search.py`
+  build one internally) without closing it, so the process prints its
+  result and then hangs on the events writer thread. Repro: in an empty
+  git directory, `python -m agentic_inquiry.cli entity foo` prints
+  `Entity not found: foo` and does not exit. Close the facade in a
+  `finally` in each command.
+- **`ai server` never shuts its MCP services down:** the FastAPI lifespan
+  in `agentic_inquiry/server/app.py` does not call `MCPServer.shutdown()`,
+  so `server/lifecycle.py` falls back to SIGKILL. Call it on lifespan exit.
+- **`close()` paths skip releasing the connection on error:**
+  `EventSystem.stop` returns `False` on a writer timeout before it closes
+  the store; `StorageFacade.close` stops at the first provider that
+  raises; `EventStore.close` and `SQLiteEventStorage.close` skip
+  `conn.close()` when the final commit raises. Each leaves an aiosqlite
+  thread alive. Release the connection in a `finally`.
+- **`ai mcp` over stdio cancels its background tasks before serving:**
+  `agentic_inquiry/mcp/cli.py` builds the services inside one
+  `asyncio.run`, which cancels the maintenance task, the `EventSystem`
+  writer and the memory consolidation and cleanup tasks when it returns;
+  serving then runs on a second loop. Under the default transport no
+  maintenance tick runs and emitted events are not persisted. Build and
+  serve on one loop.
+- **Importing `agentic_inquiry.watching` creates `./.agentic-inquiry`:**
+  `_register_default_watcher()` builds a `FileTracker()` at import time,
+  which creates the directory in the importing process's cwd. Register
+  the default watcher lazily.
+
 <!-- Add one section per spec with open work, e.g.:
 
 ## <spec-name>
