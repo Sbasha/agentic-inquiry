@@ -200,8 +200,8 @@ exits.
 runtime was opened, then closes the ledger in a nested `finally`;
 `_open_runtime` calls it on its own failure.
 
-**Done when:** the three tests pass and the maintenance-tick integration
-test is green.
+**Done when:** the T4 tests above pass and the maintenance-tick
+integration test is green.
 
 ### T5: Harness exits after its summary; watchdog reports leaks
 

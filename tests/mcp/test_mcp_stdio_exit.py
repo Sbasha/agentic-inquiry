@@ -19,8 +19,10 @@ _MODEL_CACHE = "models--sentence-transformers--all-MiniLM-L6-v2"
 def test_stdio_server_exits_after_stdin_closes(tmp_path: Path) -> None:
     # ai mcp loads the sentence-transformer whatever the configured provider;
     # use the developer's cache offline rather than download it per run.
-    hf_home = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface"))
-    if not (hf_home / "hub" / _MODEL_CACHE).is_dir():
+    from huggingface_hub import constants
+
+    hub_cache = Path(constants.HF_HUB_CACHE)
+    if not (hub_cache / _MODEL_CACHE).is_dir():
         pytest.skip(f"{_MODEL_CACHE} is not in the HuggingFace cache")
     project = tmp_path / "project"
     project.mkdir()
@@ -28,7 +30,7 @@ def test_stdio_server_exits_after_stdin_closes(tmp_path: Path) -> None:
     env = {
         **{k: v for k, v in os.environ.items() if not k.startswith("INQUIRY_")},
         "HOME": str(tmp_path / "home"),
-        "HF_HOME": str(hf_home),
+        "HF_HUB_CACHE": str(hub_cache),
         "HF_HUB_OFFLINE": "1",
     }
     log = tmp_path / "stderr.log"
