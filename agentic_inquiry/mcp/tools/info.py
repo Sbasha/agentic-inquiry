@@ -230,8 +230,9 @@ async def get_project_info(
 
         # Check project state (includes chunk and entity counts)
         project_state = await check_project_state(db_manager, project_id)
-        chunks_count = project_state["chunk_count"]
-        entities_count = project_state["entity_count"]
+        # -1 means "unknown" (storage error); project_state carries a warning for it
+        chunks_count = max(0, project_state["chunk_count"])
+        entities_count = max(0, project_state["entity_count"])
 
         # Get recent indexing events (let caller interpret state)
         recent_indexing_events = []
@@ -385,7 +386,9 @@ async def get_project_info(
             "recent_indexing_events": recent_indexing_events,
             "top_keywords": top_keywords,
             "guidance": {
-                "next_steps": _generate_guidance(chunks_count, entities_count, memory_stats)
+                "next_steps": _generate_guidance(
+                    project_state["chunk_count"], project_state["entity_count"], memory_stats
+                )
             }
         }
 
@@ -620,10 +623,14 @@ async def get_server_info(
 
 
 def _generate_guidance(chunks_count: int, entities_count: int, memory_stats: dict) -> list:
-    """Generate guidance based on project state."""
+    """Generate guidance based on project state; a count of -1 means unknown."""
     guidance = []
 
-    if chunks_count == 0:
+    if chunks_count < 0:
+        guidance.append(
+            "Index statistics are unavailable. Retry get_project_info before re-indexing."
+        )
+    elif chunks_count == 0:
         guidance.append("Project not yet indexed. Use add_knowledge to index files.")
     elif chunks_count < 100:
         guidance.append("Small project indexed. Consider indexing more files for better search results.")
@@ -632,7 +639,7 @@ def _generate_guidance(chunks_count: int, entities_count: int, memory_stats: dic
 
     if entities_count == 0:
         guidance.append("No code entities found. Index code files to enable entity analysis.")
-    else:
+    elif entities_count > 0:
         guidance.append(f"{entities_count} code entities available for analysis.")
 
     total_memories = (

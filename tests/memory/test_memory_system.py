@@ -126,9 +126,9 @@ def sample_context() -> MemoryContext:
 @pytest.mark.asyncio
 async def test_memory_system_initialization(memory_system: MemorySystem) -> None:
     """Test memory system initialization."""
-    from agentic_inquiry.memory.working import WorkingMemory
-    from agentic_inquiry.memory.episodic import EpisodicMemory
-    from agentic_inquiry.memory.semantic import SemanticMemory
+    from agentic_inquiry.memory.layers.working import WorkingMemory
+    from agentic_inquiry.memory.layers.episodic import EpisodicMemory
+    from agentic_inquiry.memory.layers.semantic import SemanticMemory
     from agentic_inquiry.memory.consolidation import ConsolidationEngine
     from agentic_inquiry.memory.retrieval import RetrievalEngine
     from agentic_inquiry.memory.context import ContextManager

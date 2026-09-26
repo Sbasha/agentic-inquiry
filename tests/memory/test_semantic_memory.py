@@ -598,3 +598,97 @@ async def test_get_stats(temp_semantic_memory: SemanticMemory) -> None:
     assert "size" in stats
     assert "utilization" in stats
     assert stats["capacity"] == 100
+
+
+async def _stored_rows(db_manager: LanceDBManager, item_id: str) -> list[dict]:
+    return await db_manager.advanced_filter(
+        table_name="memory_semantic_high",
+        filters={"id": item_id},
+        limit=10,
+        project_id=None,
+    )
+
+
+@pytest.mark.asyncio
+async def test_access_refresh_does_not_overwrite_concurrent_update(
+    temp_semantic_memory: SemanticMemory,
+    db_manager: LanceDBManager,
+    sample_fact_item: MemoryItem,
+    sample_context: MemoryContext,
+) -> None:
+    """An update racing retrieve()'s access refresh leaves one row with the update."""
+    await temp_semantic_memory.store(sample_fact_item)
+
+    for attempt in range(5):
+        await temp_semantic_memory.retrieve(
+            query_embedding=sample_fact_item.embedding, context=sample_context
+        )
+        item = await temp_semantic_memory.get_by_id(sample_fact_item.id, update_access=False)
+        item.importance = 0.9 + attempt / 100
+        await temp_semantic_memory.update(item)
+        await temp_semantic_memory.wait_for_background_writes()
+
+        rows = await _stored_rows(db_manager, sample_fact_item.id)
+        assert [row["importance"] for row in rows] == [item.importance]
+
+
+@pytest.mark.asyncio
+async def test_access_refresh_does_not_recreate_deleted_item(
+    temp_semantic_memory: SemanticMemory,
+    db_manager: LanceDBManager,
+    sample_fact_item: MemoryItem,
+    sample_context: MemoryContext,
+) -> None:
+    """Deleting a fact while its access refresh is pending keeps it deleted."""
+    for _ in range(5):
+        sample_fact_item.id = str(uuid.uuid4())
+        await temp_semantic_memory.store(sample_fact_item)
+        await temp_semantic_memory.retrieve(
+            query_embedding=sample_fact_item.embedding, context=sample_context
+        )
+
+        await temp_semantic_memory.delete(sample_fact_item.id)
+        await temp_semantic_memory.wait_for_background_writes()
+
+        assert await _stored_rows(db_manager, sample_fact_item.id) == []
+
+
+@pytest.mark.asyncio
+async def test_failed_access_refresh_keeps_the_stored_row(
+    temp_semantic_memory,
+    db_manager: LanceDBManager,
+    sample_fact_item: MemoryItem,
+    sample_context: MemoryContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A refresh whose write fails leaves the previous version readable."""
+    await temp_semantic_memory.store(sample_fact_item)
+
+    async def fail(*args, **kwargs):
+        raise RuntimeError("disk full")
+
+    monkeypatch.setattr(db_manager, "add_rows", fail)
+    monkeypatch.setattr(db_manager, "upsert", fail)
+    await temp_semantic_memory.retrieve(query_embedding=sample_fact_item.embedding, context=sample_context)
+    await temp_semantic_memory.wait_for_background_writes()
+
+    rows = await _stored_rows(db_manager, sample_fact_item.id)
+    assert [row["importance"] for row in rows] == [sample_fact_item.importance]
+
+
+@pytest.mark.asyncio
+async def test_repeated_retrieves_count_every_access(
+    temp_semantic_memory,
+    db_manager: LanceDBManager,
+    sample_fact_item: MemoryItem,
+    sample_context: MemoryContext,
+) -> None:
+    """Retrieves that coalesce into one refresh still count each access."""
+    await temp_semantic_memory.store(sample_fact_item)
+
+    for _ in range(3):
+        await temp_semantic_memory.retrieve(query_embedding=sample_fact_item.embedding, context=sample_context)
+    await temp_semantic_memory.wait_for_background_writes()
+
+    rows = await _stored_rows(db_manager, sample_fact_item.id)
+    assert [row["access_count"] for row in rows] == [sample_fact_item.access_count + 3]

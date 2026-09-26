@@ -2,7 +2,7 @@
 
 Tests cover:
 - InMemorySessionStorage: Full coverage for testing backend
-- LanceDBSessionStorage: Mock-based tests for production backend
+- LanceDBSessionStorage: Tests against a real temporary LanceDB
 - SessionStorageProtocol: Protocol compliance verification
 """
 
@@ -10,7 +10,6 @@ import pytest
 
 pytestmark = pytest.mark.unit
 from datetime import datetime, timedelta
-from unittest.mock import AsyncMock, MagicMock
 
 from agentic_inquiry.mcp.models.session import Session
 from agentic_inquiry.mcp.services.persistence import (
@@ -56,26 +55,13 @@ def memory_storage() -> InMemorySessionStorage:
 
 
 @pytest.fixture
-def mock_db_manager() -> MagicMock:
-    """Create a mock LanceDB manager."""
-    manager = MagicMock()
-    manager.upsert = AsyncMock()
-    manager.advanced_filter = AsyncMock(return_value=[])
-    return manager
+def lancedb_session_storage(lancedb_storage) -> LanceDBSessionStorage:
+    """LanceDB session storage over a real temporary database."""
+    return LanceDBSessionStorage(lancedb_storage)
 
 
-@pytest.fixture
-def mock_storage_facade(mock_db_manager: MagicMock) -> MagicMock:
-    """Create a mock StorageFacade wrapping the mock db_manager."""
-    facade = MagicMock()
-    facade.get_db_manager = MagicMock(return_value=mock_db_manager)
-    return facade
-
-
-@pytest.fixture
-def lancedb_storage(mock_storage_facade: MagicMock) -> LanceDBSessionStorage:
-    """Create a LanceDB storage instance with mocked StorageFacade."""
-    return LanceDBSessionStorage(mock_storage_facade)
+def _fail(*args, **kwargs):
+    raise RuntimeError("DB error")
 
 
 # =============================================================================
@@ -91,10 +77,11 @@ class TestProtocolCompliance:
         storage = InMemorySessionStorage()
         assert isinstance(storage, SessionStorageProtocol)
 
-    def test_lancedb_is_protocol_compliant(self, mock_storage_facade: MagicMock):
+    def test_lancedb_is_protocol_compliant(
+        self, lancedb_session_storage: LanceDBSessionStorage
+    ):
         """LanceDBSessionStorage implements SessionStorageProtocol."""
-        storage = LanceDBSessionStorage(mock_storage_facade)
-        assert isinstance(storage, SessionStorageProtocol)
+        assert isinstance(lancedb_session_storage, SessionStorageProtocol)
 
 
 # =============================================================================
@@ -322,123 +309,137 @@ class TestInMemorySessionStorage:
 
 
 class TestLanceDBSessionStorage:
-    """Tests for LanceDBSessionStorage with mocked db_manager."""
+    """Tests for LanceDBSessionStorage against a real temporary LanceDB."""
 
     @pytest.mark.asyncio
-    async def test_persist_session(
-        self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
-        sample_session: Session,
+    async def test_persist_and_load_session(
+        self, lancedb_session_storage: LanceDBSessionStorage, sample_session: Session
     ):
-        """Persist session calls db_manager.upsert."""
-        await lancedb_storage.persist_session(sample_session)
+        """A persisted session loads back with its fields intact."""
+        await lancedb_session_storage.persist_session(sample_session)
 
-        mock_db_manager.upsert.assert_called_once()
-        call_args = mock_db_manager.upsert.call_args
-        assert call_args.kwargs["table_name"] == "mcp_sessions"
-        assert call_args.kwargs["key_field"] == "session_id"
-        assert len(call_args.kwargs["data"]) == 1
+        loaded = await lancedb_session_storage.load_session(sample_session.session_id)
+
+        assert loaded is not None
+        assert loaded.session_id == sample_session.session_id
+        assert loaded.project_id == sample_session.project_id
+        assert loaded.description == sample_session.description
+
+    @pytest.mark.asyncio
+    async def test_persist_twice_keeps_one_record(
+        self, lancedb_session_storage: LanceDBSessionStorage, sample_session: Session
+    ):
+        """Persisting an existing session replaces it instead of duplicating it."""
+        await lancedb_session_storage.persist_session(sample_session)
+        sample_session.description = "Updated"
+        await lancedb_session_storage.persist_session(sample_session)
+
+        listed = await lancedb_session_storage.list_sessions()
+
+        assert [s["description"] for s in listed] == ["Updated"]
+
+    @pytest.mark.asyncio
+    async def test_first_session_without_description_does_not_block_later_ones(
+        self, lancedb_session_storage: LanceDBSessionStorage
+    ):
+        """Optional columns keep their type when the first row leaves them empty."""
+        await lancedb_session_storage.persist_session(
+            Session(session_id="bare", project_id="p")
+        )
+        await lancedb_session_storage.persist_session(
+            Session(session_id="full", project_id="p", description="Described", log_file="/tmp/s.log")
+        )
+
+        listed = await lancedb_session_storage.list_sessions()
+
+        assert {s["session_id"]: s["description"] for s in listed} == {
+            "bare": None,
+            "full": "Described",
+        }
+
+    @pytest.mark.asyncio
+    async def test_persist_into_null_typed_legacy_table_names_the_fix(
+        self, lancedb_session_storage: LanceDBSessionStorage, tmp_path
+    ):
+        """A table an older release typed as null fails with a recovery hint."""
+        import lancedb
+
+        legacy = Session(session_id="legacy", project_id="p").to_db_record()
+        lancedb.connect(str(tmp_path / "lancedb")).create_table("mcp_sessions", data=[legacy])
+
+        with pytest.raises(StorageError) as exc_info:
+            await lancedb_session_storage.persist_session(
+                Session(session_id="new", project_id="p", description="Described")
+            )
+
+        assert "null-typed columns ['description', 'log_file']" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_persist_session_error(
         self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
+        lancedb_session_storage: LanceDBSessionStorage,
         sample_session: Session,
+        monkeypatch: pytest.MonkeyPatch,
     ):
         """Persist session raises StorageError on failure."""
-        mock_db_manager.upsert.side_effect = Exception("DB error")
+        monkeypatch.setattr(lancedb_session_storage.db_manager, "upsert", _fail)
 
         with pytest.raises(StorageError) as exc_info:
-            await lancedb_storage.persist_session(sample_session)
+            await lancedb_session_storage.persist_session(sample_session)
 
         assert "Failed to persist session" in str(exc_info.value)
         assert exc_info.value.cause is not None
 
     @pytest.mark.asyncio
-    async def test_load_session_found(
-        self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
-        sample_session: Session,
-    ):
-        """Load session returns Session when found."""
-        mock_db_manager.advanced_filter.return_value = [sample_session.to_db_record()]
-
-        loaded = await lancedb_storage.load_session(sample_session.session_id)
-
-        assert loaded is not None
-        assert loaded.session_id == sample_session.session_id
-        mock_db_manager.advanced_filter.assert_called_once()
-
-    @pytest.mark.asyncio
     async def test_load_session_not_found(
-        self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
+        self, lancedb_session_storage: LanceDBSessionStorage
     ):
         """Load session returns None when not found."""
-        mock_db_manager.advanced_filter.return_value = []
-
-        loaded = await lancedb_storage.load_session("nonexistent")
-
-        assert loaded is None
+        assert await lancedb_session_storage.load_session("nonexistent") is None
 
     @pytest.mark.asyncio
     async def test_load_session_error(
         self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
+        lancedb_session_storage: LanceDBSessionStorage,
+        monkeypatch: pytest.MonkeyPatch,
     ):
         """Load session raises StorageError on failure."""
-        mock_db_manager.advanced_filter.side_effect = Exception("DB error")
+        monkeypatch.setattr(lancedb_session_storage.db_manager, "advanced_filter", _fail)
 
         with pytest.raises(StorageError) as exc_info:
-            await lancedb_storage.load_session("test-id")
+            await lancedb_session_storage.load_session("test-id")
 
         assert "Failed to load session" in str(exc_info.value)
 
     @pytest.mark.asyncio
-    async def test_delete_session_found(
-        self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
-        sample_session: Session,
+    async def test_delete_session_marks_expired(
+        self, lancedb_session_storage: LanceDBSessionStorage, sample_session: Session
     ):
-        """Delete session marks as expired when found."""
-        mock_db_manager.advanced_filter.return_value = [sample_session.to_db_record()]
+        """Delete marks the session expired rather than removing the record."""
+        await lancedb_session_storage.persist_session(sample_session)
 
-        deleted = await lancedb_storage.delete_session(sample_session.session_id)
+        deleted = await lancedb_session_storage.delete_session(sample_session.session_id)
 
         assert deleted is True
-        # Should have called upsert to persist the expired state
-        mock_db_manager.upsert.assert_called_once()
+        loaded = await lancedb_session_storage.load_session(sample_session.session_id)
+        assert loaded is not None
+        assert loaded.is_expired is True
 
     @pytest.mark.asyncio
     async def test_delete_session_not_found(
-        self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
+        self, lancedb_session_storage: LanceDBSessionStorage
     ):
         """Delete session returns False when not found."""
-        mock_db_manager.advanced_filter.return_value = []
-
-        deleted = await lancedb_storage.delete_session("nonexistent")
-
-        assert deleted is False
+        assert await lancedb_session_storage.delete_session("nonexistent") is False
 
     @pytest.mark.asyncio
     async def test_list_sessions(
-        self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
-        sample_session: Session,
+        self, lancedb_session_storage: LanceDBSessionStorage, sample_session: Session
     ):
         """List sessions returns formatted session data."""
-        mock_db_manager.advanced_filter.return_value = [sample_session.to_db_record()]
+        await lancedb_session_storage.persist_session(sample_session)
 
-        listed = await lancedb_storage.list_sessions()
+        listed = await lancedb_session_storage.list_sessions()
 
         assert len(listed) == 1
         assert listed[0]["session_id"] == sample_session.session_id
@@ -448,90 +449,103 @@ class TestLanceDBSessionStorage:
         assert "inactive_hours" in listed[0]
 
     @pytest.mark.asyncio
+    async def test_list_sessions_filters_project_and_expired(
+        self, lancedb_session_storage: LanceDBSessionStorage
+    ):
+        """List sessions filters by project and hides expired sessions by default."""
+        expired = Session(session_id="s3", project_id="project-a")
+        expired.mark_expired()
+        for session in (
+            Session(session_id="s1", project_id="project-a"),
+            Session(session_id="s2", project_id="project-b"),
+            expired,
+        ):
+            await lancedb_session_storage.persist_session(session)
+
+        active_a = await lancedb_session_storage.list_sessions(project_id="project-a")
+        all_a = await lancedb_session_storage.list_sessions(
+            project_id="project-a", include_expired=True
+        )
+
+        assert {s["session_id"] for s in active_a} == {"s1"}
+        assert {s["session_id"] for s in all_a} == {"s1", "s3"}
+
+    @pytest.mark.asyncio
     async def test_list_sessions_error(
         self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
+        lancedb_session_storage: LanceDBSessionStorage,
+        monkeypatch: pytest.MonkeyPatch,
     ):
         """List sessions raises StorageError on failure."""
-        mock_db_manager.advanced_filter.side_effect = Exception("DB error")
+        monkeypatch.setattr(lancedb_session_storage.db_manager, "advanced_filter", _fail)
 
         with pytest.raises(StorageError) as exc_info:
-            await lancedb_storage.list_sessions()
+            await lancedb_session_storage.list_sessions()
 
         assert "Failed to list sessions" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_find_expired_sessions(
         self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
+        lancedb_session_storage: LanceDBSessionStorage,
+        sample_session: Session,
         expired_session: Session,
     ):
-        """Find expired sessions returns sessions past TTL."""
-        mock_db_manager.advanced_filter.return_value = [expired_session.to_db_record()]
+        """Find expired sessions returns only sessions past TTL."""
+        await lancedb_session_storage.persist_session(sample_session)
+        await lancedb_session_storage.persist_session(expired_session)
 
-        expired = await lancedb_storage.find_expired_sessions(ttl_hours=24)
+        expired = await lancedb_session_storage.find_expired_sessions(ttl_hours=24)
 
-        assert len(expired) == 1
-        assert expired[0]["session_id"] == expired_session.session_id
+        assert [s["session_id"] for s in expired] == [expired_session.session_id]
 
     @pytest.mark.asyncio
     async def test_find_expired_sessions_error(
         self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
+        lancedb_session_storage: LanceDBSessionStorage,
+        monkeypatch: pytest.MonkeyPatch,
     ):
         """Find expired sessions raises StorageError on failure."""
-        mock_db_manager.advanced_filter.side_effect = Exception("DB error")
+        monkeypatch.setattr(lancedb_session_storage.db_manager, "advanced_filter", _fail)
 
         with pytest.raises(StorageError) as exc_info:
-            await lancedb_storage.find_expired_sessions(ttl_hours=24)
+            await lancedb_session_storage.find_expired_sessions(ttl_hours=24)
 
         assert "Failed to find expired sessions" in str(exc_info.value)
 
     @pytest.mark.asyncio
     async def test_mark_session_expired_found(
-        self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
-        sample_session: Session,
+        self, lancedb_session_storage: LanceDBSessionStorage, sample_session: Session
     ):
-        """Mark session expired when found."""
-        mock_db_manager.advanced_filter.return_value = [sample_session.to_db_record()]
+        """Mark session expired persists the expired state."""
+        await lancedb_session_storage.persist_session(sample_session)
 
-        marked = await lancedb_storage.mark_session_expired(sample_session.session_id)
+        marked = await lancedb_session_storage.mark_session_expired(sample_session.session_id)
 
         assert marked is True
-        mock_db_manager.upsert.assert_called_once()
+        loaded = await lancedb_session_storage.load_session(sample_session.session_id)
+        assert loaded is not None
+        assert loaded.is_expired is True
 
     @pytest.mark.asyncio
     async def test_mark_session_expired_not_found(
-        self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
+        self, lancedb_session_storage: LanceDBSessionStorage
     ):
         """Mark session expired returns False when not found."""
-        mock_db_manager.advanced_filter.return_value = []
-
-        marked = await lancedb_storage.mark_session_expired("nonexistent")
-
-        assert marked is False
+        assert await lancedb_session_storage.mark_session_expired("nonexistent") is False
 
     @pytest.mark.asyncio
     async def test_mark_session_expired_error(
         self,
-        lancedb_storage: LanceDBSessionStorage,
-        mock_db_manager: MagicMock,
+        lancedb_session_storage: LanceDBSessionStorage,
         sample_session: Session,
+        monkeypatch: pytest.MonkeyPatch,
     ):
-        """Mark session expired returns False on StorageError (graceful degradation)."""
-        mock_db_manager.advanced_filter.return_value = [sample_session.to_db_record()]
-        mock_db_manager.upsert.side_effect = Exception("DB error")
+        """Mark session expired returns False when the write fails."""
+        await lancedb_session_storage.persist_session(sample_session)
+        monkeypatch.setattr(lancedb_session_storage.db_manager, "upsert", _fail)
 
-        # StorageError from persist_session is caught and returns False
-        result = await lancedb_storage.mark_session_expired(sample_session.session_id)
-        assert result is False
+        assert await lancedb_session_storage.mark_session_expired(sample_session.session_id) is False
 
 
 # =============================================================================
@@ -543,68 +557,30 @@ class TestSessionManagerIntegration:
     """Test SessionManager with pluggable storage backend."""
 
     @pytest.mark.asyncio
-    async def test_session_manager_with_memory_storage(self, tmp_path):
-        """SessionManager works with InMemorySessionStorage."""
-        from agentic_inquiry.config import Config, StorageConfig
+    async def test_session_manager_with_memory_storage(self, lancedb_storage):
+        """SessionManager uses an explicitly supplied storage backend."""
+        from agentic_inquiry.config import Config
         from agentic_inquiry.mcp.services.session_manager import SessionManager
-        from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
-
-        config = Config()
-        config.storage = StorageConfig(
-            root=str(tmp_path),
-            default_project_id="test"
-        )
-
-        # Create InMemoryLanceDBManager and wrap in mock StorageFacade
-        db_manager = InMemoryLanceDBManager(uri="memory://test")
-        mock_facade = MagicMock()
-        mock_facade.get_backend_type = MagicMock(return_value="lancedb")
-        mock_facade.get_db_manager = MagicMock(return_value=db_manager)
 
         memory_storage = InMemorySessionStorage()
-
         session_manager = SessionManager(
-            db_manager=mock_facade,
-            config=config,
-            storage=memory_storage
+            db_manager=lancedb_storage,
+            config=Config.load(),
+            storage=memory_storage,
         )
 
-        # Create session - returns dict with session info
         result = await session_manager.create_session("test-project")
-        assert result is not None
+
         assert result["project_id"] == "test-project"
-        assert "session_id" in result
-
-        # Verify stored in memory backend
         assert memory_storage.session_count == 1
-
-        # Validate session
-        is_valid = await session_manager.validate_session(result["session_id"])
-        assert is_valid is True
+        assert await session_manager.validate_session(result["session_id"]) is True
 
     @pytest.mark.asyncio
-    async def test_session_manager_uses_default_storage(self, tmp_path):
-        """SessionManager creates LanceDBSessionStorage by default."""
-        from agentic_inquiry.config import Config, StorageConfig
+    async def test_session_manager_uses_default_storage(self, lancedb_storage):
+        """SessionManager persists to LanceDB when the backend is LanceDB."""
+        from agentic_inquiry.config import Config
         from agentic_inquiry.mcp.services.session_manager import SessionManager
-        from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
-        config = Config()
-        config.storage = StorageConfig(
-            root=str(tmp_path),
-            default_project_id="test"
-        )
-
-        # Create InMemoryLanceDBManager and wrap in mock StorageFacade
-        db_manager = InMemoryLanceDBManager(uri="memory://test")
-        mock_facade = MagicMock()
-        mock_facade.get_backend_type = MagicMock(return_value="lancedb")
-        mock_facade.get_db_manager = MagicMock(return_value=db_manager)
-
-        # Don't pass storage - should create LanceDBSessionStorage
-        session_manager = SessionManager(
-            db_manager=mock_facade,
-            config=config
-        )
+        session_manager = SessionManager(db_manager=lancedb_storage, config=Config.load())
 
         assert isinstance(session_manager.storage, LanceDBSessionStorage)

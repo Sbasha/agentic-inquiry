@@ -88,6 +88,25 @@ class MemoryStorageProtocol(Protocol):
         """
         ...
 
+    async def replace(
+        self,
+        item: "MemoryItem",
+        vector: List[float],
+    ) -> None:
+        """Write item over any stored item with the same id, in one atomic write.
+
+        The stored item is never absent in between, so a cancelled or failed
+        replace leaves either the old or the new version readable.
+
+        Args:
+            item: Memory item to write (must have valid id)
+            vector: Embedding vector for similarity search
+
+        Raises:
+            RuntimeError: If storage fails
+        """
+        ...
+
     async def retrieve(
         self,
         query_vector: List[float],

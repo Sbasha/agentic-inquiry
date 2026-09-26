@@ -11,6 +11,7 @@ from agentic_inquiry.config import Config
 from agentic_inquiry.database import LanceDBManager
 from agentic_inquiry.embeddings import EmbeddingService
 from agentic_inquiry.memory import MemoryContext, MemorySystem, MemoryTier
+from agentic_inquiry.memory.models import MemoryStatus
 from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 
 
@@ -697,3 +698,86 @@ class TestErrorHandling:
         # Should return False, not raise error
         deleted = await memory_system.delete("nonexistent_id")
         assert deleted is False
+
+
+class TestConcurrentWrites:
+    """MemorySystem writes stay consistent while access refreshes run."""
+
+    @pytest.mark.asyncio
+    async def test_update_importance_races_refresh_and_delete(
+        self, memory_system, db_manager, test_context
+    ):
+        """One row with the new importance; a racing delete is never undone."""
+
+        async def stored_importances(item_id):
+            rows = await db_manager.advanced_filter(
+                table_name="memory_episodic_medium",
+                filters={"id": item_id},
+                limit=10,
+                project_id=None,
+            )
+            return [row["importance"] for row in rows]
+
+        for attempt in range(5):
+            item = await memory_system.store(
+                content=f"User prefers Python for data analysis ({attempt})",
+                context=test_context,
+                importance=0.8,
+                summary="Python preference",
+            )
+
+            await memory_system.retrieve(
+                query="programming language preference", context=test_context, limit=5
+            )
+            assert await memory_system.update_importance(item.id, 0.85) is True
+            await memory_system.episodic_memory.wait_for_background_writes()
+            assert await stored_importances(item.id) == [0.85]
+
+            await memory_system.retrieve(
+                query="programming language preference", context=test_context, limit=5
+            )
+            await asyncio.gather(
+                memory_system.update_importance(item.id, 0.86),
+                memory_system.delete(item.id),
+            )
+            await memory_system.episodic_memory.wait_for_background_writes()
+            assert await stored_importances(item.id) == []
+
+
+class TestStatusChangesPersist:
+    """Negate and supersede persist on the stored tiers, not only in memory."""
+
+    @staticmethod
+    def _layer(memory_system, importance):
+        return memory_system.semantic_memory if importance >= 0.9 else memory_system.episodic_memory
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("importance", [0.8, 0.95], ids=["episodic", "semantic"])
+    async def test_negate_persists(self, memory_system, test_context, importance):
+        item = await memory_system.store(
+            content="The build uses Makefiles", context=test_context,
+            importance=importance, summary="Build tool",
+        )
+
+        assert await memory_system.negate_memory(item.id) is True
+
+        stored = await self._layer(memory_system, importance).get_by_id(
+            item.id, update_access=False
+        )
+        assert stored.status == MemoryStatus.NEGATED
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("importance", [0.8, 0.95], ids=["episodic", "semantic"])
+    async def test_supersede_persists(self, memory_system, test_context, importance):
+        old = await memory_system.store(
+            content="The build uses Makefiles", context=test_context,
+            importance=importance, summary="Build tool",
+        )
+
+        new = await memory_system.supersede_memory(old.id, "The build uses just")
+
+        stored = await self._layer(memory_system, importance).get_by_id(
+            old.id, update_access=False
+        )
+        assert stored.status == MemoryStatus.SUPERSEDED
+        assert stored.superseded_by == new.id

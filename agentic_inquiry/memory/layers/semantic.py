@@ -20,7 +20,7 @@ Example:
 import asyncio
 import logging
 from datetime import datetime, timezone
-from typing import cast
+from typing import Callable, cast
 
 import numpy as np
 
@@ -75,6 +75,16 @@ class SemanticMemory:
         # Check capabilities
         self._has_scored_retrieval = has_scored_retrieval(storage)
         self._has_query_capability = has_query_capability(storage)
+
+        # Every read-modify-write of a stored item (updates, deletes, evictions,
+        # access-stat refreshes) runs under this lock, so no writer can write
+        # back a copy it read before another writer's change or delete.
+        self._write_lock = asyncio.Lock()
+        # Strong references keep fire-and-forget access-stat tasks alive.
+        self._background_tasks: set[asyncio.Task[None]] = set()
+        # Accesses not yet persisted, per item with a refresh queued; a repeat
+        # retrieve() adds to the count instead of queueing another refresh.
+        self._refresh_pending: dict[str, int] = {}
 
         self._initialized = False
         logger.info(
@@ -155,16 +165,17 @@ class SemanticMemory:
         if not self._initialized:
             await self.initialize()
 
-        # Delegate to storage adapter
-        item = await self._storage.get_by_id(item_id)
+        if not update_access:
+            item = await self._storage.get_by_id(item_id)
+        else:
+            async with self._write_lock:
+                item = await self._storage.get_by_id(item_id)
+                if item is not None:
+                    item.access()
+                    await self._replace(item)
 
         if item is None:
             return None
-
-        # Update access statistics if requested
-        if update_access:
-            item.access()
-            await self.update(item)
 
         logger.debug("Retrieved fact from semantic memory: id=%s", item_id)
         return item
@@ -173,8 +184,8 @@ class SemanticMemory:
         """
         Update an existing memory item (fact).
 
-        Replaces the item entirely (delete + store) to ensure all fields
-        including the embedding vector are updated.
+        Writes the whole item, embedding included, over the stored copy in one
+        atomic write.
 
         Args:
             item: MemoryItem with updated values
@@ -182,14 +193,37 @@ class SemanticMemory:
         if not self._initialized:
             await self.initialize()
 
-        # Delete old version and insert updated version
-        await self._storage.delete(item.id)
-
-        # Insert updated version
-        vector = item.embedding.tolist() if item.embedding is not None else []
-        await self._storage.store(item, vector)
+        async with self._write_lock:
+            await self._replace(item)
 
         logger.debug("Updated fact in semantic memory: id=%s", item.id)
+
+    async def modify(
+        self, item_id: str, change: Callable[[MemoryItem], None]
+    ) -> MemoryItem | None:
+        """Re-read item_id, apply change to it and write it back, atomically.
+
+        Use this instead of get_by_id() + update() so a concurrent write or
+        delete cannot land between the read and the write.
+
+        Returns:
+            The updated item, or None if it does not exist
+        """
+        if not self._initialized:
+            await self.initialize()
+
+        async with self._write_lock:
+            item = await self._storage.get_by_id(item_id)
+            if item is None:
+                return None
+            change(item)
+            await self._replace(item)
+        return item
+
+    async def _replace(self, item: MemoryItem) -> None:
+        """Write item over its stored copy; caller holds the write lock."""
+        vector = item.embedding.tolist() if item.embedding is not None else []
+        await self._storage.replace(item, vector)
 
     async def delete(self, item_id: str) -> bool:
         """
@@ -204,8 +238,8 @@ class SemanticMemory:
         if not self._initialized:
             await self.initialize()
 
-        # Delegate to storage adapter
-        deleted = await self._storage.delete(item_id)
+        async with self._write_lock:
+            deleted = await self._storage.delete(item_id)
 
         if deleted:
             logger.debug("Deleted fact from semantic memory: id=%s", item_id)
@@ -288,7 +322,7 @@ class SemanticMemory:
 
             # Fire-and-forget access stat updates — must not block or fail retrieval
             if ids_to_update:
-                asyncio.create_task(self._update_access_stats(ids_to_update))
+                self._spawn_access_update(ids_to_update)
         else:
             # Fall back to basic retrieve (no scores)
             if use_server_side and hasattr(self._storage, 'retrieve_by_text'):
@@ -324,7 +358,7 @@ class SemanticMemory:
 
             # Fire-and-forget access stat updates — must not block or fail retrieval
             if ids_to_update_fallback:
-                asyncio.create_task(self._update_access_stats(ids_to_update_fallback))
+                self._spawn_access_update(ids_to_update_fallback)
 
         # Sort by combined score (descending)
         retrieval_results.sort(key=lambda r: r.relevance_score, reverse=True)
@@ -340,13 +374,29 @@ class SemanticMemory:
 
         return retrieval_results
 
+    def _spawn_access_update(self, item_ids: list[str]) -> None:
+        """Refresh access stats in the background without blocking retrieval."""
+        new_ids = [item_id for item_id in item_ids if item_id not in self._refresh_pending]
+        for item_id in item_ids:
+            self._refresh_pending[item_id] = self._refresh_pending.get(item_id, 0) + 1
+        if not new_ids:
+            return
+        task = asyncio.create_task(self._update_access_stats(new_ids))
+        self._background_tasks.add(task)
+        task.add_done_callback(self._background_tasks.discard)
+
+    async def wait_for_background_writes(self) -> None:
+        """Wait until the access-stat refreshes started by retrieve() finish."""
+        while self._background_tasks:
+            await asyncio.gather(*self._background_tasks, return_exceptions=True)
+
     async def _update_access_stats(self, item_ids: list[str]) -> None:
         """Persist access count and accessed_at updates for retrieved items.
 
         Called as a fire-and-forget task from retrieve() so it never blocks
-        the recall path. Re-fetches each item from the DB before updating to
-        avoid overwriting concurrent writes (e.g., update_importance calls).
-        All items are updated in parallel via asyncio.gather.
+        the recall path. Each item is re-read and rewritten under the write
+        lock, so a refresh never overwrites a concurrent write (for example
+        update_importance) or re-creates a deleted item.
         Failures are logged but do not propagate.
 
         Args:
@@ -354,18 +404,27 @@ class SemanticMemory:
         """
         async def _update_one(item_id: str) -> None:
             try:
-                fresh_item = await self._storage.get_by_id(item_id)
-                if fresh_item is not None:
-                    fresh_item.access()
-                    await self.update(fresh_item)
-            except Exception:
-                logger.debug(
-                    "Failed to persist access stats for %s item %s",
+                async with self._write_lock:
+                    accesses = self._refresh_pending.pop(item_id, 1)
+                    fresh_item = await self._storage.get_by_id(item_id)
+                    if fresh_item is not None:
+                        for _ in range(accesses):
+                            fresh_item.access()
+                        await self._replace(fresh_item)
+            except Exception as e:
+                logger.warning(
+                    "Failed to persist access stats for %s item %s: %s",
                     self._tier_name,
                     item_id,
+                    e,
                 )
 
-        await asyncio.gather(*[_update_one(iid) for iid in item_ids])
+        try:
+            await asyncio.gather(*[_update_one(iid) for iid in item_ids])
+        finally:
+            # A cancelled refresh must not leave ids that block future refreshes
+            for item_id in item_ids:
+                self._refresh_pending.pop(item_id, None)
 
     async def query_facts(
         self,

@@ -71,7 +71,11 @@ async def check_project_state(
     is_empty = chunk_count == 0
     is_incomplete = 0 < chunk_count < chunk_threshold
     
-    if is_empty:
+    if chunk_count < 0:
+        warnings.append(
+            "Could not read index statistics; counts are unknown."
+        )
+    elif is_empty:
         warnings.append(
             "Project has no indexed content. "
             "Use add_knowledge() to index files before searching."

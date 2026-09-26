@@ -119,7 +119,7 @@ class TestRerankerConfiguration:
                 'hybrid_search': {
                     'vector_weight': 0.7,
                     'fts_weight': 0.3,
-                    'reranker_type': 'cohere',  # API-based reranker not supported
+                    'reranker_type': 'cohere',  # Hosted API reranker; local only (CHARTER principle 1)
                     'reranker_params': {}
                 }
             },

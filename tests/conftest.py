@@ -33,6 +33,12 @@ import warnings
 
 import pytest
 import pytest_asyncio
+from hypothesis import settings
+
+# Property tests assert behaviour, not speed; a per-example deadline only
+# fails them when the machine is loaded.
+settings.register_profile("agentic-inquiry", deadline=None)
+settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "agentic-inquiry"))
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 if ROOT_DIR not in sys.path:
@@ -68,6 +74,9 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: tests exceeding time budget")
     config.addinivalue_line("markers", "model: tests that load neural network models")
     config.addinivalue_line("markers", "contracts: storage provider contract tests")
+    config.addinivalue_line(
+        "markers", "perf: wall-clock budget tests; run with INQUIRY_PERF_TESTS=1"
+    )
 
 
 def pytest_collection_modifyitems(items):
@@ -83,8 +92,15 @@ def pytest_collection_modifyitems(items):
     - tests/golden/     -> @pytest.mark.golden
     - tests/stress/     -> @pytest.mark.stress
     - tests/adapters/   -> @pytest.mark.adapters
+
+    Tests marked ``perf`` assert wall-clock budgets that a loaded machine
+    misses, so they are skipped unless INQUIRY_PERF_TESTS=1.
     """
+    run_perf = os.environ.get("INQUIRY_PERF_TESTS") == "1"
+    skip_perf = pytest.mark.skip(reason="wall-clock budget test; set INQUIRY_PERF_TESTS=1")
     for item in items:
+        if not run_perf and item.get_closest_marker("perf"):
+            item.add_marker(skip_perf)
         path = str(item.fspath)
         if "/unit/" in path:
             item.add_marker(pytest.mark.unit)
@@ -291,7 +307,6 @@ def integration_config(tmp_path):
         EmbeddingsConfig,
         SentenceTransformerConfig,
         ParsersConfig,
-        ParserConfig,
         MemoryConfig,
         WorkingMemoryConfig,
         EpisodicMemoryConfig,
@@ -352,11 +367,7 @@ def integration_config(tmp_path):
     )
     
     # Parsers configuration (required)
-    config.parsers = ParsersConfig(
-        unified_code=ParserConfig(enabled=True, priority=100),
-        document=ParserConfig(enabled=True, priority=50),
-        fallback_text=ParserConfig(enabled=True, priority=0),
-    )
+    config.parsers = ParsersConfig()
     
     # Memory configuration (optional but commonly used)
     config.memory = MemoryConfig(

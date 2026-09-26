@@ -254,7 +254,7 @@ def test_document_relationships_processing():
             ],
         )
 
-        await pipeline.process_document(doc)
+        await pipeline.process_document(doc, flush_relationships=False)
 
         # Verify entities were registered
         assert "Chapter 1" in pipeline.symbol_registry._by_name

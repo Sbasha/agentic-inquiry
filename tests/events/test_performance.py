@@ -26,6 +26,7 @@ from agentic_inquiry.events.store import EventStore
 class TestEventEmissionLatency:
     """Test event emission latency (target: < 1ms)."""
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_single_event_emission_latency(self, tmp_path: Path):
@@ -73,6 +74,7 @@ class TestEventEmissionLatency:
             assert p95_latency < 2.0, \
                 f"P95 emission latency {p95_latency:.3f}ms exceeds 2ms threshold"
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_concurrent_event_emission_latency(self, tmp_path: Path):
@@ -127,6 +129,7 @@ class TestEventEmissionLatency:
 class TestBatchWriteThroughput:
     """Test batch write throughput (target: > 1000 events/sec)."""
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_batch_write_throughput(self, tmp_path: Path):
@@ -169,6 +172,7 @@ class TestBatchWriteThroughput:
             assert throughput > 1000, \
                 f"Throughput {throughput:.1f} events/sec is below 1000 events/sec target"
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_sustained_throughput(self, tmp_path: Path):
@@ -215,6 +219,7 @@ class TestBatchWriteThroughput:
 class TestQueryPerformance:
     """Test query performance (target: < 10ms for 1000 events)."""
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_operation_query_performance(self, tmp_path: Path):
@@ -270,6 +275,7 @@ class TestQueryPerformance:
         assert avg_query_time < 10.0, \
             f"Average query time {avg_query_time:.2f}ms exceeds 10ms target"
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_type_filter_query_performance(self, tmp_path: Path):
@@ -321,6 +327,7 @@ class TestQueryPerformance:
         assert avg_query_time < 15.0, \
             f"Type query time {avg_query_time:.2f}ms is too slow"
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_time_range_query_performance(self, tmp_path: Path):

@@ -171,8 +171,8 @@ they tell you. The non-negotiables not covered by a linter:
 - **Complete type annotations** on every function.
 - **Lazy logging:** `logger.info("Processing %s items", count)` — not
   f-strings (eager evaluation).
-- **Parser metadata uses LanceDB-compatible types only:** `str`, `int`,
-  `float`, `bool`, `list[str]`.
+- **Parser metadata must be JSON-serializable:** the pipeline stores the
+  dict as one JSON string and drops all of it if any value fails to encode.
 
 Subsystem-specific rationale:
 [`async-best-practices.md`](docs/development/async-best-practices.md),

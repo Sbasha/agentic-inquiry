@@ -245,3 +245,22 @@ def mock_services_minimal():
         "event_system": event_system,
         "session_manager": session_manager,
     }
+
+
+@pytest.fixture
+async def lancedb_storage(tmp_path):
+    """A real StorageFacade over a LanceDB directory under tmp_path."""
+    from agentic_inquiry.config import Config, StorageConfig
+    from agentic_inquiry.storage.facade import StorageFacade
+
+    config = Config.load()
+    config.storage = StorageConfig(
+        root=str(tmp_path),
+        default_project_id="test_project",
+        backends={"local": {"type": "lancedb", "database_path": str(tmp_path / "lancedb")}},
+        vector_backend="local",
+        graph_backend="local",
+    )
+    storage = await StorageFacade.from_config(config, "test_project")
+    yield storage
+    await storage.close()

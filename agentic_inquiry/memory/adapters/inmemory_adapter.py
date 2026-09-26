@@ -74,6 +74,14 @@ class InMemoryMemoryAdapter(MemoryStorageProtocol):
         self._items[item.id] = (item, vector)
         return item.id
 
+    async def replace(
+        self,
+        item: MemoryItem,
+        vector: List[float],
+    ) -> None:
+        """Write item over any stored item with the same id."""
+        await self.store(item, vector)
+
     async def retrieve(
         self,
         query_vector: List[float],

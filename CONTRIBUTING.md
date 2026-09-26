@@ -80,6 +80,7 @@ uv run --env-file .env pytest tests/path/test_file.py  # Specific file
 uv run --env-file .env pytest -k parser                # By pattern
 uv run --env-file .env pytest -m unit                  # By marker (unit/integration/golden/stress/adapters)
 uv run --env-file .env pytest --cov=agentic_inquiry       # With coverage
+INQUIRY_PERF_TESTS=1 uv run --env-file .env pytest -m perf  # Wall-clock budget tests (skipped by default)
 ```
 
 ### Fixture naming

@@ -50,7 +50,7 @@ def get_reranker(
 
     Note: This creates a NEW instance each time. For lightweight rerankers
     (RRF, LinearCombination) this is fine. For ML-based rerankers (CrossEncoder,
-    ColBERT, Cohere), callers should cache the instance to avoid repeated
+    ColBERT), callers should cache the instance to avoid repeated
     model loading which is expensive (seconds + GBs of RAM).
 
     Args:

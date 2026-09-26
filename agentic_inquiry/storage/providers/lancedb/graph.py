@@ -9,7 +9,6 @@ and focuses on graph-specific operations (entities and relationships).
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Sequence
 
@@ -21,6 +20,7 @@ from agentic_inquiry.storage.providers.lancedb.entity_rows import (
 )
 
 if TYPE_CHECKING:
+    from agentic_inquiry.database.filters import FilterInput
     from agentic_inquiry.storage.providers.lancedb.connection import (
         LanceDBConnectionManager,
     )
@@ -598,7 +598,7 @@ class LanceDBGraphProvider:
 
     async def query_relationships(
         self,
-        filters: Dict[str, Any],
+        filters: "FilterInput",
         project_id: str,
         limit: int = 100,
         offset: int = 0,
@@ -606,7 +606,7 @@ class LanceDBGraphProvider:
         """Query relationships with arbitrary filters.
 
         Args:
-            filters: Filter conditions as key-value pairs
+            filters: Filter conditions (dict or Filter AST)
             project_id: Project ID for isolation
             limit: Maximum number of results
             offset: Number of results to skip (not currently supported)
@@ -617,22 +617,9 @@ class LanceDBGraphProvider:
         if self._db_manager is None:
             raise RuntimeError("Provider not initialized")
 
-        # Map filter keys for compatibility:
-        # - 'relationship_type' is used by callers (e.g., relationship_resolver)
-        # - 'type' is the actual LanceDB column name (schema uses 'type')
-        mapped_filters = {}
-        if filters:
-            for key, value in filters.items():
-                if key == "relationship_type":
-                    mapped_filters["type"] = value
-                else:
-                    mapped_filters[key] = value
-        else:
-            mapped_filters = filters
-
         # Note: offset not currently implemented in LanceDBManager
         return await self._db_manager.query_relationships(
-            filters=mapped_filters,
+            filters=filters,
             limit=limit,
             project_id=project_id,
         )

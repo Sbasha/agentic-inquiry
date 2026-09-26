@@ -31,3 +31,5 @@ files inside any feature dir are gitignored — see
 [`salesforce-apex-parsing`](salesforce-apex-parsing/spec.md) - Apex class and trigger extraction.
 
 [`salesforce-intelligence`](salesforce-intelligence/spec.md) - Salesforce recognizer and metadata allowlist.
+
+[`main-suite-green`](main-suite-green/spec.md) - Root-cause fixes that make the full test suite pass deterministically; removes the Cohere reranker.

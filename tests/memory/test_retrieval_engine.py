@@ -110,22 +110,17 @@ def retrieval_engine(
     semantic_memory: SemanticMemory,
     mock_embedding_service: MagicMock,
     retrieval_config: RetrievalConfig,
+    test_config: Config,
 ) -> RetrievalEngine:
     """Create a retrieval engine."""
-    # Create a mock Config with proper structure
-    from unittest.mock import MagicMock
-    from agentic_inquiry.config import Config, MemoryConfig
-    
-    config = MagicMock(spec=Config)
-    config.memory = MagicMock(spec=MemoryConfig)
-    config.memory.retrieval = retrieval_config
-    
+    test_config.memory.retrieval = retrieval_config
+
     return RetrievalEngine(
         working_memory=working_memory,
         episodic_memory=episodic_memory,
         semantic_memory=semantic_memory,
         embedding_service=mock_embedding_service,
-        config=config,
+        config=test_config,
     )
 
 
@@ -578,11 +573,9 @@ async def test_retrieve_with_disabled_cache(
     semantic_memory: SemanticMemory,
     mock_embedding_service: MagicMock,
     sample_context: MemoryContext,
+    test_config: Config,
 ) -> None:
     """Test retrieval with caching disabled."""
-    # Create engine with caching disabled
-    from agentic_inquiry.config import Config, MemoryConfig
-    
     retrieval_config = RetrievalConfig(
         default_strategy="adaptive",
         cache_enabled=False,
@@ -595,16 +588,14 @@ async def test_retrieve_with_disabled_cache(
         },
     )
     
-    config = MagicMock(spec=Config)
-    config.memory = MagicMock(spec=MemoryConfig)
-    config.memory.retrieval = retrieval_config
-    
+    test_config.memory.retrieval = retrieval_config
+
     engine = RetrievalEngine(
         working_memory=working_memory,
         episodic_memory=episodic_memory,
         semantic_memory=semantic_memory,
         embedding_service=mock_embedding_service,
-        config=config,
+        config=test_config,
     )
 
     # Add items

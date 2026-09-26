@@ -55,7 +55,7 @@ class TestRerankerConfigValidation:
 
     def test_valid_reranker_types_constant(self):
         """Test that VALID_RERANKER_TYPES contains expected values."""
-        expected = {"rrf", "linear_combination", "cross_encoder", "colbert", "cohere"}
+        expected = {"rrf", "linear_combination", "cross_encoder", "colbert"}
         assert VALID_RERANKER_TYPES == expected
         assert isinstance(VALID_RERANKER_TYPES, frozenset)
 
@@ -64,7 +64,6 @@ class TestRerankerConfigValidation:
         "linear_combination",
         "cross_encoder",
         "colbert",
-        "cohere",
     ])
     def test_valid_reranker_types_accepted(
         self,

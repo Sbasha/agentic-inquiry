@@ -217,7 +217,7 @@ class TestResolutionStrategies:
         mock_db.query_raw.assert_called_once()
         call_args = mock_db.query_raw.call_args
         assert call_args[1]["table_name"] == "graph_relationships"
-        assert call_args[1]["filters"]["relationship_type"] == "imports"
+        assert call_args[1]["filters"]["type"] == "imports"
 
     @pytest.mark.asyncio
     async def test_database_resolution_no_match(self, resolver, symbol_registry):
