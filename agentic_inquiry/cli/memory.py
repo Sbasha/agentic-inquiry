@@ -117,45 +117,50 @@ async def create_memory_system(config, project_id: str):
 
     # Create storage and detect backend type for adapter selection
     storage = await StorageFacade.from_config(config, project_id)
-    backend_type = (
-        storage.get_backend_type() if hasattr(storage, "get_backend_type") else None
-    )
-
-    if backend_type == "lancedb":
-        # LanceDB backend - use LanceDBMemoryAdapter for persistence across invocations
-        from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
-
-        db_manager = storage.get_db_manager()
-        episodic_storage = LanceDBMemoryAdapter(
-            manager=db_manager,
-            table_name=episodic_table,
-            embedding_dims=embedding_dims,
-        )
-        semantic_storage = LanceDBMemoryAdapter(
-            manager=db_manager,
-            table_name=semantic_table,
-            embedding_dims=embedding_dims,
-        )
-        await episodic_storage.initialize()
-        await semantic_storage.initialize()
-    else:
-        # Unknown backend - use in-memory adapter as last resort
-        from agentic_inquiry.memory.adapters.inmemory_adapter import InMemoryMemoryAdapter
-
-        episodic_storage = InMemoryMemoryAdapter(embedding_dims=embedding_dims)
-        semantic_storage = InMemoryMemoryAdapter(embedding_dims=embedding_dims)
-        print(
-            "Warning: Using in-memory storage - memories will not persist",
-            file=sys.stderr,
+    try:
+        backend_type = (
+            storage.get_backend_type() if hasattr(storage, "get_backend_type") else None
         )
 
-    memory_system = MemorySystem(
-        config=config,
-        embedding_service=embedding_service,
-        episodic_storage=episodic_storage,
-        semantic_storage=semantic_storage,
-    )
-    await memory_system.initialize()
+        if backend_type == "lancedb":
+            # LanceDB backend - use LanceDBMemoryAdapter for persistence across invocations
+            from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
+
+            db_manager = storage.get_db_manager()
+            episodic_storage = LanceDBMemoryAdapter(
+                manager=db_manager,
+                table_name=episodic_table,
+                embedding_dims=embedding_dims,
+            )
+            semantic_storage = LanceDBMemoryAdapter(
+                manager=db_manager,
+                table_name=semantic_table,
+                embedding_dims=embedding_dims,
+            )
+            await episodic_storage.initialize()
+            await semantic_storage.initialize()
+        else:
+            # Unknown backend - use in-memory adapter as last resort
+            from agentic_inquiry.memory.adapters.inmemory_adapter import InMemoryMemoryAdapter
+
+            episodic_storage = InMemoryMemoryAdapter(embedding_dims=embedding_dims)
+            semantic_storage = InMemoryMemoryAdapter(embedding_dims=embedding_dims)
+            print(
+                "Warning: Using in-memory storage - memories will not persist",
+                file=sys.stderr,
+            )
+
+        memory_system = MemorySystem(
+            config=config,
+            embedding_service=embedding_service,
+            episodic_storage=episodic_storage,
+            semantic_storage=semantic_storage,
+        )
+        await memory_system.initialize()
+    except BaseException:
+        # The events writer thread blocks interpreter exit until closed.
+        await storage.close()
+        raise
 
     return memory_system, storage
 
@@ -184,6 +189,7 @@ async def save_command(args: argparse.Namespace) -> int:
         print("Error: Summary is required", file=sys.stderr)
         return 1
 
+    storage = None
     try:
         memory_system, storage = await create_memory_system(config, project_id)
 
@@ -248,6 +254,9 @@ async def save_command(args: argparse.Namespace) -> int:
         logger.exception("Save failed")
         print(f"Error: {e}", file=sys.stderr)
         return 1
+    finally:
+        if storage is not None:
+            await storage.close()
 
 
 async def recall_command(args: argparse.Namespace) -> int:
@@ -274,6 +283,7 @@ async def recall_command(args: argparse.Namespace) -> int:
         print("Error: Query is required", file=sys.stderr)
         return 1
 
+    storage = None
     try:
         memory_system, storage = await create_memory_system(config, project_id)
 
@@ -349,6 +359,9 @@ async def recall_command(args: argparse.Namespace) -> int:
         logger.exception("Recall failed")
         print(f"Error: {e}", file=sys.stderr)
         return 1
+    finally:
+        if storage is not None:
+            await storage.close()
 
 
 async def list_command(args: argparse.Namespace) -> int:
@@ -370,6 +383,7 @@ async def list_command(args: argparse.Namespace) -> int:
         )
         return 1
 
+    storage = None
     try:
         memory_system, storage = await create_memory_system(config, project_id)
 
@@ -453,6 +467,9 @@ async def list_command(args: argparse.Namespace) -> int:
         logger.exception("List failed")
         print(f"Error: {e}", file=sys.stderr)
         return 1
+    finally:
+        if storage is not None:
+            await storage.close()
 
 
 def create_parser() -> argparse.ArgumentParser:

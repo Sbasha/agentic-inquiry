@@ -155,6 +155,12 @@ owners that spec covers.
   serving then runs on a second loop. Under the default transport no
   maintenance tick runs and emitted events are not persisted. Build and
   serve on one loop.
+- **`ai memory recall` ignores the hashing embedder's size:** with
+  `INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER=hashing` and
+  `INQUIRY_EMBEDDINGS_DEFAULT_DIMENSIONS=128`, `save` writes 128-dim
+  vectors but `recall` embeds its query at 384 dims and fails with
+  `query dim(384) doesn't match the column vector vector dim(128)`. Find
+  where the recall path picks an embedder other than the configured one.
 - **Importing `agentic_inquiry.watching` creates `./.agentic-inquiry`:**
   `_register_default_watcher()` builds a `FileTracker()` at import time,
   which creates the directory in the importing process's cwd. Register
