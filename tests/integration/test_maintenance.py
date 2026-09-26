@@ -110,8 +110,8 @@ class TestMaintenanceIntegration:
         self, event_system, mock_storage_with_lancedb
     ):
         """Test full event-driven maintenance flow."""
-        # Create manager with event system and the mock storage
-        manager = MaintenanceManager(
+        # Construction subscribes the manager to the event bus
+        MaintenanceManager(
             event_system=event_system,
             storage=mock_storage_with_lancedb
         )
@@ -179,7 +179,8 @@ class TestMaintenanceConfigIntegration:
         self, event_system, mock_storage_with_lancedb
     ):
         """Test different trigger configs change behavior."""
-        manager = MaintenanceManager(
+        # Construction subscribes the manager to the event bus
+        MaintenanceManager(
             event_system=event_system,
             storage=mock_storage_with_lancedb
         )

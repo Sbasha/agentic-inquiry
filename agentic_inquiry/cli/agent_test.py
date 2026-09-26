@@ -17,7 +17,6 @@ import argparse
 import asyncio
 import json
 import logging
-import os
 import re
 import sys
 from datetime import datetime
@@ -226,11 +225,8 @@ async def run_test_scenario(
         Test result dict
     """
     from agentic_inquiry.storage.facade import StorageFacade
-    from agentic_inquiry.indexing.pipeline import IndexingPipeline
-    from agentic_inquiry.search.service import SearchService
     from agentic_inquiry.embeddings.registry import embedding_registry
     from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
-    from agentic_inquiry.embeddings.service import EmbeddingService
 
     # Find the test file
     tests = get_test_files()
@@ -320,7 +316,7 @@ async def run_test_scenario(
 
     # Append to test log
     with open(test_log, "a") as log:
-        log.write(f"\n---\n\n")
+        log.write("\n---\n\n")
         log.write(f"**Completed:** {end_time.isoformat()}\n")
         log.write(f"**Duration:** {duration:.1f} seconds\n")
         log.write(f"**Status:** {results['status'].upper()}\n")
@@ -330,13 +326,13 @@ async def run_test_scenario(
     final_report = test_output / "FINAL_REPORT.md"
     with open(final_report, "w") as f:
         f.write(f"# Final Report: TEST_{test_id} - {test_name}\n\n")
-        f.write(f"## Summary\n\n")
+        f.write("## Summary\n\n")
         f.write(f"- **Status:** {results['status'].upper()}\n")
         f.write(f"- **Duration:** {duration:.1f} seconds\n")
         f.write(f"- **Steps:** {sum(1 for s in results['steps'] if s.get('passed'))}/{len(results['steps'])} passed\n")
         f.write(f"- **Issues:** {len(results['issues'])}\n\n")
 
-        f.write(f"## Step Results\n\n")
+        f.write("## Step Results\n\n")
         for step in results["steps"]:
             icon = "✓" if step.get("passed") else "✗"
             f.write(f"- {icon} {step.get('name', 'Unknown step')}\n")
@@ -344,7 +340,7 @@ async def run_test_scenario(
                 f.write(f"  - {step['details']}\n")
 
         if results["issues"]:
-            f.write(f"\n## Issues\n\n")
+            f.write("\n## Issues\n\n")
             for issue in results["issues"]:
                 f.write(f"- [{issue.get('severity', 'unknown')}] {issue.get('description', 'No description')}\n")
 
@@ -621,17 +617,17 @@ async def run_command(args: argparse.Namespace) -> int:
     # Write session summary
     summary_path = output_dir / "SESSION_SUMMARY.md"
     with open(summary_path, "w") as f:
-        f.write(f"# Agent Test Session Summary\n\n")
+        f.write("# Agent Test Session Summary\n\n")
         f.write(f"**Run ID:** {timestamp}\n")
         f.write(f"**Date:** {datetime.now().isoformat()}\n")
         f.write(f"**Tests Run:** {len(all_results)}\n\n")
 
         passed = sum(1 for r in all_results if r.get("status") == "complete")
-        f.write(f"## Results\n\n")
+        f.write("## Results\n\n")
         f.write(f"- **Passed:** {passed}/{len(all_results)}\n")
         f.write(f"- **Failed:** {len(all_results) - passed}\n\n")
 
-        f.write(f"## Test Details\n\n")
+        f.write("## Test Details\n\n")
         for result in all_results:
             icon = "✓" if result.get("status") == "complete" else "✗"
             f.write(f"### {icon} TEST_{result.get('test_id')}: {result.get('test_name')}\n\n")

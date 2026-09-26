@@ -10,7 +10,7 @@ temporarily change CWD to the parent of the target codebase before indexing.
 import os
 import time
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from .base import (
     call_tool,
@@ -38,11 +38,10 @@ async def run(
     output_dir: Path,
     target_codebase: str = TARGET_CODEBASE,
 ) -> Dict[str, Any]:
-    from agentic_inquiry.mcp.tools.session import create_session, get_session
+    from agentic_inquiry.mcp.tools.session import create_session
     from agentic_inquiry.mcp.tools.knowledge import add_knowledge
     from agentic_inquiry.mcp.tools.search import search_knowledge
     from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
-    from agentic_inquiry.mcp.tools.info import get_project_info, get_server_info
     from agentic_inquiry.mcp.tools.context import build_context
 
     results: Dict[str, Any] = {}

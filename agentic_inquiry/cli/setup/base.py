@@ -153,7 +153,7 @@ class BaseSetup(ABC):
 
         # Prompt user for name
         name = prompt_input(
-            f"Environment name", default=default_name
+            "Environment name", default=default_name
         )
 
         # Ensure dev environments follow naming convention

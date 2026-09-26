@@ -1,8 +1,6 @@
 """Tests for agentic_inquiry.server.lifecycle - PID file, port, auto-start."""
 
-import json
 import os
-import tempfile
 
 import pytest
 

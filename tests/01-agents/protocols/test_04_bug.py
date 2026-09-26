@@ -116,7 +116,6 @@ async def run(
 
     # ── T1.1: Symptom Analysis ─────────────────────────────────────────
     log(test_id, "T1.1: Symptom analysis - search with camelCase query")
-    t1_start = time.time()
     try:
         # Direct test of the reported symptom
         r, t = await call_tool(
@@ -323,9 +322,9 @@ async def run(
         log(test_id, f"T4.1: {count} results for FTS implementation")
         if hypothesis_found:
             note_adoption(journal,
-                f"found FTS implementation details (to_tsquery, plainto_tsquery) via "
-                f"semantic search — understanding SQL-level root cause without reading "
-                f"every provider file manually",
+                "found FTS implementation details (to_tsquery, plainto_tsquery) via "
+                "semantic search — understanding SQL-level root cause without reading "
+                "every provider file manually",
                 "positive")
     except Exception as e:
         check(results, issues, "T4_1_hypothesis_fts_impl", False, fail_msg=str(e))
