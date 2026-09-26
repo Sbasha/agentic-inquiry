@@ -10,7 +10,7 @@ from __future__ import annotations
 import logging
 import uuid
 from pathlib import Path
-from typing import Any, AsyncIterator, Dict, List, Union
+from typing import Any, AsyncIterator, Awaitable, Callable, Dict, List, Union
 
 import numpy as np
 import pytest
@@ -246,7 +246,8 @@ async def test_negate_keeps_concurrent_access_count(
 
     stored = await layer.get_by_id(item.id, update_access=False)
     assert stored is not None
-    assert bumper.writes >= 1
+    # The bumper fires once per commit on the item's table: one write.
+    assert bumper.writes == 1
     assert stored.access_count == bumper.writes
     assert stored.status == MemoryStatus.NEGATED
     assert stored.importance == 0.0
@@ -268,7 +269,8 @@ async def test_supersede_keeps_concurrent_access_count(
     assert new_item is not None
     stored = await layer.get_by_id(item.id, update_access=False)
     assert stored is not None
-    assert bumper.writes >= 1
+    # The bumper fires once per commit on the item's table: one write.
+    assert bumper.writes == 1
     assert stored.access_count == bumper.writes
     assert stored.status == MemoryStatus.SUPERSEDED
     assert stored.superseded_by == new_item.id
@@ -288,33 +290,117 @@ async def test_negate_working_item(system: MemorySystem) -> None:
     assert stored.importance == 0.0
 
 
+def _after_first_read(
+    monkeypatch: pytest.MonkeyPatch,
+    layer: Layer,
+    action: Callable[[MemoryItem], Awaitable[None]],
+) -> None:
+    """Run ``action`` on the item right after the layer's first read returns it."""
+    real_get_by_id = layer.get_by_id
+    fired = False
+
+    async def get_then_act(
+        item_id: str, update_access: bool = True
+    ) -> MemoryItem | None:
+        nonlocal fired
+        found = await real_get_by_id(item_id, update_access=update_access)
+        if found is not None and not fired:
+            fired = True
+            await action(found)
+        return found
+
+    monkeypatch.setattr(layer, "get_by_id", get_then_act)
+
+
+def _promote_to_semantic(
+    system: MemorySystem,
+) -> Callable[[MemoryItem], Awaitable[None]]:
+    async def promote(item: MemoryItem) -> None:
+        await system.semantic_memory.store(item)
+        await system.episodic_memory.delete(item.id)
+
+    return promote
+
+
+def _warned_about(caplog: pytest.LogCaptureFixture, item_id: str) -> bool:
+    return any(
+        record.levelno == logging.WARNING and item_id in record.getMessage()
+        for record in caplog.records
+    )
+
+
+@pytest.mark.asyncio
+async def test_negate_follows_item_promoted_mid_call(
+    system: MemorySystem, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    item = _item(importance=0.6)
+    await system.episodic_memory.store(item)
+    _after_first_read(monkeypatch, system.episodic_memory, _promote_to_semantic(system))
+
+    assert await system.negate_memory(item.id)
+
+    stored = await system.semantic_memory.get_by_id(item.id, update_access=False)
+    assert stored is not None
+    assert stored.status == MemoryStatus.NEGATED
+    assert stored.importance == 0.0
+
+
+@pytest.mark.asyncio
+async def test_negate_item_deleted_mid_call_returns_false(
+    system: MemorySystem,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    item = _item(importance=0.6)
+    await system.episodic_memory.store(item)
+
+    async def delete(found: MemoryItem) -> None:
+        await system.episodic_memory.delete(found.id)
+
+    _after_first_read(monkeypatch, system.episodic_memory, delete)
+
+    with caplog.at_level(logging.WARNING, logger="agentic_inquiry.memory.system"):
+        assert not await system.negate_memory(item.id)
+
+    assert await system.episodic_memory.get_by_id(item.id, update_access=False) is None
+    assert _warned_about(caplog, item.id)
+
+
+@pytest.mark.asyncio
+async def test_supersede_follows_item_promoted_mid_call(
+    system: MemorySystem, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    item = _item(importance=0.5)
+    await system.episodic_memory.store(item)
+    _after_first_read(monkeypatch, system.episodic_memory, _promote_to_semantic(system))
+
+    new_item = await system.supersede_memory(item.id, "replacement")
+
+    assert new_item is not None
+    stored = await system.semantic_memory.get_by_id(item.id, update_access=False)
+    assert stored is not None
+    assert stored.status == MemoryStatus.SUPERSEDED
+    assert stored.superseded_by == new_item.id
+
+
 @pytest.mark.asyncio
 async def test_supersede_returns_new_item_when_old_deleted(
     system: MemorySystem,
     caplog: pytest.LogCaptureFixture,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    layer = system.episodic_memory
     item = _item(importance=0.5)
-    await layer.store(item)
-    real_get_by_id = layer.get_by_id
+    await system.episodic_memory.store(item)
 
-    async def get_then_delete(
-        item_id: str, update_access: bool = True
-    ) -> MemoryItem | None:
-        found = await real_get_by_id(item_id, update_access=update_access)
-        if found is not None:
-            await layer.delete(item_id)
-        return found
+    async def delete(found: MemoryItem) -> None:
+        await system.episodic_memory.delete(found.id)
 
-    monkeypatch.setattr(layer, "get_by_id", get_then_delete)
+    _after_first_read(monkeypatch, system.episodic_memory, delete)
 
     with caplog.at_level(logging.WARNING, logger="agentic_inquiry.memory.system"):
         new_item = await system.supersede_memory(item.id, "replacement")
 
     assert new_item is not None
     assert new_item.content == "replacement"
-    assert any(
-        record.levelno == logging.WARNING and item.id in record.getMessage()
-        for record in caplog.records
-    )
+    assert await system.episodic_memory.get_by_id(item.id, update_access=False) is None
+    assert _warned_about(caplog, item.id)

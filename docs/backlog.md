@@ -150,6 +150,17 @@ leaves out.
   unrelated memory and leaves the tier one below its limit. Unblocked by
   skipping eviction when the id is already stored, at the cost of a lookup
   per store.
+- **One id in two tiers:** `ConsolidationEngine.promote_to_semantic` stores
+  an episodic item in semantic memory and keeps the episodic copy.
+  `negate_memory` and `supersede_memory` mark only the first tier that holds
+  the id, so the semantic copy stays active and keeps showing up in
+  retrieval. Needs a decision: delete the source copy on promotion, or mark
+  every tier that holds the id.
+- **Working-memory writes resurrect removed items:** `MemorySystem._write_fields`
+  stores a working item back unconditionally. If consolidation removed it
+  from working memory while supersede awaited the new item's embedding, the
+  store re-inserts it and, at capacity, evicts an unrelated item. Unblocked
+  by a working-memory presence check that does not count as an access.
 - **Inferred `mcp_sessions` schema:** the table is created from the first
   session's record, so a first session with `description` or `log_file`
   unset makes those columns null-typed, and every later persist that sets

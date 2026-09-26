@@ -42,6 +42,9 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+# Tiers in the order items move through them.
+_TIER_ORDER = (MemoryTier.WORKING, MemoryTier.EPISODIC, MemoryTier.SEMANTIC)
+
 
 class MemorySystem:
     """
@@ -754,15 +757,7 @@ class MemorySystem:
         ]
 
         for search_tier in tiers_to_search:
-            item = None
-
-            if search_tier == MemoryTier.WORKING:
-                item = await self.working_memory.get_by_id(item_id)
-            elif search_tier == MemoryTier.EPISODIC:
-                item = await self.episodic_memory.get_by_id(item_id, update_access=False)
-            else:  # SEMANTIC
-                item = await self.semantic_memory.get_by_id(item_id, update_access=False)
-
+            item = await self._read_tier(search_tier, item_id)
             if item:
                 old_importance = item.importance
                 changes = {
@@ -999,13 +994,8 @@ class MemorySystem:
             raise ValueError("MemorySystem not initialized. Call initialize() first.")
 
         now = datetime.now(timezone.utc)
-        for tier in (MemoryTier.WORKING, MemoryTier.EPISODIC, MemoryTier.SEMANTIC):
-            if tier == MemoryTier.WORKING:
-                item = await self.working_memory.get_by_id(item_id)
-            elif tier == MemoryTier.EPISODIC:
-                item = await self.episodic_memory.get_by_id(item_id, update_access=False)
-            else:
-                item = await self.semantic_memory.get_by_id(item_id, update_access=False)
+        for tier in _TIER_ORDER:
+            item = await self._read_tier(tier, item_id)
             if item is None:
                 continue
 
@@ -1034,6 +1024,7 @@ class MemorySystem:
                 )
             return True
 
+        logger.warning("Item not found for negate: id=%s", item_id)
         return False
 
     async def supersede_memory(
@@ -1058,23 +1049,14 @@ class MemorySystem:
         if not self._initialized:
             raise ValueError("MemorySystem not initialized. Call initialize() first.")
 
-        # Find old item
         old_item = None
         old_tier = None
-        
-        tiers = [MemoryTier.WORKING, MemoryTier.EPISODIC, MemoryTier.SEMANTIC]
-        for tier in tiers:
-            if tier == MemoryTier.WORKING:
-                old_item = await self.working_memory.get_by_id(old_item_id)
-            elif tier == MemoryTier.EPISODIC:
-                old_item = await self.episodic_memory.get_by_id(old_item_id, update_access=False)
-            else:
-                old_item = await self.semantic_memory.get_by_id(old_item_id, update_access=False)
-            
-            if old_item:
+        for tier in _TIER_ORDER:
+            old_item = await self._read_tier(tier, old_item_id)
+            if old_item is not None:
                 old_tier = tier
                 break
-        
+
         if old_item is None or old_tier is None:
             logger.warning("Old item not found for supersede: id=%s", old_item_id)
             return None
@@ -1092,18 +1074,24 @@ class MemorySystem:
             metadata=old_item.metadata.copy()
         )
         
-        superseded = await self._write_fields(
-            old_tier,
-            old_item,
-            {
-                "status": MemoryStatus.SUPERSEDED,
-                "superseded_by": new_item.id,
-                "modified_at": datetime.now(timezone.utc),
-            },
-        )
+        changes = {
+            "status": MemoryStatus.SUPERSEDED,
+            "superseded_by": new_item.id,
+            "modified_at": datetime.now(timezone.utc),
+        }
+        # Storing the new item awaits embedding, so the old item may have been
+        # promoted to a later tier or deleted since it was read.
+        superseded = await self._write_fields(old_tier, old_item, changes)
+        for tier in _TIER_ORDER[_TIER_ORDER.index(old_tier) + 1 :]:
+            if superseded:
+                break
+            moved = await self._read_tier(tier, old_item_id)
+            if moved is not None:
+                superseded = await self._write_fields(tier, moved, changes)
         if not superseded:
             logger.warning(
-                "Old item gone before it could be marked superseded: old_id=%s, new_id=%s",
+                "Old item deleted before it could be marked superseded: "
+                "old_id=%s, new_id=%s",
                 old_item_id,
                 new_item.id,
             )
@@ -1116,6 +1104,14 @@ class MemorySystem:
         )
         
         return new_item
+
+    async def _read_tier(self, tier: MemoryTier, item_id: str) -> MemoryItem | None:
+        """Read an item from one tier without recording a persistent access."""
+        if tier == MemoryTier.WORKING:
+            return await self.working_memory.get_by_id(item_id)
+        if tier == MemoryTier.EPISODIC:
+            return await self.episodic_memory.get_by_id(item_id, update_access=False)
+        return await self.semantic_memory.get_by_id(item_id, update_access=False)
 
     async def _write_fields(
         self, tier: MemoryTier, item: MemoryItem, changes: Dict[str, Any]

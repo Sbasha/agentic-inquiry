@@ -94,8 +94,9 @@ directly: a lone write raises the table's `version` by exactly one.
 - [x] `supersede_memory()` on an episodic or semantic item sets `status` to
       `SUPERSEDED` and `superseded_by` to the new item's id without rewriting
       other columns: an `access_count` written by another task before that
-      commit survives. If the old item is deleted between supersede's read and
-      its write, supersede logs a warning and still returns the new item.
+      commit survives. If the old item moves to a later tier between
+      supersede's read and its write, it is marked there; if it is deleted,
+      supersede logs a warning and still returns the new item.
 
 ## Assumptions
 
@@ -135,6 +136,13 @@ directly: a lone write raises the table's `version` by exactly one.
   persist that sets either fails with `StorageError`; the stored row survives
   the failure. Pre-existing and out of scope (source: reproduced on this
   branch, 2026-09-26;
+  [backlog](../../backlog.md#lancedb-single-commit-upsert)).
+- Technical: `ConsolidationEngine` promotes an episodic item to semantic
+  without deleting the episodic copy, so one id can be stored in two tiers.
+  `negate_memory()` and `supersede_memory()` mark the first tier that holds
+  the id, working, then episodic, then semantic; the other copy stays active.
+  Out of scope (source: `agentic_inquiry/memory/consolidation.py`
+  `promote_to_semantic`;
   [backlog](../../backlog.md#lancedb-single-commit-upsert)).
 - Product: `store()` upserts by id although the `merge_insert` adds a flat
   ~8 ms per call over an append (source: user confirmation 2026-09-26).

@@ -157,7 +157,7 @@ that describe delete + store or append.
 
 **Mode:** TDD (integration, on-disk LanceDB)
 **Depends on:** T3, memory-update-atomicity task 3 (layer `update_fields`)
-**Touches:** agentic_inquiry/memory/system.py, docs/backlog.md, tests/memory/test_memory_row_replace_atomicity.py
+**Touches:** agentic_inquiry/memory/system.py, docs/backlog.md, docs/specs/memory-update-atomicity/spec.md, tests/memory/test_memory_row_replace_atomicity.py, tests/memory/test_negative_truths.py
 **Tests:**
 - `test_negate_keeps_concurrent_access_count[episodic|semantic]` and
   `test_supersede_keeps_concurrent_access_count[episodic|semantic]`: on a real
@@ -172,9 +172,18 @@ that describe delete + store or append.
 - `test_supersede_returns_new_item_when_old_deleted`: delete the old item
   after supersede's read (hook on the layer's `get_by_id`); supersede returns
   the new item and logs a warning naming the old id (`caplog`).
-**Approach:** Replace the persistent-tier writes with one `update_fields()`
-call each; drop negate's call into `update_importance` and its re-fetch.
-Remove the `docs/backlog.md` entry for whole-row memory writes that this
-closes.
+- `test_negate_follows_item_promoted_mid_call`,
+  `test_negate_item_deleted_mid_call_returns_false` and
+  `test_supersede_follows_item_promoted_mid_call`: the item moves to semantic,
+  or is deleted, right after the episodic read.
+**Approach:** Add `MemorySystem._read_tier()` and `_write_fields()` (one
+per-tier read without access bookkeeping, one per-tier field write) and use
+them in `update_importance`, `negate_memory` and `supersede_memory`. Negate
+drops its call into `update_importance` and its re-fetch; negate and
+supersede move on to later tiers when the item moved mid-call, and warn when
+it is gone. Remove the mock negate test in `test_negative_truths.py`, which
+the on-disk tests cover. Remove the `docs/backlog.md` entry for whole-row
+memory writes, and the matching out-of-scope sentence in the
+memory-update-atomicity spec.
 **Done when:** listed tests green; `tests/memory` shows no new failures
 against the rebased base.
