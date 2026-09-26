@@ -114,10 +114,10 @@ code** (full detail in the per-subsystem docs):
   under concurrency, so `parsers/implementations/document.py` uses a
   single-worker `ThreadPoolExecutor`. The hard file-size limit is 50 MB
   (`_MAX_DOC_FILE_SIZE`). See [`docs/architecture/parsers.md`](docs/architecture/parsers.md).
-- **Hybrid-search tunables** (`MIN_VECTOR_SCORE`, `MIN_FTS_SCORE`,
-  RRF `k`, `dual_source_bonus`, `max_results_per_file`) live in
-  `search/` constants — change them deliberately, with a justification
-  in the PR. See [`docs/architecture/search.md`](docs/architecture/search.md).
+- **Search changes are measured, not argued.** Ranking and chunking
+  settings (RRF `k`, `max_results_per_file`, chunk budgets, the embedder)
+  change only with an `evals/` dev-split result paired against the
+  previous one (RFC-0003). See [`docs/architecture/search.md`](docs/architecture/search.md).
 
 ## Skills available to you
 

@@ -933,17 +933,11 @@ graph TB
 
 **Hybrid Search Pipeline:**
 
-The hybrid search combines vector similarity and full-text search with these enhancements:
-1. **Score-aware RRF**: k=30, score_factor multiplication, dual_source_bonus=1.3x
-2. **IDF-weighted content boost**: Rare query terms weighted higher than common ones
-3. **OR-based FTS**: Two-tier AND+OR queries with CamelCase splitting
-4. **Pre-filtering**: MIN_VECTOR_SCORE=0.15, MIN_FTS_SCORE=0.01
-5. **Proportional normalization**: Divide by max (not min-max)
-6. **Deduplication**: max_results_per_file=2
+Vector candidates (exhaustive cosine) and BM25 candidates (a Tantivy projection of `fts_text`) are fused with reciprocal rank fusion (k=60), capped per file (`max_results_per_file`) and cut to the limit. See [search.md](search.md).
 
 **Reranking Strategies:**
 
-- **RRF (Reciprocal Rank Fusion)**: Default, score-aware with quality pre-filtering
+- **RRF (Reciprocal Rank Fusion)**: Default; fuses by rank only
 - **Linear Combination**: Weighted combination of vector and FTS scores
 - **CrossEncoder**: Neural reranking with cross-attention (optional)
 - **ColBERT**: Late interaction reranking (optional)

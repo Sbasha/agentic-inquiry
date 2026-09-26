@@ -1469,7 +1469,6 @@ async def graph_filtered_search(
     limit: int = 10,
     relationship_types: list[str] | None = None,
     max_depth: int = 2,
-    rerank_by_graph: bool = True
 ) -> list[dict]
 ```
 
@@ -1479,7 +1478,6 @@ async def graph_filtered_search(
 - `limit` (int, optional): Maximum number of results to return. Default: 10.
 - `relationship_types` (list[str], optional): Types of relationships to consider (e.g., `["imports", "calls"]`).
 - `max_depth` (int, optional): Maximum graph traversal depth. Default: 2.
-- `rerank_by_graph` (bool, optional): Whether to rerank results using graph metadata. Default: True.
 
 **Returns:**
 - `list[dict]`: List of search results with graph-enhanced ranking.
@@ -1493,7 +1491,6 @@ results = await search_service.graph_filtered_search(
     limit=5,
     relationship_types=["calls", "imports"],
     max_depth=2,
-    rerank_by_graph=True
 )
 
 for result in results:
@@ -1609,7 +1606,6 @@ config = {
     },
     "graph_search": {
         "max_depth": 3,
-        "rerank_by_graph": True
     }
 }
 
@@ -1718,7 +1714,6 @@ async def search_with_context(query: str, limit: int = 5):
         limit=limit,
         relationship_types=["calls", "imports", "references"],
         max_depth=2,
-        rerank_by_graph=True
     )
     
     return results
@@ -1807,7 +1802,6 @@ search:
   hybrid_search:
     vector_weight: 0.7
     fts_weight: 0.3
-    rerank_by_graph: true
   
   graph_search:
     max_depth: 3

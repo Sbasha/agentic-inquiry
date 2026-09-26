@@ -121,7 +121,6 @@ results = await search.hybrid_search(
     query_vector=query_vector,
     query_fts="authentication",
     limit=10,
-    rerank_by_graph=True
 )
 ```
 

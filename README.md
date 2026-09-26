@@ -285,13 +285,10 @@ storage:
 search:
   hybrid_search:
     reranker_type: rrf
-    vector_weight: 0.7
-    fts_weight: 0.3
     reranker_params:
-      k: 30
-      dual_source_bonus: 1.3
+      k: 60
   deduplication:
-    max_results_per_file: 2
+    max_results_per_file: 1
 ```
 
 For per-environment config (e.g., different backends for dev vs production), use overlays:
@@ -416,32 +413,21 @@ extensions/claude/
 
 ## Search Architecture
 
-Hybrid search combines vector similarity and full-text search with innovations that eliminate the "good enough" problem at scale:
+Hybrid search fuses a vector retriever and a BM25 retriever over chunks that follow code definitions and text lines:
 
 ```
-Query → [Vector Search] + [Full-Text Search]
-              ↓                    ↓
-        Pre-filter           Two-tier AND+OR
-        (score > 0.15)       (CamelCase split)
-              ↓                    ↓
-         Score-aware RRF (k=30, dual_source_bonus=1.3x)
-              ↓
-         IDF-weighted content boost
-              ↓
-         Proportional normalization
-              ↓
-         Deduplication (max 2/file)
-              ↓
-         Top-K results
+Query → [Vector search: exhaustive cosine] + [BM25: Tantivy over fts_text]
+                          ↓
+            Reciprocal rank fusion (k=60)
+                          ↓
+            Per-file cap, then the limit
+                          ↓
+      path:start-end  scope  + chunk text
 ```
 
 Search quality is measured, not asserted: the evaluation harness in [`evals/`](evals/README.md) scores this pipeline against BM25, dense, hybrid and Graphify baselines on externally labelled datasets ([RFC-0003](docs/rfc/0003-eval-harness-and-competitor-parity.md)).
 
-Key innovations:
-- **IDF-weighted content boost**: Rare query terms get up to 20x weight. Rescues results that vector search misses entirely.
-- **Score-aware RRF**: Incorporates raw similarity scores into rank fusion, preventing dilution at scale.
-- **Two-tier FTS**: AND query for precision, OR fallback for recall, with CamelCase/snake_case splitting.
-- **Proportional normalization**: Preserves absolute quality signal (divide by max, not min-max).
+Details: [docs/architecture/search.md](docs/architecture/search.md).
 
 ---
 
