@@ -342,7 +342,7 @@ Configure rerankers in `agentic-inquiry.yaml`:
 ```yaml
 search:
   hybrid_search:
-    reranker_type: "rrf"  # Or "linear_combination", "cross_encoder", "boost_reranker"
+    reranker_type: "rrf"  # Or "linear_combination", "cross_encoder", "colbert", "cohere"
     vector_weight: 0.7
     fts_weight: 0.3
 

@@ -39,9 +39,9 @@ Each row carries two texts, built in `indexing/document_processor.py`:
 - **`fts_text`:** the same header and content, plus the words inside camelCase
   identifiers. The BM25 tokenizer already splits `snake_case` on the underscore.
 
-File-state hashes carry an index-format salt (`watching/file_tracker.py`), so
-changing the chunker or index text makes the next `ai index` rebuild every
-file.
+File-state hashes carry a salt of the index format and the configured
+embedding model (`watching/file_tracker.py`), so changing the chunker, the
+index text or the embedder makes the next `ai index` rebuild every file.
 
 ## How a query is ranked
 
@@ -60,12 +60,22 @@ file.
    `search.hybrid_search.reranker_params.k` (60). Scores are divided by the
    best achievable fused score, so 1.0 means first in both lists and 0.5 means
    first in one list only.
-3. **Content preference** (optional). Results of the preferred content type
+3. **Graph channel** (optional, `search.hybrid_search.graph_seeds`, 0 = off).
+   The definitions inside the top N fused results seed a one-hop walk over
+   `calls` and `inherits` edges (`search/graph_channel.py`). The chunks holding
+   the neighbouring definitions form a third list, and the three lists are
+   fused again.
+4. **Cross-encoder second stage** (optional,
+   `search.hybrid_search.rerank_model`, empty = off). The cross-encoder scores
+   the top `rerank_top_n` results against the query. In `fuse` mode its order
+   is fused by RRF with the fused order; in `replace` mode its order stands
+   alone. Scores keep the fused scale.
+5. **Content preference** (optional). Results of the preferred content type
    get their score raised by the given weight and the list re-sorts, without
    excluding anything.
-4. **Per-file cap.** `search.deduplication.max_results_per_file` results per
+6. **Per-file cap.** `search.deduplication.max_results_per_file` results per
    file, applied to the fused order.
-5. **Limit**, applied last.
+7. **Limit**, applied last.
 
 Other rerankers (`linear_combination`, `cross_encoder`) remain selectable
 through `search.hybrid_search.reranker_type`.
