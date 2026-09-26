@@ -225,11 +225,23 @@ class RecordedArm:
         return {"recorded_from": self.source}
 
 
-def recorded(path: Path, arm: str, case_ids: set[str]) -> tuple[RecordedArm, list[dict[str, Any]]]:
+def recorded(path: Path, live: set[str], case_ids: set[str]) -> tuple[list[RecordedArm], list[dict[str, Any]]]:
+    """Arms replayed from an earlier results file for the given cases.
+
+    The earlier ``inquiry`` arm is renamed ``inquiry@<sha>`` so it pairs with
+    the live one; other arms keep their names and are skipped when run live.
+    """
     report = json.loads(path.read_text())
-    label = f"{arm}@{report['provenance']['sha'][:8]}"
-    rows = [dict(r, arm=label) for r in report["rows"] if r["arm"] == arm and r["case"] in case_ids]
-    return RecordedArm(label, str(path)), rows
+    sha = report["provenance"]["sha"][:8]
+    arms: list[RecordedArm] = []
+    rows: list[dict[str, Any]] = []
+    for name in report["summary"]:
+        label = f"{name}@{sha}" if name == "inquiry" else name
+        if label in live:
+            continue
+        arms.append(RecordedArm(label, str(path)))
+        rows += [dict(r, arm=label) for r in report["rows"] if r["arm"] == name and r["case"] in case_ids]
+    return arms, rows
 
 
 def run(suite_name: str, arm_names: list[str], split: str, limit: int | None = None,
@@ -251,8 +263,8 @@ def run(suite_name: str, arm_names: list[str], split: str, limit: int | None = N
                 metrics = score_case(case, suite, got.hits, got.indexed)
                 rows.append({"arm": arm.name, "case": case.id, "latency_ms": round(got.latency_ms, 2), "metrics": metrics})
     if baseline is not None:
-        replay, replay_rows = recorded(baseline, "inquiry", {c.id for c in cases})
-        arms = [*arms, replay]
+        replay, replay_rows = recorded(baseline, {a.name for a in arms}, {c.id for c in cases})
+        arms = [*arms, *replay]
         rows.extend(replay_rows)
 
     report = _report(suite, cases, arms, rows, split, started, dirty, index_seconds)

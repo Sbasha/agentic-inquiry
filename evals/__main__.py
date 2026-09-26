@@ -22,7 +22,7 @@ def main() -> None:
     run.add_argument("--limit", type=int, help="first N cases (smoke runs only)")
     run.add_argument("--corpora", type=int, help="first N corpora (smoke runs only)")
     run.add_argument("--jobs", type=int, default=3, help="concurrent index builds for subprocess arms")
-    run.add_argument("--baseline", type=Path, help="earlier results file; its inquiry rows join as a paired arm")
+    run.add_argument("--baseline", type=Path, help="earlier results file whose arms are replayed (its inquiry becomes inquiry@sha)")
 
     answer = sub.add_parser("answer", help="Level B answer quality on LOCOMO")
     answer.add_argument("--arms", default="bm25,dense,hybrid,inquiry")

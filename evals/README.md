@@ -40,6 +40,20 @@ Run every command with the `eval` dependency group, `uv run --group eval python 
 Every arm's hits are rendered in rank order and cut at a token budget
 (tiktoken `cl100k_base`), so an arm pays for exactly what an agent would read.
 
+## Level C runs
+
+Each run is `claude -p` in the task's read-only snapshot, with `--setting-sources project` (no user settings, plugins or hooks), `--strict-mcp-config`, the floor tools Read, Grep and Glob, and at most 14 turns.
+
+| Arm | MCP server | Tools the agent sees |
+| --- | --- | --- |
+| `floor` | none | Read, Grep, Glob |
+| `graphify` | `graphify-mcp` over the task's graph | the floor plus `query_graph`, `get_node`, `get_neighbors`, `shortest_path`, `god_nodes`, `graph_stats`, `get_community` |
+| `inquiry` | `ai mcp --tools search` over the task's index | the floor plus `search` |
+
+- Tool arms get a parallel one-paragraph usage note (`ARM_GUIDANCE` in `evals/agent.py`), adapted from Graphify's always-on CLAUDE.md text.
+- The prompt states the tool-call budget and asks for `LOCATIONS:` with up to five `path:line` lines.
+- A run whose recorded tool list or server status does not match its arm is invalid and excluded, not scored.
+
 ## Results
 
 `evals/results/<suite>/<split>-<utc>-<sha8>.json` (schema `InquiryEval/v1`)
