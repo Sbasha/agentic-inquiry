@@ -764,24 +764,32 @@ class MemorySystem:
                 item = await self.semantic_memory.get_by_id(item_id, update_access=False)
 
             if item:
-                # Update importance
-                item.importance = new_importance
-                item.modified_at = datetime.now(timezone.utc)
-                item.modifier_agent_id = item.context.agent_id
+                old_importance = item.importance
+                changes = {
+                    "importance": new_importance,
+                    "modified_at": datetime.now(timezone.utc),
+                    "modifier_agent_id": item.context.agent_id,
+                }
 
-                # Store updated item
                 if search_tier == MemoryTier.WORKING:
+                    for field, value in changes.items():
+                        setattr(item, field, value)
                     await self.working_memory.store(item)
+                    updated = True
                 elif search_tier == MemoryTier.EPISODIC:
-                    await self.episodic_memory.update(item)
+                    updated = await self.episodic_memory.update_fields(item_id, changes)
                 else:  # SEMANTIC
-                    await self.semantic_memory.update(item)
+                    updated = await self.semantic_memory.update_fields(item_id, changes)
+
+                if not updated:
+                    # Gone since the read: deleted, or promoted to a later tier.
+                    continue
 
                 logger.info(
                     "Updated importance: id=%s, tier=%s, old=%.3f, new=%.3f",
                     item_id,
                     search_tier.value,
-                    item.importance,
+                    old_importance,
                     new_importance,
                 )
 
@@ -825,14 +833,18 @@ class MemorySystem:
             logger.warning("Item not found for confidence update: id=%s", item_id)
             return False
 
-        # Update confidence
         old_confidence = item.confidence
-        item.confidence = new_confidence
-        item.modified_at = datetime.now(timezone.utc)
-        item.modifier_agent_id = item.context.agent_id
-
-        # Store updated item
-        await self.semantic_memory.update(item)
+        updated = await self.semantic_memory.update_fields(
+            item_id,
+            {
+                "confidence": new_confidence,
+                "modified_at": datetime.now(timezone.utc),
+                "modifier_agent_id": item.context.agent_id,
+            },
+        )
+        if not updated:
+            logger.warning("Item deleted before confidence update: id=%s", item_id)
+            return False
 
         logger.info(
             "Updated confidence: id=%s, old=%.3f, new=%.3f",

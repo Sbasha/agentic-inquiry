@@ -125,6 +125,24 @@ a defect found while qualifying and left for its own change.
 - **`tantivy` dependency:** no code imports it after the native FTS
   switch. Remove it from `pyproject.toml` with an ADR.
 
+## memory-update-atomicity
+
+Open items from [`specs/memory-update-atomicity/spec.md`](specs/memory-update-atomicity/spec.md).
+None is a deferred acceptance criterion; each is a write path the spec
+leaves out.
+
+- **Whole-row memory writes:** `MemorySystem.negate_memory` and
+  `supersede_memory` still persist through `EpisodicMemory.update(item)` /
+  `SemanticMemory.update(item)`, a delete followed by an add. Two of those
+  writers overlapping on one id leave two rows. Unblocked by moving them to
+  `update_fields` and making the whole-row replace one `merge_insert`.
+  `LanceDBManager.upsert` has the same check, delete, add shape.
+- **Lost access increments:** access bookkeeping reads `access_count` and
+  writes back the incremented value, so two accesses of one item that
+  overlap count once. Unblocked by an increment expressed in the update
+  itself (`values_sql` `access_count + 1`), which the storage protocol
+  cannot express today.
+
 <!-- Add one section per spec with open work, e.g.:
 
 ## <spec-name>

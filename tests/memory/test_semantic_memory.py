@@ -6,6 +6,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
+import asyncio
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -598,3 +599,69 @@ async def test_get_stats(temp_semantic_memory: SemanticMemory) -> None:
     assert "size" in stats
     assert "utilization" in stats
     assert stats["capacity"] == 100
+
+
+def _write_confidence_after_first_read(
+    adapter: LanceDBMemoryAdapter, monkeypatch: pytest.MonkeyPatch, confidence: float
+) -> None:
+    """Make another writer set confidence right after the next read returns."""
+    real_get_by_id = adapter.get_by_id
+
+    async def get_then_concurrent_write(item_id: str) -> MemoryItem | None:
+        monkeypatch.setattr(adapter, "get_by_id", real_get_by_id)
+        item = await real_get_by_id(item_id)
+        await adapter.update(item_id, {"confidence": confidence})
+        return item
+
+    monkeypatch.setattr(adapter, "get_by_id", get_then_concurrent_write)
+
+
+@pytest.mark.asyncio
+async def test_access_bookkeeping_keeps_concurrent_confidence_update(
+    temp_semantic_memory: SemanticMemory,
+    semantic_adapter: LanceDBMemoryAdapter,
+    sample_fact_item: MemoryItem,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """get_by_id's access write must not revert a field another writer changed."""
+    await temp_semantic_memory.store(sample_fact_item)
+    _write_confidence_after_first_read(semantic_adapter, monkeypatch, 0.4)
+
+    await temp_semantic_memory.get_by_id(sample_fact_item.id)
+
+    stored = await semantic_adapter.get_by_id(sample_fact_item.id)
+    assert stored is not None
+    assert stored.confidence == 0.4
+    assert stored.access_count == 1
+    assert await semantic_adapter.count(filters={"id": sample_fact_item.id}) == 1
+
+
+@pytest.mark.asyncio
+async def test_retrieve_access_task_keeps_concurrent_confidence_update(
+    temp_semantic_memory: SemanticMemory,
+    semantic_adapter: LanceDBMemoryAdapter,
+    sample_fact_item: MemoryItem,
+    sample_context: MemoryContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The background access task retrieve() starts must not revert other writes."""
+    await temp_semantic_memory.store(sample_fact_item)
+    results = await temp_semantic_memory.retrieve(
+        sample_fact_item.embedding, sample_context, limit=5
+    )
+    assert [r.item.id for r in results] == [sample_fact_item.id]
+    _write_confidence_after_first_read(semantic_adapter, monkeypatch, 0.4)
+
+    access_tasks = [
+        task
+        for task in asyncio.all_tasks()
+        if "_update_access_stats" in task.get_coro().__qualname__
+    ]
+    assert len(access_tasks) == 1
+    await asyncio.gather(*access_tasks)
+
+    stored = await semantic_adapter.get_by_id(sample_fact_item.id)
+    assert stored is not None
+    assert stored.confidence == 0.4
+    assert stored.access_count == 1
+    assert await semantic_adapter.count(filters={"id": sample_fact_item.id}) == 1
