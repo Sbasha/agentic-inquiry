@@ -30,6 +30,16 @@ rots. See `CONVENTIONS.md` § 4 (Spec metadata contract).
 
 ---
 
+## local-only-rerankers
+
+Open items from [`specs/local-only-rerankers/spec.md`](specs/local-only-rerankers/spec.md).
+
+- **Custom-embedder guide suggests hosted services:** the "Custom Embeddings"
+  use cases in [`customization/extending.md`](customization/extending.md)
+  list "external embedding services (OpenAI, Cohere, etc.)", which
+  `CHARTER.md` Principle 1 rules out. Unblocked by rewriting that bullet to
+  local models only.
+
 ## afp-lifecycle-contract
 
 Open items from [`specs/afp-lifecycle-contract/spec.md`](specs/afp-lifecycle-contract/spec.md).
@@ -212,12 +222,6 @@ Open items found while building [`specs/hybrid-reranker-default/spec.md`](specs/
   `'cache' is a required property`. Unblocked by a product call: overlay user
   files on the packaged defaults (`Config._deep_merge` already exists), or
   document that the file must be complete.
-- **Stale cohere validation test:**
-  `tests/integration/test_reranker_configuration.py::TestRerankerConfiguration::test_invalid_reranker_type`
-  expects `reranker_type: cohere` to be rejected, but the schema enum and
-  `VALID_RERANKER_TYPES` accept it, so the test fails on main. Unblocked by
-  deciding whether an external-API reranker is in scope under
-  `docs/CHARTER.md`, then aligning the test or removing cohere.
 - **Scoring test docstring describes the wrong reranker:**
   `tests/search/test_hybrid_search_scoring.py::test_score_differences_reflected_in_ranking`
   explains linear-combination arithmetic, but its service is built from

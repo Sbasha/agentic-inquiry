@@ -12,6 +12,7 @@ from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
 from agentic_inquiry.exceptions import ConfigurationError
 from agentic_inquiry.search.service import SearchService
 from agentic_inquiry.search.rerankers import (
+    CrossEncoderReranker,
     RRFReranker,
     LinearCombinationReranker,
 )
@@ -89,15 +90,14 @@ class TestRRFRerankerParameterHandling:
             RRFReranker(k=60)
     
     def test_search_service_creates_reranker_with_valid_params(self, base_config, mock_storage_facade, mock_event_system):
-        """Test SearchService._hybrid_search._create_reranker() uses valid parameters.
+        """Test SearchService._hybrid_search._create_reranker() passes reranker_params
+        through the registry to an ML-based reranker.
 
-        Note: For reranker_type 'rrf' and 'linear_combination', the HybridSearchService
-        returns None because these use the built-in simple merge strategy.
-        Only external rerankers (cohere, colbert, cross_encoder) create actual reranker objects.
+        The cross-encoder loads its model lazily on first rerank, so construction
+        needs neither the model nor network access.
         """
-        # Configure for an external reranker (cohere)
-        base_config.search.hybrid_search.reranker_type = "cohere"
-        base_config.search.hybrid_search.reranker_params = {"model_name": "default"}
+        base_config.search.hybrid_search.reranker_type = "cross_encoder"
+        base_config.search.hybrid_search.reranker_params = {"model_name": "custom/model"}
 
         search_service = SearchService(
             storage=mock_storage_facade,
@@ -105,11 +105,9 @@ class TestRRFRerankerParameterHandling:
             event_system=mock_event_system,
         )
 
-        # cohere reranker will fail to create if lancedb.rerankers is not available
-        # but the method should not raise - it returns None on failure
-        search_service._hybrid_search._create_reranker()
-        # May be None if lancedb.rerankers is not installed with cohere support
-        # This is expected behavior
+        reranker = search_service._hybrid_search._create_reranker()
+        assert isinstance(reranker, CrossEncoderReranker)
+        assert reranker.model_name == "custom/model"
 
     def test_search_service_rejects_invalid_reranker_type(self, base_config, mock_storage_facade, mock_event_system):
         """Test SearchService rejects invalid reranker type at startup.
