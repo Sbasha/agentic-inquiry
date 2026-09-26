@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/enterprise-knowledge/operational-reality.md",
+    "git_blob_oid": "c767716bdd6264136662a5fc4e1e6979867260b4",
+    "sha256": "4e7be270e22f204cf80f2cf9f9efc92b86cfef3a7cf6b639d882e9b67622f9fa"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/enterprise-knowledge/operational-reality.md\nconfidence: high\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Operational reality \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| OR-1 | Assessment confidence improves when repository claims are reconciled with workload, incidents, service targets, recovery, and delivery outcomes. | S1, S2, S3 |\n| OR-1b | Conflicting, stale, or weakly applicable local context lowers confidence and requires an accountable resolution path. | S1, S2, S3 |\n\n## Sources\n\n- S1: [ISO/IEC/IEEE 42010:2022](https://www.iso.org/standard/74393.html) \u2014 stakeholders, concerns, views, decisions, and rationale.\n- S2: [NIST CSF 2.0 organizational profiles](https://www.nist.gov/cyberframework/profiles) \u2014 organization-specific mission, requirements, risk, and profile tailoring.\n- S3: [Azure operating-model readiness](https://learn.microsoft.com/en-us/azure/cloud-adoption-framework/strategy/prepare-organizational-alignment) \u2014 local ownership, alignment, and operating context.\n\n## Counter-evidence and downgrade factors\n\nThe portable taxonomy cannot establish an adopter's actual authority, ownership,\ninventory currency, standards, operations, or roadmap. One source remains\nlower-confidence; implemented evidence can conflict without proving a defect.\n\n## Known unknowns\n\nApplicability and decision authority must be resolved from the adopting organization.\n\n## Licensing and reuse\n\nOriginal synthesis and citations only; source terms remain with publishers.\nPacket license: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview annually; retrieve organization facts afresh for every assessment.\n"
+}

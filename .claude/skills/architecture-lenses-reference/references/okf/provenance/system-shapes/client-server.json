@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/system-shapes/client-server.md",
+    "git_blob_oid": "12a08c64088d1fc8b4d36cba10965e17a67a4993",
+    "sha256": "c9d145d94c85b307285594530984cc6f0f5c241a2b9a0f4d9a3be94d6a3692a7"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/system-shapes/client-server.md\nconfidence: moderate\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Client/server systems \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| SS-C1 | Client/server assessment requires trust placement, identity, version skew, network failure, caching/synchronization, data ownership, and rollout compatibility. | S1, S2, S3 |\n| SS-C1b | A shape label is a routing hypothesis; representative runtime, data, delivery, and failure paths must confirm its material boundaries. | S1, S2, S3 |\n\n## Sources\n\n- S1: [Azure architecture styles](https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/)\n- S2: [ISO/IEC/IEEE 42010:2022](https://www.iso.org/standard/74393.html)\n- S3: [Google Cloud Well-Architected Framework](https://docs.cloud.google.com/architecture/framework)\n\n## Counter-evidence and downgrade factors\n\nArchitecture styles overlap, repositories can contain several systems, and\nprovider examples can blur logical, deployment, and ownership boundaries.\nThe shape must not predetermine quality findings.\n\n## Known unknowns\n\nLanguage-specific semantic depth depends on available native tooling.\n\n## Licensing and reuse\n\nOriginal synthesis and citations only. Packet license: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview annually; validate platform behavior and provider contracts at use time.\n"
+}

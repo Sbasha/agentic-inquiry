@@ -1,0 +1,5 @@
+interface:
+  display_name: "Prototype"
+  short_description: "Build a disposable logic or UI prototype"
+policy:
+  allow_implicit_invocation: false

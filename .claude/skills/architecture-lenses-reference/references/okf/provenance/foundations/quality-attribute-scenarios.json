@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/foundations/quality-attribute-scenarios.md",
+    "git_blob_oid": "a004bec4cee1790e73cf55f005622a827852db93",
+    "sha256": "2172722d17b6e3794d0f6aec48b562d842e36c248e12ec9adf0f14e5639ff3de"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/foundations/quality-attribute-scenarios.md\nconfidence: high\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Quality-attribute scenarios \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| QA-1 | Broad quality labels need operational scenarios before architecture adequacy can be evaluated. | S1, S2, S3 |\n| QA-2 | A scenario should connect stimulus, environment, response mechanism, and measurable outcome. | S1, S2, S4 |\n| QA-3 | Quality mechanisms create trade-offs and require stakeholder priority. | S1, S3, S4 |\n\n## Sources\n\n- S1: [SEI ATAM method](https://www.sei.cmu.edu/library/atam-method-for-architecture-evaluation/) \u2014 quality scenarios and architectural approaches.\n- S2: [SEI ATAM collection](https://www.sei.cmu.edu/library/architecture-tradeoff-analysis-method-collection/) \u2014 scenario elicitation and analysis.\n- S3: [ISO/IEC 25010:2023](https://www.iso.org/standard/78176.html) \u2014 software product quality model.\n- S4: [Azure Well-Architected Framework](https://learn.microsoft.com/en-us/azure/well-architected/what-is-well-architected-framework) \u2014 workload quality trade-offs.\n\n## Counter-evidence and downgrade factors\n\nExact scenario fields vary by method. Numeric targets can imply false precision\nwhen demand, risk tolerance, or user impact is not known.\n\n## Known unknowns\n\nThe cheapest representative exercise differs by workload and environment access.\n\n## Licensing and reuse\n\nOriginal synthesis with links only; no standards text is reproduced. Packet\nlicense: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview annually and when ISO or SEI source models change.\n"
+}

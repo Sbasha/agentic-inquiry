@@ -1,0 +1,6 @@
+interface:
+  display_name: "Writing Workflow"
+  short_description: "Turn short direction into approval-ready writing"
+  default_prompt: "Use $writing-workflow to turn my short direction into an approval-ready private draft."
+policy:
+  allow_implicit_invocation: true

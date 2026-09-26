@@ -1,0 +1,108 @@
+This component includes material from Eugene Lim's agent-ready-repo.
+Source: https://github.com/eugenelim/agent-ready-repo
+Revision: c555e906df4c345d6c31b05f479976d2dd098ed4
+Component: packs/architect/.apm/skills/architecture-lenses-reference
+
+Upstream offers Apache-2.0 OR MIT. This distribution uses its Apache-2.0 option.
+See LICENSE for the complete Apache License, Version 2.0.
+
+AFP modifications: Copyright 2026 Sammy Basha, licensed under Apache-2.0.
+Modified upstream files:
+- SKILL.md
+- references/okf/concepts/assessment-intents/baseline-and-understanding.md
+- references/okf/concepts/assessment-intents/growth-and-scale-readiness.md
+- references/okf/concepts/assessment-intents/hardening-and-risk-reduction.md
+- references/okf/concepts/assessment-intents/optimize-current-outcomes.md
+- references/okf/concepts/assessment-intents/rationalization-disposition-and-due-diligence.md
+- references/okf/concepts/assessment-intents/transformation-and-modernization.md
+- references/okf/concepts/enterprise-knowledge/business-domain-and-meaning.md
+- references/okf/concepts/enterprise-knowledge/constraints-and-standards.md
+- references/okf/concepts/enterprise-knowledge/current-system-landscape.md
+- references/okf/concepts/enterprise-knowledge/decisions-and-rationale.md
+- references/okf/concepts/enterprise-knowledge/in-flight-work-and-roadmap.md
+- references/okf/concepts/enterprise-knowledge/interfaces-and-contracts.md
+- references/okf/concepts/enterprise-knowledge/local-patterns-and-reference-architectures.md
+- references/okf/concepts/enterprise-knowledge/operational-reality.md
+- references/okf/concepts/enterprise-knowledge/source-detection-confidence-and-conflicts.md
+- references/okf/concepts/foundations/boundaries-and-current-state-views.md
+- references/okf/concepts/foundations/decisions-constraints-and-cross-cutting-concerns.md
+- references/okf/concepts/foundations/evidence-confidence-and-coverage.md
+- references/okf/concepts/foundations/quality-attribute-scenarios.md
+- references/okf/concepts/foundations/tradeoffs-sensitivity-and-evolution.md
+- references/okf/concepts/operating-model-patterns/delivery-runtime-and-development-patterns.md
+- references/okf/concepts/operating-model-patterns/governance-ownership-and-team-patterns.md
+- references/okf/concepts/operating-model-patterns/provider-and-platform-operating-models.md
+- references/okf/concepts/quality-lenses/cost-and-resource-efficiency.md
+- references/okf/concepts/quality-lenses/data-integrity-lifecycle-and-governance.md
+- references/okf/concepts/quality-lenses/maintainability-modularity-and-evolvability.md
+- references/okf/concepts/quality-lenses/operability-observability-and-supportability.md
+- references/okf/concepts/quality-lenses/performance-scalability-and-capacity.md
+- references/okf/concepts/quality-lenses/reliability-resilience-and-recovery.md
+- references/okf/concepts/quality-lenses/security-privacy-and-trust-boundaries.md
+- references/okf/concepts/quality-lenses/testability-delivery-and-change-safety.md
+- references/okf/concepts/system-shapes/client-server.md
+- references/okf/concepts/system-shapes/distributed-services.md
+- references/okf/concepts/system-shapes/event-driven-and-streaming.md
+- references/okf/concepts/system-shapes/layered-and-modular-application.md
+- references/okf/concepts/system-shapes/library-sdk-and-cli.md
+- references/okf/concepts/system-shapes/monorepo-platform-and-infrastructure.md
+- references/okf/concepts/workload-lenses/background-batch-and-scheduled-work.md
+- references/okf/concepts/workload-lenses/data-analytics-and-ml.md
+- references/okf/concepts/workload-lenses/genai-agentic/durable-run-state-and-recovery.md
+- references/okf/concepts/workload-lenses/genai-agentic/evaluation-and-observability.md
+- references/okf/concepts/workload-lenses/genai-agentic/knowledge-provenance-and-isolation.md
+- references/okf/concepts/workload-lenses/genai-agentic/model-access-and-policy.md
+- references/okf/concepts/workload-lenses/genai-agentic/tool-authorization-and-credentials.md
+- references/okf/concepts/workload-lenses/knowledge-search-and-retrieval.md
+- references/okf/concepts/workload-lenses/serverless.md
+- references/okf/concepts/workload-lenses/transactional-request-response.md
+Additional component resources:
+- references/okf/provenance/assessment-intents/baseline-and-understanding.json
+- references/okf/provenance/assessment-intents/growth-and-scale-readiness.json
+- references/okf/provenance/assessment-intents/hardening-and-risk-reduction.json
+- references/okf/provenance/assessment-intents/optimize-current-outcomes.json
+- references/okf/provenance/assessment-intents/rationalization-disposition-and-due-diligence.json
+- references/okf/provenance/assessment-intents/transformation-and-modernization.json
+- references/okf/provenance/enterprise-knowledge/business-domain-and-meaning.json
+- references/okf/provenance/enterprise-knowledge/constraints-and-standards.json
+- references/okf/provenance/enterprise-knowledge/current-system-landscape.json
+- references/okf/provenance/enterprise-knowledge/decisions-and-rationale.json
+- references/okf/provenance/enterprise-knowledge/in-flight-work-and-roadmap.json
+- references/okf/provenance/enterprise-knowledge/interfaces-and-contracts.json
+- references/okf/provenance/enterprise-knowledge/local-patterns-and-reference-architectures.json
+- references/okf/provenance/enterprise-knowledge/operational-reality.json
+- references/okf/provenance/enterprise-knowledge/source-detection-confidence-and-conflicts.json
+- references/okf/provenance/foundations/boundaries-and-current-state-views.json
+- references/okf/provenance/foundations/decisions-constraints-and-cross-cutting-concerns.json
+- references/okf/provenance/foundations/evidence-confidence-and-coverage.json
+- references/okf/provenance/foundations/quality-attribute-scenarios.json
+- references/okf/provenance/foundations/tradeoffs-sensitivity-and-evolution.json
+- references/okf/provenance/operating-model-patterns/delivery-runtime-and-development-patterns.json
+- references/okf/provenance/operating-model-patterns/governance-ownership-and-team-patterns.json
+- references/okf/provenance/operating-model-patterns/provider-and-platform-operating-models.json
+- references/okf/provenance/quality-lenses/cost-and-resource-efficiency.json
+- references/okf/provenance/quality-lenses/data-integrity-lifecycle-and-governance.json
+- references/okf/provenance/quality-lenses/maintainability-modularity-and-evolvability.json
+- references/okf/provenance/quality-lenses/operability-observability-and-supportability.json
+- references/okf/provenance/quality-lenses/performance-scalability-and-capacity.json
+- references/okf/provenance/quality-lenses/reliability-resilience-and-recovery.json
+- references/okf/provenance/quality-lenses/security-privacy-and-trust-boundaries.json
+- references/okf/provenance/quality-lenses/testability-delivery-and-change-safety.json
+- references/okf/provenance/system-shapes/client-server.json
+- references/okf/provenance/system-shapes/distributed-services.json
+- references/okf/provenance/system-shapes/event-driven-and-streaming.json
+- references/okf/provenance/system-shapes/layered-and-modular-application.json
+- references/okf/provenance/system-shapes/library-sdk-and-cli.json
+- references/okf/provenance/system-shapes/monorepo-platform-and-infrastructure.json
+- references/okf/provenance/workload-lenses/background-batch-and-scheduled-work.json
+- references/okf/provenance/workload-lenses/data-analytics-and-ml.json
+- references/okf/provenance/workload-lenses/genai-agentic/durable-run-state-and-recovery.json
+- references/okf/provenance/workload-lenses/genai-agentic/evaluation-and-observability.json
+- references/okf/provenance/workload-lenses/genai-agentic/knowledge-provenance-and-isolation.json
+- references/okf/provenance/workload-lenses/genai-agentic/model-access-and-policy.json
+- references/okf/provenance/workload-lenses/genai-agentic/tool-authorization-and-credentials.json
+- references/okf/provenance/workload-lenses/knowledge-search-and-retrieval.json
+- references/okf/provenance/workload-lenses/serverless.json
+- references/okf/provenance/workload-lenses/transactional-request-response.json
+
+This distribution supplies local license and attribution files with the component.

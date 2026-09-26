@@ -418,10 +418,12 @@ parsers:
   fallback_text:
     enabled: true
     priority: 0  # Lowest priority = last resort
-    # Maximum chunk size in characters
+    # Maximum chunk size in characters when a file is larger than whole_file_max_chars
     max_chunk_size: 1000
     # Overlap between chunks in characters
     chunk_overlap: 100
+    # Files at or under this size stay one chunk (sessions, abstracts)
+    whole_file_max_chars: 8192
 
 # Memory system configuration
 memory:

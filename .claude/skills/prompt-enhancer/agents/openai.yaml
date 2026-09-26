@@ -1,0 +1,5 @@
+interface:
+  display_name: "Prompt Enhancer"
+  short_description: "Reframe a prompt with expert precision"
+policy:
+  allow_implicit_invocation: false

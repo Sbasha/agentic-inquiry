@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/quality-lenses/maintainability-modularity-and-evolvability.md",
+    "git_blob_oid": "fe737657d597ea183abe5fa53a5b88db73eab373",
+    "sha256": "c22ad2768de2b49b15d1006a7179e25ba1d08fe880250510349b6ff95da2cdcc"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/quality-lenses/maintainability-modularity-and-evolvability.md\nconfidence: high\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Maintainability, modularity, and evolvability \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| QL-M1 | Modularity should be judged through representative change coupling across responsibilities, contracts, teams, data, tests, build, and deployment rather than file metrics alone. | S1, S2, S3 |\n| QL-M1b | Structural proxies focus investigation but do not establish the quality outcome without scenario and exercised evidence. | S1, S2, S3 |\n\n## Sources\n\n- S1: [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html)\n- S2: [Azure Well-Architected Framework](https://learn.microsoft.com/en-us/azure/well-architected/what-is-well-architected-framework)\n- S3: [Google Cloud Well-Architected Framework](https://docs.cloud.google.com/architecture/framework)\n\n## Counter-evidence and downgrade factors\n\nThe frameworks organize concerns differently and provider guidance can favor its\nown service model. Actual targets, tolerance, workload, cost, obligations, and\noperational history are organization-specific.\n\n## Known unknowns\n\nScenario priority and adequacy thresholds require local stakeholder evidence.\n\n## Licensing and reuse\n\nOriginal cross-framework synthesis and citations only. Packet license:\nApache-2.0 OR MIT; source terms remain with publishers.\n\n## Freshness\n\nReview annually and ground current provider contracts when they become load-bearing.\n"
+}

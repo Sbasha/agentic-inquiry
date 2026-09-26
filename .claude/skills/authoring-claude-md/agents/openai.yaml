@@ -1,0 +1,5 @@
+interface:
+  display_name: "Author CLAUDE.md"
+  short_description: "Maintain Claude-specific project instructions"
+policy:
+  allow_implicit_invocation: false

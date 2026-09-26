@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/assessment-intents/growth-and-scale-readiness.md",
+    "git_blob_oid": "b2bf403af3942b5f83c644379a6eb30a8062ab26",
+    "sha256": "0aff0cf022460e242b4ba021d28fde1b2c42ec164ce97487671ad4015a30c35a"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/assessment-intents/growth-and-scale-readiness.md\nconfidence: high\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Growth and scale readiness \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| AI-G1 | Growth readiness is evaluated against a named future scenario, horizon, workload shape, capacity model, sensitivity points, and investment triggers. | S1, S2, S3 |\n| AI-G1b | Repository proxies can focus investigation but cannot establish the operational, organizational, or business facts required by this decision. | S1, S2, S3 |\n\n## Sources\n\n- S1: [Primary or framework source 1](https://learn.microsoft.com/en-us/azure/well-architected/mission-critical/mission-critical-design-principles)\n- S2: [Independent source 2](https://docs.cloud.google.com/architecture/framework#design_for_change)\n- S3: [Independent source 3](https://www.sei.cmu.edu/library/architecture-tradeoff-analysis-method-collection/)\n\n## Counter-evidence and downgrade factors\n\nThe intent taxonomy is a practitioner synthesis, not an external standard.\nMixed prompts can carry secondary intents, and local thresholds, costs, skills,\nownership, and risk tolerance require authorized organization evidence.\n\n## Known unknowns\n\nLabel comprehension and routing accuracy require cross-repository dogfood.\n\n## Licensing and reuse\n\nOriginal synthesis and citations only; source terms remain with publishers.\nPacket license: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview annually and before relying on provider- or portfolio-specific guidance.\n"
+}

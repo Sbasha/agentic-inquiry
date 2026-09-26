@@ -673,6 +673,8 @@ class FallbackTextParserConfig(ParserConfig):
     priority: int = 0
     max_chunk_size: int = 1000
     chunk_overlap: int = 100
+    # Files at or under this size stay one chunk. Zero disables whole-file mode.
+    whole_file_max_chars: int = 8192
 
 
 @dataclass
@@ -2182,6 +2184,9 @@ class Config:
                 'fallback_text': {
                     'enabled': self.parsers.fallback_text.enabled,
                     'priority': self.parsers.fallback_text.priority,
+                    'max_chunk_size': self.parsers.fallback_text.max_chunk_size,
+                    'chunk_overlap': self.parsers.fallback_text.chunk_overlap,
+                    'whole_file_max_chars': self.parsers.fallback_text.whole_file_max_chars,
                 },
             },
             'memory': {

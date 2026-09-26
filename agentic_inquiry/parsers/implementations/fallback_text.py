@@ -8,8 +8,29 @@ import re
 from pathlib import Path
 from typing import List, Tuple
 
+from agentic_inquiry.config import FallbackTextParserConfig
 from agentic_inquiry.exceptions import ParsingError
 from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
+
+# Files at or under this size stay one chunk. Matches the AFP 8 KB evidence pack
+# and covers LoCoMo / LongMemEval session files in those corpora (max ~7 KB).
+WHOLE_FILE_MAX_CHARS = 8192
+
+_SESSION_LINE = re.compile(r"^Session:\s+\S", re.IGNORECASE)
+_DATE_LINE = re.compile(r"^(?:Date:|S\d+\s+Date:)", re.IGNORECASE)
+
+
+def session_date_header(content: str) -> str:
+    """Return the first two lines when they are a Session / Date header.
+
+    Recognizes ``Session: …`` followed by ``Date: …`` or ``S0xx Date: …``.
+    """
+    lines = content.splitlines()
+    if len(lines) < 2:
+        return ""
+    if _SESSION_LINE.match(lines[0].strip()) and _DATE_LINE.match(lines[1].strip()):
+        return lines[0] + "\n" + lines[1]
+    return ""
 
 
 class FallbackTextParser:
@@ -17,21 +38,38 @@ class FallbackTextParser:
     
     This parser:
     - Reads files as UTF-8 text (with fallback to latin-1, cp1252, ASCII)
-    - Creates semantic chunks based on paragraphs and sentences
+    - Keeps files at or under whole_file_max_chars as a single chunk
+    - Splits larger files on paragraphs and sentences, copying Session/Date
+      headers onto every remaining slice
     - Supports configurable chunk size and overlap
     - Does not extract symbols or relationships
     - Works with any text-based file
     """
     
-    def __init__(self, max_chunk_size: int = 1000, chunk_overlap: int = 100):
+    def __init__(
+        self,
+        max_chunk_size: int = 1000,
+        chunk_overlap: int = 100,
+        whole_file_max_chars: int = WHOLE_FILE_MAX_CHARS,
+    ):
         """Initialize the fallback text parser.
         
         Args:
-            max_chunk_size: Maximum number of characters per chunk (default: 1000)
+            max_chunk_size: Maximum number of characters per chunk when a file
+                is larger than whole_file_max_chars (default: 1000)
             chunk_overlap: Number of characters to overlap between chunks (default: 100)
+            whole_file_max_chars: Files at or under this size stay one chunk.
+                Zero disables whole-file mode. Default is 8192.
         """
         self.max_chunk_size = max_chunk_size
         self.chunk_overlap = chunk_overlap
+        self.whole_file_max_chars = whole_file_max_chars
+
+    def apply_config(self, config: FallbackTextParserConfig) -> None:
+        """Copy chunk settings from the loaded parser configuration."""
+        self.max_chunk_size = config.max_chunk_size
+        self.chunk_overlap = config.chunk_overlap
+        self.whole_file_max_chars = config.whole_file_max_chars
     
     async def parse(self, path: str, **kwargs) -> ParsedDocument:
         """Parse a file as plain text with semantic chunking.
@@ -128,6 +166,14 @@ class FallbackTextParser:
                 line_end=1,
                 metadata={'chunk_index': 0, 'total_chunks': 1, 'chunk_type': 'empty'}
             )]
+
+        # Small prose files (sessions, abstracts) stay one retrieval unit.
+        if self.whole_file_max_chars > 0 and len(content) <= self.whole_file_max_chars:
+            line_end = max(content.count("\n") + 1, 1)
+            chunk = self._create_chunk(content, 1, line_end, "file")
+            chunk.metadata["chunk_index"] = 0
+            chunk.metadata["total_chunks"] = 1
+            return [chunk]
         
         # Split into paragraphs (double newlines)
         paragraphs = self._split_into_paragraphs(content)
@@ -192,6 +238,11 @@ class FallbackTextParser:
                 'paragraph'
             ))
         
+        # Keep Session/Date on every slice so temporal retrieval still sees it.
+        header = session_date_header(content)
+        if header:
+            chunks = [self._prefix_header(chunk, header) for chunk in chunks]
+
         # Set chunk indices
         total_chunks = len(chunks)
         for idx, chunk in enumerate(chunks):
@@ -201,6 +252,16 @@ class FallbackTextParser:
             chunk.metadata['total_chunks'] = total_chunks
         
         return chunks
+
+    def _prefix_header(self, chunk: ParserChunk, header: str) -> ParserChunk:
+        """Copy the session/date header onto a slice that does not already have it."""
+        text = chunk.content or ""
+        if text.startswith(header):
+            return chunk
+        prefixed = header + "\n" + text
+        chunk.content = prefixed
+        chunk.fts_text = prefixed
+        return chunk
     
     def _split_into_paragraphs(self, content: str) -> List[Tuple[str, int, int]]:
         """Split content into paragraphs.

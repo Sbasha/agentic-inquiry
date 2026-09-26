@@ -26,6 +26,7 @@ from .recognizers import apply_recognizers
 
 # Import implementations to trigger parser registration
 from . import implementations  # noqa: F401
+from .implementations.fallback_text import FallbackTextParser
 
 
 logger = logging.getLogger(__name__)
@@ -122,8 +123,29 @@ class ParserChain:
                 parser_names = DEFAULT_PARSER_PRIORITY.copy()
 
         self.parser_names = parser_names
+        # Bind fallback_text to this chain's config so YAML/overlay chunk
+        # settings are used. Other registered parsers stay on the global registry.
+        self._bound_parsers: dict[str, ParserProtocol] = {}
+        self._bind_fallback_text_parser()
 
         logger.debug("Initialized ParserChain with priority: %s", self.parser_names)
+
+    def _bind_fallback_text_parser(self) -> None:
+        """Construct FallbackTextParser from config without mutating the registry."""
+        if "fallback_text" not in self.parser_names:
+            return
+        try:
+            registered = get_parser_instance("fallback_text")
+        except KeyError:
+            return
+        if not isinstance(registered, FallbackTextParser):
+            return
+        cfg = self.config.parsers.fallback_text
+        self._bound_parsers["fallback_text"] = FallbackTextParser(
+            max_chunk_size=cfg.max_chunk_size,
+            chunk_overlap=cfg.chunk_overlap,
+            whole_file_max_chars=cfg.whole_file_max_chars,
+        )
 
     @classmethod
     def from_config(cls, config: Optional[Config] = None) -> "ParserChain":
@@ -192,7 +214,9 @@ class ParserChain:
                 for name in self.parser_names:
                     try:
                         # Get the full parser instance from registry
-                        parser_instance = get_parser_instance(name)
+                        parser_instance = self._bound_parsers.get(name) or get_parser_instance(
+                            name
+                        )
 
                         # Check if parser can handle this file (if can_parse is implemented)
                         if isinstance(parser_instance, ParserProtocol):
@@ -312,6 +336,7 @@ class ParserChain:
 def create_parser_chain(
     priority: Optional[List[str]] = None,
     event_system: Optional["EventSystem"] = None,
+    config: Optional[Config] = None,
 ) -> ParserChain:
     """Create a parser chain with specified priority order.
 
@@ -321,6 +346,8 @@ def create_parser_chain(
         priority: Ordered list of parser names. If None, uses default priority.
         event_system: EventSystem instance for event emission. If None, creates
             a no-op event system for standalone usage.
+        config: Optional Config instance. When provided, fallback text chunk
+            settings come from this config instead of a fresh Config.load().
 
     Returns:
         ParserChain instance
@@ -332,7 +359,7 @@ def create_parser_chain(
         >>> # Custom priority
         >>> chain = create_parser_chain(["unified_document", "fallback_text"])
     """
-    return ParserChain(parser_names=priority, event_system=event_system)
+    return ParserChain(parser_names=priority, event_system=event_system, config=config)
 
 
 __all__ = [

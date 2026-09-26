@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/workload-lenses/genai-agentic/model-access-and-policy.md",
+    "git_blob_oid": "c12cf10da53324816c32a957fec892c2c37cf9d1",
+    "sha256": "b139388bad4afc68dbb5fa9a9bba0d0ce1ce56fd27ebd2543f1c7fd6e0fa2b6d"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/workload-lenses/genai-agentic/model-access-and-policy.md\nconfidence: high\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Model access and policy \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| WL-A1 | Provider, capability, and transport are separate axes; all model invocation paths need equivalent policy, budget, safety/PII, telemetry, version, timeout, retry, and cancellation coverage. | S1, S2, S3 |\n| WL-A1b | Repository structure and provider labels can trigger this lens but cannot prove runtime, policy, isolation, or recovery behavior without representative path evidence. | S1, S2, S3 |\n\n## Sources\n\n- S1: [Primary source 1](https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-generative-artificial-intelligence)\n- S2: [Independent source 2](https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/)\n- S3: [Independent source 3](https://docs.aws.amazon.com/prescriptive-guidance/latest/govern-architect-agentic-ai/enterprise-architecture.html)\n\n## Counter-evidence and downgrade factors\n\nProvider guidance may favor its own service model; agentic practice and threat\ntaxonomies are evolving. Actual identity, workload, policy, data, cost, and\noperational outcomes require target and enterprise evidence.\n\n## Known unknowns\n\nAdapter capabilities and representative deep-mode evidence vary by environment.\n\n## Licensing and reuse\n\nOriginal synthesis and citations only. Packet license: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview at least annually; re-ground current provider and agentic guidance when used.\n"
+}

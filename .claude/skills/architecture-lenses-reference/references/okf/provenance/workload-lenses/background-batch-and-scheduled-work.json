@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/workload-lenses/background-batch-and-scheduled-work.md",
+    "git_blob_oid": "6761c1872628290867e689c04cedaeae25f2b819",
+    "sha256": "c54f5b0a2e78b0e5bf653194ac7663191cf1eaaa11ce1782e25c726e3beef5c3"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/workload-lenses/background-batch-and-scheduled-work.md\nconfidence: high\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Background, batch, and scheduled work \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| WL-B1 | Every background entry path must carry durable execution context and define state, leases, idempotency, retry, cancellation, effect evidence, recovery, and audit. | S1, S2, S3 |\n| WL-B1b | Repository structure and provider labels can trigger this lens but cannot prove runtime, policy, isolation, or recovery behavior without representative path evidence. | S1, S2, S3 |\n\n## Sources\n\n- S1: [Primary source 1](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html)\n- S2: [Independent source 2](https://learn.microsoft.com/en-us/azure/well-architected/mission-critical/mission-critical-design-principles)\n- S3: [Independent source 3](https://docs.cloud.google.com/architecture/framework)\n\n## Counter-evidence and downgrade factors\n\nProvider guidance may favor its own service model; agentic practice and threat\ntaxonomies are evolving. Actual identity, workload, policy, data, cost, and\noperational outcomes require target and enterprise evidence.\n\n## Known unknowns\n\nAdapter capabilities and representative deep-mode evidence vary by environment.\n\n## Licensing and reuse\n\nOriginal synthesis and citations only. Packet license: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview at least annually; re-ground current provider and agentic guidance when used.\n"
+}

@@ -1,0 +1,23 @@
+This component includes material from Eugene Lim's agent-ready-repo.
+Source: https://github.com/eugenelim/agent-ready-repo
+Revision: c555e906df4c345d6c31b05f479976d2dd098ed4
+Component: packs/architect/.apm/skills/architect-diagram
+
+Upstream offers Apache-2.0 OR MIT. This distribution uses its Apache-2.0 option.
+See LICENSE for the complete Apache License, Version 2.0.
+
+AFP modifications: Copyright 2026 Sammy Basha, licensed under Apache-2.0.
+Modified upstream files:
+- SKILL.md
+- evals/eval_queries.json
+- evals/evals.json
+Additional component resources:
+- references/mermaid-diagrams/LICENSE
+- references/mermaid-diagrams/NOTICE
+- references/mermaid-diagrams/THIRD_PARTY_NOTICES.md
+- references/mermaid-diagrams/reference.md
+
+This distribution supplies local license and attribution files with the component.
+
+references/mermaid-diagrams retains its own Apache-2.0 terms and attribution.
+The parent Apache terms do not replace that component license or notice.

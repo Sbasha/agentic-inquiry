@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/quality-lenses/data-integrity-lifecycle-and-governance.md",
+    "git_blob_oid": "716a883e6cadf3d7989e319cadda7bb73e51dff0",
+    "sha256": "75fe002d0a57687d7dcf698f1cb4585508a9aa7a701be06a6a71c1941908c09c"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/quality-lenses/data-integrity-lifecycle-and-governance.md\nconfidence: high\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Data integrity, lifecycle, and governance \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| QL-D1 | Data assessment must cover authority, semantics, consistency, lineage, access, derived copies, correction, deletion, retention, migration, recovery, and reconciliation. | S1, S2, S3 |\n| QL-D1b | Structural proxies focus investigation but do not establish the quality outcome without scenario and exercised evidence. | S1, S2, S3 |\n\n## Sources\n\n- S1: [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html)\n- S2: [Azure Well-Architected Framework](https://learn.microsoft.com/en-us/azure/well-architected/what-is-well-architected-framework)\n- S3: [Google Cloud Well-Architected Framework](https://docs.cloud.google.com/architecture/framework)\n\n## Counter-evidence and downgrade factors\n\nThe frameworks organize concerns differently and provider guidance can favor its\nown service model. Actual targets, tolerance, workload, cost, obligations, and\noperational history are organization-specific.\n\n## Known unknowns\n\nScenario priority and adequacy thresholds require local stakeholder evidence.\n\n## Licensing and reuse\n\nOriginal cross-framework synthesis and citations only. Packet license:\nApache-2.0 OR MIT; source terms remain with publishers.\n\n## Freshness\n\nReview annually and ground current provider contracts when they become load-bearing.\n"
+}

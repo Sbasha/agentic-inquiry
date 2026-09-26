@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/assessment-intents/optimize-current-outcomes.md",
+    "git_blob_oid": "1e2592892f8afb44c7be71efc3b56af94f80ba18",
+    "sha256": "8fc4ead735a3b3e6f8831a1a6af0229a9d081019f8fbbe2d7f29ac990da3aeca"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/assessment-intents/optimize-current-outcomes.md\nconfidence: high\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Optimize current outcomes \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| AI-O1 | Optimization needs a current end-to-end outcome baseline, mechanism hypothesis, bounded experiment, and regression-aware before/after validation. | S1, S2, S3 |\n| AI-O1b | Repository proxies can focus investigation but cannot establish the operational, organizational, or business facts required by this decision. | S1, S2, S3 |\n\n## Sources\n\n- S1: [Primary or framework source 1](https://learn.microsoft.com/en-us/azure/well-architected/performance-efficiency/)\n- S2: [Independent source 2](https://docs.cloud.google.com/architecture/framework)\n- S3: [Independent source 3](https://docs.aws.amazon.com/wellarchitected/latest/framework/ops_evolve_ops_process_cont_imp.html)\n\n## Counter-evidence and downgrade factors\n\nThe intent taxonomy is a practitioner synthesis, not an external standard.\nMixed prompts can carry secondary intents, and local thresholds, costs, skills,\nownership, and risk tolerance require authorized organization evidence.\n\n## Known unknowns\n\nLabel comprehension and routing accuracy require cross-repository dogfood.\n\n## Licensing and reuse\n\nOriginal synthesis and citations only; source terms remain with publishers.\nPacket license: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview annually and before relying on provider- or portfolio-specific guidance.\n"
+}

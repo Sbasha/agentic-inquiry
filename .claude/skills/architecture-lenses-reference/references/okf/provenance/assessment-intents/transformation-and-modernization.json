@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/assessment-intents/transformation-and-modernization.md",
+    "git_blob_oid": "10f2cdaae0613ec2d839b406ced9c6587254c851",
+    "sha256": "0ef12289187106b86fe212f9fdeed4ce4ac5558bb5a6712bd5b7e1a64ab14b74"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/assessment-intents/transformation-and-modernization.md\nconfidence: high\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Transformation and modernization \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| AI-T1 | Modernization should compare retained-system transition options with seams, data/behavior compatibility, cutover, rollback, skills, and option cost; rewrite is not a default. | S1, S2, S3 |\n| AI-T1b | Repository proxies can focus investigation but cannot establish the operational, organizational, or business facts required by this decision. | S1, S2, S3 |\n\n## Sources\n\n- S1: [Primary or framework source 1](https://learn.microsoft.com/en-au/azure/cloud-adoption-framework/digital-estate/5-rs-of-rationalization)\n- S2: [Independent source 2](https://docs.aws.amazon.com/prescriptive-guidance/latest/large-migration-guide/migration-strategies.html)\n- S3: [Independent source 3](https://www.sei.cmu.edu/library/creating-software-modernization-roadmaps-the-architecture-options-workshop/)\n\n## Counter-evidence and downgrade factors\n\nThe intent taxonomy is a practitioner synthesis, not an external standard.\nMixed prompts can carry secondary intents, and local thresholds, costs, skills,\nownership, and risk tolerance require authorized organization evidence.\n\n## Known unknowns\n\nLabel comprehension and routing accuracy require cross-repository dogfood.\n\n## Licensing and reuse\n\nOriginal synthesis and citations only; source terms remain with publishers.\nPacket license: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview annually and before relying on provider- or portfolio-specific guidance.\n"
+}

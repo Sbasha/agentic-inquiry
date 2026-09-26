@@ -1,0 +1,6 @@
+interface:
+  display_name: "Reframe Voice"
+  short_description: "Propose an evidence-led change of frame"
+  default_prompt: "Use $reframe-voice to compare the current and proposed frame before rewriting."
+policy:
+  allow_implicit_invocation: false

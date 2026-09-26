@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/operating-model-patterns/delivery-runtime-and-development-patterns.md",
+    "git_blob_oid": "664a7fbaff7c98107687e5577134f106a37578ff",
+    "sha256": "37e72a0a5fd438cfd4c6761f5471dbfbdb83bab426e8fb303e00428e5dee4f31"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/operating-model-patterns/delivery-runtime-and-development-patterns.md\nconfidence: high\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Delivery, runtime, and development patterns \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| DD-1 | Change safety depends on the end-to-end path from source through artifact, deployment, observation, and rollback, including ownership and environment alignment. | S1, S2, S3 |\n| DD-1b | Repository proxies can focus investigation but cannot establish the operational, organizational, or business facts required by this decision. | S1, S2, S3 |\n\n## Sources\n\n- S1: [Primary or framework source 1](https://dora.dev/capabilities/loosely-coupled-teams/)\n- S2: [Independent source 2](https://docs.aws.amazon.com/wellarchitected/latest/framework/ops_evolve_ops_process_cont_imp.html)\n- S3: [Independent source 3](https://docs.cloud.google.com/architecture/framework#design_for_change)\n\n## Counter-evidence and downgrade factors\n\nThe intent taxonomy is a practitioner synthesis, not an external standard.\nMixed prompts can carry secondary intents, and local thresholds, costs, skills,\nownership, and risk tolerance require authorized organization evidence.\n\n## Known unknowns\n\nLabel comprehension and routing accuracy require cross-repository dogfood.\n\n## Licensing and reuse\n\nOriginal synthesis and citations only; source terms remain with publishers.\nPacket license: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview annually and before relying on provider- or portfolio-specific guidance.\n"
+}

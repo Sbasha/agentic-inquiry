@@ -27,7 +27,7 @@ def parser():
 @pytest.fixture
 def small_parser():
     """Create a FallbackTextParser with small chunks for testing."""
-    return FallbackTextParser(max_chunk_size=200, chunk_overlap=50)
+    return FallbackTextParser(max_chunk_size=200, chunk_overlap=50, whole_file_max_chars=0)
 
 
 @pytest.mark.asyncio
@@ -88,7 +88,7 @@ Third paragraph with even more content to test chunking."""
     for idx, chunk in enumerate(result.chunks):
         assert chunk.metadata['chunk_index'] == idx
         assert chunk.metadata['total_chunks'] == len(result.chunks)
-        assert chunk.metadata['chunk_type'] in ['paragraph', 'sentence', 'empty']
+        assert chunk.metadata['chunk_type'] in ['paragraph', 'sentence', 'empty', 'file']
 
 
 @pytest.mark.asyncio
@@ -273,3 +273,64 @@ async def test_metadata_structure(parser, tmp_path):
         assert 'chunk_type' in chunk.metadata
         assert chunk.metadata['chunk_index'] >= 0
         assert chunk.metadata['chunk_index'] < chunk.metadata['total_chunks']
+
+
+@pytest.mark.asyncio
+async def test_small_prose_file_stays_one_chunk(parser, tmp_path):
+    """Files under the whole-file cap are one chunk even when max_chunk_size is smaller."""
+    text_file = tmp_path / "session.txt"
+    body = "Gina: Hello.\n\nJon: Hi there.\n\n" + ("More talk. " * 200)
+    content = "Session: session_1\nDate: 4:04 pm on 20 January, 2023\n" + body
+    assert 1000 < len(content) <= 8192
+    text_file.write_text(content, encoding="utf-8")
+
+    result = await parser.parse(str(text_file))
+
+    assert len(result.chunks) == 1
+    assert result.chunks[0].content == content
+    assert result.chunks[0].metadata["chunk_type"] == "file"
+    assert result.metadata["total_chunks"] == 1
+
+
+@pytest.mark.asyncio
+async def test_session_date_header_copied_on_forced_split(tmp_path):
+    """When a session file must split, every slice keeps the Session/Date header."""
+    parser = FallbackTextParser(
+        max_chunk_size=120, chunk_overlap=0, whole_file_max_chars=0
+    )
+    text_file = tmp_path / "long_session.txt"
+    turns = "\n\n".join(
+        f"[D1:{i}] Speaker: This is a long conversation turn number {i} with extra words."
+        for i in range(1, 12)
+    )
+    content = "Session: session_1\nDate: 4:04 pm on 20 January, 2023\n" + turns
+    text_file.write_text(content, encoding="utf-8")
+
+    result = await parser.parse(str(text_file))
+
+    assert len(result.chunks) >= 2
+    header = "Session: session_1\nDate: 4:04 pm on 20 January, 2023"
+    for chunk in result.chunks:
+        assert chunk.content.startswith(header)
+
+
+@pytest.mark.asyncio
+async def test_lme_session_header_copied_on_forced_split(tmp_path):
+    """LongMemEval Session: S000 / Date: headers are copied onto splits."""
+    parser = FallbackTextParser(
+        max_chunk_size=80, chunk_overlap=0, whole_file_max_chars=0
+    )
+    text_file = tmp_path / "lme.txt"
+    content = (
+        "Session: S000\n"
+        "Date: 2023/05/30 (Tue) 23:27\n"
+        + "\n\n".join(f"Turn {i}: " + ("word " * 20) for i in range(8))
+    )
+    text_file.write_text(content, encoding="utf-8")
+
+    result = await parser.parse(str(text_file))
+
+    assert len(result.chunks) >= 2
+    header = "Session: S000\nDate: 2023/05/30 (Tue) 23:27"
+    for chunk in result.chunks:
+        assert chunk.content.startswith(header)

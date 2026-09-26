@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/assessment-intents/rationalization-disposition-and-due-diligence.md",
+    "git_blob_oid": "6a77a2467015d9196761dffec9dcbdfe9eedad35",
+    "sha256": "dc06ac903affea53c99d5afb5ade35c4e41a83b866dc58960f92cc783e612c88"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/assessment-intents/rationalization-disposition-and-due-diligence.md\nconfidence: moderate\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Rationalization, disposition, and due diligence \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| AI-R1 | Disposition compares retain, invest, consolidate, acquire/integrate, replace, and retire using business, technical, operational, contractual, data, and exit evidence. | S1, S2, S3 |\n| AI-R1b | Repository proxies can focus investigation but cannot establish the operational, organizational, or business facts required by this decision. | S1, S2, S3 |\n\n## Sources\n\n- S1: [Primary or framework source 1](https://docs.aws.amazon.com/whitepapers/latest/aws-caf-governance-perspective/application-portfolio-management.html)\n- S2: [Independent source 2](https://learn.microsoft.com/en-au/azure/cloud-adoption-framework/digital-estate/5-rs-of-rationalization)\n- S3: [Independent source 3](https://www.sei.cmu.edu/library/creating-software-modernization-roadmaps-the-architecture-options-workshop/)\n\n## Counter-evidence and downgrade factors\n\nThe intent taxonomy is a practitioner synthesis, not an external standard.\nMixed prompts can carry secondary intents, and local thresholds, costs, skills,\nownership, and risk tolerance require authorized organization evidence.\n\n## Known unknowns\n\nLabel comprehension and routing accuracy require cross-repository dogfood.\n\n## Licensing and reuse\n\nOriginal synthesis and citations only; source terms remain with publishers.\nPacket license: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview annually and before relying on provider- or portfolio-specific guidance.\n"
+}

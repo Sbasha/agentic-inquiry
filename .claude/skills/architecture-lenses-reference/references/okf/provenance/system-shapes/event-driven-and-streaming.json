@@ -1,0 +1,12 @@
+{
+  "schema": "afp-architecture-source-packet/v1",
+  "origin": {
+    "repository": "https://github.com/eugenelim/agent-ready-repo",
+    "revision": "c555e906df4c345d6c31b05f479976d2dd098ed4",
+    "path": "docs/product/research/architecture-assessment-corpus/concepts/system-shapes/event-driven-and-streaming.md",
+    "git_blob_oid": "e07d6990a2d62574b94f32f250dfb352233dfd58",
+    "sha256": "c3a8e9ce85847a0f1b033f2dab21198888db68d3b159bc25002b59039a7dcd52"
+  },
+  "evidence_boundary": "Original upstream source attribution, preserved verbatim. Dates and confidence belong to that original packet; this record does not assert current web verification, independent AFP research or native qualification.",
+  "original_utf8": "---\ntype: architecture-corpus-source-packet\nconcept_path: concepts/system-shapes/event-driven-and-streaming.md\nconfidence: moderate\nlifecycle: living\nreview_by: 2027-08-21\n---\n# Event-driven and streaming systems \u2014 source packet\n\n## Material claims\n\n| Claim | Synthesis | Sources |\n| --- | --- | --- |\n| SS-E1 | Event architecture requires explicit semantics, schema, ordering/partitioning, delivery, idempotency, replay, backpressure, retention, state, and reconciliation. | S1, S2, S3 |\n| SS-E1b | A shape label is a routing hypothesis; representative runtime, data, delivery, and failure paths must confirm its material boundaries. | S1, S2, S3 |\n\n## Sources\n\n- S1: [Azure architecture styles](https://learn.microsoft.com/en-us/azure/architecture/guide/architecture-styles/)\n- S2: [ISO/IEC/IEEE 42010:2022](https://www.iso.org/standard/74393.html)\n- S3: [Google Cloud Well-Architected Framework](https://docs.cloud.google.com/architecture/framework)\n\n## Counter-evidence and downgrade factors\n\nArchitecture styles overlap, repositories can contain several systems, and\nprovider examples can blur logical, deployment, and ownership boundaries.\nThe shape must not predetermine quality findings.\n\n## Known unknowns\n\nLanguage-specific semantic depth depends on available native tooling.\n\n## Licensing and reuse\n\nOriginal synthesis and citations only. Packet license: Apache-2.0 OR MIT.\n\n## Freshness\n\nReview annually; validate platform behavior and provider contracts at use time.\n"
+}

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Rewrite AI Slop"
+  short_description: "Remove surface slop without reframing"
+  default_prompt: "Use $rewrite-slop for a conservative surface pass that preserves the approved form and meaning."
+policy:
+  allow_implicit_invocation: true

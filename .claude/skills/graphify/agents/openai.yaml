@@ -1,0 +1,5 @@
+interface:
+  display_name: "Graphify"
+  short_description: "Explicit code and document graph analysis"
+policy:
+  allow_implicit_invocation: false

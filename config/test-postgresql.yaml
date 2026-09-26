@@ -228,6 +228,7 @@ parsers:
     priority: 0
     max_chunk_size: 1000
     chunk_overlap: 100
+    whole_file_max_chars: 8192
 
 # Memory configuration
 memory:

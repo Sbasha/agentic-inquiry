@@ -458,10 +458,11 @@ Even more...
 
 ### Text Chunking
 
-**Strategy:** Fixed-size or line-based chunking
-- Chunks of N lines or N characters
-- Overlapping chunks for context
-- Simple but effective
+**Strategy:** Whole-file for small prose, then paragraph/sentence splits
+- Files at or under `parsers.fallback_text.whole_file_max_chars` (default 8192 characters) stay one chunk. Conversation sessions and short abstracts are one retrieval unit.
+- Larger files split on paragraphs and sentences using `max_chunk_size` and `chunk_overlap`.
+- When a file must split and its first two lines look like `Session:` / `Date:` (or `Session:` / `S0xx Date:`), every remaining slice is prefixed with those lines.
+- Markdown, PDF, and code parsers are unchanged: documents keep their section/line strategy, and code keeps tree-sitter symbol units.
 
 ## Entity Extraction
 

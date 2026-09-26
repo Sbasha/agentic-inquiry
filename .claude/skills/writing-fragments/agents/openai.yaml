@@ -1,0 +1,6 @@
+interface:
+  display_name: "Writing Fragments"
+  short_description: "Capture private fragments before structure"
+  default_prompt: "Use $writing-fragments to preserve these private raw noticings without imposing a structure."
+policy:
+  allow_implicit_invocation: false

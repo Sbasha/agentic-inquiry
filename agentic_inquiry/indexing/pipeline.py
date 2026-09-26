@@ -704,7 +704,7 @@ class IndexingPipeline:
                                 message=f"Failed to materialize remote content: {e}"
                             )
 
-                chain = create_parser_chain()
+                chain = create_parser_chain(config=self.config)
                 parsed_doc = await chain.parse(
                     local_path,
                     db_manager=self.db_manager,
@@ -772,7 +772,7 @@ class IndexingPipeline:
                     from agentic_inquiry.connectors.protocols import ChangeDetectionCapability
 
                     processed_paths: Set[str] = set()
-                    chain = create_parser_chain()
+                    chain = create_parser_chain(config=self.config)
                     total_files = len(files)
                     _progress_lock = asyncio.Lock()
 

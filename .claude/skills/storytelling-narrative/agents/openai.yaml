@@ -1,0 +1,6 @@
+interface:
+  display_name: "Storytelling Narrative"
+  short_description: "Shape a real story without inventing it"
+  default_prompt: "Use $storytelling-narrative to shape these supplied events into a faithful story."
+policy:
+  allow_implicit_invocation: false

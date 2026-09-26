@@ -1085,6 +1085,12 @@
               "description": "Overlap between chunks in characters",
               "minimum": 0,
               "default": 100
+            },
+            "whole_file_max_chars": {
+              "type": "integer",
+              "description": "Files at or under this size stay one chunk. Zero disables whole-file mode.",
+              "minimum": 0,
+              "default": 8192
             }
           },
           "additionalProperties": false
