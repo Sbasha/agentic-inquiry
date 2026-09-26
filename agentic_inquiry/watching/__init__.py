@@ -6,7 +6,10 @@ change detection for reliability.
 """
 
 import logging
+import threading
 from typing import Callable, List, Optional, Protocol, runtime_checkable
+
+from agentic_inquiry.watching.watcher import FileWatcher
 
 logger = logging.getLogger(__name__)
 
@@ -177,49 +180,59 @@ def unregister_watcher(name: str) -> None:
 
 def get_watcher(name: Optional[str] = None) -> WatcherProtocol:
     """Get a registered watcher (default if name not specified).
-    
+
+    With no name and no default set, the watcher registered as ``"default"``
+    is returned. The built-in ``FileWatcher`` is built and registered under
+    that name when it is requested and absent.
+
     Args:
         name: Optional watcher name (uses default if None)
-        
+
     Returns:
         The requested watcher instance
+
+    Raises:
+        ValueError: If the built-in watcher cannot be built, for example
+            when no ``storage.default_project_id`` is configured.
     """
+    if name is None and _watcher_registry._default is None:
+        name = "default"
+    if name == "default":
+        _ensure_default_registered()
     return _watcher_registry.get(name)
 
 
 def available_watchers() -> List[str]:
-    """List all registered watcher names.
-    
+    """List all registered watcher names, building the built-in ``"default"``.
+
     Returns:
         List of registered watcher names
+
+    Raises:
+        ValueError: If the built-in watcher cannot be built, for example
+            when no ``storage.default_project_id`` is configured.
     """
+    _ensure_default_registered()
     return _watcher_registry.available()
 
 
-# Auto-register default watcher implementation
-def _register_default_watcher():
-    """Register the default FileWatcher implementation."""
-    try:
-        from .watcher import FileWatcher
-        from .file_tracker import FileTracker
-        
-        # Create default watcher with default tracker
-        default_watcher = FileWatcher(file_tracker=FileTracker())
-        register_watcher("default", default_watcher, set_default=True)
-        logger.info("✓ Registered default file watcher")
-    except ImportError as e:
-        logger.warning("✗ Default file watcher not available: %s\n"
-            "  Install with: pip install watchdog", e)
-    except Exception as e:
-        logger.error("✗ Failed to initialize default file watcher: %s", e)
+_default_lock = threading.Lock()
 
 
-# Auto-register on import
-_register_default_watcher()
+def _ensure_default_registered() -> None:
+    """Register the built-in ``FileWatcher`` as ``"default"`` if absent.
 
+    Building it constructs a ``FileTracker``, which loads configuration and
+    creates the tracker database's parent directory, so it must not run at
+    import. It becomes the registry default only when none is set, so a
+    watcher the caller registered keeps precedence.
+    """
+    with _default_lock:
+        if "default" in _watcher_registry.available():
+            return
+        _watcher_registry.register("default", FileWatcher())
+        logger.info("Registered built-in FileWatcher as the default watcher")
 
-# Import FileWatcher for direct access (after registration to avoid circular imports)
-from agentic_inquiry.watching.watcher import FileWatcher  # noqa: E402
 
 # Export public API
 __all__ = [

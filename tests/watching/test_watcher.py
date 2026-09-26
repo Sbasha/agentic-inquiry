@@ -461,7 +461,7 @@ class TestWatcherRegistry:
         """Test getting the default watcher."""
         from agentic_inquiry.watching import _watcher_registry
 
-        # Unregister any existing default watcher from auto-registration
+        # Unregister any default watcher left by an earlier test
         if "default" in _watcher_registry.available():
             _watcher_registry.unregister("default")
 
@@ -480,7 +480,7 @@ class TestWatcherRegistry:
         """Test listing available watchers."""
         from agentic_inquiry.watching import _watcher_registry
 
-        # Unregister any existing default watcher from auto-registration
+        # Unregister any default watcher left by an earlier test
         if "default" in _watcher_registry.available():
             _watcher_registry.unregister("default")
 
