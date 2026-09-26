@@ -157,8 +157,7 @@ async def test_stale_context_cleanup(context_manager: ContextManager) -> None:
 
         # Wait for context to become stale (TTL is 2 seconds)
         success = await AsyncTestHelper.wait_for_condition(
-            lambda: len(context_manager.get_active_contexts()) == 0,
-            timeout=5.0
+            lambda: len(context_manager.get_active_contexts()) == 0, timeout=5.0
         )
 
         # Verify context was cleaned up
@@ -427,7 +426,7 @@ async def test_cleanup_preserves_recently_accessed_contexts(
             # Wait a bit before touching
             await AsyncTestHelper.wait_for_condition(
                 lambda: True,  # Just wait for the interval
-                timeout=1.5
+                timeout=1.5,
             )
             context_manager._touch_context(context)
 

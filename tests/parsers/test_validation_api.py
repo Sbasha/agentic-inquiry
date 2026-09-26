@@ -1,4 +1,5 @@
 """Test validate_relationships API."""
+
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
@@ -10,7 +11,11 @@ from agentic_inquiry.config import Config, StorageConfig
 from agentic_inquiry.embeddings.base import Embedder
 from agentic_inquiry.embeddings.registry import EmbeddingRegistry
 from agentic_inquiry.indexing.pipeline import IndexingPipeline
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -34,6 +39,7 @@ class _DummyEmbedder(Embedder):
 
 def test_validate_relationships_all_valid():
     """Test validation when all relationships are valid."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-validate-valid")
@@ -63,7 +69,7 @@ def test_validate_relationships_all_valid():
                     language="python",
                     symbols=["User"],
                     symbol_metadata={"User": {"type": "class"}},
-                    relationships=[]
+                    relationships=[],
                 ),
             ],
         )
@@ -85,7 +91,7 @@ def test_validate_relationships_all_valid():
                             target_name="User",
                             type="imports",
                         )
-                    ]
+                    ],
                 ),
             ],
         )
@@ -110,6 +116,7 @@ def test_validate_relationships_all_valid():
 
 def test_validate_relationships_broken_target():
     """Test validation when target entity is missing."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-validate-broken")
@@ -148,7 +155,7 @@ def test_validate_relationships_broken_target():
                             type="imports",
                             target_path="/tmp/project/models.py",  # Specify target path
                         )
-                    ]
+                    ],
                 ),
             ],
         )
@@ -164,12 +171,12 @@ def test_validate_relationships_broken_target():
         assert results["total_relationships"] == 1
         assert results["valid_relationships"] == 0
         assert len(results["broken_links"]) == 1
-        
+
         broken = results["broken_links"][0]
         assert broken["issue"] == "target_missing"
         assert "User" in broken["target_id"]
         assert broken["type"] == "imports"
-        
+
         assert results["summary"]["broken_count"] == 1
         assert results["summary"]["health_percentage"] == 0.0
 
@@ -178,6 +185,7 @@ def test_validate_relationships_broken_target():
 
 def test_validate_relationships_circular_dependencies():
     """Test circular dependency detection."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-validate-circular")
@@ -215,7 +223,7 @@ def test_validate_relationships_circular_dependencies():
                             target_name="B",
                             type="imports",
                         )
-                    ]
+                    ],
                 ),
             ],
         )
@@ -237,7 +245,7 @@ def test_validate_relationships_circular_dependencies():
                             target_name="C",
                             type="imports",
                         )
-                    ]
+                    ],
                 ),
             ],
         )
@@ -259,7 +267,7 @@ def test_validate_relationships_circular_dependencies():
                             target_name="A",
                             type="imports",
                         )
-                    ]
+                    ],
                 ),
             ],
         )
@@ -271,12 +279,14 @@ def test_validate_relationships_circular_dependencies():
         await pipeline.flush_pending_relationships()
 
         # Validate with circular dependency detection
-        results = await pipeline.validate_relationships(check_circular_dependencies=True)
+        results = await pipeline.validate_relationships(
+            check_circular_dependencies=True
+        )
 
         # Verify circular dependency is detected
         assert "circular_dependencies" in results
         assert len(results["circular_dependencies"]) >= 1
-        
+
         # Find the A -> B -> C -> A cycle
         cycle_found = False
         for cycle_info in results["circular_dependencies"]:
@@ -284,14 +294,18 @@ def test_validate_relationships_circular_dependencies():
             # Check if this is our expected cycle (in any rotation)
             if len(cycle) == 4:  # 3 unique nodes + 1 repeated
                 cycle_set = set(cycle[:-1])  # Remove duplicate end node
-                if all(any(node_id.endswith(f"::{name}") for node_id in cycle_set) 
-                       for name in ["A", "B", "C"]):
+                if all(
+                    any(node_id.endswith(f"::{name}") for node_id in cycle_set)
+                    for name in ["A", "B", "C"]
+                ):
                     cycle_found = True
                     assert cycle_info["length"] == 3
                     break
-        
-        assert cycle_found, f"Expected cycle not found. Cycles: {results['circular_dependencies']}"
-        
+
+        assert cycle_found, (
+            f"Expected cycle not found. Cycles: {results['circular_dependencies']}"
+        )
+
         assert results["summary"]["circular_count"] >= 1
 
     asyncio.run(run())
@@ -299,6 +313,7 @@ def test_validate_relationships_circular_dependencies():
 
 def test_validate_relationships_no_relationships():
     """Test validation when there are no relationships."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-validate-empty")
@@ -333,6 +348,7 @@ def test_validate_relationships_no_relationships():
 
 def test_validate_relationships_mixed_health():
     """Test validation with mix of valid and broken relationships."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-validate-mixed")
@@ -362,7 +378,7 @@ def test_validate_relationships_mixed_health():
                     language="python",
                     symbols=["User"],
                     symbol_metadata={"User": {"type": "class"}},
-                    relationships=[]
+                    relationships=[],
                 ),
             ],
         )
@@ -394,7 +410,7 @@ def test_validate_relationships_mixed_health():
                             type="imports",
                             target_path="/tmp/project/models.py",
                         ),
-                    ]
+                    ],
                 ),
             ],
         )
@@ -413,7 +429,7 @@ def test_validate_relationships_mixed_health():
         assert len(results["broken_links"]) == 1
         assert results["summary"]["broken_count"] == 1
         assert results["summary"]["health_percentage"] == 50.0
-        
+
         # Verify broken link details
         broken = results["broken_links"][0]
         assert broken["issue"] == "target_missing"

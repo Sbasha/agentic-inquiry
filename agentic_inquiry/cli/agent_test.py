@@ -11,6 +11,7 @@ Examples:
     ai agent-test list            # List available tests
     ai agent-test status          # Show test run status
 """
+
 from __future__ import annotations
 
 import argparse
@@ -130,8 +131,7 @@ async def list_command(args: argparse.Namespace) -> int:
 
     if args.json:
         output = [
-            {"id": tid, "name": name, "path": str(path)}
-            for tid, name, path in tests
+            {"id": tid, "name": name, "path": str(path)} for tid, name, path in tests
         ]
         print(json.dumps(output, indent=2))
     else:
@@ -189,18 +189,22 @@ async def status_command(args: argparse.Namespace) -> int:
             elif final_report.exists():
                 status = "partial"
 
-            runs.append({
-                "timestamp": run_dir.name,
-                "status": status,
-                "path": str(run_dir),
-            })
+            runs.append(
+                {
+                    "timestamp": run_dir.name,
+                    "status": status,
+                    "path": str(run_dir),
+                }
+            )
 
     if args.json:
         print(json.dumps(runs[:10], indent=2))
     else:
         print("Recent Test Runs:\n")
         for run in runs[:10]:
-            status_icon = {"complete": "✓", "partial": "◐", "incomplete": "○"}.get(run["status"], "?")
+            status_icon = {"complete": "✓", "partial": "◐", "incomplete": "○"}.get(
+                run["status"], "?"
+            )
             print(f"  {status_icon} {run['timestamp']} [{run['status']}]")
             print(f"    {run['path']}")
             print()
@@ -229,7 +233,9 @@ async def run_test_scenario(
     from agentic_inquiry.indexing.pipeline import IndexingPipeline
     from agentic_inquiry.search.service import SearchService
     from agentic_inquiry.embeddings.registry import embedding_registry
-    from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
+    from agentic_inquiry.embeddings.sentence_transformer import (
+        SentenceTransformerEmbedder,
+    )
     from agentic_inquiry.embeddings.service import EmbeddingService
 
     # Find the test file
@@ -284,8 +290,10 @@ async def run_test_scenario(
     try:
         # Configure embedder
         if not embedding_registry._default_configured:
-            model_name = getattr(config.embeddings.sentence_transformer, 'model_name', 'all-MiniLM-L6-v2')
-            ndims = getattr(config.embeddings, 'default_dimensions', 384)
+            model_name = getattr(
+                config.embeddings.sentence_transformer, "model_name", "all-MiniLM-L6-v2"
+            )
+            ndims = getattr(config.embeddings, "default_dimensions", 384)
             embedder = SentenceTransformerEmbedder(model_name=model_name)
             embedding_registry.configure_default_embedder(embedder, ndims=ndims)
 
@@ -295,10 +303,14 @@ async def run_test_scenario(
         # Execute test based on test_id
         if test_id == "01":
             # Core Functionality Smoke Test
-            results = await _run_smoke_test(storage, config, project_id, test_output, results)
+            results = await _run_smoke_test(
+                storage, config, project_id, test_output, results
+            )
         else:
             # For other tests, execute generic steps
-            results = await _run_generic_test(storage, config, project_id, parsed, test_output, results)
+            results = await _run_generic_test(
+                storage, config, project_id, parsed, test_output, results
+            )
 
         results["status"] = "complete"
 
@@ -306,11 +318,13 @@ async def run_test_scenario(
         logger.exception(f"Test {test_id} failed")
         results["status"] = "failed"
         results["error"] = str(e)
-        results["issues"].append({
-            "severity": "critical",
-            "description": str(e),
-            "status": "open",
-        })
+        results["issues"].append(
+            {
+                "severity": "critical",
+                "description": str(e),
+                "status": "open",
+            }
+        )
 
     # Write final results
     end_time = datetime.now()
@@ -324,7 +338,9 @@ async def run_test_scenario(
         log.write(f"**Completed:** {end_time.isoformat()}\n")
         log.write(f"**Duration:** {duration:.1f} seconds\n")
         log.write(f"**Status:** {results['status'].upper()}\n")
-        log.write(f"**Steps Passed:** {sum(1 for s in results['steps'] if s.get('passed'))}/{len(results['steps'])}\n")
+        log.write(
+            f"**Steps Passed:** {sum(1 for s in results['steps'] if s.get('passed'))}/{len(results['steps'])}\n"
+        )
 
     # Write final report
     final_report = test_output / "FINAL_REPORT.md"
@@ -333,7 +349,9 @@ async def run_test_scenario(
         f.write(f"## Summary\n\n")
         f.write(f"- **Status:** {results['status'].upper()}\n")
         f.write(f"- **Duration:** {duration:.1f} seconds\n")
-        f.write(f"- **Steps:** {sum(1 for s in results['steps'] if s.get('passed'))}/{len(results['steps'])} passed\n")
+        f.write(
+            f"- **Steps:** {sum(1 for s in results['steps'] if s.get('passed'))}/{len(results['steps'])} passed\n"
+        )
         f.write(f"- **Issues:** {len(results['issues'])}\n\n")
 
         f.write(f"## Step Results\n\n")
@@ -346,12 +364,16 @@ async def run_test_scenario(
         if results["issues"]:
             f.write(f"\n## Issues\n\n")
             for issue in results["issues"]:
-                f.write(f"- [{issue.get('severity', 'unknown')}] {issue.get('description', 'No description')}\n")
+                f.write(
+                    f"- [{issue.get('severity', 'unknown')}] {issue.get('description', 'No description')}\n"
+                )
 
     return results
 
 
-async def _run_smoke_test(storage, config, project_id: str, output_dir: Path, results: dict) -> dict:
+async def _run_smoke_test(
+    storage, config, project_id: str, output_dir: Path, results: dict
+) -> dict:
     """Execute TEST_01 Core Functionality Smoke Test.
 
     Args:
@@ -387,10 +409,18 @@ async def _run_smoke_test(storage, config, project_id: str, output_dir: Path, re
             limit=1,
             project_id=project_id,
         )
-        log_step("T1.1: Storage Health Check", True, "Storage accessible and responding")
+        log_step(
+            "T1.1: Storage Health Check", True, "Storage accessible and responding"
+        )
     except Exception as e:
         log_step("T1.1: Storage Health Check", False, f"Error: {e}")
-        results["issues"].append({"severity": "critical", "description": f"Storage not accessible: {e}", "status": "open"})
+        results["issues"].append(
+            {
+                "severity": "critical",
+                "description": f"Storage not accessible: {e}",
+                "status": "open",
+            }
+        )
 
     # Test 2: Indexing
     try:
@@ -400,14 +430,24 @@ async def _run_smoke_test(storage, config, project_id: str, output_dir: Path, re
         ai_path = Path(__file__).parent.parent
         if ai_path.exists():
             result = await pipeline.index_directory(path=str(ai_path), wait=True)
-            chunks = getattr(result, 'chunks_indexed', 0) if result else 0
-            entities = getattr(result, 'entities_created', 0) if result else 0
-            log_step("T3.1: Index Content", True, f"Indexed {chunks} chunks, {entities} entities")
+            chunks = getattr(result, "chunks_indexed", 0) if result else 0
+            entities = getattr(result, "entities_created", 0) if result else 0
+            log_step(
+                "T3.1: Index Content",
+                True,
+                f"Indexed {chunks} chunks, {entities} entities",
+            )
         else:
             log_step("T3.1: Index Content", False, "Test codebase not found")
     except Exception as e:
         log_step("T3.1: Index Content", False, f"Error: {e}")
-        results["issues"].append({"severity": "high", "description": f"Indexing failed: {e}", "status": "open"})
+        results["issues"].append(
+            {
+                "severity": "high",
+                "description": f"Indexing failed: {e}",
+                "status": "open",
+            }
+        )
 
     # Test 3: Verify Index
     try:
@@ -421,7 +461,11 @@ async def _run_smoke_test(storage, config, project_id: str, output_dir: Path, re
         if count > 0:
             log_step("T3.2: Verify Indexed Content", True, f"Found {count} entities")
         else:
-            log_step("T3.2: Verify Indexed Content", False, "No entities found after indexing")
+            log_step(
+                "T3.2: Verify Indexed Content",
+                False,
+                "No entities found after indexing",
+            )
     except Exception as e:
         log_step("T3.2: Verify Indexed Content", False, f"Error: {e}")
 
@@ -442,21 +486,27 @@ async def _run_smoke_test(storage, config, project_id: str, output_dir: Path, re
 
         count = len(search_results) if search_results else 0
         if count > 0:
-            log_step("T4.1: Simple Search", True, f"Found {count} results for '{query}'")
+            log_step(
+                "T4.1: Simple Search", True, f"Found {count} results for '{query}'"
+            )
         else:
             log_step("T4.1: Simple Search", False, f"No results for '{query}'")
     except Exception as e:
         log_step("T4.1: Simple Search", False, f"Error: {e}")
-        results["issues"].append({"severity": "high", "description": f"Search failed: {e}", "status": "open"})
+        results["issues"].append(
+            {"severity": "high", "description": f"Search failed: {e}", "status": "open"}
+        )
 
     # Test 5: Memory (if available)
     try:
         from agentic_inquiry.memory.system import MemorySystem
         from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 
-        db_manager = storage.get_db_manager() if hasattr(storage, "get_db_manager") else None
+        db_manager = (
+            storage.get_db_manager() if hasattr(storage, "get_db_manager") else None
+        )
         if db_manager:
-            embedding_dims = getattr(config.embeddings, 'default_dimensions', 384)
+            embedding_dims = getattr(config.embeddings, "default_dimensions", 384)
             episodic = LanceDBMemoryAdapter(
                 manager=db_manager,
                 table_name="memory_episodic",
@@ -496,20 +546,38 @@ async def _run_smoke_test(storage, config, project_id: str, output_dir: Path, re
             )
 
             if memories:
-                log_step("T5.2: Retrieve Memory", True, f"Retrieved {len(memories)} memories")
+                log_step(
+                    "T5.2: Retrieve Memory", True, f"Retrieved {len(memories)} memories"
+                )
             else:
                 log_step("T5.2: Retrieve Memory", False, "No memories retrieved")
         else:
-            log_step("T5.1: Store Memory", True, "Memory system not configured (LanceDB mode)")
-            log_step("T5.2: Retrieve Memory", True, "Memory system not configured (LanceDB mode)")
+            log_step(
+                "T5.1: Store Memory",
+                True,
+                "Memory system not configured (LanceDB mode)",
+            )
+            log_step(
+                "T5.2: Retrieve Memory",
+                True,
+                "Memory system not configured (LanceDB mode)",
+            )
     except Exception as e:
         log_step("T5.1: Store Memory", False, f"Error: {e}")
-        results["issues"].append({"severity": "medium", "description": f"Memory failed: {e}", "status": "open"})
+        results["issues"].append(
+            {
+                "severity": "medium",
+                "description": f"Memory failed: {e}",
+                "status": "open",
+            }
+        )
 
     return results
 
 
-async def _run_generic_test(storage, config, project_id: str, parsed: dict, output_dir: Path, results: dict) -> dict:
+async def _run_generic_test(
+    storage, config, project_id: str, parsed: dict, output_dir: Path, results: dict
+) -> dict:
     """Execute a generic test based on parsed test file.
 
     For tests other than the smoke test, this provides basic execution.
@@ -537,20 +605,26 @@ async def _run_generic_test(storage, config, project_id: str, parsed: dict, outp
             f.write(f"{i}. {section.get('title', 'Unknown section')}\n")
 
         f.write("\n---\n\n")
-        f.write("**Note:** This test file contains detailed procedures that should be\n")
+        f.write(
+            "**Note:** This test file contains detailed procedures that should be\n"
+        )
         f.write("followed manually by an AI agent using ai CLI commands.\n")
 
-    results["steps"].append({
-        "name": "Test file parsed",
-        "passed": True,
-        "details": f"Found {len(parsed.get('sections', []))} sections to execute",
-    })
+    results["steps"].append(
+        {
+            "name": "Test file parsed",
+            "passed": True,
+            "details": f"Found {len(parsed.get('sections', []))} sections to execute",
+        }
+    )
 
-    results["steps"].append({
-        "name": "Manual execution required",
-        "passed": True,
-        "details": "See test file for detailed procedures",
-    })
+    results["steps"].append(
+        {
+            "name": "Manual execution required",
+            "passed": True,
+            "details": "See test file for detailed procedures",
+        }
+    )
 
     return results
 
@@ -612,11 +686,15 @@ async def run_command(args: argparse.Namespace) -> int:
         steps_total = len(result.get("steps", []))
 
         icon = "✓" if status == "complete" else "✗"
-        print(f"  {icon} TEST_{test_id}: {status} ({steps_passed}/{steps_total} steps, {duration:.1f}s)")
+        print(
+            f"  {icon} TEST_{test_id}: {status} ({steps_passed}/{steps_total} steps, {duration:.1f}s)"
+        )
 
         if result.get("issues"):
             for issue in result["issues"]:
-                print(f"    ! [{issue.get('severity')}] {issue.get('description', '')[:50]}")
+                print(
+                    f"    ! [{issue.get('severity')}] {issue.get('description', '')[:50]}"
+                )
 
     # Write session summary
     summary_path = output_dir / "SESSION_SUMMARY.md"
@@ -634,10 +712,14 @@ async def run_command(args: argparse.Namespace) -> int:
         f.write(f"## Test Details\n\n")
         for result in all_results:
             icon = "✓" if result.get("status") == "complete" else "✗"
-            f.write(f"### {icon} TEST_{result.get('test_id')}: {result.get('test_name')}\n\n")
+            f.write(
+                f"### {icon} TEST_{result.get('test_id')}: {result.get('test_name')}\n\n"
+            )
             f.write(f"- Status: {result.get('status')}\n")
             f.write(f"- Duration: {result.get('duration_seconds', 0):.1f}s\n")
-            f.write(f"- Steps: {sum(1 for s in result.get('steps', []) if s.get('passed'))}/{len(result.get('steps', []))}\n\n")
+            f.write(
+                f"- Steps: {sum(1 for s in result.get('steps', []) if s.get('passed'))}/{len(result.get('steps', []))}\n\n"
+            )
 
     print()
     print(f"Summary written to: {summary_path}")
@@ -695,7 +777,7 @@ def main(args: Optional[list[str]] = None) -> int:
     parser = create_run_parser()
     parsed = parser.parse_args(args)
 
-    if not parsed.test_id and not getattr(parsed, 'all', False):
+    if not parsed.test_id and not getattr(parsed, "all", False):
         if not args:
             # Show help if no args
             return asyncio.run(list_command(argparse.Namespace(json=False)))

@@ -3,6 +3,7 @@
 Pre-computes expensive queries at index time and stores results
 for <100ms retrieval. Supports incremental updates on file changes.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -44,7 +45,9 @@ class CacheEntry:
         return {
             "key": self.key,
             "query_type": self.query_type,
-            "data": json.dumps(self.data) if not isinstance(self.data, str) else self.data,
+            "data": json.dumps(self.data)
+            if not isinstance(self.data, str)
+            else self.data,
             "entity_ids": self.entity_ids,
             "file_paths": self.file_paths,
             "created_at": self.created_at.isoformat(),
@@ -69,7 +72,8 @@ class CacheEntry:
             entity_ids=data.get("entity_ids", []),
             file_paths=data.get("file_paths", []),
             created_at=datetime.fromisoformat(data["created_at"])
-            if data.get("created_at") else datetime.utcnow(),
+            if data.get("created_at")
+            else datetime.utcnow(),
             ttl_seconds=data.get("ttl_seconds", 3600),
             hit_count=data.get("hit_count", 0),
         )
@@ -158,7 +162,9 @@ class PrecomputedCache:
                         self._memory_cache[cache_key] = entry
                         self._stats["hits"] += 1
                         elapsed = (time.perf_counter() - start_time) * 1000
-                        logger.debug("Cache HIT (file) for %s in %.1fms", cache_key, elapsed)
+                        logger.debug(
+                            "Cache HIT (file) for %s in %.1fms", cache_key, elapsed
+                        )
                         return entry.data
                 except Exception as e:
                     logger.debug("File cache read failed: %s", e)
@@ -294,7 +300,8 @@ class PrecomputedCache:
 
         logger.info(
             "Refreshed cache after index: %d entries invalidated for %d files",
-            invalidated, len(changed_files)
+            invalidated,
+            len(changed_files),
         )
         return invalidated
 
@@ -379,12 +386,14 @@ class PrecomputedCache:
                 if file_path:
                     if file_path not in by_file:
                         by_file[file_path] = []
-                    by_file[file_path].append({
-                        "id": entity.get("id"),
-                        "name": entity.get("name"),
-                        "type": entity.get("type"),
-                        "line_number": entity.get("line_number"),
-                    })
+                    by_file[file_path].append(
+                        {
+                            "id": entity.get("id"),
+                            "name": entity.get("name"),
+                            "type": entity.get("type"),
+                            "line_number": entity.get("line_number"),
+                        }
+                    )
 
             for file_path, symbols in by_file.items():
                 await self.set(

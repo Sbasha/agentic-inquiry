@@ -5,6 +5,7 @@ swappability without modifying event system implementations.
 
 Design reference: DES-S2-003 in .sessions/deep-architecture-review/009-design.md
 """
+
 from __future__ import annotations
 
 from datetime import datetime

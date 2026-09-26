@@ -1,4 +1,5 @@
 """Tests for AccuracyValidator."""
+
 import pytest
 from datetime import datetime
 from pathlib import Path
@@ -178,9 +179,7 @@ class TestAccuracyValidator:
         )
 
     @pytest.mark.asyncio
-    async def test_validate_all_empty_index(
-        self, validator: AccuracyValidator
-    ) -> None:
+    async def test_validate_all_empty_index(self, validator: AccuracyValidator) -> None:
         """Test validation with empty index."""
         report = await validator.validate_all()
         assert isinstance(report, ValidationReport)
@@ -196,9 +195,7 @@ class TestAccuracyValidator:
         assert isinstance(report, ValidationReport)
 
     @pytest.mark.asyncio
-    async def test_validate_all_deep(
-        self, validator: AccuracyValidator
-    ) -> None:
+    async def test_validate_all_deep(self, validator: AccuracyValidator) -> None:
         """Test validation with deep completeness check."""
         report = await validator.validate_all(deep=True)
         assert isinstance(report, ValidationReport)
@@ -217,9 +214,7 @@ class TestAccuracyValidator:
         assert "detected_stack" in report.to_dict()
 
     @pytest.mark.asyncio
-    async def test_validate_all_threshold(
-        self, validator: AccuracyValidator
-    ) -> None:
+    async def test_validate_all_threshold(self, validator: AccuracyValidator) -> None:
         """Test that validation uses threshold."""
         validator._threshold = 0.99
         report = await validator.validate_all()
@@ -234,32 +229,36 @@ class TestAccuracyValidatorIntegration:
         """Create mock storage with sample data."""
         storage = MagicMock()
         storage.project_id = "test_project"
-        storage.query_raw = AsyncMock(return_value=[
-            {
-                "id": "entity1",
-                "name": "test_func",
-                "type": "function",
-                "file_path": "test.py",
-                "line_start": 10,
-                "line_end": 20,
-            },
-            {
-                "id": "entity2",
-                "name": "TestClass",
-                "type": "class",
-                "file_path": "test.py",
-                "line_start": 1,
-                "line_end": 30,
-            },
-        ])
+        storage.query_raw = AsyncMock(
+            return_value=[
+                {
+                    "id": "entity1",
+                    "name": "test_func",
+                    "type": "function",
+                    "file_path": "test.py",
+                    "line_start": 10,
+                    "line_end": 20,
+                },
+                {
+                    "id": "entity2",
+                    "name": "TestClass",
+                    "type": "class",
+                    "file_path": "test.py",
+                    "line_start": 1,
+                    "line_end": 30,
+                },
+            ]
+        )
         storage.query_entities = AsyncMock(return_value=[])
-        storage.query_relationships = AsyncMock(return_value=[
-            {
-                "source_id": "entity1",
-                "target_id": "entity2",
-                "type": "belongs_to",
-            }
-        ])
+        storage.query_relationships = AsyncMock(
+            return_value=[
+                {
+                    "source_id": "entity1",
+                    "target_id": "entity2",
+                    "type": "belongs_to",
+                }
+            ]
+        )
         return storage
 
     @pytest.mark.asyncio

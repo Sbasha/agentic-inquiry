@@ -18,11 +18,13 @@ class PathValidationError(ValueError):
     such as attempting to access files outside allowed directories or
     using directory traversal sequences.
     """
+
     pass
 
 
 class ProjectIDValidationError(ValueError):
     """Raised when project_id validation fails."""
+
     pass
 
 
@@ -32,6 +34,7 @@ class QueryValidationError(ValueError):
     This exception is raised when a search query fails validation,
     such as being empty or exceeding maximum length limits.
     """
+
     pass
 
 
@@ -41,6 +44,7 @@ class EntityNameValidationError(ValueError):
     This exception is raised when an entity name fails validation,
     such as containing path separators or exceeding length limits.
     """
+
     pass
 
 
@@ -50,6 +54,7 @@ class SessionIDValidationError(ValueError):
     This exception is raised when a session ID fails validation,
     such as not being a valid UUID format.
     """
+
     pass
 
 
@@ -59,6 +64,7 @@ class ColumnNameValidationError(ValueError):
     This exception is raised when a column or field name fails validation,
     such as containing SQL injection characters or invalid patterns.
     """
+
     pass
 
 
@@ -71,7 +77,9 @@ MAX_ENTITY_NAME_LENGTH = 500  # 500 characters for entity names
 MIN_ENTITY_NAME_LENGTH = 1  # Minimum 1 character (non-empty)
 
 # Path separator characters that are not allowed in entity names
-FORBIDDEN_ENTITY_CHARS = frozenset({'/', '\\', '\x00'})  # Forward slash, backslash, null byte
+FORBIDDEN_ENTITY_CHARS = frozenset(
+    {"/", "\\", "\x00"}
+)  # Forward slash, backslash, null byte
 
 # Logger for query validation warnings
 _logger = logging.getLogger(__name__)
@@ -129,7 +137,7 @@ def validate_query_length(
     query: str,
     max_length: int = MAX_QUERY_LENGTH,
     truncate: bool = True,
-    field_name: str = "query"
+    field_name: str = "query",
 ) -> str:
     """Validate and optionally truncate query string length.
 
@@ -189,7 +197,7 @@ def validate_query_length(
                 "Query truncated from %d to %d characters for DoS protection. "
                 "Consider using a more specific query.",
                 original_length,
-                max_length
+                max_length,
             )
         else:
             raise QueryValidationError(
@@ -205,7 +213,7 @@ def validate_query_length(
 def validate_entity_name(
     entity_name: str,
     max_length: int = MAX_ENTITY_NAME_LENGTH,
-    field_name: str = "entity"
+    field_name: str = "entity",
 ) -> str:
     """Validate entity name for security and consistency.
 
@@ -274,11 +282,11 @@ def validate_entity_name(
         # Format forbidden characters for display
         char_display = []
         for char in sorted(forbidden_found):
-            if char == '/':
+            if char == "/":
                 char_display.append("'/' (forward slash)")
-            elif char == '\\':
+            elif char == "\\":
                 char_display.append("'\\\\' (backslash)")
-            elif char == '\x00':
+            elif char == "\x00":
                 char_display.append("null byte")
             else:
                 char_display.append(repr(char))
@@ -295,38 +303,39 @@ def validate_entity_name(
 
 def validate_path(project_root_attr: str = "project_root") -> Callable:
     """Decorator to validate file paths before method execution.
-    
+
     This decorator automatically validates file_path parameters against the
     project root to prevent directory traversal attacks. It extracts the
     project root from the instance using the specified attribute name.
-    
+
     Args:
         project_root_attr: Name of the instance attribute containing project root path
                           (default: "project_root")
-        
+
     Returns:
         Decorated function that validates file_path parameter before execution
-        
+
     Raises:
         PathValidationError: If file_path is outside project root
         AttributeError: If instance doesn't have the specified project_root attribute
-        
+
     Example:
         >>> class IndexingPipeline:
         ...     def __init__(self, project_root: str):
         ...         self.project_root = project_root
-        ...     
+        ...
         ...     @validate_path()
         ...     async def remove_file_data(self, file_path: str) -> None:
         ...         # file_path is now validated
         ...         pass
-        
+
     Security Notes:
         - Validates file_path parameter before method execution
         - Uses validate_file_path() for actual validation logic
         - Preserves original exception messages for debugging
         - Works with both sync and async methods
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def async_wrapper(self, *args, **kwargs):
@@ -335,101 +344,100 @@ def validate_path(project_root_attr: str = "project_root") -> Callable:
             if args:
                 file_path = args[0]
                 remaining_args = args[1:]
-            elif 'file_path' in kwargs:
-                file_path = kwargs.pop('file_path')
+            elif "file_path" in kwargs:
+                file_path = kwargs.pop("file_path")
                 remaining_args = args
             else:
                 raise ValueError(
                     f"Method {func.__name__} requires 'file_path' parameter for validation"
                 )
-            
+
             # Get project root from instance
             if not hasattr(self, project_root_attr):
                 raise AttributeError(
                     f"Instance of {type(self).__name__} does not have attribute '{project_root_attr}'. "
                     f"Ensure the class has a '{project_root_attr}' attribute for path validation."
                 )
-            
+
             project_root = getattr(self, project_root_attr)
-            
+
             # Validate the path
             validated_path = validate_file_path(file_path, project_root)
-            
+
             # Call original function with validated path
             return await func(self, str(validated_path), *remaining_args, **kwargs)
-        
+
         @functools.wraps(func)
         def sync_wrapper(self, *args, **kwargs):
             # Extract file_path from args or kwargs
             if args:
                 file_path = args[0]
                 remaining_args = args[1:]
-            elif 'file_path' in kwargs:
-                file_path = kwargs.pop('file_path')
+            elif "file_path" in kwargs:
+                file_path = kwargs.pop("file_path")
                 remaining_args = args
             else:
                 raise ValueError(
                     f"Method {func.__name__} requires 'file_path' parameter for validation"
                 )
-            
+
             # Get project root from instance
             if not hasattr(self, project_root_attr):
                 raise AttributeError(
                     f"Instance of {type(self).__name__} does not have attribute '{project_root_attr}'. "
                     f"Ensure the class has a '{project_root_attr}' attribute for path validation."
                 )
-            
+
             project_root = getattr(self, project_root_attr)
-            
+
             # Validate the path
             validated_path = validate_file_path(file_path, project_root)
-            
+
             # Call original function with validated path
             return func(self, str(validated_path), *remaining_args, **kwargs)
-        
+
         # Return appropriate wrapper based on whether function is async
         import inspect
+
         if inspect.iscoroutinefunction(func):
             return async_wrapper
         else:
             return sync_wrapper
-    
+
     return decorator
 
 
 def validate_file_path(
-    path: Union[str, Path],
-    allowed_base: Path,
-    must_exist: bool = False
+    path: Union[str, Path], allowed_base: Path, must_exist: bool = False
 ) -> Path:
     """Validate file path is within allowed directory.
-    
+
     This function provides security validation to prevent directory traversal
     attacks by ensuring that resolved paths stay within the allowed base directory.
-    
+
     Args:
         path: Path to validate (can be relative or absolute)
         allowed_base: Base directory that path must be within
         must_exist: If True, path must exist on filesystem
-        
+
     Returns:
         Validated absolute Path object
-        
+
     Raises:
         PathValidationError: If path is outside allowed_base or doesn't exist
-        
+
     Warning:
         Always use this function to validate user-provided file paths before
         performing file operations. Direct use of user-provided paths without
         validation can lead to unauthorized file access.
-        
+
     Example:
         >>> base = Path("/project")
         >>> validate_file_path("src/main.py", base)
         Path("/project/src/main.py")
         >>> validate_file_path("../etc/passwd", base)
         PathValidationError: Path outside allowed directory
-        
+
     Note:
         Security implementation details:
         - Uses Path.resolve() to normalize paths and resolve symlinks
@@ -441,14 +449,14 @@ def validate_file_path(
     # Convert to Path objects
     path_obj = Path(path)
     allowed_base = Path(allowed_base).resolve()
-    
+
     # If path is relative, resolve it relative to allowed_base
     # If path is absolute, resolve it as-is
     if not path_obj.is_absolute():
         path_obj = (allowed_base / path_obj).resolve()
     else:
         path_obj = path_obj.resolve()
-    
+
     # Check if path is within allowed base
     # relative_to() raises ValueError if path is not a subpath
     try:
@@ -460,7 +468,7 @@ def validate_file_path(
             f"Try using a relative path from the project root (e.g., 'src/file.py') or "
             f"an absolute path within the project directory."
         )
-    
+
     # Check existence if required
     if must_exist and not path_obj.exists():
         raise PathValidationError(
@@ -468,34 +476,30 @@ def validate_file_path(
             f"Ensure the file or directory exists within the project at '{allowed_base}'. "
             f"Try checking the path spelling or use a file listing tool to verify the location."
         )
-    
+
     return path_obj
 
 
-
-def validate_project_id(
-    project_id: str,
-    normalize: bool = True
-) -> str:
+def validate_project_id(project_id: str, normalize: bool = True) -> str:
     """
     Validate and optionally normalize project ID.
-    
+
     This function validates project IDs according to the following rules:
     - Length: 1-64 characters
     - Characters: Only alphanumeric, hyphens (-), and underscores (_)
     - Pattern: ^[a-zA-Z0-9_-]+$
     - Normalization: Converts to lowercase if requested
-    
+
     Args:
         project_id: Project identifier to validate
         normalize: If True, convert to lowercase (default: True)
-        
+
     Returns:
         Validated (and possibly normalized) project_id
-        
+
     Raises:
         ProjectIDValidationError: If validation fails with helpful error message
-        
+
     Examples:
         >>> validate_project_id("my-project")
         'my-project'
@@ -503,14 +507,14 @@ def validate_project_id(
         'my_project_123'
         >>> validate_project_id("invalid project!")
         ProjectIDValidationError: Invalid characters in project_id
-        
+
     Security Notes:
         - Strict format validation prevents SQL injection
         - Length limit prevents DoS attacks
         - Normalization ensures consistent storage
     """
     import re
-    
+
     # Check for empty or None
     if not project_id:
         raise ProjectIDValidationError(
@@ -518,7 +522,7 @@ def validate_project_id(
             "Please provide a valid project identifier. "
             "Examples of valid project IDs: 'my-project', 'project_123', 'my_project'"
         )
-    
+
     # Check length constraints
     if len(project_id) > 64:
         raise ProjectIDValidationError(
@@ -526,49 +530,47 @@ def validate_project_id(
             f"Please use a shorter identifier. "
             f"Examples: 'my-project', 'proj-123', 'my_app'"
         )
-    
+
     # Check character pattern
-    pattern = r'^[a-zA-Z0-9_-]+$'
+    pattern = r"^[a-zA-Z0-9_-]+$"
     if not re.fullmatch(pattern, project_id):
         # Identify invalid characters for better error message
-        valid_chars = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-')
+        valid_chars = set(
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-"
+        )
         invalid_chars = set(project_id) - valid_chars
-        
+
         raise ProjectIDValidationError(
             f"Project ID '{project_id}' contains invalid characters: {sorted(invalid_chars)}. "
             f"Only alphanumeric characters, hyphens (-), and underscores (_) are allowed. "
             f"Examples of valid project IDs: 'my-project', 'project_123', 'my_project'"
         )
-    
+
     # Normalize to lowercase if requested
     if normalize:
         normalized = project_id.lower()
         return normalized
-    
+
     return project_id
 
 
-
 def validate_limit(
-    limit: int,
-    min_value: int = 1,
-    max_value: int = 1000,
-    field_name: str = "limit"
+    limit: int, min_value: int = 1, max_value: int = 1000, field_name: str = "limit"
 ) -> int:
     """Validate limit parameter for search and query operations.
-    
+
     Args:
         limit: Limit value to validate
         min_value: Minimum allowed value (default: 1)
         max_value: Maximum allowed value (default: 1000)
         field_name: Name of the field for error messages
-        
+
     Returns:
         Validated limit value
-        
+
     Raises:
         ValueError: If limit is outside allowed range with detailed error
-        
+
     Examples:
         >>> validate_limit(10)
         10
@@ -584,7 +586,7 @@ def validate_limit(
             f"Expected: integer between {min_value} and {max_value}. "
             f"Example: {field_name}=10"
         )
-    
+
     if limit < min_value or limit > max_value:
         raise ValueError(
             f"{field_name} must be between {min_value} and {max_value}. "
@@ -592,26 +594,25 @@ def validate_limit(
             f"Try using a value within the allowed range. "
             f"Example: {field_name}=10"
         )
-    
+
     return limit
 
 
 def validate_search_type(
-    search_type: str,
-    allowed_types: Optional[list[Any]] = None
+    search_type: str, allowed_types: Optional[list[Any]] = None
 ) -> str:
     """Validate search_type parameter.
-    
+
     Args:
         search_type: Search type to validate
         allowed_types: List of allowed search types (default: ["hybrid", "vector", "fts"])
-        
+
     Returns:
         Validated search_type
-        
+
     Raises:
         ValueError: If search_type is not in allowed types with detailed error
-        
+
     Examples:
         >>> validate_search_type("hybrid")
         'hybrid'
@@ -620,7 +621,7 @@ def validate_search_type(
     """
     if allowed_types is None:
         allowed_types = ["hybrid", "vector", "fts"]
-    
+
     if not isinstance(search_type, str):
         raise ValueError(
             f"search_type must be a string. "
@@ -628,7 +629,7 @@ def validate_search_type(
             f"Expected: one of {', '.join(allowed_types)}. "
             f"Example: search_type='hybrid'"
         )
-    
+
     if search_type not in allowed_types:
         raise ValueError(
             f"search_type must be one of: {', '.join(allowed_types)}. "
@@ -636,13 +637,12 @@ def validate_search_type(
             f"Try using one of the supported search types. "
             f"Example: search_type='hybrid'"
         )
-    
+
     return search_type
 
 
 def validate_content_type(
-    content_type: str,
-    allowed_types: Optional[list[Any]] = None
+    content_type: str, allowed_types: Optional[list[Any]] = None
 ) -> str:
     """Validate content_type parameter for indexing operations.
 
@@ -682,7 +682,7 @@ def validate_content_type(
             param_name="content_type",
             invalid_value=content_type,
             valid_values=allowed_types + list(CONTENT_TYPE_ALIASES.keys()),
-            example="content_type='file'"
+            example="content_type='file'",
         )
 
     # Normalize alias to canonical value
@@ -693,7 +693,7 @@ def validate_content_type(
             param_name="content_type",
             invalid_value=content_type,
             valid_values=allowed_types + list(CONTENT_TYPE_ALIASES.keys()),
-            example="content_type='file'"
+            example="content_type='file'",
         )
 
     return normalized
@@ -706,13 +706,13 @@ def create_validation_error_response(
     provided_value: Any = None,
     expected_type: Optional[str] = None,
     expected_values: Optional[list[Any]] = None,
-    example: Optional[str] = None
+    example: Optional[str] = None,
 ) -> dict[str, Any]:
     """Create a standardized validation error response.
-    
+
     This is a convenience function that wraps MCPErrorHandler.create_validation_error
     with additional context from validation exceptions.
-    
+
     Args:
         field: Field that failed validation
         error: The validation exception
@@ -721,12 +721,12 @@ def create_validation_error_response(
         expected_type: Expected type or format
         expected_values: List of valid values
         example: Example of valid usage
-        
+
     Returns:
         Formatted validation error response
     """
     from agentic_inquiry.mcp.utils.errors import MCPErrorHandler
-    
+
     return MCPErrorHandler.create_validation_error(
         field=field,
         message=str(error),
@@ -734,7 +734,7 @@ def create_validation_error_response(
         provided_value=provided_value,
         expected_type=expected_type,
         expected_values=expected_values,
-        example=example
+        example=example,
     )
 
 
@@ -801,9 +801,7 @@ _COLUMN_NAME_PATTERN = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
 
 
 def validate_column_name(
-    column_name: str,
-    field_name: str = "column",
-    allow_nested: bool = True
+    column_name: str, field_name: str = "column", allow_nested: bool = True
 ) -> str:
     """Validate that a column name is safe for use in database queries.
 
@@ -879,7 +877,11 @@ def validate_column_name(
             )
 
         # Check for invalid dot patterns
-        if column_name.startswith(".") or column_name.endswith(".") or ".." in column_name:
+        if (
+            column_name.startswith(".")
+            or column_name.endswith(".")
+            or ".." in column_name
+        ):
             raise ColumnNameValidationError(
                 f"{field_name} '{column_name}' has invalid dot pattern. "
                 f"Column names cannot start/end with dots or contain consecutive dots. "
@@ -916,9 +918,7 @@ def validate_column_name(
 
 
 def validate_column_names(
-    column_names: list,
-    field_name: str = "columns",
-    allow_nested: bool = True
+    column_names: list, field_name: str = "columns", allow_nested: bool = True
 ) -> list:
     """Validate a list of column names for safe database use.
 
@@ -943,24 +943,22 @@ def validate_column_names(
     """
     if column_names is None:
         raise ColumnNameValidationError(
-            f"{field_name} cannot be None. "
-            f"Please provide a list of column names."
+            f"{field_name} cannot be None. Please provide a list of column names."
         )
 
     if not isinstance(column_names, list):
         raise ColumnNameValidationError(
-            f"{field_name} must be a list. "
-            f"Provided: {type(column_names).__name__}"
+            f"{field_name} must be a list. Provided: {type(column_names).__name__}"
         )
 
     validated = []
     for i, col in enumerate(column_names):
         try:
-            validated.append(validate_column_name(
-                col,
-                field_name=f"{field_name}[{i}]",
-                allow_nested=allow_nested
-            ))
+            validated.append(
+                validate_column_name(
+                    col, field_name=f"{field_name}[{i}]", allow_nested=allow_nested
+                )
+            )
         except ColumnNameValidationError as e:
             # Re-raise with context about the list position
             raise ColumnNameValidationError(str(e))
@@ -970,23 +968,22 @@ def validate_column_names(
 
 # Known table names for validation (SEC-006)
 # This allowlist prevents SQL injection via table name manipulation
-KNOWN_TABLE_NAMES = frozenset({
-    "document_chunks",
-    "graph_entities",
-    "graph_relationships",
-    "memory_episodic",
-    "memory_episodic_medium",
-    "memory_semantic",
-    "memory_semantic_high",
-    "mcp_sessions",
-    "mcp_events",
-})
+KNOWN_TABLE_NAMES = frozenset(
+    {
+        "document_chunks",
+        "graph_entities",
+        "graph_relationships",
+        "memory_episodic",
+        "memory_episodic_medium",
+        "memory_semantic",
+        "memory_semantic_high",
+        "mcp_sessions",
+        "mcp_events",
+    }
+)
 
 
-def validate_table_name(
-    table_name: str,
-    allow_unknown: bool = False
-) -> str:
+def validate_table_name(table_name: str, allow_unknown: bool = False) -> str:
     """Validate that a table name is safe for database use.
 
     SEC-006: Prevents SQL injection via table name by:
@@ -1015,7 +1012,7 @@ def validate_table_name(
     validated = validate_column_name(
         table_name,
         field_name="table",
-        allow_nested=False  # Table names cannot have dots
+        allow_nested=False,  # Table names cannot have dots
     )
 
     # Check against allowlist
@@ -1028,8 +1025,7 @@ def validate_table_name(
             )
         # allow_unknown=True: format was validated above, allow it
         _logger.warning(
-            "Allowing unknown table name '%s' - not in allowlist",
-            validated
+            "Allowing unknown table name '%s' - not in allowlist", validated
         )
 
     return validated

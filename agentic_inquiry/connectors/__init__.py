@@ -26,6 +26,7 @@ Registry:
 
 See: docs/design/connector-architecture.md
 """
+
 from agentic_inquiry.connectors.base import (
     DEFAULT_BINARY_EXTENSIONS,
     DEFAULT_IGNORE_PATTERNS,

@@ -12,7 +12,7 @@ from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerE
 class TestEmbeddingRegistry(unittest.TestCase):
     def test_default_must_be_explicit(self):
         from agentic_inquiry.exceptions import StorageError
-        
+
         registry = EmbeddingRegistry()
 
         with self.assertRaises(StorageError):
@@ -49,11 +49,13 @@ class TestEmbeddingRegistry(unittest.TestCase):
 
         # Second configuration should succeed with warning (idempotent behavior)
         # This is expected in test environments
-        with self.assertLogs('agentic_inquiry.embeddings.registry', level=logging.WARNING) as cm:
+        with self.assertLogs(
+            "agentic_inquiry.embeddings.registry", level=logging.WARNING
+        ) as cm:
             registry.configure_default_embedder(HashingEmbedder())
 
         # Verify warning was logged
-        self.assertTrue(any('already been configured' in msg for msg in cm.output))
+        self.assertTrue(any("already been configured" in msg for msg in cm.output))
 
 
 class TestHybridEmbeddings(unittest.TestCase):

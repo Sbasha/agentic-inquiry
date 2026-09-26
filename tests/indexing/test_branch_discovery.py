@@ -21,14 +21,20 @@ from pathlib import Path
 
 import pytest
 
-from agentic_inquiry.indexing.branch_discovery import _detect_default_branch, discover_branches
+from agentic_inquiry.indexing.branch_discovery import (
+    _detect_default_branch,
+    discover_branches,
+)
 
 
 # ---------------------------------------------------------------------------
 # Fixtures — real git repos in tmp_path
 # ---------------------------------------------------------------------------
 
-def _git(args: list[str], cwd: Path, env: dict | None = None, check: bool = True) -> subprocess.CompletedProcess:
+
+def _git(
+    args: list[str], cwd: Path, env: dict | None = None, check: bool = True
+) -> subprocess.CompletedProcess:
     """Run a git command in cwd."""
     effective_env = {**os.environ}
     if env:
@@ -82,7 +88,9 @@ def _initial_commit(repo: Path, dt: datetime | None = None) -> None:
     _git(["commit", "-m", "init"], cwd=repo, env=env)
 
 
-def _create_branch_with_commit(repo: Path, branch: str, filename: str, dt: datetime | None = None) -> None:
+def _create_branch_with_commit(
+    repo: Path, branch: str, filename: str, dt: datetime | None = None
+) -> None:
     """Create a new branch from current HEAD with a single commit."""
     _git(["checkout", "-b", branch], cwd=repo)
     (repo / filename).write_text(f"content for {branch}")
@@ -98,6 +106,7 @@ def _create_branch_with_commit(repo: Path, branch: str, filename: str, dt: datet
 # ---------------------------------------------------------------------------
 # T42-1: Returns only branches within max_age_days
 # ---------------------------------------------------------------------------
+
 
 class TestDiscoverBranchesAgeFilter:
     """discover_branches filters by max_age_days cutoff."""
@@ -130,9 +139,7 @@ class TestDiscoverBranchesAgeFilter:
         _initial_commit(local_repo, dt=recent_dt)
         _git(["push", "--set-upstream", "origin", "main"], cwd=local_repo, check=False)
 
-        _create_branch_with_commit(
-            local_repo, "feature/stale", "stale.py", dt=stale_dt
-        )
+        _create_branch_with_commit(local_repo, "feature/stale", "stale.py", dt=stale_dt)
 
         branches = discover_branches(str(local_repo), max_age_days=30)
         names = [b.short_name for b in branches]
@@ -171,6 +178,7 @@ class TestDiscoverBranchesAgeFilter:
 # T42-2: Configurable cutoff
 # ---------------------------------------------------------------------------
 
+
 class TestConfigurableCutoff:
     """max_age_days parameter controls which branches are included."""
 
@@ -183,9 +191,7 @@ class TestConfigurableCutoff:
         _initial_commit(local_repo, dt=recent_dt)
         _git(["push", "--set-upstream", "origin", "main"], cwd=local_repo, check=False)
 
-        _create_branch_with_commit(
-            local_repo, "feature/old-8days", "old.py", dt=old_dt
-        )
+        _create_branch_with_commit(local_repo, "feature/old-8days", "old.py", dt=old_dt)
 
         branches = discover_branches(str(local_repo), max_age_days=7)
         names = [b.short_name for b in branches]
@@ -213,6 +219,7 @@ class TestConfigurableCutoff:
 # T42-3: DiscoveredBranch fields
 # ---------------------------------------------------------------------------
 
+
 class TestDiscoveredBranchFields:
     """Verify DiscoveredBranch has the correct fields after discovery."""
 
@@ -235,10 +242,13 @@ class TestDiscoveredBranchFields:
         assert feature_branches
         # short_name must not contain "origin/"
         for b in feature_branches:
-            assert not b.short_name.startswith("origin/"), \
+            assert not b.short_name.startswith("origin/"), (
                 f"short_name should not have remote prefix: {b.short_name}"
+            )
 
-    def test_branch_has_last_commit_date(self, local_repo: Path, bare_remote: Path) -> None:
+    def test_branch_has_last_commit_date(
+        self, local_repo: Path, bare_remote: Path
+    ) -> None:
         dt = datetime.now(timezone.utc) - timedelta(days=1)
         _initial_commit(local_repo, dt=dt)
         _git(["push", "--set-upstream", "origin", "main"], cwd=local_repo, check=False)
@@ -249,7 +259,9 @@ class TestDiscoveredBranchFields:
             assert isinstance(b.last_commit_date, datetime)
             assert b.last_commit_date.tzinfo is not None
 
-    def test_branch_has_last_commit_sha(self, local_repo: Path, bare_remote: Path) -> None:
+    def test_branch_has_last_commit_sha(
+        self, local_repo: Path, bare_remote: Path
+    ) -> None:
         dt = datetime.now(timezone.utc) - timedelta(days=1)
         _initial_commit(local_repo, dt=dt)
         _git(["push", "--set-upstream", "origin", "main"], cwd=local_repo, check=False)
@@ -259,7 +271,9 @@ class TestDiscoveredBranchFields:
         for b in branches:
             assert isinstance(b.last_commit_sha, str) and b.last_commit_sha
 
-    def test_head_tracking_branch_excluded(self, local_repo: Path, bare_remote: Path) -> None:
+    def test_head_tracking_branch_excluded(
+        self, local_repo: Path, bare_remote: Path
+    ) -> None:
         """The synthetic origin/HEAD branch must not appear in results."""
         dt = datetime.now(timezone.utc) - timedelta(days=1)
         _initial_commit(local_repo, dt=dt)
@@ -273,6 +287,7 @@ class TestDiscoveredBranchFields:
 # ---------------------------------------------------------------------------
 # T42-4: Error cases
 # ---------------------------------------------------------------------------
+
 
 class TestDiscoverBranchesErrors:
     """discover_branches handles errors gracefully."""
@@ -296,6 +311,7 @@ class TestDiscoverBranchesErrors:
 # ---------------------------------------------------------------------------
 # T42-5: _detect_default_branch helper
 # ---------------------------------------------------------------------------
+
 
 class TestDetectDefaultBranch:
     """_detect_default_branch returns a sensible fallback when git cannot resolve."""

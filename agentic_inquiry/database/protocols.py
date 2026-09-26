@@ -11,6 +11,7 @@ Design principles:
 
 See: docs/design/database-abstraction-revised.md
 """
+
 from __future__ import annotations
 
 from typing import (

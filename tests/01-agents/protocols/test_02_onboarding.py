@@ -7,6 +7,7 @@ Target: command_iq (TypeScript monorepo, ~1138 source files)
 Security note: add_knowledge uses os.getcwd() as security root, so we
 temporarily change CWD to the parent of the target codebase before indexing.
 """
+
 import os
 import time
 from pathlib import Path
@@ -69,17 +70,38 @@ async def run(
         # Verify empty index (cold start requirement)
         stats = r.get("statistics", {})
         initial_chunks = stats.get("chunks", 0)
-        check(results, issues, "SETUP_create_session", True, {
-            "session_id": session_id,
-            "project_id": project_id,
-            "initial_chunks": initial_chunks,
-            "cold_start": initial_chunks == 0,
-        })
+        check(
+            results,
+            issues,
+            "SETUP_create_session",
+            True,
+            {
+                "session_id": session_id,
+                "project_id": project_id,
+                "initial_chunks": initial_chunks,
+                "cold_start": initial_chunks == 0,
+            },
+        )
         log(test_id, f"  Session: {session_id}, chunks: {initial_chunks}")
 
     except Exception as e:
-        check(results, issues, "SETUP_create_session", False, severity="CRITICAL", fail_msg=str(e))
-        return summarize(test_id, slug, results, issues, time.time() - t_start, project_id=project_id, adoption_journal=journal)
+        check(
+            results,
+            issues,
+            "SETUP_create_session",
+            False,
+            severity="CRITICAL",
+            fail_msg=str(e),
+        )
+        return summarize(
+            test_id,
+            slug,
+            results,
+            issues,
+            time.time() - t_start,
+            project_id=project_id,
+            adoption_journal=journal,
+        )
 
     # ── TEST 1: Index the codebase ──────────────────────────────────────
     log(test_id, f"T1: Indexing target codebase: {target_codebase}")
@@ -108,7 +130,16 @@ async def run(
                 source=source_for_indexing,
                 wait_for_completion=True,
                 wait_timeout=1800,
-                filters={"exclude_patterns": ["node_modules", ".git", "dist", "build", "*.lock", "__pycache__"]},
+                filters={
+                    "exclude_patterns": [
+                        "node_modules",
+                        ".git",
+                        "dist",
+                        "build",
+                        "*.lock",
+                        "__pycache__",
+                    ]
+                },
             )
         finally:
             # Always restore CWD
@@ -120,41 +151,80 @@ async def run(
         chunks_created = idx_result.get("chunks_created", 0)
         entities_created = idx_result.get("entities_created", 0)
 
-        check(results, issues, "T1_1_indexing_completed", index_status == "completed", {
-            "status": index_status,
-            "files_processed": files_processed,
-            "chunks_created": chunks_created,
-            "entities_created": entities_created,
-            "elapsed_s": round(index_elapsed, 1),
-        }, severity="CRITICAL", fail_msg=f"Indexing failed: {idx_result.get('error', index_status)}")
+        check(
+            results,
+            issues,
+            "T1_1_indexing_completed",
+            index_status == "completed",
+            {
+                "status": index_status,
+                "files_processed": files_processed,
+                "chunks_created": chunks_created,
+                "entities_created": entities_created,
+                "elapsed_s": round(index_elapsed, 1),
+            },
+            severity="CRITICAL",
+            fail_msg=f"Indexing failed: {idx_result.get('error', index_status)}",
+        )
 
-        log(test_id, f"  Indexing: status={index_status}, files={files_processed}, "
-                     f"chunks={chunks_created}, entities={entities_created}, "
-                     f"elapsed={index_elapsed:.1f}s")
+        log(
+            test_id,
+            f"  Indexing: status={index_status}, files={files_processed}, "
+            f"chunks={chunks_created}, entities={entities_created}, "
+            f"elapsed={index_elapsed:.1f}s",
+        )
 
         if index_status == "completed" and chunks_created > 50:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"indexed {chunks_created} chunks from {files_processed} files in {index_elapsed:.0f}s "
                 f"— pre-built searchable knowledge base vs manual file traversal",
-                "positive")
-            note_adoption(journal,
+                "positive",
+            )
+            note_adoption(
+                journal,
                 f"indexing {chunks_created} chunks took {index_elapsed:.0f}s — significant upfront cost "
                 f"before the first useful query; an agent running 'find . -name *.ts | head' gets orientation in <1s",
-                "neutral")
+                "neutral",
+            )
         elif index_status != "completed":
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"indexing failed with status={index_status} — agent would fall back to grep immediately",
-                "blocker")
+                "blocker",
+            )
 
         # Verify we have searchable content
-        check(results, issues, "T1_2_chunks_created", chunks_created > 50, {
-            "chunks_created": chunks_created,
-            "threshold": 50,
-        }, fail_msg=f"Too few chunks: {chunks_created}")
+        check(
+            results,
+            issues,
+            "T1_2_chunks_created",
+            chunks_created > 50,
+            {
+                "chunks_created": chunks_created,
+                "threshold": 50,
+            },
+            fail_msg=f"Too few chunks: {chunks_created}",
+        )
 
     except Exception as e:
-        check(results, issues, "T1_1_indexing_completed", False, severity="CRITICAL", fail_msg=str(e))
-        return summarize(test_id, slug, results, issues, time.time() - t_start, project_id=project_id, adoption_journal=journal)
+        check(
+            results,
+            issues,
+            "T1_1_indexing_completed",
+            False,
+            severity="CRITICAL",
+            fail_msg=str(e),
+        )
+        return summarize(
+            test_id,
+            slug,
+            results,
+            issues,
+            time.time() - t_start,
+            project_id=project_id,
+            adoption_journal=journal,
+        )
 
     # ── TEST 1.1: T1.1 Project Purpose Discovery ────────────────────────
     log(test_id, "T1.1: Project Purpose Discovery")
@@ -216,39 +286,59 @@ async def run(
 
         # Infer domain from content
         domain_indicators = {
-            "agent/ai": any(w in combined_text for w in ["agent", "ai", "llm", "claude", "openai"]),
-            "cli_tool": any(w in combined_text for w in ["cli", "command", "terminal", "shell"]),
-            "collaboration": any(w in combined_text for w in ["collab", "team", "workspace", "session"]),
-            "typescript": any(w in combined_text for w in ["typescript", "javascript", "tsx", "interface"]),
+            "agent/ai": any(
+                w in combined_text for w in ["agent", "ai", "llm", "claude", "openai"]
+            ),
+            "cli_tool": any(
+                w in combined_text for w in ["cli", "command", "terminal", "shell"]
+            ),
+            "collaboration": any(
+                w in combined_text for w in ["collab", "team", "workspace", "session"]
+            ),
+            "typescript": any(
+                w in combined_text
+                for w in ["typescript", "javascript", "tsx", "interface"]
+            ),
         }
 
         total_results = q1_results + q2_results + q3_results
         purpose_ok = total_results >= 3
 
-        check(results, issues, "T1_1_purpose_discovery", purpose_ok, {
-            "q1_query": "project overview purpose",
-            "q1_results": q1_results,
-            "q2_query": "main application features",
-            "q2_results": q2_results,
-            "q3_query": "agent commands CLI tools",
-            "q3_results": q3_results,
-            "total_results": total_results,
-            "domain_indicators": domain_indicators,
-            "context_built": "error" not in r_ctx,
-            "queries_used": query_count,
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Insufficient search results for purpose discovery: {total_results}")
+        check(
+            results,
+            issues,
+            "T1_1_purpose_discovery",
+            purpose_ok,
+            {
+                "q1_query": "project overview purpose",
+                "q1_results": q1_results,
+                "q2_query": "main application features",
+                "q2_results": q2_results,
+                "q3_query": "agent commands CLI tools",
+                "q3_results": q3_results,
+                "total_results": total_results,
+                "domain_indicators": domain_indicators,
+                "context_built": "error" not in r_ctx,
+                "queries_used": query_count,
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Insufficient search results for purpose discovery: {total_results}",
+        )
 
         domains_detected = sum(1 for v in domain_indicators.values() if v)
         if purpose_ok and domains_detected >= 2:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"discovered project purpose and {domains_detected} domain signals from code semantics "
                 f"— grep can't infer 'what does this project do' from scattered source files",
-                "positive")
+                "positive",
+            )
         elif not purpose_ok:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"purpose discovery returned only {total_results} results — agent would need to read READMEs manually",
-                "negative")
+                "negative",
+            )
 
     except Exception as e:
         check(results, issues, "T1_1_purpose_discovery", False, fail_msg=str(e))
@@ -286,19 +376,28 @@ async def run(
         }
         tech_found = sum(1 for v in tech_indicators.values() if v)
 
-        check(results, issues, "T1_2_tech_stack", tech_found >= 2, {
-            "tech_results": len(tech_results),
-            "build_results": len(build_results),
-            "indicators": tech_indicators,
-            "tech_found_count": tech_found,
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Only {tech_found}/4 tech indicators found")
+        check(
+            results,
+            issues,
+            "T1_2_tech_stack",
+            tech_found >= 2,
+            {
+                "tech_results": len(tech_results),
+                "build_results": len(build_results),
+                "indicators": tech_indicators,
+                "tech_found_count": tech_found,
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Only {tech_found}/4 tech indicators found",
+        )
 
         if tech_found >= 3:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"identified {tech_found}/4 tech stack indicators via semantic search "
                 f"— consolidates what would require grepping package.json, tsconfig, and build files separately",
-                "positive")
+                "positive",
+            )
 
     except Exception as e:
         check(results, issues, "T1_2_tech_stack", False, fail_msg=str(e))
@@ -326,22 +425,41 @@ async def run(
         test_results_list = r_tests.get("results", [])
 
         # Extract file paths to map structure
-        file_paths = [r.get("file_path", "") for r in struct_results + test_results_list if r.get("file_path")]
+        file_paths = [
+            r.get("file_path", "")
+            for r in struct_results + test_results_list
+            if r.get("file_path")
+        ]
         dirs_found = set()
         for fp in file_paths:
             parts = Path(fp).parts
             for part in parts:
-                if part in ["packages", "scripts", "docs", "tests", "src", "extensions", "requirements"]:
+                if part in [
+                    "packages",
+                    "scripts",
+                    "docs",
+                    "tests",
+                    "src",
+                    "extensions",
+                    "requirements",
+                ]:
                     dirs_found.add(part)
                     break
 
-        check(results, issues, "T2_1_directory_mapping", len(struct_results) >= 3, {
-            "struct_results": len(struct_results),
-            "test_results": len(test_results_list),
-            "dirs_found": list(dirs_found),
-            "file_paths_found": len(file_paths),
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Insufficient structure info: {len(struct_results)} results")
+        check(
+            results,
+            issues,
+            "T2_1_directory_mapping",
+            len(struct_results) >= 3,
+            {
+                "struct_results": len(struct_results),
+                "test_results": len(test_results_list),
+                "dirs_found": list(dirs_found),
+                "file_paths_found": len(file_paths),
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Insufficient structure info: {len(struct_results)} results",
+        )
 
     except Exception as e:
         check(results, issues, "T2_1_directory_mapping", False, fail_msg=str(e))
@@ -366,25 +484,38 @@ async def run(
         )
 
         comp_results = r_comp1.get("results", []) + r_comp2.get("results", [])
-        unique_files = list(set(r.get("file_path", "") for r in comp_results if r.get("file_path")))
+        unique_files = list(
+            set(r.get("file_path", "") for r in comp_results if r.get("file_path"))
+        )
 
-        check(results, issues, "T2_2_component_identification", len(unique_files) >= 5, {
-            "comp_results": len(comp_results),
-            "unique_files": len(unique_files),
-            "sample_files": unique_files[:5],
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Only {len(unique_files)} unique component files found")
+        check(
+            results,
+            issues,
+            "T2_2_component_identification",
+            len(unique_files) >= 5,
+            {
+                "comp_results": len(comp_results),
+                "unique_files": len(unique_files),
+                "sample_files": unique_files[:5],
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Only {len(unique_files)} unique component files found",
+        )
 
         if len(unique_files) >= 5:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"identified {len(unique_files)} distinct component files across the codebase "
                 f"— semantic search surfaces related components that aren't co-located in the file tree",
-                "positive")
+                "positive",
+            )
         elif len(unique_files) < 3:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"only found {len(unique_files)} component files — too few to map the codebase, "
                 f"agent would still need to manually browse directories",
-                "negative")
+                "negative",
+            )
 
     except Exception as e:
         check(results, issues, "T2_2_component_identification", False, fail_msg=str(e))
@@ -413,20 +544,33 @@ async def run(
         arch_text = " ".join([r.get("content", "") for r in arch_results]).lower()
 
         pattern_indicators = {
-            "layered": any(w in arch_text for w in ["layer", "service", "repository", "controller"]),
-            "event_driven": any(w in arch_text for w in ["event", "emit", "on(", "handler", "listener"]),
-            "modular": any(w in arch_text for w in ["module", "package", "export", "import"]),
+            "layered": any(
+                w in arch_text for w in ["layer", "service", "repository", "controller"]
+            ),
+            "event_driven": any(
+                w in arch_text for w in ["event", "emit", "on(", "handler", "listener"]
+            ),
+            "modular": any(
+                w in arch_text for w in ["module", "package", "export", "import"]
+            ),
             "config_driven": len(config_results) > 0,
         }
         patterns_found = sum(1 for v in pattern_indicators.values() if v)
 
-        check(results, issues, "T2_3_architectural_patterns", patterns_found >= 2, {
-            "arch_results": len(arch_results),
-            "config_results": len(config_results),
-            "patterns": pattern_indicators,
-            "patterns_found": patterns_found,
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Only {patterns_found}/4 architectural patterns identified")
+        check(
+            results,
+            issues,
+            "T2_3_architectural_patterns",
+            patterns_found >= 2,
+            {
+                "arch_results": len(arch_results),
+                "config_results": len(config_results),
+                "patterns": pattern_indicators,
+                "patterns_found": patterns_found,
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Only {patterns_found}/4 architectural patterns identified",
+        )
 
     except Exception as e:
         check(results, issues, "T2_3_architectural_patterns", False, fail_msg=str(e))
@@ -452,19 +596,35 @@ async def run(
 
         entry_results = r_entry.get("results", [])
         init_results = r_init.get("results", [])
-        all_paths = [r.get("file_path", "") for r in entry_results + init_results if r.get("file_path")]
+        all_paths = [
+            r.get("file_path", "")
+            for r in entry_results + init_results
+            if r.get("file_path")
+        ]
 
         # Check for typical entry point file names
-        entry_indicators = [p for p in all_paths if any(
-            name in Path(p).name.lower() for name in ["index", "main", "server", "app", "cli", "entry"]
-        )]
+        entry_indicators = [
+            p
+            for p in all_paths
+            if any(
+                name in Path(p).name.lower()
+                for name in ["index", "main", "server", "app", "cli", "entry"]
+            )
+        ]
 
-        check(results, issues, "T3_1_entry_points", len(entry_results) >= 2, {
-            "entry_results": len(entry_results),
-            "init_results": len(init_results),
-            "entry_files": entry_indicators[:5],
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Entry points unclear: only {len(entry_results)} results")
+        check(
+            results,
+            issues,
+            "T3_1_entry_points",
+            len(entry_results) >= 2,
+            {
+                "entry_results": len(entry_results),
+                "init_results": len(init_results),
+                "entry_files": entry_indicators[:5],
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Entry points unclear: only {len(entry_results)} results",
+        )
 
     except Exception as e:
         check(results, issues, "T3_1_entry_points", False, fail_msg=str(e))
@@ -491,11 +651,18 @@ async def run(
         flow_results = r_flow.get("results", [])
         cmd_results = r_cmd.get("results", [])
 
-        check(results, issues, "T3_2_request_flow", len(flow_results) >= 2, {
-            "flow_results": len(flow_results),
-            "cmd_results": len(cmd_results),
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Flow unclear: {len(flow_results)} results")
+        check(
+            results,
+            issues,
+            "T3_2_request_flow",
+            len(flow_results) >= 2,
+            {
+                "flow_results": len(flow_results),
+                "cmd_results": len(cmd_results),
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Flow unclear: {len(flow_results)} results",
+        )
 
     except Exception as e:
         check(results, issues, "T3_2_request_flow", False, fail_msg=str(e))
@@ -516,12 +683,14 @@ async def run(
             limit=5,
         )
         auth_found = len(r_auth.get("results", [])) > 0
-        feature_tests.append({
-            "feature": "Authentication/Session",
-            "results": len(r_auth.get("results", [])),
-            "found": auth_found,
-            "elapsed_ms": round((time.time() - t_f1) * 1000),
-        })
+        feature_tests.append(
+            {
+                "feature": "Authentication/Session",
+                "results": len(r_auth.get("results", [])),
+                "found": auth_found,
+                "elapsed_ms": round((time.time() - t_f1) * 1000),
+            }
+        )
 
         # Feature 2: Data storage
         t_f2 = time.time()
@@ -533,12 +702,14 @@ async def run(
             limit=5,
         )
         data_found = len(r_data.get("results", [])) > 0
-        feature_tests.append({
-            "feature": "Data Storage",
-            "results": len(r_data.get("results", [])),
-            "found": data_found,
-            "elapsed_ms": round((time.time() - t_f2) * 1000),
-        })
+        feature_tests.append(
+            {
+                "feature": "Data Storage",
+                "results": len(r_data.get("results", [])),
+                "found": data_found,
+                "elapsed_ms": round((time.time() - t_f2) * 1000),
+            }
+        )
 
         # Feature 3: Error handling
         t_f3 = time.time()
@@ -550,31 +721,46 @@ async def run(
             limit=5,
         )
         err_found = len(r_err.get("results", [])) > 0
-        feature_tests.append({
-            "feature": "Error Handling",
-            "results": len(r_err.get("results", [])),
-            "found": err_found,
-            "elapsed_ms": round((time.time() - t_f3) * 1000),
-        })
+        feature_tests.append(
+            {
+                "feature": "Error Handling",
+                "results": len(r_err.get("results", [])),
+                "found": err_found,
+                "elapsed_ms": round((time.time() - t_f3) * 1000),
+            }
+        )
 
         found_count = sum(1 for f in feature_tests if f["found"])
-        avg_ms = sum(f["elapsed_ms"] for f in feature_tests) / max(len(feature_tests), 1)
-        check(results, issues, "T4_1_feature_location", found_count >= 2, {
-            "features_tested": len(feature_tests),
-            "features_found": found_count,
-            "feature_details": feature_tests,
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Only {found_count}/3 features located")
+        avg_ms = sum(f["elapsed_ms"] for f in feature_tests) / max(
+            len(feature_tests), 1
+        )
+        check(
+            results,
+            issues,
+            "T4_1_feature_location",
+            found_count >= 2,
+            {
+                "features_tested": len(feature_tests),
+                "features_found": found_count,
+                "feature_details": feature_tests,
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Only {found_count}/3 features located",
+        )
 
         if found_count >= 2:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"located {found_count}/3 features at ~{avg_ms:.0f}ms avg — semantic feature location "
                 f"finds auth/storage/error-handling code without knowing file names or patterns",
-                "positive")
+                "positive",
+            )
         else:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"feature location found only {found_count}/3 features — agent would have to grep manually",
-                "negative")
+                "negative",
+            )
 
     except Exception as e:
         check(results, issues, "T4_1_feature_location", False, fail_msg=str(e))
@@ -600,17 +786,30 @@ async def run(
 
         util_results = r_util.get("results", [])
         type_results = r_types.get("results", [])
-        util_files = list(set(
-            r.get("file_path", "") for r in util_results + type_results
-            if any(w in r.get("file_path", "").lower() for w in ["util", "helper", "type", "constant", "logger"])
-        ))
+        util_files = list(
+            set(
+                r.get("file_path", "")
+                for r in util_results + type_results
+                if any(
+                    w in r.get("file_path", "").lower()
+                    for w in ["util", "helper", "type", "constant", "logger"]
+                )
+            )
+        )
 
-        check(results, issues, "T4_2_utilities", len(util_results) >= 2, {
-            "util_results": len(util_results),
-            "type_results": len(type_results),
-            "utility_files": util_files[:5],
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Utilities unclear: {len(util_results)} results")
+        check(
+            results,
+            issues,
+            "T4_2_utilities",
+            len(util_results) >= 2,
+            {
+                "util_results": len(util_results),
+                "type_results": len(type_results),
+                "utility_files": util_files[:5],
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Utilities unclear: {len(util_results)} results",
+        )
 
     except Exception as e:
         check(results, issues, "T4_2_utilities", False, fail_msg=str(e))
@@ -625,36 +824,36 @@ async def run(
         {
             "summary": "command_iq project overview",
             "content": "command_iq is a TypeScript monorepo providing AI agent CLI tooling. "
-                       "Uses pnpm workspaces with packages/ directory containing multiple modules. "
-                       "Multiple CLI entry points: agent-cli.sh, collab-cli.sh, jam-cli.sh.",
+            "Uses pnpm workspaces with packages/ directory containing multiple modules. "
+            "Multiple CLI entry points: agent-cli.sh, collab-cli.sh, jam-cli.sh.",
             "importance": 0.9,
             "tags": ["onboarding", "project-overview", "architecture"],
         },
         {
             "summary": "command_iq entry points and CLI structure",
             "content": "Entry points are CLI shell scripts: agent-cli.sh, collab-cli.sh, jam-cli.sh. "
-                       "Suggests multiple distinct agent modes. Frontend and backend logs exist separately.",
+            "Suggests multiple distinct agent modes. Frontend and backend logs exist separately.",
             "importance": 0.8,
             "tags": ["onboarding", "entry-points", "cli"],
         },
         {
             "summary": "command_iq technology stack",
             "content": "Codebase uses TypeScript with vitest for testing. Build system uses pnpm workspaces. "
-                       "packages/ directory contains modular components. Node.js runtime.",
+            "packages/ directory contains modular components. Node.js runtime.",
             "importance": 0.8,
             "tags": ["onboarding", "technology-stack", "testing"],
         },
         {
             "summary": "command_iq data storage pattern",
             "content": "Data directory contains checkpoints/ suggesting state persistence for agent sessions. "
-                       "Storage pattern appears file-based for agent state.",
+            "Storage pattern appears file-based for agent state.",
             "importance": 0.7,
             "tags": ["onboarding", "data-storage", "architecture"],
         },
         {
             "summary": "command_iq architecture - extensions and docs",
             "content": "docs/ directory for documentation. extensions/ directory suggests plugin/extension "
-                       "architecture similar to VS Code extensions. Full-stack application.",
+            "architecture similar to VS Code extensions. Full-stack application.",
             "importance": 0.7,
             "tags": ["onboarding", "docs", "architecture", "extensions"],
         },
@@ -677,23 +876,34 @@ async def run(
         except Exception:
             pass
 
-    check(results, issues, "T5_1_memory_storage", memories_stored >= 3, {
-        "memories_attempted": memories_attempted,
-        "memories_stored": memories_stored,
-        "success_rate": f"{memories_stored}/{memories_attempted}",
-        "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-    }, fail_msg=f"Only {memories_stored}/{memories_attempted} memories stored")
+    check(
+        results,
+        issues,
+        "T5_1_memory_storage",
+        memories_stored >= 3,
+        {
+            "memories_attempted": memories_attempted,
+            "memories_stored": memories_stored,
+            "success_rate": f"{memories_stored}/{memories_attempted}",
+            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+        },
+        fail_msg=f"Only {memories_stored}/{memories_attempted} memories stored",
+    )
 
     if memories_stored >= 3:
-        note_adoption(journal,
+        note_adoption(
+            journal,
             f"stored {memories_stored} onboarding insights as persistent memory "
             f"— grep has no memory; next session starts from zero without this",
-            "positive")
+            "positive",
+        )
     elif memories_stored == 0:
-        note_adoption(journal,
+        note_adoption(
+            journal,
             "memory storage completely failed — no persistent onboarding knowledge, "
             "negating the key advantage over stateless grep",
-            "blocker")
+            "blocker",
+        )
 
     # ── TEST 5.2: Knowledge Retrieval ──────────────────────────────────────
     log(test_id, "T5.2: Knowledge Retrieval")
@@ -718,20 +928,29 @@ async def run(
         recall2_count = len(r_recall2.get("memories", []))
         total_recalled = recall1_count + recall2_count
 
-        check(results, issues, "T5_2_memory_retrieval", total_recalled >= 2, {
-            "recall1_query": "onboarding project overview",
-            "recall1_results": recall1_count,
-            "recall2_query": "architecture entry points",
-            "recall2_results": recall2_count,
-            "total_recalled": total_recalled,
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Memory recall insufficient: {total_recalled} total memories recalled")
+        check(
+            results,
+            issues,
+            "T5_2_memory_retrieval",
+            total_recalled >= 2,
+            {
+                "recall1_query": "onboarding project overview",
+                "recall1_results": recall1_count,
+                "recall2_query": "architecture entry points",
+                "recall2_results": recall2_count,
+                "total_recalled": total_recalled,
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Memory recall insufficient: {total_recalled} total memories recalled",
+        )
 
         if total_recalled >= 2:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"recalled {total_recalled} stored insights by semantic query "
                 f"— agent can resume onboarding across sessions without re-reading the codebase",
-                "positive")
+                "positive",
+            )
 
     except Exception as e:
         check(results, issues, "T5_2_memory_retrieval", False, fail_msg=str(e))
@@ -754,18 +973,29 @@ async def run(
         ctx_tokens = token_usage.get("used", r_comp_ctx.get("token_count", 0))
         context_dict = r_comp_ctx.get("context", {})
         ctx_chunks = (
-            len(context_dict.get("code", []))
-            + len(context_dict.get("documentation", []))
-            + len(context_dict.get("memories", []))
-        ) if isinstance(context_dict, dict) else len(r_comp_ctx.get("chunks", []))
+            (
+                len(context_dict.get("code", []))
+                + len(context_dict.get("documentation", []))
+                + len(context_dict.get("memories", []))
+            )
+            if isinstance(context_dict, dict)
+            else len(r_comp_ctx.get("chunks", []))
+        )
 
-        check(results, issues, "T6_1_comprehension_context", ctx_ok and (ctx_tokens > 100 or ctx_chunks > 0), {
-            "context_built": ctx_ok,
-            "token_count": ctx_tokens,
-            "chunks_in_context": ctx_chunks,
-            "elapsed_s": round(t_comp_ctx, 2),
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Context building failed or too sparse: {ctx_tokens} tokens")
+        check(
+            results,
+            issues,
+            "T6_1_comprehension_context",
+            ctx_ok and (ctx_tokens > 100 or ctx_chunks > 0),
+            {
+                "context_built": ctx_ok,
+                "token_count": ctx_tokens,
+                "chunks_in_context": ctx_chunks,
+                "elapsed_s": round(t_comp_ctx, 2),
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Context building failed or too sparse: {ctx_tokens} tokens",
+        )
 
     except Exception as e:
         check(results, issues, "T6_1_comprehension_context", False, fail_msg=str(e))
@@ -792,46 +1022,73 @@ async def run(
         )
 
         task_results = r_task1.get("results", []) + r_task2.get("results", [])
-        task_files = [r.get("file_path", "") for r in task_results if r.get("file_path")]
-        cmd_files = [f for f in task_files if any(
-            w in f.lower() for w in ["command", "cmd", "cli", "handler", "router"]
-        )]
+        task_files = [
+            r.get("file_path", "") for r in task_results if r.get("file_path")
+        ]
+        cmd_files = [
+            f
+            for f in task_files
+            if any(
+                w in f.lower() for w in ["command", "cmd", "cli", "handler", "router"]
+            )
+        ]
 
         task_elapsed = time.time() - t_task_start
         task_success = len(task_results) >= 2
 
-        check(results, issues, "T6_2_simulated_task", task_success, {
-            "task": "Where to add a new CLI command",
-            "task_results": len(task_results),
-            "command_files_found": cmd_files[:5],
-            "task_elapsed_s": round(task_elapsed, 1),
-            "phase_elapsed_s": round(time.time() - t_phase_start, 1),
-        }, fail_msg=f"Could not locate where to add new command: {len(task_results)} results")
+        check(
+            results,
+            issues,
+            "T6_2_simulated_task",
+            task_success,
+            {
+                "task": "Where to add a new CLI command",
+                "task_results": len(task_results),
+                "command_files_found": cmd_files[:5],
+                "task_elapsed_s": round(task_elapsed, 1),
+                "phase_elapsed_s": round(time.time() - t_phase_start, 1),
+            },
+            fail_msg=f"Could not locate where to add new command: {len(task_results)} results",
+        )
 
         if task_success and cmd_files:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 f"located {len(cmd_files)} command-related files in {task_elapsed:.1f}s for 'add new CLI command' task "
                 f"— agent gets actionable file list vs grepping for 'command' across thousands of files",
-                "positive")
+                "positive",
+            )
         elif not task_success:
-            note_adoption(journal,
+            note_adoption(
+                journal,
                 "could not locate where to add a new CLI command — the core onboarding deliverable failed",
-                "negative")
+                "negative",
+            )
 
     except Exception as e:
         check(results, issues, "T6_2_simulated_task", False, fail_msg=str(e))
 
     # ── Honest assessment: onboarding cost vs benefit ──────────────────
     total_elapsed = time.time() - t_start
-    note_adoption(journal,
+    note_adoption(
+        journal,
         f"total onboarding protocol took {total_elapsed:.0f}s — for a one-time codebase review, "
         f"reading README + directory listing is faster; ai value comes from repeated queries across sessions",
-        "neutral")
+        "neutral",
+    )
 
     # ── Finalize ────────────────────────────────────────────────────
     log(test_id, f"Tests complete in {total_elapsed:.1f}s")
 
-    summary = summarize(test_id, slug, results, issues, total_elapsed, project_id=project_id, adoption_journal=journal)
+    summary = summarize(
+        test_id,
+        slug,
+        results,
+        issues,
+        total_elapsed,
+        project_id=project_id,
+        adoption_journal=journal,
+    )
     summary["target_codebase"] = target_codebase
     summary["indexing_stats"] = {
         "files": files_processed,

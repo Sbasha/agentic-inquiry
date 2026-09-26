@@ -120,7 +120,9 @@ class TestInMemorySessionStorage:
         assert loaded.description == sample_session.description
 
     @pytest.mark.asyncio
-    async def test_load_nonexistent_session(self, memory_storage: InMemorySessionStorage):
+    async def test_load_nonexistent_session(
+        self, memory_storage: InMemorySessionStorage
+    ):
         """Loading nonexistent session returns None."""
         loaded = await memory_storage.load_session("nonexistent-id")
         assert loaded is None
@@ -139,7 +141,9 @@ class TestInMemorySessionStorage:
         assert loaded is None
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_session(self, memory_storage: InMemorySessionStorage):
+    async def test_delete_nonexistent_session(
+        self, memory_storage: InMemorySessionStorage
+    ):
         """Deleting nonexistent session returns False."""
         deleted = await memory_storage.delete_session("nonexistent-id")
         assert deleted is False
@@ -148,8 +152,7 @@ class TestInMemorySessionStorage:
     async def test_list_sessions(self, memory_storage: InMemorySessionStorage):
         """List all sessions."""
         sessions = [
-            Session(session_id=f"session-{i}", project_id="project-a")
-            for i in range(3)
+            Session(session_id=f"session-{i}", project_id="project-a") for i in range(3)
         ]
         for session in sessions:
             await memory_storage.persist_session(session)
@@ -161,7 +164,9 @@ class TestInMemorySessionStorage:
         assert session_ids == {"session-0", "session-1", "session-2"}
 
     @pytest.mark.asyncio
-    async def test_list_sessions_by_project(self, memory_storage: InMemorySessionStorage):
+    async def test_list_sessions_by_project(
+        self, memory_storage: InMemorySessionStorage
+    ):
         """List sessions filtered by project_id."""
         await memory_storage.persist_session(
             Session(session_id="s1", project_id="project-a")
@@ -211,7 +216,9 @@ class TestInMemorySessionStorage:
         assert len(listed) == 2
 
     @pytest.mark.asyncio
-    async def test_list_sessions_with_limit(self, memory_storage: InMemorySessionStorage):
+    async def test_list_sessions_with_limit(
+        self, memory_storage: InMemorySessionStorage
+    ):
         """List sessions respects limit."""
         for i in range(10):
             await memory_storage.persist_session(
@@ -550,10 +557,7 @@ class TestSessionManagerIntegration:
         from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
         config = Config()
-        config.storage = StorageConfig(
-            root=str(tmp_path),
-            default_project_id="test"
-        )
+        config.storage = StorageConfig(root=str(tmp_path), default_project_id="test")
 
         # Create InMemoryLanceDBManager and wrap in mock StorageFacade
         db_manager = InMemoryLanceDBManager(uri="memory://test")
@@ -564,9 +568,7 @@ class TestSessionManagerIntegration:
         memory_storage = InMemorySessionStorage()
 
         session_manager = SessionManager(
-            db_manager=mock_facade,
-            config=config,
-            storage=memory_storage
+            db_manager=mock_facade, config=config, storage=memory_storage
         )
 
         # Create session - returns dict with session info
@@ -590,10 +592,7 @@ class TestSessionManagerIntegration:
         from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
         config = Config()
-        config.storage = StorageConfig(
-            root=str(tmp_path),
-            default_project_id="test"
-        )
+        config.storage = StorageConfig(root=str(tmp_path), default_project_id="test")
 
         # Create InMemoryLanceDBManager and wrap in mock StorageFacade
         db_manager = InMemoryLanceDBManager(uri="memory://test")
@@ -602,9 +601,6 @@ class TestSessionManagerIntegration:
         mock_facade.get_db_manager = MagicMock(return_value=db_manager)
 
         # Don't pass storage - should create LanceDBSessionStorage
-        session_manager = SessionManager(
-            db_manager=mock_facade,
-            config=config
-        )
+        session_manager = SessionManager(db_manager=mock_facade, config=config)
 
         assert isinstance(session_manager.storage, LanceDBSessionStorage)

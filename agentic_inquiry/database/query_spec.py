@@ -5,6 +5,7 @@ QuerySpec captures the application's intent without backend-specific details.
 
 See: docs/design/query-semantics.md
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -135,7 +136,7 @@ class QuerySpec:
                 validate_column_names(
                     self.fts_columns,
                     field_name="fts_columns",
-                    allow_nested=False  # FTS columns are simple column names
+                    allow_nested=False,  # FTS columns are simple column names
                 )
             except ColumnNameValidationError as e:
                 raise ValueError(f"QuerySpec 'fts_columns': {e}")
@@ -146,7 +147,7 @@ class QuerySpec:
                 validate_column_names(
                     self.select_columns,
                     field_name="select_columns",
-                    allow_nested=True  # Allow nested access like metadata.type
+                    allow_nested=True,  # Allow nested access like metadata.type
                 )
             except ColumnNameValidationError as e:
                 raise ValueError(f"QuerySpec 'select_columns': {e}")

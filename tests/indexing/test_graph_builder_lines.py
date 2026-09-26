@@ -60,7 +60,9 @@ async def graph_builder_setup():
         db_manager=mock_db_manager,
     )
     embedding_service = EmbeddingService(registry=registry)
-    document_processor = DocumentProcessor(project_hash=project_hash, project_id=project_id)
+    document_processor = DocumentProcessor(
+        project_hash=project_hash, project_id=project_id
+    )
 
     graph_builder = GraphBuilder(
         db_manager=mock_db_manager,

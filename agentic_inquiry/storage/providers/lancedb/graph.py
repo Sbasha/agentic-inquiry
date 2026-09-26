@@ -697,7 +697,9 @@ class LanceDBGraphProvider:
 
         # Fetch all neighbor entities
         for neighbor_id in current_level:
-            if neighbor_id != entity_id and neighbor_id not in {e.id for e in neighbors}:
+            if neighbor_id != entity_id and neighbor_id not in {
+                e.id for e in neighbors
+            }:
                 entity = await self.get_entity(neighbor_id, effective_project_id)
                 if entity:
                     neighbors.append(entity)

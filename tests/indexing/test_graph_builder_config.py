@@ -25,6 +25,7 @@ from agentic_inquiry.indexing.graph_builder import GraphBuilderConfig
 # Validates: Requirements 8.1, 8.2, 8.3
 # =============================================================================
 
+
 class TestConfigurationLoading:
     """Tests for configuration loading from indexing.relationship_flush section."""
 
@@ -32,10 +33,10 @@ class TestConfigurationLoading:
         """Configuration SHALL be read from indexing.relationship_flush section."""
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'batch_size': 200,
-                'flush_timeout_seconds': 7200,
-                'batch_commit_interval': 50,
+            "relationship_flush": {
+                "batch_size": 200,
+                "flush_timeout_seconds": 7200,
+                "batch_commit_interval": 50,
             }
         }
 
@@ -59,10 +60,10 @@ class TestConfigurationLoading:
         """
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'batch_size': batch_size,
-                'flush_timeout_seconds': flush_timeout_seconds,
-                'batch_commit_interval': batch_commit_interval,
+            "relationship_flush": {
+                "batch_size": batch_size,
+                "flush_timeout_seconds": flush_timeout_seconds,
+                "batch_commit_interval": batch_commit_interval,
             }
         }
 
@@ -77,17 +78,17 @@ class TestConfigurationLoading:
         """All configuration parameters should be loaded when specified."""
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'batch_size': 150,
-                'max_concurrent_batches': 15,
-                'progress_log_interval': 500,
-                'batch_commit_interval': 75,
-                'auto_flush_threshold': 25000,
-                'flush_timeout_seconds': 1800,
-                'external_entity_flush_threshold': 5000,
-                'enable_cache_prewarming': False,
-                'enable_performance_monitoring': False,
-                'slow_operation_threshold_ms': 250.0,
+            "relationship_flush": {
+                "batch_size": 150,
+                "max_concurrent_batches": 15,
+                "progress_log_interval": 500,
+                "batch_commit_interval": 75,
+                "auto_flush_threshold": 25000,
+                "flush_timeout_seconds": 1800,
+                "external_entity_flush_threshold": 5000,
+                "enable_cache_prewarming": False,
+                "enable_performance_monitoring": False,
+                "slow_operation_threshold_ms": 250.0,
             }
         }
 
@@ -110,6 +111,7 @@ class TestConfigurationLoading:
 # Validates: Requirements 8.4
 # =============================================================================
 
+
 class TestDefaultConfigurationValues:
     """Tests for default configuration values when not specified."""
 
@@ -127,15 +129,23 @@ class TestDefaultConfigurationValues:
         assert result.batch_commit_interval == defaults.batch_commit_interval
         assert result.auto_flush_threshold == defaults.auto_flush_threshold
         assert result.flush_timeout_seconds == defaults.flush_timeout_seconds
-        assert result.external_entity_flush_threshold == defaults.external_entity_flush_threshold
+        assert (
+            result.external_entity_flush_threshold
+            == defaults.external_entity_flush_threshold
+        )
         assert result.enable_cache_prewarming == defaults.enable_cache_prewarming
-        assert result.enable_performance_monitoring == defaults.enable_performance_monitoring
-        assert result.slow_operation_threshold_ms == defaults.slow_operation_threshold_ms
+        assert (
+            result.enable_performance_monitoring
+            == defaults.enable_performance_monitoring
+        )
+        assert (
+            result.slow_operation_threshold_ms == defaults.slow_operation_threshold_ms
+        )
 
     def test_uses_defaults_when_relationship_flush_section_missing(self):
         """Default values SHALL be used when relationship_flush section is missing."""
         config = MagicMock()
-        config.indexing = {'other_setting': 'value'}
+        config.indexing = {"other_setting": "value"}
 
         result = GraphBuilderConfig.from_config(config)
 
@@ -154,11 +164,17 @@ class TestDefaultConfigurationValues:
 
     @given(
         # Generate partial configurations with some values missing
-        provided_batch_size=st.one_of(st.none(), st.integers(min_value=1, max_value=1000)),
-        provided_timeout=st.one_of(st.none(), st.integers(min_value=1, max_value=86400)),
+        provided_batch_size=st.one_of(
+            st.none(), st.integers(min_value=1, max_value=1000)
+        ),
+        provided_timeout=st.one_of(
+            st.none(), st.integers(min_value=1, max_value=86400)
+        ),
     )
     @settings(max_examples=100)
-    def test_property_26_default_configuration_values(self, provided_batch_size, provided_timeout):
+    def test_property_26_default_configuration_values(
+        self, provided_batch_size, provided_timeout
+    ):
         """Property 26: For any configuration parameter that is not specified,
         the system SHALL use the documented default value.
         """
@@ -166,12 +182,12 @@ class TestDefaultConfigurationValues:
 
         flush_config = {}
         if provided_batch_size is not None:
-            flush_config['batch_size'] = provided_batch_size
+            flush_config["batch_size"] = provided_batch_size
         if provided_timeout is not None:
-            flush_config['flush_timeout_seconds'] = provided_timeout
+            flush_config["flush_timeout_seconds"] = provided_timeout
 
         config = MagicMock()
-        config.indexing = {'relationship_flush': flush_config}
+        config.indexing = {"relationship_flush": flush_config}
 
         result = GraphBuilderConfig.from_config(config)
 
@@ -212,6 +228,7 @@ class TestDefaultConfigurationValues:
 # Validates: Requirements 8.5
 # =============================================================================
 
+
 class TestInvalidConfigurationHandling:
     """Tests for invalid configuration value handling."""
 
@@ -219,8 +236,8 @@ class TestInvalidConfigurationHandling:
         """Invalid configuration values SHALL log a warning and use defaults."""
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'batch_size': 'not_a_number',
+            "relationship_flush": {
+                "batch_size": "not_a_number",
             }
         }
 
@@ -229,14 +246,14 @@ class TestInvalidConfigurationHandling:
 
         defaults = GraphBuilderConfig()
         assert result.batch_size == defaults.batch_size
-        assert any('batch_size' in record.message.lower() for record in caplog.records)
+        assert any("batch_size" in record.message.lower() for record in caplog.records)
 
     def test_logs_warning_for_negative_value(self, caplog):
         """Negative values SHALL log a warning and use defaults."""
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'batch_size': -10,
+            "relationship_flush": {
+                "batch_size": -10,
             }
         }
 
@@ -245,14 +262,14 @@ class TestInvalidConfigurationHandling:
 
         defaults = GraphBuilderConfig()
         assert result.batch_size == defaults.batch_size
-        assert any('batch_size' in record.message.lower() for record in caplog.records)
+        assert any("batch_size" in record.message.lower() for record in caplog.records)
 
     def test_logs_warning_for_zero_value(self, caplog):
         """Zero values SHALL log a warning and use defaults where minimum is 1."""
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'batch_size': 0,
+            "relationship_flush": {
+                "batch_size": 0,
             }
         }
 
@@ -265,12 +282,16 @@ class TestInvalidConfigurationHandling:
     @given(
         invalid_value=st.one_of(
             # Filter out numeric strings that can be parsed as valid integers
-            st.text().filter(lambda x: not x.strip().lstrip('-+').isdigit() or not x.strip()),
+            st.text().filter(
+                lambda x: not x.strip().lstrip("-+").isdigit() or not x.strip()
+            ),
             st.lists(st.integers()),
             st.dictionaries(st.text(), st.integers()),
         )
     )
-    @settings(max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture])
+    @settings(
+        max_examples=100, suppress_health_check=[HealthCheck.function_scoped_fixture]
+    )
     def test_property_27_invalid_configuration_handling(self, invalid_value):
         """Property 27: For any invalid configuration value, the system SHALL
         log a warning and use the default value.
@@ -280,8 +301,8 @@ class TestInvalidConfigurationHandling:
 
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'batch_size': invalid_value,
+            "relationship_flush": {
+                "batch_size": invalid_value,
             }
         }
 
@@ -296,8 +317,8 @@ class TestInvalidConfigurationHandling:
         """Invalid float values SHALL log a warning and use defaults."""
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'slow_operation_threshold_ms': 'invalid',
+            "relationship_flush": {
+                "slow_operation_threshold_ms": "invalid",
             }
         }
 
@@ -305,14 +326,16 @@ class TestInvalidConfigurationHandling:
             result = GraphBuilderConfig.from_config(config)
 
         defaults = GraphBuilderConfig()
-        assert result.slow_operation_threshold_ms == defaults.slow_operation_threshold_ms
+        assert (
+            result.slow_operation_threshold_ms == defaults.slow_operation_threshold_ms
+        )
 
     def test_handles_invalid_boolean_value(self):
         """Invalid boolean values SHALL be converted or use defaults."""
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'enable_cache_prewarming': 'false',  # String should convert
+            "relationship_flush": {
+                "enable_cache_prewarming": "false",  # String should convert
             }
         }
 
@@ -334,7 +357,9 @@ class TestInvalidConfigurationHandling:
         """Exceptions during config access SHALL result in defaults."""
         config = MagicMock()
         # Make indexing raise an exception when accessed
-        type(config).indexing = property(lambda self: (_ for _ in ()).throw(TypeError("test")))
+        type(config).indexing = property(
+            lambda self: (_ for _ in ()).throw(TypeError("test"))
+        )
 
         result = GraphBuilderConfig.from_config(config)
 
@@ -346,6 +371,7 @@ class TestInvalidConfigurationHandling:
 # Additional Tests for Completeness
 # =============================================================================
 
+
 class TestConfigurationEdgeCases:
     """Additional edge case tests for configuration."""
 
@@ -353,8 +379,8 @@ class TestConfigurationEdgeCases:
         """Partial configuration should merge with defaults."""
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'batch_size': 250,
+            "relationship_flush": {
+                "batch_size": 250,
                 # Other values not specified
             }
         }
@@ -368,11 +394,13 @@ class TestConfigurationEdgeCases:
 
     def test_config_with_object_style_access(self):
         """Configuration accessed via object attributes should work."""
+
         class MockConfig:
             class IndexingConfig:
                 relationship_flush = {
-                    'batch_size': 300,
+                    "batch_size": 300,
                 }
+
             indexing = IndexingConfig()
 
         result = GraphBuilderConfig.from_config(MockConfig())
@@ -383,8 +411,8 @@ class TestConfigurationEdgeCases:
         """Empty string values should use defaults."""
         config = MagicMock()
         config.indexing = {
-            'relationship_flush': {
-                'batch_size': '',
+            "relationship_flush": {
+                "batch_size": "",
             }
         }
 

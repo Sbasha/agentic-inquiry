@@ -52,9 +52,13 @@ def test_config_proj2(tmp_path):
 async def db_manager_with_multi_project_data(test_config_proj1):
     """Create a database manager with data from multiple projects."""
     # test_config_proj1 is now a ProjectContext, extract the base Config
-    config = test_config_proj1.base if hasattr(test_config_proj1, 'base') else test_config_proj1
+    config = (
+        test_config_proj1.base
+        if hasattr(test_config_proj1, "base")
+        else test_config_proj1
+    )
     mock_db_manager = LanceDBManager(config=config)
-    
+
     # Add data for project 1
     chunks_proj1 = [
         DocumentChunk(
@@ -69,11 +73,9 @@ async def db_manager_with_multi_project_data(test_config_proj1):
             metadata={
                 "data": json.dumps({}),
                 "symbol_metadata": json.dumps({}),
-                "symbol_rankings": json.dumps({})
+                "symbol_rankings": json.dumps({}),
             },
-            ranking_signals={
-                "data": json.dumps({})
-            },
+            ranking_signals={"data": json.dumps({})},
         ),
         DocumentChunk(
             id="chunk2_proj1",
@@ -87,14 +89,12 @@ async def db_manager_with_multi_project_data(test_config_proj1):
             metadata={
                 "data": json.dumps({}),
                 "symbol_metadata": json.dumps({}),
-                "symbol_rankings": json.dumps({})
+                "symbol_rankings": json.dumps({}),
             },
-            ranking_signals={
-                "data": json.dumps({})
-            },
+            ranking_signals={"data": json.dumps({})},
         ),
     ]
-    
+
     # Add data for project 2
     chunks_proj2 = [
         DocumentChunk(
@@ -109,11 +109,9 @@ async def db_manager_with_multi_project_data(test_config_proj1):
             metadata={
                 "data": json.dumps({}),
                 "symbol_metadata": json.dumps({}),
-                "symbol_rankings": json.dumps({})
+                "symbol_rankings": json.dumps({}),
             },
-            ranking_signals={
-                "data": json.dumps({})
-            },
+            ranking_signals={"data": json.dumps({})},
         ),
         DocumentChunk(
             id="chunk2_proj2",
@@ -127,18 +125,16 @@ async def db_manager_with_multi_project_data(test_config_proj1):
             metadata={
                 "data": json.dumps({}),
                 "symbol_metadata": json.dumps({}),
-                "symbol_rankings": json.dumps({})
+                "symbol_rankings": json.dumps({}),
             },
-            ranking_signals={
-                "data": json.dumps({})
-            },
+            ranking_signals={"data": json.dumps({})},
         ),
     ]
-    
+
     # Insert all chunks
     all_chunks = chunks_proj1 + chunks_proj2
     await mock_db_manager.add_document_chunks([asdict(chunk) for chunk in all_chunks])
-    
+
     # Add graph entities for both projects
     entities_proj1 = [
         GraphEntity(
@@ -152,7 +148,7 @@ async def db_manager_with_multi_project_data(test_config_proj1):
             has_ranking_signals=False,
         ),
     ]
-    
+
     entities_proj2 = [
         GraphEntity(
             id="entity1_proj2",
@@ -165,10 +161,12 @@ async def db_manager_with_multi_project_data(test_config_proj1):
             has_ranking_signals=False,
         ),
     ]
-    
+
     all_entities = entities_proj1 + entities_proj2
-    await mock_db_manager.add_graph_entities([entity.to_dict() for entity in all_entities])
-    
+    await mock_db_manager.add_graph_entities(
+        [entity.to_dict() for entity in all_entities]
+    )
+
     # Add relationships
     relationships_proj1 = [
         GraphRelationship(
@@ -180,7 +178,7 @@ async def db_manager_with_multi_project_data(test_config_proj1):
             vector=[0.1] * 384,
         ),
     ]
-    
+
     relationships_proj2 = [
         GraphRelationship(
             id="rel1_proj2",
@@ -191,18 +189,27 @@ async def db_manager_with_multi_project_data(test_config_proj1):
             vector=[0.3] * 384,
         ),
     ]
-    
+
     all_relationships = relationships_proj1 + relationships_proj2
-    await mock_db_manager.add_graph_relationships([asdict(rel) for rel in all_relationships])
-    
+    await mock_db_manager.add_graph_relationships(
+        [asdict(rel) for rel in all_relationships]
+    )
+
     return mock_db_manager
 
 
 @pytest_asyncio.fixture
-async def search_service(db_manager_with_multi_project_data, test_config_proj1, mock_event_system):
+async def search_service(
+    db_manager_with_multi_project_data, test_config_proj1, mock_event_system
+):
     """Create a search service with multi-project data."""
-    from agentic_inquiry.storage.providers.lancedb import LanceDBVectorProvider, LanceDBGraphProvider
-    from agentic_inquiry.storage.providers.lancedb.connection import LanceDBConnectionManager
+    from agentic_inquiry.storage.providers.lancedb import (
+        LanceDBVectorProvider,
+        LanceDBGraphProvider,
+    )
+    from agentic_inquiry.storage.providers.lancedb.connection import (
+        LanceDBConnectionManager,
+    )
 
     # Create connection manager with the test db_manager
     connection_manager = LanceDBConnectionManager(
@@ -223,7 +230,9 @@ async def search_service(db_manager_with_multi_project_data, test_config_proj1, 
         vector_provider=vector_provider,
         graph_provider=graph_provider,
     )
-    return SearchService(storage=facade, config=test_config_proj1, event_system=mock_event_system)
+    return SearchService(
+        storage=facade, config=test_config_proj1, event_system=mock_event_system
+    )
 
 
 @pytest.mark.asyncio
@@ -251,7 +260,7 @@ async def test_vector_search_with_specific_project_id(search_service):
         limit=10,
         project_id="proj_test_2",
     )
-    
+
     # Should only return results from proj_test_2
     assert len(results) > 0
     for result in results:
@@ -267,7 +276,7 @@ async def test_vector_search_all_projects(search_service):
         limit=10,
         project_id=None,
     )
-    
+
     # Should return results from both projects
     assert len(results) > 0
     project_ids = {result.data["project_id"] for result in results}
@@ -282,7 +291,7 @@ async def test_fts_search_filters_by_current_project(search_service):
         query_fts="Python",
         limit=10,
     )
-    
+
     # Should only return results from proj_test_1
     assert len(results) > 0
     for result in results:
@@ -298,7 +307,7 @@ async def test_fts_search_with_specific_project_id(search_service):
         limit=10,
         project_id="proj_test_2",
     )
-    
+
     # Should only return results from proj_test_2
     assert len(results) > 0
     for result in results:
@@ -314,7 +323,7 @@ async def test_hybrid_search_filters_by_project(search_service):
         query_fts="Python",
         limit=10,
     )
-    
+
     # Should only return results from proj_test_1
     assert len(results) > 0
     for result in results:
@@ -347,7 +356,7 @@ async def test_graph_filtered_search_filters_by_project(search_service):
         search_query_vector=[0.1] * 384,
         limit=10,
     )
-    
+
     # Should only return results from proj_test_1
     for result in results:
         assert result.data["project_id"] == "proj_test_1"
@@ -360,13 +369,13 @@ async def test_enrich_with_graph_context_filters_by_project(search_service):
     search_results = [
         {"doc_id": "doc1_proj1", "project_id": "proj_test_1"},
     ]
-    
+
     # Enrich with graph context
     enriched = await search_service.enrich_with_graph_context(
         search_results,
         project_id="proj_test_1",
     )
-    
+
     # Should have graph context
     assert len(enriched) > 0
 
@@ -397,7 +406,7 @@ async def test_hybrid_search_across_multiple_projects(search_service):
         limit=10,
         project_ids=["proj_test_1", "proj_test_2"],
     )
-    
+
     # Should return results from both projects
     assert len(results) > 0
     project_ids = {result.data["project_id"] for result in results}
@@ -416,7 +425,7 @@ async def test_graph_filtered_search_across_multiple_projects(search_service):
         limit=10,
         project_ids=["proj_test_1", "proj_test_2"],
     )
-    
+
     # Should return results from both projects (if graph ranking is available)
     # If graph ranking is not available, it falls back to regular search
     if len(results) > 0:

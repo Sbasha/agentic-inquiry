@@ -1,5 +1,6 @@
 # tests/connectors/test_registry.py
 """Tests for ConnectorRegistry thread-safe implementation."""
+
 import concurrent.futures
 import threading
 import pytest
@@ -214,8 +215,10 @@ class TestConnectorRegistryConcurrency:
 
         def register_connector(name: str):
             try:
+
                 class DynamicConnector:
                     connector_name = name
+
                 registry.register(name, DynamicConnector)
             except Exception as e:
                 errors.append(e)
@@ -248,10 +251,7 @@ class TestConnectorRegistryConcurrency:
 
         # 100 concurrent gets
         with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
-            futures = [
-                executor.submit(get_connector_instance)
-                for _ in range(100)
-            ]
+            futures = [executor.submit(get_connector_instance) for _ in range(100)]
             concurrent.futures.wait(futures)
 
         assert len(errors) == 0
@@ -328,6 +328,7 @@ class TestModuleLevelAPI:
 
     def test_register_connector_decorator(self):
         """Test register_connector as decorator."""
+
         @register_connector("decorated")
         class DecoratedConnector:
             pass

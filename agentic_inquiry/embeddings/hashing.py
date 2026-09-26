@@ -1,4 +1,5 @@
 """Simple deterministic hashing based embedder."""
+
 from __future__ import annotations
 
 import hashlib

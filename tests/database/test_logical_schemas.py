@@ -6,6 +6,7 @@ Tests cover:
 - Memory schemas (episodic, semantic)
 - Schema validation and registry functions
 """
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -361,7 +362,16 @@ class TestDocumentChunksSchema:
 
     def test_required_fields(self) -> None:
         """Verify required fields exist."""
-        required = {"id", "doc_id", "file_path", "project_id", "content", "fts_text", "vector", "content_type"}
+        required = {
+            "id",
+            "doc_id",
+            "file_path",
+            "project_id",
+            "content",
+            "fts_text",
+            "vector",
+            "content_type",
+        }
         actual = {f.name for f in DOCUMENT_CHUNKS_SCHEMA.get_required_fields()}
         assert required == actual
 
@@ -395,7 +405,16 @@ class TestGraphEntitiesSchema:
 
     def test_required_fields(self) -> None:
         """Verify required fields exist."""
-        required = {"id", "name", "type", "file_path", "doc_id", "project_id", "vector", "has_ranking_signals"}
+        required = {
+            "id",
+            "name",
+            "type",
+            "file_path",
+            "doc_id",
+            "project_id",
+            "vector",
+            "has_ranking_signals",
+        }
         actual = {f.name for f in GRAPH_ENTITIES_SCHEMA.get_required_fields()}
         assert required == actual
 
@@ -453,13 +472,33 @@ class TestMemorySchemas:
     def test_common_fields(self) -> None:
         """Both schemas should have common memory fields."""
         common_fields = {
-            "id", "agent_id", "session_id", "conversation_id", "task_id",
-            "project_id", "content", "summary", "importance", "tier",
-            "creator_agent_id", "modifier_agent_id", "content_source",
-            "created_at", "accessed_at", "modified_at", "access_count",
-            "vector", "summary_vector", "event_type", "emotional_valence",
-            "emotional_arousal", "subject", "relationship", "object",
-            "confidence", "metadata",
+            "id",
+            "agent_id",
+            "session_id",
+            "conversation_id",
+            "task_id",
+            "project_id",
+            "content",
+            "summary",
+            "importance",
+            "tier",
+            "creator_agent_id",
+            "modifier_agent_id",
+            "content_source",
+            "created_at",
+            "accessed_at",
+            "modified_at",
+            "access_count",
+            "vector",
+            "summary_vector",
+            "event_type",
+            "emotional_valence",
+            "emotional_arousal",
+            "subject",
+            "relationship",
+            "object",
+            "confidence",
+            "metadata",
         }
         for schema in (MEMORY_EPISODIC_SCHEMA, MEMORY_SEMANTIC_SCHEMA):
             actual = schema.get_field_names()

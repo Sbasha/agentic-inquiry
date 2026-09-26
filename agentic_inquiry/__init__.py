@@ -34,7 +34,9 @@ def __getattr__(name: str) -> ModuleType:
         module = importlib.import_module(module_name)
     except ModuleNotFoundError as exc:
         if exc.name == module_name:
-            raise AttributeError(f"module {__name__!r} has no attribute {name!r}") from None
+            raise AttributeError(
+                f"module {__name__!r} has no attribute {name!r}"
+            ) from None
         raise
     globals()[name] = module
     return module

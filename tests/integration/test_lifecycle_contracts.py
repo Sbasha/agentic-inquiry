@@ -5,6 +5,7 @@ These tests verify that:
 2. initialize() is idempotent (safe to call multiple times)
 3. Components follow consistent lifecycle patterns
 """
+
 import pytest
 
 pytestmark = pytest.mark.integration

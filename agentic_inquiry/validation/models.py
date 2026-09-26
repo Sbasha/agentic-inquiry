@@ -1,4 +1,5 @@
 """Data models for index validation."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -65,7 +66,9 @@ class ValidationReport:
 
         total_valid = sum(r.valid_count for r in self.results)
         total_checked = sum(r.total_checked for r in self.results)
-        self.overall_accuracy = total_valid / total_checked if total_checked > 0 else 1.0
+        self.overall_accuracy = (
+            total_valid / total_checked if total_checked > 0 else 1.0
+        )
         self.total_checks = len(self.results)
         self.passed_checks = sum(1 for r in self.results if r.passed)
         self.meets_threshold = self.overall_accuracy >= self.threshold

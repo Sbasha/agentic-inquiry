@@ -6,6 +6,7 @@ to this format at the boundary.
 
 See: docs/design/result-contract.md
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -61,9 +62,7 @@ class SearchResult:
     def __post_init__(self) -> None:
         """Validate score is in valid range."""
         if not 0.0 <= self.score <= 1.0:
-            raise ValueError(
-                f"Score must be normalized to 0.0-1.0, got {self.score}"
-            )
+            raise ValueError(f"Score must be normalized to 0.0-1.0, got {self.score}")
 
     def with_score(self, score: float, source: Optional[str] = None) -> SearchResult:
         """Create a new SearchResult with updated score.

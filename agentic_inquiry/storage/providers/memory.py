@@ -4,11 +4,22 @@ This module provides the InMemoryProvider class that implements
 storage protocols using in-memory data structures. This is useful
 for testing and development without external dependencies.
 """
+
 from __future__ import annotations
 
 import logging
 import math
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Dict, List, Optional, Sequence, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+)
 
 from agentic_inquiry.database.results import SearchResult
 from agentic_inquiry.models.document_chunk import DocumentChunk
@@ -60,9 +71,7 @@ def _cosine_similarity(vec1: List[float], vec2: List[float]) -> float:
     return dot_product / (norm1 * norm2)
 
 
-def _matches_filters(
-    item: Dict[str, Any], filters: "Optional[FilterInput]"
-) -> bool:
+def _matches_filters(item: Dict[str, Any], filters: "Optional[FilterInput]") -> bool:
     """Check whether ``item`` matches all conditions in ``filters``.
 
     Convenience wrapper that compiles the predicate on each call — cheap
@@ -122,7 +131,7 @@ class InMemoryProvider:
         self._entities: Dict[tuple[str, str], Dict[str, Any]] = {}
         # Key: (rel_id, project_id) -> rel_dict
         self._relationships: Dict[tuple[str, str], Dict[str, Any]] = {}
-        
+
         self._initialized = False
 
     @classmethod
@@ -627,16 +636,16 @@ class InMemoryProvider:
         for key, rel in self._relationships.items():
             # key is (rel_id, proj_id)
             _, rel_project_id = key
-            
+
             if rel_project_id != project_id:
                 continue
-                
+
             if (
                 rel.get("source_id") in entity_ids_set
                 or rel.get("target_id") in entity_ids_set
             ):
                 to_delete.append(key)
-                
+
         for key in to_delete:
             del self._relationships[key]
 
@@ -984,9 +993,7 @@ class InMemoryProvider:
             "total_bytes": 0,  # Not tracked for in-memory
             "table_count": 3,
             "row_count": (
-                len(self._chunks)
-                + len(self._entities)
-                + len(self._relationships)
+                len(self._chunks) + len(self._entities) + len(self._relationships)
             ),
         }
 

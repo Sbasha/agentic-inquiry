@@ -93,7 +93,9 @@ class TestResolveEmbeddingDimFromConfig:
     order directly so a future refactor can't silently skip validation.
     """
 
-    def _make_config(self, *, default_dimensions=None, backends=None, vector_backend=None):
+    def _make_config(
+        self, *, default_dimensions=None, backends=None, vector_backend=None
+    ):
         from types import SimpleNamespace
 
         embeddings = (

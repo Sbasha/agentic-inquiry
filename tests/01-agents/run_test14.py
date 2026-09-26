@@ -1,4 +1,5 @@
 """Runner for TEST_14 Semantic Graph."""
+
 import asyncio
 import json
 import logging

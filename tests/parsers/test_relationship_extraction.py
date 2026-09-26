@@ -83,8 +83,9 @@ async def test_parser_extracts_calls_relationships(parser, sample_python_code):
     assert len(calls) > 0, "Expected at least some CALLS relationships"
     call_names = [r.target_name for r in calls]
     # Verify we have actual function names, not empty strings
-    assert all(name and len(name) > 0 for name in call_names), \
+    assert all(name and len(name) > 0 for name in call_names), (
         "All call targets should have non-empty names"
+    )
 
     # helper_function() is called from __init__ and my_method
     assert "helper_function" in call_names, "Expected 'helper_function' in calls"
@@ -109,23 +110,26 @@ async def test_parser_extracts_inherits_relationships(parser, sample_python_code
     # Should have inherits relationships with valid source/target pairs
     assert len(inherits) > 0, "Expected at least some INHERITS relationships"
     # Verify relationships have both source and target names
-    assert all(r.source_name and r.target_name for r in inherits), \
+    assert all(r.source_name and r.target_name for r in inherits), (
         "All inherit relationships should have non-empty source and target names"
+    )
 
     # Check for specific expected inheritance
     inheritance_pairs = [(r.source_name, r.target_name) for r in inherits]
 
     # DerivedClass inherits from BaseClass
-    assert ("DerivedClass", "BaseClass") in inheritance_pairs, \
+    assert ("DerivedClass", "BaseClass") in inheritance_pairs, (
         "Expected DerivedClass -> BaseClass inheritance"
+    )
 
     # GenericClass inherits from List (generic)
     # Note: May appear as "List" or "List[str]" depending on parsing
     generic_inherits = [r for r in inherits if r.source_name == "GenericClass"]
     assert len(generic_inherits) > 0, "Expected GenericClass to have inheritance"
     # Verify the inherited class contains "List"
-    assert any("List" in r.target_name for r in generic_inherits), \
+    assert any("List" in r.target_name for r in generic_inherits), (
         f"GenericClass should inherit from List, got targets: {[r.target_name for r in generic_inherits]}"
+    )
 
 
 @pytest.mark.asyncio
@@ -144,18 +148,22 @@ async def test_parser_extracts_defines_relationships(parser, sample_python_code)
     # Should have defines relationships with valid source/target pairs
     assert len(defines) > 0, "Expected at least some DEFINES relationships"
     # Verify relationships have both source and target names
-    assert all(r.source_name and r.target_name for r in defines), \
+    assert all(r.source_name and r.target_name for r in defines), (
         "All define relationships should have non-empty source and target names"
+    )
 
     # Check for specific expected definitions
     define_pairs = [(r.source_name, r.target_name) for r in defines]
 
     # BaseClass defines base_method
-    assert ("BaseClass", "base_method") in define_pairs, \
+    assert ("BaseClass", "base_method") in define_pairs, (
         "Expected BaseClass -> base_method definition"
+    )
 
     # DerivedClass defines __init__, my_method, _private_method
-    derived_methods = [r.target_name for r in defines if r.source_name == "DerivedClass"]
+    derived_methods = [
+        r.target_name for r in defines if r.source_name == "DerivedClass"
+    ]
     assert "__init__" in derived_methods, "Expected __init__ defined in DerivedClass"
     assert "my_method" in derived_methods, "Expected my_method defined in DerivedClass"
 
@@ -176,14 +184,16 @@ async def test_parser_extracts_imports_relationships(parser, sample_python_code)
     # Should have imports relationships with valid module names
     assert len(imports) > 0, "Expected at least some IMPORTS relationships"
     # Verify all imports have non-empty target names (module names)
-    assert all(r.target_name and len(r.target_name) > 0 for r in imports), \
+    assert all(r.target_name and len(r.target_name) > 0 for r in imports), (
         "All import relationships should have non-empty module names"
+    )
 
     # Check for specific expected imports
     import_names = [r.target_name for r in imports]
     assert "os" in import_names, "Expected 'os' import"
-    assert "Optional" in import_names or "typing" in import_names, \
+    assert "Optional" in import_names or "typing" in import_names, (
         "Expected typing imports"
+    )
 
 
 @pytest.mark.asyncio
@@ -203,14 +213,15 @@ async def test_relationship_types_comprehensive(parser, sample_python_code):
     expected_types = {"imports", "calls", "inherits", "defines"}
 
     for expected in expected_types:
-        assert expected in relationship_types, \
+        assert expected in relationship_types, (
             f"Expected '{expected}' relationship type, got: {relationship_types}"
+        )
 
 
 @pytest.mark.asyncio
 async def test_calls_include_method_calls(parser, tmp_path):
     """Test that method calls (obj.method()) are captured."""
-    code = '''
+    code = """
 class MyClass:
     def process(self):
         data = []
@@ -220,7 +231,7 @@ class MyClass:
 
     def helper(self):
         return "test"
-'''
+"""
     file_path = tmp_path / "method_calls.py"
     file_path.write_text(code)
 
@@ -241,7 +252,7 @@ class MyClass:
 @pytest.mark.asyncio
 async def test_multiple_inheritance(parser, tmp_path):
     """Test that multiple inheritance is captured."""
-    code = '''
+    code = """
 class Mixin1:
     pass
 
@@ -250,7 +261,7 @@ class Mixin2:
 
 class Combined(Mixin1, Mixin2):
     pass
-'''
+"""
     file_path = tmp_path / "multiple_inheritance.py"
     file_path.write_text(code)
 
@@ -271,7 +282,7 @@ class Combined(Mixin1, Mixin2):
 @pytest.mark.asyncio
 async def test_nested_class_defines(parser, tmp_path):
     """Test that nested class definitions are captured."""
-    code = '''
+    code = """
 class Outer:
     class Inner:
         def inner_method(self):
@@ -279,7 +290,7 @@ class Outer:
 
     def outer_method(self):
         pass
-'''
+"""
     file_path = tmp_path / "nested.py"
     file_path.write_text(code)
 
@@ -295,8 +306,9 @@ class Outer:
     assert len(defines) > 0, "Expected at least some DEFINES relationships"
     # Verify we have actual method definitions
     define_targets = [r.target_name for r in defines]
-    assert any("method" in name.lower() for name in define_targets), \
+    assert any("method" in name.lower() for name in define_targets), (
         f"Expected method definitions, got targets: {define_targets}"
+    )
 
 
 @pytest.mark.asyncio
@@ -320,11 +332,14 @@ async def test_relationship_metadata(parser, sample_python_code):
     imports = [r for r in all_relationships if r.type == "imports"]
     if imports:
         imports_with_path = [r for r in imports if r.metadata.get("import_path")]
-        assert len(imports_with_path) > 0, "Expected imports to have import_path metadata"
+        assert len(imports_with_path) > 0, (
+            "Expected imports to have import_path metadata"
+        )
         # Verify import_path values are non-empty strings
         import_paths = [r.metadata.get("import_path") for r in imports_with_path]
-        assert all(isinstance(path, str) and len(path) > 0 for path in import_paths), \
+        assert all(isinstance(path, str) and len(path) > 0 for path in import_paths), (
             f"All import_path metadata should be non-empty strings, got: {import_paths}"
+        )
 
 
 @pytest.mark.asyncio
@@ -341,7 +356,7 @@ async def test_chained_method_calls_captured(parser, tmp_path):
 
     After the fix, both patterns should be captured.
     """
-    code = '''
+    code = """
 class DatabaseService:
     def __init__(self):
         self.db = DatabaseConnection()
@@ -360,7 +375,7 @@ class DatabaseService:
         simple_function()                       # simple function call
         self.method()                           # object is 'self' (identifier)
         obj.method()                            # object is 'obj' (identifier)
-'''
+"""
     file_path = tmp_path / "chained_calls.py"
     file_path.write_text(code)
 
@@ -379,9 +394,15 @@ class DatabaseService:
 
     # Chained calls (fixed by query update)
     assert "execute" in call_names, "Chained call self.db.execute() should be captured"
-    assert "invalidate" in call_names, "Deep chain self.cache.client.invalidate() should be captured"
-    assert "query" in call_names, "Chained call get_connection().query() should be captured"
-    assert "process" in call_names, "Subscript chain items[0].process() should be captured"
+    assert "invalidate" in call_names, (
+        "Deep chain self.cache.client.invalidate() should be captured"
+    )
+    assert "query" in call_names, (
+        "Chained call get_connection().query() should be captured"
+    )
+    assert "process" in call_names, (
+        "Subscript chain items[0].process() should be captured"
+    )
 
     # Should have at least 8 calls total (2 in __init__, 4 in query, 3 in simple_calls)
     # Note: get_connection() is also a call, so we may have more
@@ -391,7 +412,7 @@ class DatabaseService:
 @pytest.mark.asyncio
 async def test_self_method_calls_captured(parser, tmp_path):
     """Test that self.method() calls within a class are captured with object='self'."""
-    code = '''
+    code = """
 class MyClass:
     def process(self):
         self.step1()
@@ -407,7 +428,7 @@ class MyClass:
 
     def _internal_helper(self):
         return "done"
-'''
+"""
     file_path = tmp_path / "self_calls.py"
     file_path.write_text(code)
 
@@ -423,8 +444,12 @@ class MyClass:
     call_names = [r.target_name for r in calls]
     assert "step1" in call_names, "self.step1() should be captured"
     assert "step2" in call_names, "self.step2() should be captured"
-    assert "_internal_helper" in call_names, "self._internal_helper() should be captured"
+    assert "_internal_helper" in call_names, (
+        "self._internal_helper() should be captured"
+    )
 
     # Check metadata includes 'self' as the object
     self_calls = [r for r in calls if r.metadata.get("object") == "self"]
-    assert len(self_calls) >= 3, f"Expected at least 3 self.* calls, got {len(self_calls)}"
+    assert len(self_calls) >= 3, (
+        f"Expected at least 3 self.* calls, got {len(self_calls)}"
+    )

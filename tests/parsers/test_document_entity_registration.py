@@ -1,4 +1,5 @@
 """Test document entity registration in IndexingPipeline."""
+
 import asyncio
 from unittest.mock import AsyncMock, MagicMock
 import pytest
@@ -9,7 +10,11 @@ from agentic_inquiry.config import Config, StorageConfig
 from agentic_inquiry.embeddings.base import Embedder
 from agentic_inquiry.embeddings.registry import EmbeddingRegistry
 from agentic_inquiry.indexing.pipeline import IndexingPipeline
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -33,6 +38,7 @@ def _create_mock_event_system():
 
 def test_document_entity_registration():
     """Test that document entities (headings, sections) are registered in symbol registry."""
+
     async def run():
         from pathlib import Path
 
@@ -121,7 +127,9 @@ def test_document_entity_registration():
         assert intro_metadata[0].entity_type == "doc_section"
         assert intro_metadata[0].language == "markdown"
         assert intro_metadata[0].file_path == outline_file
-        assert intro_metadata[0].is_exported is True  # Document entities are always exported
+        assert (
+            intro_metadata[0].is_exported is True
+        )  # Document entities are always exported
         assert intro_metadata[0].parent_scope is None  # Top-level heading has no parent
 
         # Verify metadata for nested heading
@@ -129,10 +137,14 @@ def test_document_entity_registration():
         assert len(background_metadata) == 1
         assert background_metadata[0].name == "Background"
         assert background_metadata[0].entity_type == "doc_section"
-        assert background_metadata[0].parent_scope == "Introduction"  # Nested under Introduction
+        assert (
+            background_metadata[0].parent_scope == "Introduction"
+        )  # Nested under Introduction
 
         # Verify metadata for section entity
-        section_metadata = pipeline.symbol_registry.lookup_by_name("This is the introduction section")
+        section_metadata = pipeline.symbol_registry.lookup_by_name(
+            "This is the introduction section"
+        )
         assert len(section_metadata) == 1
         assert section_metadata[0].name == "This is the introduction section"
         assert section_metadata[0].entity_type == "section"
@@ -146,7 +158,9 @@ def test_document_entity_registration():
         assert table_metadata[0].parent_scope == "Background"
 
         # Verify lookup by name and type works for document entities
-        heading_lookup = pipeline.symbol_registry.lookup_by_name_and_type("Introduction", "doc_section")
+        heading_lookup = pipeline.symbol_registry.lookup_by_name_and_type(
+            "Introduction", "doc_section"
+        )
         assert len(heading_lookup) == 1
         assert heading_lookup[0].name == "Introduction"
 
@@ -161,6 +175,7 @@ def test_document_entity_registration():
 
 def test_document_relationships_processing():
     """Test that document relationships (contains, follows) are processed correctly."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-doc-rels")
@@ -200,7 +215,7 @@ def test_document_relationships_processing():
                             target_type="doc_section",
                             target_name="Chapter 1",
                             type="contains",
-                            metadata={"hierarchy_level": 1}
+                            metadata={"hierarchy_level": 1},
                         ),
                     ],
                 ),
@@ -219,7 +234,7 @@ def test_document_relationships_processing():
                             target_type="doc_section",
                             target_name="Section 1.1",
                             type="contains",
-                            metadata={"hierarchy_level": 2}
+                            metadata={"hierarchy_level": 2},
                         ),
                     ],
                 ),
@@ -238,7 +253,7 @@ def test_document_relationships_processing():
                             target_type="doc_section",
                             target_name="Section 1.2",
                             type="contains",
-                            metadata={"hierarchy_level": 2}
+                            metadata={"hierarchy_level": 2},
                         ),
                         # This heading follows the previous one
                         ParserRelationship(
@@ -247,7 +262,7 @@ def test_document_relationships_processing():
                             target_type="doc_section",
                             target_name="Section 1.2",
                             type="follows",
-                            metadata={}
+                            metadata={},
                         ),
                     ],
                 ),
@@ -291,6 +306,7 @@ def test_document_relationships_processing():
 
 def test_mixed_code_and_document_entities():
     """Test that code entities and document entities can coexist in the same document."""
+
     async def run():
         from pathlib import Path
 
@@ -336,12 +352,7 @@ def test_mixed_code_and_document_entities():
                     line_start=5,
                     line_end=6,
                     symbols=["MyClass"],
-                    symbol_metadata={
-                        "MyClass": {
-                            "type": "class",
-                            "is_exported": True
-                        }
-                    }
+                    symbol_metadata={"MyClass": {"type": "class", "is_exported": True}},
                 ),
                 # Code entity (function)
                 ParserChunk(
@@ -351,11 +362,8 @@ def test_mixed_code_and_document_entities():
                     line_end=9,
                     symbols=["my_function"],
                     symbol_metadata={
-                        "my_function": {
-                            "type": "function",
-                            "is_exported": True
-                        }
-                    }
+                        "my_function": {"type": "function", "is_exported": True}
+                    },
                 ),
             ],
         )
@@ -383,7 +391,9 @@ def test_mixed_code_and_document_entities():
 
         # Verify stats
         stats = await pipeline.symbol_registry.get_stats()
-        assert stats["total_symbols"] == 4  # 1 document entity + 2 code entities + 1 file entity
+        assert (
+            stats["total_symbols"] == 4
+        )  # 1 document entity + 2 code entities + 1 file entity
         assert stats["total_files"] == 1
         assert stats["total_entries"] == 4
 
@@ -392,6 +402,7 @@ def test_mixed_code_and_document_entities():
 
 def test_document_entity_without_element_name():
     """Test that chunks without element_name are not registered as entities."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-no-name")

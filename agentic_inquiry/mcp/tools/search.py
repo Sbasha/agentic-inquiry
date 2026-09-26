@@ -36,14 +36,7 @@ logger = logging.getLogger(__name__)
 # Content type enum for agentic content discovery (SDD-001)
 # Exposes valid content types in tool schema for model-driven filtering
 ContentType = Literal[
-    "CODE",
-    "PROSE",
-    "TABLE",
-    "HEADING",
-    "LIST_ITEM",
-    "IMAGE_CAPTION",
-    "TITLE",
-    "OTHER"
+    "CODE", "PROSE", "TABLE", "HEADING", "LIST_ITEM", "IMAGE_CAPTION", "TITLE", "OTHER"
 ]
 
 # Preview mode snippet length (SDD-001)
@@ -83,7 +76,7 @@ def build_result_quality(
     index_status: str,
     progress_percent: Optional[float],
     strategy: str,
-    result_count: int
+    result_count: int,
 ) -> dict:
     """Build result quality indicator for search response.
 
@@ -151,7 +144,7 @@ def build_result_quality(
         "coverage_percent": round(progress_percent, 1),
         "note": note,
         "strategy": strategy,
-        "result_count": result_count
+        "result_count": result_count,
     }
 
 
@@ -166,16 +159,18 @@ CONFIDENCE_MEDIUM = 0.5
 
 # Code entity types for prioritization (ISS-W2-010/015)
 # Uses plain structural types - domain is stored separately on GraphEntity
-CODE_ENTITY_TYPES = frozenset({
-    "class",
-    "function",
-    "method",
-    "module",
-    "variable",
-    "interface",
-    "property",
-    "constructor",
-})
+CODE_ENTITY_TYPES = frozenset(
+    {
+        "class",
+        "function",
+        "method",
+        "module",
+        "variable",
+        "interface",
+        "property",
+        "constructor",
+    }
+)
 
 
 def _classify_confidence(similarity: float) -> str:
@@ -208,10 +203,7 @@ def _determine_match_quality(similarity: float, is_fuzzy: bool = False) -> str:
 
 
 def _generate_similar_recommendations(
-    query: str,
-    results: list,
-    match_summary: dict,
-    entity_type: Optional[str] = None
+    query: str, results: list, match_summary: dict, entity_type: Optional[str] = None
 ) -> dict:
     """Generate contextual recommendations based on search results.
 
@@ -227,7 +219,7 @@ def _generate_similar_recommendations(
     recommendations: dict[str, list[str]] = {
         "refine_query": [],
         "related_tools": [],
-        "tips": []
+        "tips": [],
     }
 
     total_results = sum(match_summary.values())
@@ -267,7 +259,7 @@ def _generate_similar_recommendations(
         recommendations["related_tools"] = [
             "search_knowledge(query='...') - Full-text search across all content",
             "list_entities() - Browse all indexed entities",
-            "get_project_info() - Check what's indexed"
+            "get_project_info() - Check what's indexed",
         ]
     elif high_confidence == 0:
         recommendations["related_tools"].append(
@@ -312,6 +304,7 @@ def _extract_metadata_fields(raw_metadata: Any, allowed_keys: set) -> dict:
     """
     if isinstance(raw_metadata, str):
         import json as _json
+
         try:
             raw_metadata = _json.loads(raw_metadata)
         except (ValueError, TypeError):
@@ -349,8 +342,8 @@ def _fuzzy_name_match(query: str, entity_name: str) -> float:
     # Split into words (handle CamelCase and snake_case)
     def split_words(text: str) -> List[str]:
         # Split on underscores and camelCase boundaries
-        expanded = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
-        word_list = expanded.replace('_', ' ').lower().split()
+        expanded = re.sub(r"([a-z])([A-Z])", r"\1 \2", text)
+        word_list = expanded.replace("_", " ").lower().split()
         return [w for w in word_list if len(w) > 1]
 
     query_words = set(split_words(query))
@@ -375,9 +368,7 @@ def _fuzzy_name_match(query: str, entity_name: str) -> float:
 
 
 def diversify_entity_results(
-    entities: list[dict],
-    limit: int = 10,
-    max_per_file: int = 2
+    entities: list[dict], limit: int = 10, max_per_file: int = 2
 ) -> list[dict]:
     """Group entities by file and interleave to ensure diversity.
 
@@ -424,28 +415,25 @@ def diversify_entity_results(
 
 def _generate_usage_hints(results: list, query: str, related_keywords: list) -> dict:
     """Generate usage hints based on search results.
-    
+
     Args:
         results: Formatted search results
         query: Original search query
         related_keywords: Related keywords extracted from results
-        
+
     Returns:
         Dictionary with next_steps and related_tools
     """
-    hints: dict[str, list[str]] = {
-        "next_steps": [],
-        "related_tools": []
-    }
-    
+    hints: dict[str, list[str]] = {"next_steps": [], "related_tools": []}
+
     # Analyze results to provide contextual hints
     if not results:
         return hints
-    
+
     # Check if results contain code entities
     has_code = any(r.get("entity_type") or r.get("symbols") for r in results)
     has_docs = any(r.get("language") == "markdown" for r in results)
-    
+
     # Generate next steps based on result types
     if has_code:
         # Found code - suggest entity understanding
@@ -453,39 +441,35 @@ def _generate_usage_hints(results: list, query: str, related_keywords: list) -> 
         for r in results[:3]:  # Top 3 results
             if r.get("symbols"):
                 entities.extend(r["symbols"][:2])  # First 2 symbols per result
-        
+
         if entities:
             hints["next_steps"].append(
                 f"Understand key entities: {', '.join(entities[:3])}"
             )
             hints["related_tools"].append("understand_entity")
-    
+
     if has_docs:
         # Found documentation - suggest context building
-        hints["next_steps"].append(
-            "Build comprehensive context with build_context()"
-        )
+        hints["next_steps"].append("Build comprehensive context with build_context()")
         hints["related_tools"].append("build_context")
-    
+
     # Suggest refining with related keywords
     if related_keywords:
         hints["next_steps"].append(
             f"Refine search with related keywords: {', '.join(related_keywords[:5])}"
         )
-    
+
     # Suggest impact analysis if code entities found
     if has_code:
         hints["next_steps"].append(
             "Analyze impact before making changes with analyze_impact()"
         )
         hints["related_tools"].append("analyze_impact")
-    
+
     # Suggest saving insights
-    hints["next_steps"].append(
-        "Save important findings with save_memory()"
-    )
+    hints["next_steps"].append("Save important findings with save_memory()")
     hints["related_tools"].append("save_memory")
-    
+
     # Deduplicate related tools
     hints["related_tools"] = list(dict.fromkeys(hints["related_tools"]))
 
@@ -539,13 +523,15 @@ async def _entities_from_semantic_search(
         # Performance optimization: use smaller limit for semantic bridge (SG-PERF-001)
         # to reduce search time while still finding relevant entity locations
         chunk_results = await search_service.hybrid_search(
-            query_vector=query_vector if isinstance(query_vector, str) else query_vector.tolist(),
+            query_vector=query_vector
+            if isinstance(query_vector, str)
+            else query_vector.tolist(),
             query_fts=query,
             project_id=project_id,
             limit=min(limit, 10),  # Cap at 10 chunks for faster semantic bridge
             content_preference="CODE",  # Boost code, but include docs for discovery
             content_preference_weight=0.7,  # 70% boost for code content
-            boost_overview=False  # We want code, not docs
+            boost_overview=False,  # We want code, not docs
         )
         step1_time = (time.perf_counter() - step1_start) * 1000
 
@@ -573,9 +559,9 @@ async def _entities_from_semantic_search(
         # Step 3: Find entities in those files using BATCHED query
         # Sort by score and take top files
         step3_start = time.perf_counter()
-        top_files = sorted(
-            file_scores.items(), key=lambda x: x[1], reverse=True
-        )[:limit]
+        top_files = sorted(file_scores.items(), key=lambda x: x[1], reverse=True)[
+            :limit
+        ]
         file_paths = [fp for fp, _ in top_files]
 
         # Use IN clause for all file paths in a single query (fixes N+1 problem)
@@ -600,12 +586,17 @@ async def _entities_from_semantic_search(
         if step1_time > 500 or step3_time > 500:
             logger.info(
                 "Semantic bridge SLOW: step1(hybrid)=%.1fms, step2(paths)=%.1fms, step3(entities)=%.1fms, query='%s'",
-                step1_time, step2_time, step3_time, query[:50]
+                step1_time,
+                step2_time,
+                step3_time,
+                query[:50],
             )
         else:
             logger.debug(
                 "Semantic bridge timing: step1(hybrid)=%.1fms, step2(paths)=%.1fms, step3(entities)=%.1fms",
-                step1_time, step2_time, step3_time
+                step1_time,
+                step2_time,
+                step3_time,
             )
 
         # Calculate scores for each entity based on their file's semantic score
@@ -630,7 +621,8 @@ async def _entities_from_semantic_search(
 
         logger.debug(
             "Semantic bridge: Found %d entities from %d files (batched)",
-            len(entities_found), len(file_scores)
+            len(entities_found),
+            len(file_scores),
         )
         return entities_found
 
@@ -648,7 +640,7 @@ async def search_knowledge(
     filters: Optional[dict] = None,
     content_type: Optional[ContentType] = None,
     preview_only: bool = False,
-    include_impact: bool = False
+    include_impact: bool = False,
 ) -> dict:
     """Search across all indexed content in the project.
 
@@ -704,7 +696,7 @@ async def search_knowledge(
         validate_search_type,
         validate_query_length,
         create_validation_error_response,
-        QueryValidationError
+        QueryValidationError,
     )
     from agentic_inquiry.mcp.utils.project_state import check_project_state
 
@@ -724,7 +716,7 @@ async def search_knowledge(
             context={"session_id": session_id},
             provided_value=query[:100] if query else None,  # Truncate for display
             expected_type="non-empty string (max 10,000 chars)",
-            example='query="how to authenticate users"'
+            example='query="how to authenticate users"',
         )
 
     # Validate parameters
@@ -740,12 +732,12 @@ async def search_knowledge(
                 "session_id": session_id,
                 "query": query,
                 "limit": limit,
-                "search_type": search_type
+                "search_type": search_type,
             },
             provided_value=limit if field == "limit" else search_type,
             expected_type="integer (1-1000)" if field == "limit" else "string",
             expected_values=None if field == "limit" else ["hybrid", "vector", "fts"],
-            example="limit=10" if field == "limit" else "search_type='hybrid'"
+            example="limit=10" if field == "limit" else "search_type='hybrid'",
         )
 
     # Validate session
@@ -753,13 +745,14 @@ async def search_knowledge(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Track tool call in session history
     await session_manager.track_tool_call(
-        session_id, "search_knowledge",
-        {"query": query, "search_type": search_type, "limit": limit}
+        session_id,
+        "search_knowledge",
+        {"query": query, "search_type": search_type, "limit": limit},
     )
 
     # Get session to extract project_id
@@ -784,7 +777,7 @@ async def search_knowledge(
         tool_name="search_knowledge",
         session_id=session_id,
         query=query,
-        search_type=search_type
+        search_type=search_type,
     )
 
     try:
@@ -798,8 +791,15 @@ async def search_knowledge(
         capabilities = services.get("capabilities")
         if capabilities is None:
             # Fallback: derive capabilities from storage backend
-            from agentic_inquiry.storage.capabilities import get_capabilities_for_backend
-            _backend = db_manager.get_backend_type() if hasattr(db_manager, 'get_backend_type') else "lancedb"
+            from agentic_inquiry.storage.capabilities import (
+                get_capabilities_for_backend,
+            )
+
+            _backend = (
+                db_manager.get_backend_type()
+                if hasattr(db_manager, "get_backend_type")
+                else "lancedb"
+            )
             capabilities = get_capabilities_for_backend(_backend)
 
         if capabilities.uses_server_side_embedding:
@@ -814,6 +814,7 @@ async def search_knowledge(
         # Map entity_type filter to element_type for document_chunks
         if filters and "entity_type" in filters:
             from agentic_inquiry.models.graph_entity import EntityType
+
             filters = filters.copy()
             et = filters.pop("entity_type")
             filters["element_type"] = EntityType.normalize(et)
@@ -833,17 +834,11 @@ async def search_knowledge(
         query_start = time.perf_counter()
         if search_type == "vector":
             results = await search_service.vector_search(
-                query_vector=qv,
-                project_id=project_id,
-                limit=limit,
-                filters=filters
+                query_vector=qv, project_id=project_id, limit=limit, filters=filters
             )
         elif search_type == "fts":
             results = await search_service.fts_search(
-                query_fts=query,
-                project_id=project_id,
-                limit=limit,
-                filters=filters
+                query_fts=query, project_id=project_id, limit=limit, filters=filters
             )
         else:  # hybrid (default)
             # Use the same code path as find_similar/build_context (no return_ambiguity)
@@ -857,13 +852,15 @@ async def search_knowledge(
                 filters=filters,
             )
             ambiguity_info = {"ambiguous": False}
-            
+
         query_time_ms = (time.perf_counter() - query_start) * 1000
 
         # Handle Ambiguity (Proactive Metacognition)
         clarification_request = None
         if search_type == "hybrid" and ambiguity_info.get("ambiguous"):
-            clarification_request = ClarificationBuilder.build_question(ambiguity_info, query)
+            clarification_request = ClarificationBuilder.build_question(
+                ambiguity_info, query
+            )
             logger.info("Ambiguity detected for search: %s", query)
 
         # Track the source of results for response
@@ -877,7 +874,7 @@ async def search_knowledge(
             logger.debug(
                 "Triggering fallback search: index_status=%s, results_empty=%s",
                 index_state_info.status.value,
-                results_empty
+                results_empty,
             )
 
             # Get project root for file-based search
@@ -887,16 +884,12 @@ async def search_knowledge(
             if is_structural_query(query):
                 # Use ast-grep for structural queries
                 fallback_response = await structural_search(
-                    query=query,
-                    project_root=project_root,
-                    limit=limit
+                    query=query, project_root=project_root, limit=limit
                 )
             else:
                 # Use ripgrep/python_glob for text queries
                 fallback_response = await execute_fallback_search(
-                    query=query,
-                    project_root=project_root,
-                    limit=limit
+                    query=query, project_root=project_root, limit=limit
                 )
 
             # If fallback found results, convert them to search result format
@@ -904,34 +897,37 @@ async def search_knowledge(
                 search_source = fallback_response.get("source", "fallback")
                 search_source_note = fallback_response.get(
                     "source_note",
-                    "Results from static text search (semantic index still building)"
+                    "Results from static text search (semantic index still building)",
                 )
 
                 # Convert FallbackResult objects to SearchResult-like format
                 # Create mock results list that will be formatted below
                 from agentic_inquiry.database.results import SearchResult
+
                 fallback_results = []
                 for fb_result in fallback_response["results"]:
                     # Create a SearchResult-compatible object
-                    fallback_results.append(SearchResult(
-                        id=f"fallback_{fb_result.file_path}_{fb_result.line_number}",
-                        data={
-                            "file_path": fb_result.file_path,
-                            "content": fb_result.content,
-                            "line_start": fb_result.line_number,
-                            "line_end": fb_result.line_number,
-                            "language": fb_result.language,
-                            "metadata": fb_result.metadata,
-                        },
-                        score=fb_result.score,
-                        distance=None,
-                    ))
+                    fallback_results.append(
+                        SearchResult(
+                            id=f"fallback_{fb_result.file_path}_{fb_result.line_number}",
+                            data={
+                                "file_path": fb_result.file_path,
+                                "content": fb_result.content,
+                                "line_start": fb_result.line_number,
+                                "line_end": fb_result.line_number,
+                                "language": fb_result.language,
+                                "metadata": fb_result.metadata,
+                            },
+                            score=fb_result.score,
+                            distance=None,
+                        )
+                    )
                 results = fallback_results
 
                 logger.debug(
                     "Fallback search returned %d results from %s",
                     len(results),
-                    search_source
+                    search_source,
                 )
 
         # Enhanced empty result handling
@@ -941,9 +937,9 @@ async def search_knowledge(
                 "query": query,
                 "project_id": project_id,
                 "indexed_chunks": project_state["chunk_count"],
-                "search_type": search_type
+                "search_type": search_type,
             }
-            
+
             if project_state["is_empty"]:
                 # No indexed content in project
                 empty_response: dict = {
@@ -959,16 +955,20 @@ async def search_knowledge(
                     "suggestions": [
                         "Use add_knowledge() to index files or directories",
                         "Use get_server_info() to see available projects",
-                        "Verify you're using the correct project_id"
+                        "Verify you're using the correct project_id",
                     ],
                     "usage_hints": {
                         "next_steps": [
                             "Index content with add_knowledge(source='.')",
                             "Check available projects with get_server_info()",
-                            "Get project overview with get_project_info()"
+                            "Get project overview with get_project_info()",
                         ],
-                        "related_tools": ["add_knowledge", "get_server_info", "get_project_info"]
-                    }
+                        "related_tools": [
+                            "add_knowledge",
+                            "get_server_info",
+                            "get_project_info",
+                        ],
+                    },
                 }
                 # Add index state when not ready
                 if index_state_info.status != IndexState.READY:
@@ -980,32 +980,38 @@ async def search_knowledge(
                     "Try broader search terms",
                     "Try different keywords or synonyms",
                     "Use search_type='fts' for exact keyword matching",
-                    "Check if the content you're looking for is indexed"
+                    "Check if the content you're looking for is indexed",
                 ]
-                
+
                 # Try to get top keywords from the project to suggest alternatives
                 try:
-                    from agentic_inquiry.mcp.utils.keyword_extractor import KeywordExtractor
-                    
+                    from agentic_inquiry.mcp.utils.keyword_extractor import (
+                        KeywordExtractor,
+                    )
+
                     keyword_extractor = KeywordExtractor()
                     top_keywords = await keyword_extractor.extract_top_keywords(
-                        db_manager=db_manager,
-                        project_id=project_id,
-                        limit=10
+                        db_manager=db_manager, project_id=project_id, limit=10
                     )
-                    
+
                     if top_keywords:
-                        keyword_list = ", ".join([kw["keyword"] for kw in top_keywords[:5]])
-                        suggestions.insert(0, f"Try keywords from indexed content: {keyword_list}")
-                        
+                        keyword_list = ", ".join(
+                            [kw["keyword"] for kw in top_keywords[:5]]
+                        )
+                        suggestions.insert(
+                            0, f"Try keywords from indexed content: {keyword_list}"
+                        )
+
                         logger.debug(
                             "Suggested %d keywords for no-results query: %s",
                             len(top_keywords),
-                            query
+                            query,
                         )
                 except Exception as e:
-                    logger.debug("Failed to extract keywords for no-results suggestions: %s", e)
-                
+                    logger.debug(
+                        "Failed to extract keywords for no-results suggestions: %s", e
+                    )
+
                 no_match_response: dict = {
                     "results": [],
                     "total": 0,
@@ -1020,10 +1026,14 @@ async def search_knowledge(
                         "next_steps": [
                             "Try broader query terms or suggested keywords",
                             "Use build_context() for comprehensive exploration",
-                            "Check project overview with get_project_info()"
+                            "Check project overview with get_project_info()",
                         ],
-                        "related_tools": ["build_context", "get_project_info", "find_patterns"]
-                    }
+                        "related_tools": [
+                            "build_context",
+                            "get_project_info",
+                            "find_patterns",
+                        ],
+                    },
                 }
 
                 # Add warnings if project is incomplete
@@ -1047,41 +1057,49 @@ async def search_knowledge(
                 # Preview mode: minimal metadata, truncated snippet (SDD-001)
                 # Token-efficient for large result sets
                 content = result.data.get("content", "")
-                preview_snippet = content[:PREVIEW_SNIPPET_LENGTH] + "..." if len(content) > PREVIEW_SNIPPET_LENGTH else content
+                preview_snippet = (
+                    content[:PREVIEW_SNIPPET_LENGTH] + "..."
+                    if len(content) > PREVIEW_SNIPPET_LENGTH
+                    else content
+                )
 
                 # Title: prefer element_name (function/class name), then entity_name
                 title = (
-                    result.data.get("element_name", "") or
-                    result.data.get("entity_name", "") or
-                    ""
+                    result.data.get("element_name", "")
+                    or result.data.get("entity_name", "")
+                    or ""
                 )
 
-                formatted_results.append({
-                    "id": result.data.get("id", ""),
-                    "file_path": result.data.get("file_path", ""),
-                    "content_type": result.data.get("content_type", "OTHER"),
-                    "line_start": result.data.get("line_start"),
-                    "line_end": result.data.get("line_end"),
-                    "score": result.score,
-                    "title": title,
-                    "preview_snippet": preview_snippet
-                })
+                formatted_results.append(
+                    {
+                        "id": result.data.get("id", ""),
+                        "file_path": result.data.get("file_path", ""),
+                        "content_type": result.data.get("content_type", "OTHER"),
+                        "line_start": result.data.get("line_start"),
+                        "line_end": result.data.get("line_end"),
+                        "score": result.score,
+                        "title": title,
+                        "preview_snippet": preview_snippet,
+                    }
+                )
             else:
                 # Full mode: complete content and all metadata
-                formatted_results.append({
-                    "file_path": result.data.get("file_path", ""),
-                    "content": result.data.get("content", ""),
-                    "score": result.score,
-                    "line_start": result.data.get("line_start"),
-                    "line_end": result.data.get("line_end"),
-                    "language": result.data.get("language"),
-                    "entity_type": result.data.get("entity_type"),
-                    "entity_name": result.data.get("entity_name"),
-                    "symbols": result.data.get("symbols", []),
-                    "element_name": result.data.get("element_name", ""),
-                    "metadata": result.data.get("metadata", {}),
-                    "content_type": result.data.get("content_type", "OTHER")
-                })
+                formatted_results.append(
+                    {
+                        "file_path": result.data.get("file_path", ""),
+                        "content": result.data.get("content", ""),
+                        "score": result.score,
+                        "line_start": result.data.get("line_start"),
+                        "line_end": result.data.get("line_end"),
+                        "language": result.data.get("language"),
+                        "entity_type": result.data.get("entity_type"),
+                        "entity_name": result.data.get("entity_name"),
+                        "symbols": result.data.get("symbols", []),
+                        "element_name": result.data.get("element_name", ""),
+                        "metadata": result.data.get("metadata", {}),
+                        "content_type": result.data.get("content_type", "OTHER"),
+                    }
+                )
 
         # Enrich results with graph context (#81: Search + Graph Fusion)
         # For each result that matches a known entity, add callers/dependencies
@@ -1100,11 +1118,12 @@ async def search_knowledge(
                     # Fallback: extract class/function name from content (language-agnostic patterns)
                     if not entity_name:
                         import re
+
                         content = fr.get("content", "")
                         # Matches: class X, def X, function X, func X, fn X, export class X,
                         # export function X, type X, interface X, struct X, impl X
                         m = re.search(
-                            r'(?:export\s+)?(?:class|def|function|func|fn|type|interface|struct|impl|enum)\s+(\w+)',
+                            r"(?:export\s+)?(?:class|def|function|func|fn|type|interface|struct|impl|enum)\s+(\w+)",
                             content,
                         )
                         if m:
@@ -1138,7 +1157,11 @@ async def search_knowledge(
                                     {
                                         "file_path": getattr(u, "file_path", ""),
                                         "line": getattr(u, "line_number", None),
-                                        "type": getattr(u, "usage_type", getattr(u, "relationship_type", "")),
+                                        "type": getattr(
+                                            u,
+                                            "usage_type",
+                                            getattr(u, "relationship_type", ""),
+                                        ),
                                     }
                                     for u in usages[:5]
                                 ],
@@ -1159,12 +1182,17 @@ async def search_knowledge(
                         entity_name = (
                             fr.get("element_name")
                             or fr.get("entity_name")
-                            or (fr.get("symbols", [None])[0] if fr.get("symbols") else None)
+                            or (
+                                fr.get("symbols", [None])[0]
+                                if fr.get("symbols")
+                                else None
+                            )
                         )
                         if not entity_name:
                             import re as _re
+
                             _m = _re.search(
-                                r'(?:export\s+)?(?:class|def|function|func|fn|type|interface|struct|impl|enum)\s+(\w+)',
+                                r"(?:export\s+)?(?:class|def|function|func|fn|type|interface|struct|impl|enum)\s+(\w+)",
                                 fr.get("content", ""),
                             )
                             entity_name = _m.group(1) if _m else None
@@ -1179,8 +1207,14 @@ async def search_knowledge(
                             fr["impact"] = {
                                 "affected_files": len(impact.affected_files),
                                 "affected_entities": len(impact.affected_entities),
-                                "relationship_types": dict(impact.relationship_types) if hasattr(impact, 'relationship_types') else {},
-                                "blast_radius": "high" if len(impact.affected_files) > 10 else "medium" if len(impact.affected_files) > 3 else "low",
+                                "relationship_types": dict(impact.relationship_types)
+                                if hasattr(impact, "relationship_types")
+                                else {},
+                                "blast_radius": "high"
+                                if len(impact.affected_files) > 10
+                                else "medium"
+                                if len(impact.affected_files) > 3
+                                else "low",
                             }
                         except Exception:
                             pass  # Non-fatal
@@ -1191,16 +1225,15 @@ async def search_knowledge(
         related_keywords = []
         try:
             from agentic_inquiry.mcp.utils.keyword_extractor import KeywordExtractor
-            
+
             keyword_extractor = KeywordExtractor()
             related_keywords = await keyword_extractor.extract_related_keywords(
-                search_results=results,
-                limit=10
+                search_results=results, limit=10
             )
-            
+
             logger.debug(
                 "Extracted %d related keywords from search results",
-                len(related_keywords)
+                len(related_keywords),
             )
         except Exception as e:
             logger.error("Failed to extract related keywords: %s", e, exc_info=True)
@@ -1222,7 +1255,7 @@ async def search_knowledge(
             source="mcp_tool",
             tool_name="search_knowledge",
             session_id=session_id,
-            count=len(formatted_results)
+            count=len(formatted_results),
         )
 
         response: dict = {
@@ -1234,9 +1267,9 @@ async def search_knowledge(
             "source_note": search_source_note,
             "content_type_counts": content_type_counts,  # SDD-001: Dynamic type visibility
             "related_keywords": related_keywords,
-            "usage_hints": usage_hints
+            "usage_hints": usage_hints,
         }
-        
+
         if clarification_request:
             response["clarification_needed"] = True
             response["clarification_request"] = clarification_request
@@ -1245,7 +1278,7 @@ async def search_knowledge(
         # SDD-001: Mark response as preview mode for agentic workflows
         if preview_only:
             response["preview"] = True
-        
+
         # Add warnings if project is incomplete (even with results)
         if project_state["warnings"]:
             response["warnings"] = project_state["warnings"]
@@ -1259,14 +1292,14 @@ async def search_knowledge(
 
         strategy = determine_search_strategy(
             progress_percent=index_state_info.progress_percent or 0,
-            index_status=index_state_info.status.value
+            index_status=index_state_info.status.value,
         )
 
         result_quality = build_result_quality(
             index_status=index_state_info.status.value,
             progress_percent=index_state_info.progress_percent,
             strategy=strategy.value,
-            result_count=len(formatted_results)
+            result_count=len(formatted_results),
         )
 
         # Include result_quality in response when not at full quality
@@ -1281,7 +1314,7 @@ async def search_knowledge(
             "execution_time_ms": round(execution_time_ms, 2),
             "embedding_time_ms": round(embedding_time_ms, 2),
             "query_time_ms": round(query_time_ms, 2),
-            "result_count": len(formatted_results)
+            "result_count": len(formatted_results),
         }
 
         return response
@@ -1292,7 +1325,7 @@ async def search_knowledge(
             "mcp.tool.failed",
             source="mcp_tool",
             tool_name="search_knowledge",
-            error=str(e)
+            error=str(e),
         )
         logger.error("Failed to search knowledge: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
@@ -1300,9 +1333,9 @@ async def search_knowledge(
             context={
                 "session_id": session_id,
                 "query": query,
-                "search_type": search_type
+                "search_type": search_type,
             },
-            services=services
+            services=services,
         )
 
 
@@ -1316,7 +1349,7 @@ async def find_similar(
     search_scope: Optional[Literal["entities", "content", "all"]] = None,
     content_type: Optional[ContentType] = None,
     preview_only: bool = False,
-    timeout_ms: Optional[int] = None
+    timeout_ms: Optional[int] = None,
 ) -> dict:
     """Find semantically similar entities or content.
 
@@ -1415,7 +1448,7 @@ async def find_similar(
         validate_limit,
         validate_query_length,
         create_validation_error_response,
-        QueryValidationError
+        QueryValidationError,
     )
 
     session_manager = services["session_manager"]
@@ -1438,7 +1471,7 @@ async def find_similar(
             context={"session_id": session_id},
             provided_value=query[:100] if query else None,  # Truncate for display
             expected_type="non-empty string (max 10,000 chars)",
-            example='query="authentication handler"'
+            example='query="authentication handler"',
         )
 
     # Validate parameters
@@ -1451,7 +1484,7 @@ async def find_similar(
             context={"session_id": session_id, "query": query},
             provided_value=limit,
             expected_type="integer (1-100)",
-            example="limit=10"
+            example="limit=10",
         )
 
     # Validate similarity threshold
@@ -1462,7 +1495,7 @@ async def find_similar(
             context={"session_id": session_id, "query": query},
             provided_value=similarity_threshold,
             expected_type="float (0.0-1.0)",
-            example="similarity_threshold=0.7"
+            example="similarity_threshold=0.7",
         )
 
     # Validate search_scope (default to "entities" if not provided)
@@ -1477,7 +1510,7 @@ async def find_similar(
             context={"session_id": session_id, "query": query},
             provided_value=search_scope,
             expected_type=f"string ({', '.join(valid_scopes)})",
-            example='search_scope="content"'
+            example='search_scope="content"',
         )
 
     # Determine what to search
@@ -1489,7 +1522,7 @@ async def find_similar(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -1512,7 +1545,7 @@ async def find_similar(
         session_id=session_id,
         query=query,
         entity_type=entity_type,
-        search_scope=effective_scope
+        search_scope=effective_scope,
     )
 
     try:
@@ -1524,8 +1557,15 @@ async def find_similar(
         embedding_start = time.perf_counter()
         capabilities_fs = services.get("capabilities")
         if capabilities_fs is None:
-            from agentic_inquiry.storage.capabilities import get_capabilities_for_backend
-            _backend_fs = db_manager.get_backend_type() if hasattr(db_manager, 'get_backend_type') else "lancedb"
+            from agentic_inquiry.storage.capabilities import (
+                get_capabilities_for_backend,
+            )
+
+            _backend_fs = (
+                db_manager.get_backend_type()
+                if hasattr(db_manager, "get_backend_type")
+                else "lancedb"
+            )
             capabilities_fs = get_capabilities_for_backend(_backend_fs)
 
         if capabilities_fs.uses_server_side_embedding:
@@ -1540,6 +1580,7 @@ async def find_similar(
 
         # Normalize entity type
         from agentic_inquiry.models.graph_entity import EntityType
+
         entity_type_lower = EntityType.normalize(entity_type) if entity_type else None
 
         # Initialize result containers
@@ -1547,10 +1588,16 @@ async def find_similar(
         similar_content: list[dict] = []
         seen_names: set[str] = set()
         seen_chunk_ids: set[str] = set()
-        match_summary = {"high": 0, "medium": 0, "semantic": 0, "fuzzy": 0, "content": 0}
+        match_summary = {
+            "high": 0,
+            "medium": 0,
+            "semantic": 0,
+            "fuzzy": 0,
+            "content": 0,
+        }
 
         # Check if entity search is supported (for PostgreSQL and LanceDB backends)
-        has_entity_search = hasattr(db_manager, 'entity_vector_search')
+        has_entity_search = hasattr(db_manager, "entity_vector_search")
 
         # Helper to format an entity result
         def format_entity(
@@ -1558,7 +1605,7 @@ async def find_similar(
             combined_sim: float,
             vector_sim: float,
             name_sim: float,
-            match_quality: str
+            match_quality: str,
         ) -> dict:
             entity_type = result.get("type", "")
             return {
@@ -1574,14 +1621,16 @@ async def find_similar(
                 "confidence": _classify_confidence(combined_sim),  # ISS-W2-017
                 "is_code_entity": entity_type in CODE_ENTITY_TYPES,  # ISS-W2-010/015
                 "parent": result.get("parent_name", ""),
-                "docstring": result.get("docstring", "")[:200] if result.get("docstring") else None
+                "docstring": result.get("docstring", "")[:200]
+                if result.get("docstring")
+                else None,
             }
 
         # Helper to run vector search at a given threshold
         async def vector_search_pass(
             min_threshold: float,
             max_threshold: Optional[float] = None,
-            search_limit: int = 50
+            search_limit: int = 50,
         ) -> list[dict]:
             """Run vector search and return results within threshold range.
 
@@ -1595,7 +1644,9 @@ async def find_similar(
                 # Use the backend-agnostic entity_vector_search method
                 # This works for both LanceDB (via StorageFacade) and PostgreSQL
                 raw_results = await db_manager.entity_vector_search(
-                    query_vector=query_vector if isinstance(query_vector, str) else query_vector.tolist(),
+                    query_vector=query_vector
+                    if isinstance(query_vector, str)
+                    else query_vector.tolist(),
                     limit=search_limit,
                     entity_type=entity_type_lower,
                     project_id=project_id,
@@ -1629,9 +1680,11 @@ async def find_similar(
                     continue
 
                 match_quality = _determine_match_quality(combined_sim)
-                pass_results.append(format_entity(
-                    result_dict, combined_sim, vector_sim, name_sim, match_quality
-                ))
+                pass_results.append(
+                    format_entity(
+                        result_dict, combined_sim, vector_sim, name_sim, match_quality
+                    )
+                )
                 seen_names.add(entity_name)
 
             return pass_results
@@ -1657,15 +1710,18 @@ async def find_similar(
             def log_pass_timing(pass_name: str) -> None:
                 elapsed_ms = (time.perf_counter() - entity_search_start) * 1000
                 pass_timings.append((pass_name, round(elapsed_ms, 1)))
-                logger.debug("Entity search %s completed, elapsed=%.1fms, budget=%.0fms",
-                            pass_name, elapsed_ms, time_budget_ms)
+                logger.debug(
+                    "Entity search %s completed, elapsed=%.1fms, budget=%.0fms",
+                    pass_name,
+                    elapsed_ms,
+                    time_budget_ms,
+                )
 
             # ==========================================
             # PASS 1: High confidence (uses user-provided similarity_threshold)
             # ==========================================
             high_results = await vector_search_pass(
-                min_threshold=similarity_threshold,
-                search_limit=limit * 2
+                min_threshold=similarity_threshold, search_limit=limit * 2
             )
             similar_entities.extend(high_results)
             match_summary["high"] = len(high_results)
@@ -1675,13 +1731,15 @@ async def find_similar(
             # PASS 2: Medium confidence (0.35 <= threshold < similarity_threshold)
             # Only if we need more results, threshold allows it, and within time budget
             # ==========================================
-            if (len(similar_entities) < limit and
-                similarity_threshold > THRESHOLD_MEDIUM and
-                within_time_budget()):
+            if (
+                len(similar_entities) < limit
+                and similarity_threshold > THRESHOLD_MEDIUM
+                and within_time_budget()
+            ):
                 medium_results = await vector_search_pass(
                     min_threshold=THRESHOLD_MEDIUM,
                     max_threshold=similarity_threshold,
-                    search_limit=limit * 2
+                    search_limit=limit * 2,
                 )
                 # Only take what we need
                 slots_remaining = limit - len(similar_entities)
@@ -1694,9 +1752,11 @@ async def find_similar(
             # Uses semantic search on code chunks to find related entities
             # Only if we still need results, search_service is available, and within time budget
             # ==========================================
-            if (len(similar_entities) < limit and
-                search_service is not None and
-                within_time_budget()):
+            if (
+                len(similar_entities) < limit
+                and search_service is not None
+                and within_time_budget()
+            ):
                 log_pass_timing("PASS2.5 starting")
                 try:
                     # Calculate remaining time budget for semantic bridge (SG-PERF-003)
@@ -1716,7 +1776,7 @@ async def find_similar(
                             limit=limit * 2,
                             query_vector=query_vector,  # Reuse pre-computed embedding
                         ),
-                        timeout=timeout_seconds
+                        timeout=timeout_seconds,
                     )
 
                     semantic_results = []
@@ -1734,9 +1794,15 @@ async def find_similar(
 
                         if combined_sim >= THRESHOLD_LOW:
                             seen_names.add(entity_name)
-                            semantic_results.append(format_entity(
-                                entity, combined_sim, semantic_score, name_sim, "semantic"
-                            ))
+                            semantic_results.append(
+                                format_entity(
+                                    entity,
+                                    combined_sim,
+                                    semantic_score,
+                                    name_sim,
+                                    "semantic",
+                                )
+                            )
 
                             if len(semantic_results) >= limit - len(similar_entities):
                                 break
@@ -1746,14 +1812,16 @@ async def find_similar(
                     log_pass_timing("PASS2.5(semantic) done")
                     logger.debug(
                         "Semantic bridge added %d entities for query '%s'",
-                        len(semantic_results), query
+                        len(semantic_results),
+                        query,
                     )
 
                 except asyncio.TimeoutError:
                     log_pass_timing("PASS2.5 TIMEOUT")
                     logger.debug(
                         "Semantic bridge timed out after %.1fms for query '%s'",
-                        remaining_budget_ms, query
+                        remaining_budget_ms,
+                        query,
                     )
                     match_summary["semantic"] = 0
                 except Exception as e:
@@ -1770,7 +1838,9 @@ async def find_similar(
             if len(similar_entities) < limit // 2 and within_time_budget():
                 try:
                     # Build Filter AST for optional type filter
-                    fuzzy_filter_ast = by_type(entity_type_lower) if entity_type_lower else None
+                    fuzzy_filter_ast = (
+                        by_type(entity_type_lower) if entity_type_lower else None
+                    )
 
                     all_entities = await db_manager.advanced_filter(
                         table_name="graph_entities",
@@ -1790,9 +1860,9 @@ async def find_similar(
                         min_fuzzy_threshold = max(similarity_threshold, THRESHOLD_LOW)
                         if name_sim >= min_fuzzy_threshold:
                             seen_names.add(entity_name)
-                            fuzzy_results.append(format_entity(
-                                entity, name_sim, 0.0, name_sim, "fuzzy"
-                            ))
+                            fuzzy_results.append(
+                                format_entity(entity, name_sim, 0.0, name_sim, "fuzzy")
+                            )
 
                             if len(fuzzy_results) >= limit - len(similar_entities):
                                 break
@@ -1813,6 +1883,7 @@ async def find_similar(
             if len(similar_entities) == 0 and within_time_budget():
                 try:
                     from agentic_inquiry.mcp.tools.info import list_entities
+
                     name_results = await list_entities(
                         services=services,
                         session_id=session_id,
@@ -1827,9 +1898,11 @@ async def find_similar(
                         name_sim = _fuzzy_name_match(query, entity_name)
                         if name_sim >= 0.2:
                             seen_names.add(entity_name)
-                            similar_entities.append(format_entity(
-                                entity, name_sim, 0.0, name_sim, "name_fallback"
-                            ))
+                            similar_entities.append(
+                                format_entity(
+                                    entity, name_sim, 0.0, name_sim, "name_fallback"
+                                )
+                            )
                     match_summary["name_fallback"] = len(similar_entities)
                     log_pass_timing("PASS4(name_fallback)")
                 except Exception as e:
@@ -1851,18 +1924,21 @@ async def find_similar(
 
                 # Use hybrid search to find relevant content chunks
                 chunk_results = await search_service.hybrid_search(
-                    query_vector=query_vector if isinstance(query_vector, str) else query_vector.tolist(),
+                    query_vector=query_vector
+                    if isinstance(query_vector, str)
+                    else query_vector.tolist(),
                     query_fts=query,
                     project_id=project_id,
                     limit=limit * 2,  # Get more to filter by threshold
                     filters=content_filters,  # SDD-001: Apply content_type filter
-                    boost_overview=False
+                    boost_overview=False,
                 )
 
                 content_results = []
                 logger.debug(
                     "find_similar content search returned %d chunks (threshold=%.2f)",
-                    len(chunk_results), similarity_threshold
+                    len(chunk_results),
+                    similarity_threshold,
                 )
                 for chunk in chunk_results:
                     chunk_id = chunk.id
@@ -1874,7 +1950,9 @@ async def find_similar(
                     similarity = chunk.score
                     logger.debug(
                         "Content chunk %s score=%.4f (threshold=%.2f)",
-                        chunk.data.get("file_path", "?")[:50], similarity, similarity_threshold
+                        chunk.data.get("file_path", "?")[:50],
+                        similarity,
+                        similarity_threshold,
                     )
 
                     if similarity < similarity_threshold:
@@ -1886,43 +1964,60 @@ async def find_similar(
                     if preview_only:
                         # Preview mode: minimal metadata, truncated snippet
                         content = chunk.data.get("content", "")
-                        preview_snippet = content[:PREVIEW_SNIPPET_LENGTH] + "..." if len(content) > PREVIEW_SNIPPET_LENGTH else content
+                        preview_snippet = (
+                            content[:PREVIEW_SNIPPET_LENGTH] + "..."
+                            if len(content) > PREVIEW_SNIPPET_LENGTH
+                            else content
+                        )
 
                         # Title: prefer element_name (function/class name), then entity_name
                         title = (
-                            chunk.data.get("element_name", "") or
-                            chunk.data.get("entity_name", "") or
-                            ""
+                            chunk.data.get("element_name", "")
+                            or chunk.data.get("entity_name", "")
+                            or ""
                         )
 
-                        content_results.append({
-                            "id": chunk_id,
-                            "file_path": chunk.data.get("file_path", ""),
-                            "content_type": chunk.data.get("content_type", "OTHER"),
-                            "line_start": chunk.data.get("line_start"),
-                            "line_end": chunk.data.get("line_end"),
-                            "similarity": round(similarity, 4),
-                            "title": title,
-                            "preview_snippet": preview_snippet
-                        })
+                        content_results.append(
+                            {
+                                "id": chunk_id,
+                                "file_path": chunk.data.get("file_path", ""),
+                                "content_type": chunk.data.get("content_type", "OTHER"),
+                                "line_start": chunk.data.get("line_start"),
+                                "line_end": chunk.data.get("line_end"),
+                                "similarity": round(similarity, 4),
+                                "title": title,
+                                "preview_snippet": preview_snippet,
+                            }
+                        )
                     else:
                         # Full mode: complete content and all metadata
-                        content_results.append({
-                            "id": chunk_id,  # Use canonical 'id' field
-                            "file_path": chunk.data.get("file_path", ""),
-                            "content": chunk.data.get("content", "")[:500],  # Truncate for response
-                            "content_type": chunk.data.get("content_type", ""),
-                            "chunk_type": chunk.data.get("chunk_type", ""),
-                            "similarity": round(similarity, 4),
-                            "line_start": chunk.data.get("line_start"),
-                            "line_end": chunk.data.get("line_end"),
-                            "match_quality": _determine_match_quality(similarity),
-                            "confidence": _classify_confidence(similarity),  # ISS-W2-017
-                            "metadata": _extract_metadata_fields(
-                                chunk.data.get("metadata", {}),
-                                {"language", "symbols", "heading_level", "section_title"}
-                            )
-                        })
+                        content_results.append(
+                            {
+                                "id": chunk_id,  # Use canonical 'id' field
+                                "file_path": chunk.data.get("file_path", ""),
+                                "content": chunk.data.get("content", "")[
+                                    :500
+                                ],  # Truncate for response
+                                "content_type": chunk.data.get("content_type", ""),
+                                "chunk_type": chunk.data.get("chunk_type", ""),
+                                "similarity": round(similarity, 4),
+                                "line_start": chunk.data.get("line_start"),
+                                "line_end": chunk.data.get("line_end"),
+                                "match_quality": _determine_match_quality(similarity),
+                                "confidence": _classify_confidence(
+                                    similarity
+                                ),  # ISS-W2-017
+                                "metadata": _extract_metadata_fields(
+                                    chunk.data.get("metadata", {}),
+                                    {
+                                        "language",
+                                        "symbols",
+                                        "heading_level",
+                                        "section_title",
+                                    },
+                                ),
+                            }
+                        )
 
                     if len(content_results) >= limit:
                         break
@@ -1932,7 +2027,8 @@ async def find_similar(
 
                 logger.debug(
                     "Content search found %d chunks for query '%s'",
-                    len(content_results), query
+                    len(content_results),
+                    query,
                 )
 
             except Exception as e:
@@ -1962,8 +2058,7 @@ async def find_similar(
         # P1-1 Fix: Filter by user's similarity_threshold before limiting
         # Passes 2/2.5/3 may add results below threshold - remove them here
         similar_entities = [
-            e for e in similar_entities
-            if e["similarity"] >= similarity_threshold
+            e for e in similar_entities if e["similarity"] >= similarity_threshold
         ]
 
         # ISS-002 Fix: Apply diversity filter for entities to prevent
@@ -1973,17 +2068,13 @@ async def find_similar(
             # Note: Default config value is 1 (for search_knowledge), but entity
             # search benefits from 2 to show more variety per file
             max_per_file = getattr(
-                getattr(config.search, 'deduplication', None),
-                'max_results_per_file',
-                2
+                getattr(config.search, "deduplication", None), "max_results_per_file", 2
             )
             # Use at least 2 for entity diversity unless explicitly configured lower
             if max_per_file < 2:
                 max_per_file = 2
             similar_entities = diversify_entity_results(
-                entities=similar_entities,
-                limit=limit,
-                max_per_file=max_per_file
+                entities=similar_entities, limit=limit, max_per_file=max_per_file
             )
 
         # Trim to limit
@@ -2012,7 +2103,7 @@ async def find_similar(
             tool_name="find_similar",
             session_id=session_id,
             count=total_results,
-            search_scope=effective_scope
+            search_scope=effective_scope,
         )
 
         # Generate recommendations
@@ -2020,7 +2111,7 @@ async def find_similar(
             query=query,
             results=similar_entities,
             match_summary=match_summary,
-            entity_type=entity_type
+            entity_type=entity_type,
         )
 
         # Build response based on search_scope
@@ -2029,7 +2120,7 @@ async def find_similar(
             "search_scope": effective_scope,
             "similarity_threshold": similarity_threshold,
             "match_summary": match_summary,
-            "content_type_counts": content_type_counts  # SDD-001: Dynamic type visibility
+            "content_type_counts": content_type_counts,  # SDD-001: Dynamic type visibility
         }
 
         # SDD-001: Mark response as preview mode for agentic workflows
@@ -2066,7 +2157,7 @@ async def find_similar(
                 "related_tools": [
                     "add_knowledge(source='.') - Index more content",
                     "get_project_info() - Check what's indexed",
-                    "Try broader search terms or lower similarity_threshold"
+                    "Try broader search terms or lower similarity_threshold",
                 ]
             }
 
@@ -2080,7 +2171,7 @@ async def find_similar(
             "execution_time_ms": round(execution_time_ms, 2),
             "embedding_time_ms": round(embedding_time_ms, 2),
             "query_time_ms": round(query_time_ms, 2),
-            "result_count": total_results
+            "result_count": total_results,
         }
         # Add pass timing debug info if entity search ran
         if pass_timings:
@@ -2092,10 +2183,7 @@ async def find_similar(
     except Exception as e:
         # Track failure
         await event_system.emit(
-            "mcp.tool.failed",
-            source="mcp_tool",
-            tool_name="find_similar",
-            error=str(e)
+            "mcp.tool.failed", source="mcp_tool", tool_name="find_similar", error=str(e)
         )
         logger.error("Failed to find similar entities: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
@@ -2103,17 +2191,13 @@ async def find_similar(
             context={
                 "session_id": session_id,
                 "query": query,
-                "entity_type": entity_type
+                "entity_type": entity_type,
             },
-            services=services
+            services=services,
         )
 
 
-async def fetch_content(
-    services: dict,
-    session_id: str,
-    ids: List[str]
-) -> dict:
+async def fetch_content(services: dict, session_id: str, ids: List[str]) -> dict:
     """Fetch full content for specific chunk IDs (SDD-001).
 
     Use this after search_knowledge(preview_only=True) or find_similar(preview_only=True)
@@ -2160,14 +2244,14 @@ async def fetch_content(
         return {
             "status": "failed",
             "error": "ids must be a non-empty list",
-            "error_type": "validation_error"
+            "error_type": "validation_error",
         }
 
     if len(ids) > 20:
         return {
             "status": "failed",
             "error": "Maximum 20 IDs per request. For larger batches, make multiple calls.",
-            "error_type": "validation_error"
+            "error_type": "validation_error",
         }
 
     # Validate session
@@ -2175,7 +2259,7 @@ async def fetch_content(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -2188,7 +2272,7 @@ async def fetch_content(
         source="mcp_tool",
         tool_name="fetch_content",
         session_id=session_id,
-        id_count=len(ids)
+        id_count=len(ids),
     )
 
     try:
@@ -2202,24 +2286,26 @@ async def fetch_content(
                     table_name="document_chunks",
                     filters=eq("id", chunk_id),
                     limit=1,
-                    project_id=project_id
+                    project_id=project_id,
                 )
 
                 if chunk_results:
                     chunk = chunk_results[0]
-                    results.append({
-                        "id": chunk_id,
-                        "file_path": chunk.get("file_path", ""),
-                        "content": chunk.get("content", ""),
-                        "content_type": chunk.get("content_type", "OTHER"),
-                        "line_start": chunk.get("line_start"),
-                        "line_end": chunk.get("line_end"),
-                        "language": chunk.get("language", ""),
-                        "symbols": chunk.get("symbols", []),
-                        "element_name": chunk.get("element_name", ""),
-                        "entity_name": chunk.get("entity_name", ""),
-                        "metadata": chunk.get("metadata", {})
-                    })
+                    results.append(
+                        {
+                            "id": chunk_id,
+                            "file_path": chunk.get("file_path", ""),
+                            "content": chunk.get("content", ""),
+                            "content_type": chunk.get("content_type", "OTHER"),
+                            "line_start": chunk.get("line_start"),
+                            "line_end": chunk.get("line_end"),
+                            "language": chunk.get("language", ""),
+                            "symbols": chunk.get("symbols", []),
+                            "element_name": chunk.get("element_name", ""),
+                            "entity_name": chunk.get("entity_name", ""),
+                            "metadata": chunk.get("metadata", {}),
+                        }
+                    )
                 else:
                     not_found.append(chunk_id)
 
@@ -2234,14 +2320,14 @@ async def fetch_content(
             tool_name="fetch_content",
             session_id=session_id,
             found=len(results),
-            not_found=len(not_found)
+            not_found=len(not_found),
         )
 
         return {
             "results": results,
             "found": len(results),
             "not_found": not_found,  # Always return list for consistent typing
-            "requested": len(ids)
+            "requested": len(ids),
         }
 
     except Exception as e:
@@ -2250,17 +2336,18 @@ async def fetch_content(
             "mcp.tool.failed",
             source="mcp_tool",
             tool_name="fetch_content",
-            error=str(e)
+            error=str(e),
         )
         logger.error("Failed to fetch content: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
-            error=e,
-            context={
-                "session_id": session_id,
-                "ids": ids
-            },
-            services=services
+            error=e, context={"session_id": session_id, "ids": ids}, services=services
         )
 
 
-__all__ = ["search_knowledge", "find_similar", "fetch_content", "build_result_quality", "ContentType"]
+__all__ = [
+    "search_knowledge",
+    "find_similar",
+    "fetch_content",
+    "build_result_quality",
+    "ContentType",
+]

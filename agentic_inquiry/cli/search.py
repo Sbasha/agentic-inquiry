@@ -4,6 +4,7 @@ Usage:
     ai search <query> [--limit N] [--type code|doc|all] [--json]
     ai search similar <entity> [--limit N]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -87,7 +88,10 @@ async def search_command(args: argparse.Namespace) -> int:
 
     project_id = args.project or config.storage.default_project_id
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     query = " ".join(args.query) if isinstance(args.query, list) else args.query
@@ -144,9 +148,9 @@ async def search_command(args: argparse.Namespace) -> int:
                 return result
             # SearchResult has id, data, score, source, distance
             # data contains the actual document fields
-            r = result.data.copy() if hasattr(result, 'data') else {}
-            r['score'] = getattr(result, 'score', 0.0)
-            r['source'] = getattr(result, 'source', 'unknown')
+            r = result.data.copy() if hasattr(result, "data") else {}
+            r["score"] = getattr(result, "score", 0.0)
+            r["source"] = getattr(result, "source", "unknown")
             return r
 
         if args.json:
@@ -191,7 +195,10 @@ async def similar_command(args: argparse.Namespace) -> int:
 
     project_id = args.project or config.storage.default_project_id
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     try:
@@ -228,9 +235,9 @@ async def similar_command(args: argparse.Namespace) -> int:
         def to_dict(result):
             if isinstance(result, dict):
                 return result
-            r = result.data.copy() if hasattr(result, 'data') else {}
-            r['score'] = getattr(result, 'score', 0.0)
-            r['source'] = getattr(result, 'source', 'unknown')
+            r = result.data.copy() if hasattr(result, "data") else {}
+            r["score"] = getattr(result, "score", 0.0)
+            r["source"] = getattr(result, "source", "unknown")
             return r
 
         if args.json:
@@ -270,28 +277,33 @@ def create_search_parser() -> argparse.ArgumentParser:
         help="Search query",
     )
     parser.add_argument(
-        "--limit", "-l",
+        "--limit",
+        "-l",
         type=int,
         default=10,
         help="Maximum results (default: 10)",
     )
     parser.add_argument(
-        "--type", "-t",
+        "--type",
+        "-t",
         choices=["code", "doc", "all"],
         default="all",
         help="Search type (default: all)",
     )
     parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID",
     )
     parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show full content",
     )
@@ -305,22 +317,26 @@ def create_similar_parser() -> argparse.ArgumentParser:
         description="Find similar code/entities",
     )
     similar_parser.add_argument(
-        "--limit", "-l",
+        "--limit",
+        "-l",
         type=int,
         default=10,
         help="Maximum results (default: 10)",
     )
     similar_parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID",
     )
     similar_parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )
     similar_parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show full content",
     )

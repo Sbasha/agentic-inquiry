@@ -54,7 +54,7 @@ ParsedDocumentLike = Union[
 @runtime_checkable
 class ParserProtocol(Protocol):
     """Minimal protocol that parser implementations are expected to satisfy.
-    
+
     The protocol requires an async parse method. The can_parse method is optional
     and can be used for efficient parser selection in parser chains.
     All methods are async to support non-blocking I/O operations.
@@ -62,13 +62,13 @@ class ParserProtocol(Protocol):
 
     async def parse(self, path: str) -> ParsedDocumentLike:
         """Parse the document at ``path`` asynchronously and return structured data.
-        
+
         Args:
             path: Path to the document to parse
-            
+
         Returns:
             Parsed document data structure
-            
+
         Raises:
             ParserError: If parsing fails
         """
@@ -76,7 +76,9 @@ class ParserProtocol(Protocol):
 
 
 # ParserCallable can be either sync or async
-ParserCallable = Callable[[str], Union[ParsedDocumentLike, Coroutine[Any, Any, ParsedDocumentLike]]]
+ParserCallable = Callable[
+    [str], Union[ParsedDocumentLike, Coroutine[Any, Any, ParsedDocumentLike]]
+]
 
 
 def _default_doc_id(file_path: str) -> str:
@@ -175,13 +177,13 @@ async def execute_parser(
     **kwargs: Any,
 ) -> ParsedDocument:
     """Execute ``parser`` against ``path`` and normalise the output.
-    
+
     Args:
         parser: Parser instance or callable
         path: Path to file to parse
         doc_id: Optional document ID
         **kwargs: Additional parameters to pass to parser (e.g., db_manager, embedding_service, project_id)
-    
+
     Returns:
         Normalized ParsedDocument
     """
@@ -253,7 +255,7 @@ class ParserRegistry:
 
     def get_instance(self, name: str) -> Union[ParserCallable, ParserProtocol]:
         """Get the full parser instance (not just the callable).
-        
+
         This is useful for accessing additional methods like can_parse.
         """
         try:
@@ -264,7 +266,9 @@ class ParserRegistry:
     def available(self) -> Tuple[str, ...]:
         return tuple(sorted(self._parsers))
 
-    async def parse(self, name: str, path: str, *, doc_id: Optional[str] = None) -> ParsedDocument:
+    async def parse(
+        self, name: str, path: str, *, doc_id: Optional[str] = None
+    ) -> ParsedDocument:
         parser = self.get(name)
         return await execute_parser(parser, path, doc_id=doc_id)
 
@@ -297,7 +301,7 @@ def get_parser(name: str) -> ParserCallable:
 
 def get_parser_instance(name: str) -> Union[ParserCallable, ParserProtocol]:
     """Retrieve the full parser instance registered under ``name``.
-    
+
     This returns the full parser object, not just the parse method,
     allowing access to additional methods like can_parse.
     """
@@ -338,4 +342,3 @@ __all__ = [
     "parse_with_registry",
     "available_parsers",
 ]
-

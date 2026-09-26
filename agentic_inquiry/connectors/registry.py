@@ -5,6 +5,7 @@ Uses a singleton pattern with RLock for concurrent access safety.
 
 See: docs/design/connector-architecture.md
 """
+
 from __future__ import annotations
 
 import logging
@@ -186,13 +187,11 @@ class ConnectorRegistry:
 
 
 @overload
-def register_connector(name: str) -> Callable[[ConnectorFactory], ConnectorFactory]:
-    ...
+def register_connector(name: str) -> Callable[[ConnectorFactory], ConnectorFactory]: ...
 
 
 @overload
-def register_connector(name: str, factory: ConnectorFactory) -> ConnectorFactory:
-    ...
+def register_connector(name: str, factory: ConnectorFactory) -> ConnectorFactory: ...
 
 
 def register_connector(

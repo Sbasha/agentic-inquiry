@@ -94,8 +94,7 @@ class Application:
 
 @pytest.mark.asyncio
 async def test_relationship_count_after_indexing_completed(
-    tmp_path: Path,
-    sample_python_code_with_relationships: Path
+    tmp_path: Path, sample_python_code_with_relationships: Path
 ):
     """Test that relationship count is accurate after indexing.completed event.
 
@@ -118,7 +117,7 @@ async def test_relationship_count_after_indexing_completed(
         root=str(tmp_path / "storage"),
         default_project_id="test_project",
         backend="lancedb",
-        event_store=EventStoreConfig(path="test_events.db")
+        event_store=EventStoreConfig(path="test_events.db"),
     )
     config.events = EventsConfig(
         enabled=True,
@@ -145,14 +144,12 @@ async def test_relationship_count_after_indexing_completed(
             project_id="test_project",
             event_system=event_system,
             registry=registry,
-            project_root=str(sample_python_code_with_relationships)
+            project_root=str(sample_python_code_with_relationships),
         )
 
         # Create session manager for get_project_info
         session_manager = SessionManager(
-            db_manager=storage,
-            config=config,
-            event_system=event_system
+            db_manager=storage, config=config, event_system=event_system
         )
 
         # Create memory system (required by get_project_info)
@@ -160,13 +157,15 @@ async def test_relationship_count_after_indexing_completed(
         from agentic_inquiry.embeddings.service import EmbeddingService
 
         embedding_service = EmbeddingService(config)
-        memory_system = MemorySystem(config, embedding_service, event_system=event_system)
+        memory_system = MemorySystem(
+            config, embedding_service, event_system=event_system
+        )
         await memory_system.initialize()
 
         # Create session
         session = await session_manager.create_session(
             project_id="test_project",
-            description="Test session for relationship count validation"
+            description="Test session for relationship count validation",
         )
         session_id = session["session_id"]
 
@@ -174,7 +173,7 @@ async def test_relationship_count_after_indexing_completed(
         services = {
             "session_manager": session_manager,
             "storage": storage,
-            "memory_system": memory_system
+            "memory_system": memory_system,
         }
 
         # Index the directory - this should create relationships
@@ -189,6 +188,7 @@ async def test_relationship_count_after_indexing_completed(
 
         # Wrap emit to capture operation_id
         original_emit = event_system.emit
+
         async def wrapped_emit(event_type, **kwargs):
             await capture_operation_id(event_type=event_type, **kwargs)
             return await original_emit(event_type, **kwargs)
@@ -197,8 +197,7 @@ async def test_relationship_count_after_indexing_completed(
 
         # Index the directory (wait=True for synchronous completion)
         await indexing_pipeline.index_directory(
-            path=str(sample_python_code_with_relationships),
-            wait=True
+            path=str(sample_python_code_with_relationships), wait=True
         )
 
         # Wait for indexing.completed event to be persisted
@@ -206,16 +205,15 @@ async def test_relationship_count_after_indexing_completed(
 
         success = await AsyncTestHelper.wait_for_async_condition(
             lambda: event_system.store.get_operation_events(operation_id),
-            lambda events: any(e.event_type == EventTypes.Indexing.COMPLETED for e in events),
-            timeout=10.0
+            lambda events: any(
+                e.event_type == EventTypes.Indexing.COMPLETED for e in events
+            ),
+            timeout=10.0,
         )
         assert success, "indexing.completed event was not persisted in time"
 
         # Now call get_project_info to get the relationship count
-        project_info = await get_project_info(
-            services=services,
-            session_id=session_id
-        )
+        project_info = await get_project_info(services=services, session_id=session_id)
 
         # Verify we got a valid response
         assert "statistics" in project_info
@@ -225,8 +223,7 @@ async def test_relationship_count_after_indexing_completed(
 
         # Query actual relationship count from database
         actual_count = await storage.count_records(
-            table_name="graph_relationships",
-            project_id="test_project"
+            table_name="graph_relationships", project_id="test_project"
         )
 
         # Verify counts match (AC-1.1)
@@ -251,8 +248,7 @@ async def test_relationship_count_after_indexing_completed(
 
 @pytest.mark.asyncio
 async def test_relationship_count_matches_after_multiple_indexing_operations(
-    tmp_path: Path,
-    sample_python_code_with_relationships: Path
+    tmp_path: Path, sample_python_code_with_relationships: Path
 ):
     """Test that relationship count remains accurate across multiple indexing operations.
 
@@ -268,7 +264,7 @@ async def test_relationship_count_matches_after_multiple_indexing_operations(
         root=str(tmp_path / "storage"),
         default_project_id="test_project",
         backend="lancedb",
-        event_store=EventStoreConfig(path="test_events.db")
+        event_store=EventStoreConfig(path="test_events.db"),
     )
     config.events = EventsConfig(
         enabled=True,
@@ -293,14 +289,12 @@ async def test_relationship_count_matches_after_multiple_indexing_operations(
             project_id="test_project",
             event_system=event_system,
             registry=registry,
-            project_root=str(sample_python_code_with_relationships)
+            project_root=str(sample_python_code_with_relationships),
         )
 
         # Create session manager
         session_manager = SessionManager(
-            db_manager=storage,
-            config=config,
-            event_system=event_system
+            db_manager=storage, config=config, event_system=event_system
         )
 
         # Create memory system
@@ -308,13 +302,15 @@ async def test_relationship_count_matches_after_multiple_indexing_operations(
         from agentic_inquiry.embeddings.service import EmbeddingService
 
         embedding_service = EmbeddingService(config)
-        memory_system = MemorySystem(config, embedding_service, event_system=event_system)
+        memory_system = MemorySystem(
+            config, embedding_service, event_system=event_system
+        )
         await memory_system.initialize()
 
         # Create session
         session = await session_manager.create_session(
             project_id="test_project",
-            description="Test session for multiple indexing operations"
+            description="Test session for multiple indexing operations",
         )
         session_id = session["session_id"]
 
@@ -322,13 +318,12 @@ async def test_relationship_count_matches_after_multiple_indexing_operations(
         services = {
             "session_manager": session_manager,
             "storage": storage,
-            "memory_system": memory_system
+            "memory_system": memory_system,
         }
 
         # Perform first indexing
         await indexing_pipeline.index_directory(
-            path=str(sample_python_code_with_relationships),
-            wait=True
+            path=str(sample_python_code_with_relationships), wait=True
         )
 
         # Wait a bit for event persistence
@@ -338,8 +333,7 @@ async def test_relationship_count_matches_after_multiple_indexing_operations(
         project_info_1 = await get_project_info(services, session_id)
         reported_count_1 = project_info_1["statistics"]["relationships_created"]
         actual_count_1 = await storage.count_records(
-            table_name="graph_relationships",
-            project_id="test_project"
+            table_name="graph_relationships", project_id="test_project"
         )
 
         assert reported_count_1 == actual_count_1, (
@@ -348,8 +342,7 @@ async def test_relationship_count_matches_after_multiple_indexing_operations(
 
         # Perform second indexing (re-index same files)
         await indexing_pipeline.index_directory(
-            path=str(sample_python_code_with_relationships),
-            wait=True
+            path=str(sample_python_code_with_relationships), wait=True
         )
 
         # Wait for event persistence
@@ -359,8 +352,7 @@ async def test_relationship_count_matches_after_multiple_indexing_operations(
         project_info_2 = await get_project_info(services, session_id)
         reported_count_2 = project_info_2["statistics"]["relationships_created"]
         actual_count_2 = await storage.count_records(
-            table_name="graph_relationships",
-            project_id="test_project"
+            table_name="graph_relationships", project_id="test_project"
         )
 
         assert reported_count_2 == actual_count_2, (

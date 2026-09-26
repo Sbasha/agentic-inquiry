@@ -1,7 +1,9 @@
 # Pre-commit hooks for code quality and security
-# Install: pip install pre-commit
-# Setup: pre-commit install
-# Run manually: pre-commit run --all-files
+# Setup: uvx pre-commit install
+# Run manually: uvx pre-commit run --all-files
+# The detect-secrets hook needs a .secrets.baseline, which does not exist yet;
+# until it does, installed hooks block every commit. Run single hooks with
+# `uvx pre-commit run ruff-format --files <paths>` in the meantime.
 
 repos:
   # Secret detection
@@ -60,16 +62,27 @@ repos:
       - id: mixed-line-ending
         args: ['--fix=lf']
 
-  # Python-specific hooks
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.9
+  # Python-specific hooks. Ruff runs through uv so the hooks use the version
+  # pinned in uv.lock; a separate ruff-pre-commit rev drifts from it, and
+  # formatter output changes between ruff releases.
+  - repo: local
     hooks:
       # Run Ruff linter
       - id: ruff
+        name: ruff
+        entry: uv run --frozen ruff check --force-exclude
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
         args: [--fix, --exit-non-zero-on-fix]
 
       # Run Ruff formatter
       - id: ruff-format
+        name: ruff-format
+        entry: uv run --frozen ruff format --force-exclude
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
 
   # Type checking (optional - can be slow)
   # - repo: https://github.com/pre-commit/mirrors-mypy

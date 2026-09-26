@@ -5,6 +5,7 @@ It merges ranked lists by computing: score = sum(1 / (k + rank)) for each result
 
 Reference: https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf
 """
+
 from __future__ import annotations
 
 import logging

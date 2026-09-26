@@ -31,7 +31,9 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # Directory names
-GLOBAL_DIR_NAME = ".agentic-inquiry"  # ~/.agentic-inquiry/ for environments, registry, logs
+GLOBAL_DIR_NAME = (
+    ".agentic-inquiry"  # ~/.agentic-inquiry/ for environments, registry, logs
+)
 LOCAL_DIR_NAME = ".agentic-inquiry"  # .agentic-inquiry/ (project-local) for test data
 ENVS_DIR_NAME = "envs"
 REGISTRY_FILE_NAME = "env-registry.json"
@@ -138,8 +140,6 @@ def is_test_environment(env_name: str) -> bool:
     if "test" in env_name.lower() and "prod" not in env_name.lower():
         return True
     return False
-
-
 
 
 def load_env_registry(workspace: Optional[Path] = None) -> dict:
@@ -330,7 +330,10 @@ def load_environment_dotenv(
     if environ is None:
         environ = os.environ
 
-    from agentic_inquiry.mcp.utils.validation import PathValidationError, validate_file_path
+    from agentic_inquiry.mcp.utils.validation import (
+        PathValidationError,
+        validate_file_path,
+    )
 
     try:
         env_file = validate_file_path(

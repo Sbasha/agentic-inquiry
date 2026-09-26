@@ -10,27 +10,27 @@ Example Usage:
     >>> from agentic_inquiry.memory import MemorySystem, MemoryContext, MemoryTier
     >>> from agentic_inquiry.config import Config
     >>> from agentic_inquiry.embeddings import EmbeddingService
-    >>> 
+    >>>
     >>> # Initialize the memory system
     >>> config = Config.load()
     >>> embedding_service = EmbeddingService(config)
     >>> memory_system = MemorySystem(config=config, embedding_service=embedding_service)
     >>> await memory_system.initialize()
-    >>> 
+    >>>
     >>> # Create a context for an agent
     >>> context = MemoryContext(
     ...     agent_id="assistant_001",
     ...     session_id="session_xyz",
     ...     conversation_id="conv_abc123"
     ... )
-    >>> 
+    >>>
     >>> # Store a memory
     >>> memory_item = await memory_system.store(
     ...     content="User prefers Python for data analysis",
     ...     context=context,
     ...     importance=0.9
     ... )
-    >>> 
+    >>>
     >>> # Retrieve memories
     >>> results = await memory_system.retrieve(
     ...     query="programming preferences",

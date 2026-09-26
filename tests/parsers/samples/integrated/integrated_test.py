@@ -1,1 +1,2 @@
-def modified(): return 42
+def modified():
+    return 42

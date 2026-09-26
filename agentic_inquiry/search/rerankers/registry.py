@@ -3,6 +3,7 @@
 Provides a central registry for reranker types and factory methods
 to create reranker instances from configuration.
 """
+
 from __future__ import annotations
 
 import logging
@@ -19,7 +20,9 @@ RerankerFactory = Callable[..., RerankerProtocol]
 _RERANKER_REGISTRY: Dict[str, RerankerFactory] = {}
 
 
-def register_reranker(name: str) -> Callable[[Type[RerankerProtocol]], Type[RerankerProtocol]]:
+def register_reranker(
+    name: str,
+) -> Callable[[Type[RerankerProtocol]], Type[RerankerProtocol]]:
     """Decorator to register a reranker class.
 
     Args:

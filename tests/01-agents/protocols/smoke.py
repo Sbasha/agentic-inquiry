@@ -4,6 +4,7 @@ Generic smoke test — 5 checks per test with adoption journal.
 Used as fallback for tests that don't have a full protocol module yet.
 Covers: session, indexing, search, memory_save, memory_recall.
 """
+
 import time
 from pathlib import Path
 from typing import Any, Dict
@@ -40,37 +41,62 @@ async def run(
     # 1. Session
     try:
         session_id, project_id = await create_test_session(
-            services, test_id, slug, run_id,
+            services,
+            test_id,
+            slug,
+            run_id,
         )
         check(results, issues, "session", True, {"session_id": session_id})
-        note_adoption(journal, "session created successfully — basic state management works", "positive")
+        note_adoption(
+            journal,
+            "session created successfully — basic state management works",
+            "positive",
+        )
         log(test_id, f"Session: {session_id}")
     except Exception as e:
         check(results, issues, "session", False, severity="CRITICAL", fail_msg=str(e))
-        note_adoption(journal, f"cannot create session: {e} — tool is unusable", "blocker")
-        return summarize(test_id, slug, results, issues, time.time() - t_start, adoption_journal=journal)
+        note_adoption(
+            journal, f"cannot create session: {e} — tool is unusable", "blocker"
+        )
+        return summarize(
+            test_id,
+            slug,
+            results,
+            issues,
+            time.time() - t_start,
+            adoption_journal=journal,
+        )
 
     # 2. Index (small subset for speed)
     idx = await index_and_wait(
-        services, session_id, project_id, test_id,
+        services,
+        session_id,
+        project_id,
+        test_id,
         source=TOOLS_PATH,
         max_wait=120,
         poll_interval=5,
     )
     idx_ok = idx.get("completed", False)
     check(
-        results, issues, "indexing",
+        results,
+        issues,
+        "indexing",
         idx_ok,
         detail=idx,
         fail_msg=idx.get("error", "Indexing failed"),
     )
     if idx_ok:
         elapsed = idx.get("elapsed_s", 0)
-        note_adoption(journal,
+        note_adoption(
+            journal,
             f"indexed MCP tools directory in {elapsed:.0f}s — pre-built knowledge base ready",
-            "positive")
+            "positive",
+        )
     else:
-        note_adoption(journal, "indexing failed — agent cannot build knowledge base", "blocker")
+        note_adoption(
+            journal, "indexing failed — agent cannot build knowledge base", "blocker"
+        )
 
     # 3. Search
     r, t = await call_tool(
@@ -81,15 +107,25 @@ async def run(
         limit=5,
     )
     count = len(r.get("results", []))
-    check(results, issues, "search", count > 0, {"result_count": count, "elapsed_s": round(t, 2)})
+    check(
+        results,
+        issues,
+        "search",
+        count > 0,
+        {"result_count": count, "elapsed_s": round(t, 2)},
+    )
     if count > 0:
-        note_adoption(journal,
+        note_adoption(
+            journal,
             f"semantic search returned {count} results in {t:.1f}s for '{slug}' workflow — finds conceptual matches grep would miss",
-            "positive")
+            "positive",
+        )
     else:
-        note_adoption(journal,
+        note_adoption(
+            journal,
             "search returned 0 results — agent would fall back to grep",
-            "negative")
+            "negative",
+        )
     log(test_id, f"Search: {count} results")
 
     # 4. Memory save
@@ -114,13 +150,30 @@ async def run(
     recall_ok = bool(r.get("memories"))
     check(results, issues, "memory_recall", recall_ok)
     if mem_ok and recall_ok:
-        note_adoption(journal,
+        note_adoption(
+            journal,
             "memory save/recall works — agent can accumulate knowledge across interactions, grep cannot",
-            "positive")
+            "positive",
+        )
     elif not mem_ok:
-        note_adoption(journal, "memory save failed — agent loses knowledge between sessions", "negative")
-    log(test_id, f"Memory: save={results['memory_save']['pass']}, recall={results['memory_recall']['pass']}")
+        note_adoption(
+            journal,
+            "memory save failed — agent loses knowledge between sessions",
+            "negative",
+        )
+    log(
+        test_id,
+        f"Memory: save={results['memory_save']['pass']}, recall={results['memory_recall']['pass']}",
+    )
 
-    summary = summarize(test_id, slug, results, issues, time.time() - t_start, project_id, adoption_journal=journal)
+    summary = summarize(
+        test_id,
+        slug,
+        results,
+        issues,
+        time.time() - t_start,
+        project_id,
+        adoption_journal=journal,
+    )
     write_results(output_dir, summary)
     return summary

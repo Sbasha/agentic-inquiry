@@ -24,6 +24,7 @@ Metrics tracked:
 - search.fallback.engine.python_glob: Pure-Python searches
 - search.fallback.engine.ast_grep: AST-grep searches
 """
+
 import asyncio
 import json
 import logging
@@ -61,6 +62,7 @@ class FallbackResult:
         context_after: Lines after the match (if context requested).
         metadata: Additional metadata from the search tool.
     """
+
     file_path: str
     line_number: int
     content: str
@@ -127,7 +129,7 @@ async def ripgrep_search(
     project_root: Path,
     limit: int = 20,
     timeout: float = 10.0,
-    file_patterns: Optional[List[str]] = None
+    file_patterns: Optional[List[str]] = None,
 ) -> List[FallbackResult]:
     """Search using ripgrep with JSON output.
 
@@ -175,10 +177,12 @@ async def ripgrep_search(
     # Use '--' to signal end of flags and prevent injection
     cmd = [
         "rg",
-        "--json",                       # JSON output for parsing
-        "--max-count", str(limit * 2),  # Get extra for filtering
-        "--context", "2",               # Include 2 lines of context
-        "--"                            # End of flags
+        "--json",  # JSON output for parsing
+        "--max-count",
+        str(limit * 2),  # Get extra for filtering
+        "--context",
+        "2",  # Include 2 lines of context
+        "--",  # End of flags
     ]
 
     # Add sanitized query and project root
@@ -199,14 +203,9 @@ async def ripgrep_search(
 
     try:
         process = await asyncio.create_subprocess_exec(
-            *cmd,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+            *cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
         )
-        stdout, stderr = await asyncio.wait_for(
-            process.communicate(),
-            timeout=timeout
-        )
+        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
     except FileNotFoundError:
         raise FileNotFoundError(
             "ripgrep (rg) not found. Install with: brew install ripgrep"
@@ -264,9 +263,7 @@ async def ripgrep_search(
 
             # Validate path is within project root
             if not validate_result_path(file_path, project_root):
-                logger.warning(
-                    "Skipping result outside project root: %s", file_path
-                )
+                logger.warning("Skipping result outside project root: %s", file_path)
                 context_before = []
                 current_match = None
                 continue
@@ -278,7 +275,7 @@ async def ripgrep_search(
                 content=content,
                 score=1.0,
                 context_before="\n".join(context_before) if context_before else None,
-                context_after=None  # Will be filled when next match or end
+                context_after=None,  # Will be filled when next match or end
             )
             context_before = []
 
@@ -703,23 +700,42 @@ LANGUAGE_PATTERNS: dict[str, dict[str, str]] = {
 }
 
 # Keywords that indicate structural queries (more comprehensive than is_structural_query)
-STRUCTURAL_KEYWORDS: frozenset[str] = frozenset([
-    "class", "classes",
-    "function", "functions", "def",
-    "method", "methods",
-    "import", "imports",
-    "decorator", "decorators",
-    "async",
-    "interface", "interfaces",
-    "type", "types",
-    "export", "exports",
-    "const", "let", "var",
-    "arrow",
-    "lambda",
-    "for loop", "while loop",
-    "try", "catch", "except",
-    "with", "yield", "return", "raise",
-])
+STRUCTURAL_KEYWORDS: frozenset[str] = frozenset(
+    [
+        "class",
+        "classes",
+        "function",
+        "functions",
+        "def",
+        "method",
+        "methods",
+        "import",
+        "imports",
+        "decorator",
+        "decorators",
+        "async",
+        "interface",
+        "interfaces",
+        "type",
+        "types",
+        "export",
+        "exports",
+        "const",
+        "let",
+        "var",
+        "arrow",
+        "lambda",
+        "for loop",
+        "while loop",
+        "try",
+        "catch",
+        "except",
+        "with",
+        "yield",
+        "return",
+        "raise",
+    ]
+)
 
 
 def is_structural_query_extended(query: str) -> bool:
@@ -748,11 +764,17 @@ def is_structural_query_extended(query: str) -> bool:
 
     # Check for multi-word patterns first (more specific)
     multi_word_patterns = [
-        "async function", "async functions", "async def",
-        "arrow function", "arrow functions",
-        "for loop", "while loop",
-        "list comprehension", "dict comprehension",
-        "from import", "from imports",
+        "async function",
+        "async functions",
+        "async def",
+        "arrow function",
+        "arrow functions",
+        "for loop",
+        "while loop",
+        "list comprehension",
+        "dict comprehension",
+        "from import",
+        "from imports",
         "export default",
     ]
     for pattern in multi_word_patterns:
@@ -845,7 +867,7 @@ async def ast_grep_search(
     project_root: Path,
     language: str = "python",
     limit: int = 20,
-    timeout: float = 10.0
+    timeout: float = 10.0,
 ) -> List[FallbackResult]:
     """Search for structural patterns using ast-grep.
 
@@ -901,7 +923,8 @@ async def ast_grep_search(
         if not mapped_pattern:
             logger.debug(
                 "Could not map query to ast-grep pattern: %s (language=%s)",
-                query, language
+                query,
+                language,
             )
             return []
         pattern = mapped_pattern
@@ -910,9 +933,11 @@ async def ast_grep_search(
     cmd = [
         sg_path,
         "--json",
-        "--pattern", pattern,
-        "--lang", language,
-        str(project_root)
+        "--pattern",
+        pattern,
+        "--lang",
+        language,
+        str(project_root),
     ]
 
     logger.debug("Running ast-grep: %s", " ".join(cmd))
@@ -923,13 +948,10 @@ async def ast_grep_search(
             *cmd,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
-            cwd=str(project_root)
+            cwd=str(project_root),
         )
 
-        stdout, stderr = await asyncio.wait_for(
-            process.communicate(),
-            timeout=timeout
-        )
+        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
 
         if process.returncode != 0:
             stderr_text = stderr.decode("utf-8", errors="replace")
@@ -994,15 +1016,17 @@ async def ast_grep_search(
                 if "column" in end:
                     metadata["end_column"] = end["column"]
 
-                results.append(FallbackResult(
-                    file_path=file_path,
-                    line_number=line_number,
-                    content=text,
-                    score=1.0,
-                    match_type="structural",
-                    language=language,
-                    metadata=metadata
-                ))
+                results.append(
+                    FallbackResult(
+                        file_path=file_path,
+                        line_number=line_number,
+                        content=text,
+                        score=1.0,
+                        match_type="structural",
+                        language=language,
+                        metadata=metadata,
+                    )
+                )
 
                 if len(results) >= limit:
                     break
@@ -1058,7 +1082,7 @@ async def structural_search(
                 project_root=project_root,
                 language=language,
                 limit=limit,
-                timeout=timeout
+                timeout=timeout,
             )
             metrics.increment("search.fallback.engine.ast_grep")
 

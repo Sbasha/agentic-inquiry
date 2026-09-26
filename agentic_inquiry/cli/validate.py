@@ -4,6 +4,7 @@ Usage:
     ai validate [--sample-size N] [--deep] [--json] [--project PROJECT]
     ai validate check <check_name> [--sample-size N]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -43,8 +44,12 @@ def format_report(report: ValidationReport, verbose: bool = False) -> str:
     status_color = "\033[32m" if report.meets_threshold else "\033[31m"
     reset = "\033[0m"
 
-    lines.append(f"Overall Accuracy: {status_color}{report.overall_accuracy * 100:.1f}%{reset}")
-    lines.append(f"Status: {status_color}{status_icon} {'PASSED' if report.meets_threshold else 'FAILED'}{reset}")
+    lines.append(
+        f"Overall Accuracy: {status_color}{report.overall_accuracy * 100:.1f}%{reset}"
+    )
+    lines.append(
+        f"Status: {status_color}{status_icon} {'PASSED' if report.meets_threshold else 'FAILED'}{reset}"
+    )
     lines.append(f"Checks: {report.passed_checks}/{report.total_checks} passed")
     lines.append("")
 
@@ -103,7 +108,10 @@ async def validate_command(args: argparse.Namespace) -> int:
     # Determine project_id from args or config
     project_id = args.project or config.storage.default_project_id
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     # Determine project root
@@ -151,24 +159,28 @@ def create_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--sample-size", "-s",
+        "--sample-size",
+        "-s",
         type=int,
         default=100,
         help="Number of samples per validation check (default: 100)",
     )
     parser.add_argument(
-        "--deep", "-d",
+        "--deep",
+        "-d",
         action="store_true",
         help="Run deep completeness check (slower)",
     )
     parser.add_argument(
-        "--threshold", "-t",
+        "--threshold",
+        "-t",
         type=float,
         default=95.0,
         help="Accuracy threshold percentage (default: 95)",
     )
     parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID (uses config default if not specified)",
     )
     parser.add_argument(
@@ -176,12 +188,14 @@ def create_parser() -> argparse.ArgumentParser:
         help="Project root path (default: current directory)",
     )
     parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show detailed failure information",
     )

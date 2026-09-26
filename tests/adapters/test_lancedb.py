@@ -5,6 +5,7 @@ and that our assumptions about vector storage are correct.
 
 Run with: pytest tests/adapters/test_lancedb.py -v
 """
+
 from __future__ import annotations
 
 import tempfile
@@ -55,11 +56,13 @@ class TestTableOperations:
         with tempfile.TemporaryDirectory() as tmp:
             db = lancedb.connect(tmp)
 
-            schema = pa.schema([
-                pa.field("id", pa.string()),
-                pa.field("text", pa.string()),
-                pa.field("vector", pa.list_(pa.float32(), 384)),
-            ])
+            schema = pa.schema(
+                [
+                    pa.field("id", pa.string()),
+                    pa.field("text", pa.string()),
+                    pa.field("vector", pa.list_(pa.float32(), 384)),
+                ]
+            )
 
             # Create empty table with schema
             table = db.create_table("test", schema=schema)
@@ -73,10 +76,12 @@ class TestTableOperations:
         with tempfile.TemporaryDirectory() as tmp:
             db = lancedb.connect(tmp)
 
-            schema = pa.schema([
-                pa.field("id", pa.string()),
-                pa.field("vector", pa.list_(pa.float32(), 384)),
-            ])
+            schema = pa.schema(
+                [
+                    pa.field("id", pa.string()),
+                    pa.field("vector", pa.list_(pa.float32(), 384)),
+                ]
+            )
 
             db.create_table("table1", schema=schema)
             db.create_table("table2", schema=schema)
@@ -93,10 +98,12 @@ class TestTableOperations:
         with tempfile.TemporaryDirectory() as tmp:
             db = lancedb.connect(tmp)
 
-            schema = pa.schema([
-                pa.field("id", pa.string()),
-                pa.field("vector", pa.list_(pa.float32(), 384)),
-            ])
+            schema = pa.schema(
+                [
+                    pa.field("id", pa.string()),
+                    pa.field("vector", pa.list_(pa.float32(), 384)),
+                ]
+            )
 
             db.create_table("test", schema=schema)
 
@@ -167,10 +174,7 @@ class TestVectorSearch:
 
             # Filter by category
             results = (
-                table.search([0.1] * 384)
-                .where("category = 'A'")
-                .limit(10)
-                .to_list()
+                table.search([0.1] * 384).where("category = 'A'").limit(10).to_list()
             )
 
             assert len(results) == 2
@@ -257,11 +261,7 @@ class TestFullTextSearch:
             table.create_fts_index("text")
 
             # FTS search should work
-            results = (
-                table.search("hello", query_type="fts")
-                .limit(10)
-                .to_list()
-            )
+            results = table.search("hello", query_type="fts").limit(10).to_list()
 
             assert len(results) >= 1
             assert "hello" in results[0]["text"]

@@ -10,12 +10,14 @@ from starlette.responses import JSONResponse
 
 logger = logging.getLogger("ai.server.middleware.auth")
 
-EXEMPT_PATHS: frozenset[str] = frozenset({
-    "/api/v1/health",
-    "/health",
-    "/docs",
-    "/openapi.json",
-})
+EXEMPT_PATHS: frozenset[str] = frozenset(
+    {
+        "/api/v1/health",
+        "/health",
+        "/docs",
+        "/openapi.json",
+    }
+)
 
 EXEMPT_PREFIXES: tuple[str, ...] = (
     "/mcp",
@@ -46,7 +48,9 @@ class APIKeyAuthMiddleware(BaseHTTPMiddleware):
         if not auth_header.startswith("Bearer "):
             logger.warning(
                 "AUTH_FAILED request_id=%s method=%s path=%s reason=missing_token",
-                request_id, request.method, path,
+                request_id,
+                request.method,
+                path,
             )
             return JSONResponse(
                 status_code=401,
@@ -57,7 +61,9 @@ class APIKeyAuthMiddleware(BaseHTTPMiddleware):
         if token != self.api_key:
             logger.warning(
                 "AUTH_FAILED request_id=%s method=%s path=%s reason=invalid_token",
-                request_id, request.method, path,
+                request_id,
+                request.method,
+                path,
             )
             return JSONResponse(
                 status_code=401,
@@ -67,7 +73,10 @@ class APIKeyAuthMiddleware(BaseHTTPMiddleware):
         ai_user = request.headers.get("x-ai-user", "anonymous")
         logger.info(
             "AUTH_OK request_id=%s method=%s path=%s user=%s",
-            request_id, request.method, path, ai_user,
+            request_id,
+            request.method,
+            path,
+            ai_user,
         )
 
         return await call_next(request)

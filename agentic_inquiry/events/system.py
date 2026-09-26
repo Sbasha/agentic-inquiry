@@ -26,38 +26,38 @@ logger = logging.getLogger(__name__)
 
 class EventSystem:
     """Event system with queue-based batching and sampling.
-    
+
     Features:
     - Async queue for event buffering
     - Background writer for batch persistence
     - Configurable batch size and flush interval
     - Optional sampling for high-volume events
     - EventBus integration for in-memory handlers
-    
+
     Example:
         >>> async with EventSystem.from_config(config, project_id="my_project") as events:
         ...     await events.emit("indexing.started", source="pipeline", file_count=42)
     """
-    
+
     def __init__(
         self,
         config: Optional["Config"] = None,
         project_id: Optional[str] = None,
     ):
         """Initialize event system.
-        
+
         Args:
             config: Config instance
             project_id: Project ID for data isolation
         """
         from agentic_inquiry.config import Config
-        
+
         # Load config if not provided
         if config is None:
             config = Config.load()
-        
+
         self.config = config
-        
+
         # Resolve project_id
         if project_id is None:
             project_id = config.storage.default_project_id
@@ -65,39 +65,39 @@ class EventSystem:
                 raise ValueError(
                     "project_id must be provided or set as storage.default_project_id in configuration"
                 )
-        
+
         self.project_id = project_id
-        
+
         # Event bus for in-memory event handling
         self.bus = EventBus()
-        
+
         # Event store for persistence
         self.store = EventStore(config, project_id=project_id)
-        
+
         # Queue for batching
         self._queue: asyncio.Queue[Event] = asyncio.Queue(
             maxsize=config.events.queue_max_size
         )
-        
+
         # Background writer task
         self._writer_task: Optional[asyncio.Task] = None
         self._cleanup_task: Optional[asyncio.Task] = None
         self._shutdown = False
-        
+
         # Metrics
         self.events_emitted_count = 0
         self.events_dropped_count = 0
         self._sampled_count = 0
-        
+
         # Sampling configuration
         self._sampling_enabled = config.events.sampling_enabled
         self._sampling_ratio = config.events.sampling_ratio
         self._sampling_counter = 0
-        
+
         # Alerting configuration
-        self._drop_alert_threshold = getattr(config.events, 'drop_alert_threshold', 100)
+        self._drop_alert_threshold = getattr(config.events, "drop_alert_threshold", 100)
         self._drop_alert_triggered = False
-    
+
     @classmethod
     async def from_config(
         cls,
@@ -105,51 +105,51 @@ class EventSystem:
         project_id: Optional[str] = None,
     ) -> "EventSystem":
         """Create and start event system.
-        
+
         Args:
             config: Config instance
             project_id: Project ID for data isolation
-            
+
         Returns:
             Started EventSystem instance
         """
         system = cls(config, project_id)
         await system.start()
         return system
-    
+
     async def start(self) -> None:
         """Start event system and background writer."""
         if self._writer_task is not None:
             # Already started (idempotent)
             return
-        
+
         # Initialize store
         await self.store._ensure_initialized()
-        
+
         # Start background writer
         self._writer_task = asyncio.create_task(self._writer_loop())
-        
+
         # Start background cleanup task
         self._cleanup_task = asyncio.create_task(self._cleanup_loop())
-        
+
         logger.info("EventSystem started")
-    
+
     async def stop(self, timeout: float = 5.0) -> bool:
         """Stop event system and flush pending events.
-        
+
         Args:
             timeout: Maximum time to wait for flush (seconds)
-            
+
         Returns:
             True if stopped successfully, False if timeout
         """
         if self._shutdown:
             # Already stopped (idempotent)
             return True
-        
+
         # Signal shutdown
         self._shutdown = True
-        
+
         # Cancel cleanup task first (it has long sleep intervals)
         if self._cleanup_task and not self._cleanup_task.done():
             self._cleanup_task.cancel()
@@ -159,21 +159,23 @@ class EventSystem:
                 logger.debug("Cleanup task cancelled successfully")
             except Exception as e:
                 logger.error("Error during cleanup task cancellation: %s", e)
-        
+
         # Clear the cleanup task reference
         self._cleanup_task = None
-        
+
         # Wait for writer to finish with timeout
         if self._writer_task and not self._writer_task.done():
             try:
                 # Give writer loop a chance to see shutdown flag
                 await asyncio.sleep(0.01)
-                
+
                 # Wait for writer to complete
                 await asyncio.wait_for(self._writer_task, timeout=timeout)
                 logger.debug("Writer task completed gracefully")
             except asyncio.TimeoutError:
-                logger.warning("Writer task did not complete within timeout, cancelling")
+                logger.warning(
+                    "Writer task did not complete within timeout, cancelling"
+                )
                 self._writer_task.cancel()
                 try:
                     await self._writer_task
@@ -186,25 +188,25 @@ class EventSystem:
                 logger.debug("Writer task was already cancelled")
             except Exception as e:
                 logger.error("Unexpected error stopping writer task: %s", e)
-        
+
         # Clear the task reference
         self._writer_task = None
-        
+
         # Clear event bus handlers to prevent any lingering references
         self.bus.clear()
-        
+
         # Close store
         try:
             await self.store.close()
         except Exception as e:
             logger.error("Error closing event store: %s", e)
-        
+
         # Give asyncio a chance to clean up any remaining tasks
         await asyncio.sleep(0)
-        
+
         logger.info("EventSystem stopped")
         return True
-    
+
     async def emit(
         self,
         event_type: str,
@@ -247,14 +249,17 @@ class EventSystem:
         )
 
         # Publish to event bus (for in-memory handlers)
-        await self.bus.publish(event_type, {
-            "event": event,
-            "project_id": self.project_id,
-            "operation_id": operation_id,
-            "session_id": session_id,
-            "status": status,
-            **metadata
-        })
+        await self.bus.publish(
+            event_type,
+            {
+                "event": event,
+                "project_id": self.project_id,
+                "operation_id": operation_id,
+                "session_id": session_id,
+                "status": status,
+                **metadata,
+            },
+        )
 
         # Queue event for batch persistence
         try:
@@ -270,18 +275,21 @@ class EventSystem:
                 self.queue_depth,
                 self.config.events.queue_max_size,
                 event_type,
-                source
+                source,
             )
 
             # Check if we've exceeded the drop alert threshold
-            if not self._drop_alert_triggered and self.events_dropped_count >= self._drop_alert_threshold:
+            if (
+                not self._drop_alert_triggered
+                and self.events_dropped_count >= self._drop_alert_threshold
+            ):
                 self._drop_alert_triggered = True
                 logger.error(
                     "High event drop rate detected: %d events dropped (threshold: %d). "
                     "Consider increasing queue_max_size (current: %d) or enabling sampling.",
                     self.events_dropped_count,
                     self._drop_alert_threshold,
-                    self.config.events.queue_max_size
+                    self.config.events.queue_max_size,
                 )
 
     async def emit_typed(
@@ -328,37 +336,37 @@ class EventSystem:
             session_id=session_id,
             **metadata,
         )
-    
+
     def _should_sample(self, status: EventStatus) -> bool:
         """Determine if event should be sampled (dropped).
-        
+
         Sampling rules:
         - Never sample STARTED, COMPLETED, or FAILED events
         - Only sample PROGRESS events
         - Keep 1 in N events based on sampling_ratio
-        
+
         Args:
             status: Event status
-            
+
         Returns:
             True if event should be dropped, False if it should be kept
         """
         if not self._sampling_enabled:
             return False
-        
+
         # Never sample important events
         if status in (EventStatus.STARTED, EventStatus.COMPLETED, EventStatus.FAILED):
             return False
-        
+
         # Sample PROGRESS events
         if status == EventStatus.PROGRESS:
             self._sampling_counter += 1
             # Keep 1 in N events
             if self._sampling_counter % self._sampling_ratio != 0:
                 return True
-        
+
         return False
-    
+
     async def _writer_loop(self) -> None:
         """Background writer loop that batches and persists events.
 
@@ -373,8 +381,8 @@ class EventSystem:
         """
         batch_size = self.config.events.batch_size
         flush_interval = self.config.events.flush_interval_seconds
-        max_retries = getattr(self.config.events, 'retry_max_attempts', 5)
-        base_delay = getattr(self.config.events, 'retry_base_delay_seconds', 0.1)
+        max_retries = getattr(self.config.events, "retry_max_attempts", 5)
+        base_delay = getattr(self.config.events, "retry_base_delay_seconds", 0.1)
 
         # Create retry policy for store writes
         # Note: max_retries is the number of retries (not including initial),
@@ -390,7 +398,10 @@ class EventSystem:
 
         logger.debug(
             "Writer loop started (batch_size=%d, flush_interval=%s, max_retries=%d, base_delay=%s)",
-            batch_size, flush_interval, max_retries, base_delay
+            batch_size,
+            flush_interval,
+            max_retries,
+            base_delay,
         )
 
         consecutive_errors = 0
@@ -413,8 +424,7 @@ class EventSystem:
 
                         try:
                             event = await asyncio.wait_for(
-                                self._queue.get(),
-                                timeout=timeout
+                                self._queue.get(), timeout=timeout
                             )
                             batch.append(event)
                         except asyncio.TimeoutError:
@@ -428,9 +438,7 @@ class EventSystem:
                             start_time = time.time()
 
                             # Use retry policy for store writes
-                            await retry_policy.execute(
-                                self.store.store_events, batch
-                            )
+                            await retry_policy.execute(self.store.store_events, batch)
 
                             # Calculate duration and log warning if exceeds threshold
                             duration_ms = (time.time() - start_time) * 1000
@@ -438,10 +446,14 @@ class EventSystem:
                                 logger.warning(
                                     "EventStore write took %.2fms (threshold: 50ms) for batch of %d events",
                                     duration_ms,
-                                    len(batch)
+                                    len(batch),
                                 )
 
-                            logger.debug("Wrote batch of %d events in %.2fms", len(batch), duration_ms)
+                            logger.debug(
+                                "Wrote batch of %d events in %.2fms",
+                                len(batch),
+                                duration_ms,
+                            )
                             # Reset error counter on success
                             consecutive_errors = 0
                         except Exception as e:
@@ -451,7 +463,7 @@ class EventSystem:
                                 max_retries,
                                 len(batch),
                                 e,
-                                exc_info=True
+                                exc_info=True,
                             )
                             self.events_dropped_count += len(batch)
                             consecutive_errors += 1
@@ -460,7 +472,7 @@ class EventSystem:
                         if consecutive_errors >= max_consecutive_errors:
                             logger.error(
                                 "Too many consecutive batch failures (%d), backing off",
-                                consecutive_errors
+                                consecutive_errors,
                             )
                             await asyncio.sleep(1.0)
                             consecutive_errors = 0  # Reset after backoff
@@ -476,14 +488,14 @@ class EventSystem:
                         consecutive_errors,
                         max_consecutive_errors,
                         e,
-                        exc_info=True
+                        exc_info=True,
                     )
 
                     # Back off on repeated errors
                     if consecutive_errors >= max_consecutive_errors:
                         logger.error(
                             "Too many consecutive errors (%d), backing off",
-                            consecutive_errors
+                            consecutive_errors,
                         )
                         await asyncio.sleep(1.0)
                         consecutive_errors = 0  # Reset after backoff
@@ -502,15 +514,19 @@ class EventSystem:
             if remaining:
                 try:
                     await self.store.store_events(remaining)
-                    logger.debug("Flushed %d remaining events on shutdown", len(remaining))
+                    logger.debug(
+                        "Flushed %d remaining events on shutdown", len(remaining)
+                    )
                 except Exception as e:
-                    logger.error("Error flushing remaining events: %s", e, exc_info=True)
+                    logger.error(
+                        "Error flushing remaining events: %s", e, exc_info=True
+                    )
 
             logger.debug("Writer loop stopped")
 
     async def _cleanup_loop(self) -> None:
         """Background cleanup loop that periodically purges old events.
-        
+
         This loop:
         1. Waits for the configured cleanup interval
         2. Calls store.cleanup_old_events with configured retention period
@@ -518,16 +534,18 @@ class EventSystem:
         4. Logs the number of events purged
         5. Handles errors and continues running
         """
-        cleanup_interval_hours = getattr(self.config.events, 'cleanup_interval_hours', 24)
-        retention_days = getattr(self.config.events, 'retention_days', 30)
+        cleanup_interval_hours = getattr(
+            self.config.events, "cleanup_interval_hours", 24
+        )
+        retention_days = getattr(self.config.events, "retention_days", 30)
         cleanup_interval_seconds = cleanup_interval_hours * 3600
-        
+
         logger.debug(
             "Cleanup loop started (interval=%s hours, retention=%s days)",
             cleanup_interval_hours,
-            retention_days
+            retention_days,
         )
-        
+
         try:
             while not self._shutdown:
                 # Wait for cleanup interval
@@ -536,30 +554,30 @@ class EventSystem:
                 except asyncio.CancelledError:
                     logger.debug("Cleanup loop cancelled during sleep")
                     raise
-                
+
                 if self._shutdown:
                     break
-                
+
                 # Run cleanup
                 try:
                     logger.info("Starting periodic event cleanup")
-                    
+
                     # Delete old events
                     deleted_count = await self.store.cleanup_old_events(retention_days)
-                    
+
                     # Vacuum database to reclaim space
                     await self.store.vacuum()
-                    
+
                     logger.info(
                         "Periodic cleanup completed: purged %d events older than %d days",
                         deleted_count,
-                        retention_days
+                        retention_days,
                     )
-                    
+
                 except Exception as e:
                     logger.error("Error during periodic cleanup: %s", e, exc_info=True)
                     # Continue running despite errors
-                    
+
         except asyncio.CancelledError:
             logger.debug("Cleanup loop cancelled")
             raise
@@ -567,19 +585,19 @@ class EventSystem:
             logger.error("Unexpected error in cleanup loop: %s", e, exc_info=True)
         finally:
             logger.debug("Cleanup loop stopped")
-    
+
     @property
     def queue_depth(self) -> int:
         """Get current queue depth.
-        
+
         Returns:
             Number of events in queue
         """
         return self._queue.qsize()
-    
+
     def get_stats(self) -> Dict[str, Any]:
         """Get event system statistics.
-        
+
         Returns:
             Dictionary with metrics
         """
@@ -587,23 +605,24 @@ class EventSystem:
             "events_emitted_count": self.events_emitted_count,
             "events_dropped_count": self.events_dropped_count,
             "queue_depth": self.queue_depth,
-            "writer_running": self._writer_task is not None and not self._writer_task.done(),
+            "writer_running": self._writer_task is not None
+            and not self._writer_task.done(),
             "sampling_active": self._sampling_enabled,
             "sampling_enabled": self._sampling_enabled,
             "sampled_count": self._sampled_count,
         }
-    
+
     async def flush(self, timeout: float = 5.0) -> int:
         """Flush pending events from queue.
-        
+
         Args:
             timeout: Maximum time to wait for flush (seconds)
-            
+
         Returns:
             Number of events flushed
         """
         initial_depth = self.queue_depth
-        
+
         # Wait for queue to drain
         try:
             deadline = asyncio.get_running_loop().time() + timeout
@@ -614,15 +633,15 @@ class EventSystem:
                 await asyncio.sleep(min(0.1, remaining))
         except Exception as e:
             logger.error("Error during flush: %s", e)
-        
+
         return initial_depth - self.queue_depth
-    
+
     async def __aenter__(self) -> "EventSystem":
         """Async context manager entry."""
         # start() is idempotent, so safe to call even if already started
         await self.start()
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """Async context manager exit."""
         await self.stop()

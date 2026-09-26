@@ -55,16 +55,20 @@ def table_configs():
 @pytest.fixture
 def mock_ensure_db(mock_db):
     """Create a mock ensure_db function."""
+
     def _ensure_db():
         return mock_db
+
     return _ensure_db
 
 
 @pytest.fixture
 async def mock_run_sync():
     """Create a mock run_sync function."""
+
     async def _run_sync(fn, *args):
         return fn(*args) if args else fn()
+
     return _run_sync
 
 
@@ -114,9 +118,7 @@ class TestTableCreation:
 class TestIndexCreation:
     """Test index creation logic."""
 
-    def test_ensure_indexes_creates_vector_index(
-        self, schema_manager, mock_table
-    ):
+    def test_ensure_indexes_creates_vector_index(self, schema_manager, mock_table):
         """Test creating vector index."""
         # Execute
         schema_manager._ensure_indexes_sync(
@@ -167,9 +169,7 @@ class TestIndexCreation:
                 similarity_metric="hamming",
             )
 
-    def test_ensure_indexes_creates_fts_index(
-        self, schema_manager, mock_table
-    ):
+    def test_ensure_indexes_creates_fts_index(self, schema_manager, mock_table):
         """Test creating FTS index."""
         # Execute
         schema_manager._ensure_indexes_sync(
@@ -197,9 +197,7 @@ class TestIndexCreation:
             assert isinstance(call_obj.args[0], str)
             assert call_obj.kwargs.get("use_tantivy") is not True
 
-    def test_ensure_indexes_skips_existing(
-        self, schema_manager, mock_table
-    ):
+    def test_ensure_indexes_skips_existing(self, schema_manager, mock_table):
         """Test skipping existing indexes."""
         # Setup existing indices
         existing = [
@@ -218,9 +216,7 @@ class TestIndexCreation:
         mock_table.create_index.assert_not_called()
         mock_table.create_fts_index.assert_not_called()
 
-    def test_ensure_indexes_handles_errors(
-        self, schema_manager, mock_table, caplog
-    ):
+    def test_ensure_indexes_handles_errors(self, schema_manager, mock_table, caplog):
         """Test handling index creation errors."""
         # Setup mock to raise exception
         mock_table.create_index = MagicMock(side_effect=Exception("Index error"))
@@ -270,7 +266,10 @@ class TestDatabaseValidation:
         errors = result["tables"]["test_table"]["errors"]
         assert len(errors) > 0
         # Verify actual error content describes the missing table
-        assert any("not found" in str(err).lower() or "missing" in str(err).lower() for err in errors)
+        assert any(
+            "not found" in str(err).lower() or "missing" in str(err).lower()
+            for err in errors
+        )
 
     async def test_validate_database_integrity_inaccessible_table(
         self, schema_manager, mock_table, mock_tables
@@ -293,10 +292,12 @@ class TestDatabaseValidation:
     ):
         """Test validation checks for indices."""
         # Setup table with indices
-        mock_table.list_indices = MagicMock(return_value=[
-            MagicMock(columns=["embedding"]),
-            MagicMock(columns=["content"]),
-        ])
+        mock_table.list_indices = MagicMock(
+            return_value=[
+                MagicMock(columns=["embedding"]),
+                MagicMock(columns=["content"]),
+            ]
+        )
         mock_tables["test_table"] = mock_table
 
         # Execute

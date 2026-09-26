@@ -22,6 +22,7 @@ Usage:
     # Use in hybrid search
     results = reranker.rerank(query, vector_results, fts_results)
 """
+
 from agentic_inquiry.search.rerankers.protocol import RerankerProtocol, SearchResult
 from agentic_inquiry.search.rerankers.registry import (
     get_reranker,

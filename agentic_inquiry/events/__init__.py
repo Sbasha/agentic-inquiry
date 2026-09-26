@@ -15,7 +15,7 @@ Key Features:
 Example Usage:
     >>> from agentic_inquiry.events import EventSystem, track_operation
     >>> from agentic_inquiry.config import Config
-    >>> 
+    >>>
     >>> # Initialize event system
     >>> config = Config.load()
     >>> async with EventSystem.from_config(config, project_id="my_project") as events:
@@ -23,7 +23,7 @@ Example Usage:
     ...     async with track_operation(events, "indexing", "pipeline") as op:
     ...         await op.progress(files_processed=10)
     ...         # Automatically emits started/completed/failed events
-    ...     
+    ...
     ...     # Query events
     ...     operation_events = await events.store.get_operation_events(operation_id)
     ...     for event in operation_events:

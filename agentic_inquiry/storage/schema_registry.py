@@ -289,9 +289,7 @@ def _expand_backend_enums(storage_props: Dict[str, Any]) -> None:
             # Replace enum with all backend types if it exists
             if "enum" in field_schema:
                 field_schema["enum"] = all_backends
-                logger.debug(
-                    "Expanded enum for %s to: %s", field_name, all_backends
-                )
+                logger.debug("Expanded enum for %s to: %s", field_name, all_backends)
 
 
 def get_registry_info() -> Dict[str, str]:

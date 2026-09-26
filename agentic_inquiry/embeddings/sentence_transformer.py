@@ -1,4 +1,5 @@
 """Sentence-transformer-backed embedder with CUDA autodetection and opt-in MPS."""
+
 from __future__ import annotations
 
 import logging
@@ -73,7 +74,7 @@ class SentenceTransformerEmbedder(Embedder):
     def ensure_model_loaded(self) -> None:
         """Ensure the underlying model is ready for inference."""
         self._ensure_model_loaded()
-        
+
     def _ensure_model_loaded(self):
         """Lazy load the sentence transformer model.
 
@@ -108,7 +109,7 @@ class SentenceTransformerEmbedder(Embedder):
             try:
                 from sentence_transformers import SentenceTransformer
             except ImportError as e:
-                if 'sentence_transformers' in str(e):
+                if "sentence_transformers" in str(e):
                     raise ImportError(
                         "sentence-transformers is required for semantic embeddings. "
                         "Install it with: pip install sentence-transformers"
@@ -157,25 +158,27 @@ class SentenceTransformerEmbedder(Embedder):
                 texts,
                 convert_to_numpy=True,
                 normalize_embeddings=False,  # We'll normalize after dimension adjustment
-                show_progress_bar=False
+                show_progress_bar=False,
             )
-            
+
             # Truncate or pad to requested dimensions if needed
             if embeddings.shape[1] != self._ndims:
                 if embeddings.shape[1] > self._ndims:
                     # Truncate to requested dimensions
-                    embeddings = embeddings[:, :self._ndims]
+                    embeddings = embeddings[:, : self._ndims]
                 else:
                     # Pad with zeros if model produces fewer dimensions
-                    padding = np.zeros((embeddings.shape[0], self._ndims - embeddings.shape[1]))
+                    padding = np.zeros(
+                        (embeddings.shape[0], self._ndims - embeddings.shape[1])
+                    )
                     embeddings = np.concatenate([embeddings, padding], axis=1)
-            
+
             # Normalize embeddings after dimension adjustment for cosine similarity
             norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
             # Avoid division by zero
             norms = np.where(norms == 0, 1, norms)
             embeddings = embeddings / norms
-            
+
             return embeddings.tolist()
 
     def ndims(self) -> int:

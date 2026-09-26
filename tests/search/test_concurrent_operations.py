@@ -8,6 +8,7 @@ These tests verify thread safety and concurrent access patterns for:
 
 Run with: pytest tests/search/test_concurrent_operations.py -v
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -74,7 +75,9 @@ class TestConcurrentSearchOperations:
     """Test concurrent search operations for race conditions and consistency."""
 
     @pytest.mark.asyncio
-    async def test_concurrent_vector_searches_no_race_condition(self, search_service, mock_storage_facade):
+    async def test_concurrent_vector_searches_no_race_condition(
+        self, search_service, mock_storage_facade
+    ):
         """Test that concurrent vector searches don't interfere with each other."""
         # Setup: Each search should see its own query vector
         call_vectors = []
@@ -89,10 +92,7 @@ class TestConcurrentSearchOperations:
 
         # Execute: Run 10 concurrent searches with different vectors
         queries = [[float(i)] * 384 for i in range(10)]
-        tasks = [
-            search_service.vector_search(query_vector=q, limit=5)
-            for q in queries
-        ]
+        tasks = [search_service.vector_search(query_vector=q, limit=5) for q in queries]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -105,7 +105,9 @@ class TestConcurrentSearchOperations:
         assert len(set(call_vectors)) == 10, "Vectors were mixed between calls"
 
     @pytest.mark.asyncio
-    async def test_concurrent_fts_searches_query_isolation(self, search_service, mock_storage_facade):
+    async def test_concurrent_fts_searches_query_isolation(
+        self, search_service, mock_storage_facade
+    ):
         """Test that concurrent FTS searches maintain query isolation."""
         call_queries = []
 
@@ -119,10 +121,7 @@ class TestConcurrentSearchOperations:
 
         # Execute: Run concurrent searches with different queries
         queries = [f"query_{i}" for i in range(10)]
-        tasks = [
-            search_service.fts_search(query_fts=q, limit=5)
-            for q in queries
-        ]
+        tasks = [search_service.fts_search(query_fts=q, limit=5) for q in queries]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -165,7 +164,9 @@ class TestConcurrentSearchOperations:
             assert isinstance(results, list), f"Query {query_id} got non-list result"
 
     @pytest.mark.asyncio
-    async def test_concurrent_searches_metrics_consistency(self, search_service, mock_storage_facade):
+    async def test_concurrent_searches_metrics_consistency(
+        self, search_service, mock_storage_facade
+    ):
         """Test that concurrent searches maintain consistent metrics without race conditions."""
         # Execute: Many concurrent searches
         num_searches = 50
@@ -224,7 +225,9 @@ class TestConcurrentWriteOperations:
         await asyncio.gather(*tasks, return_exceptions=True)
 
         # Verify: No data loss - all 30 chunks written
-        assert len(written_chunks) == 30, f"Expected 30 chunks, got {len(written_chunks)}"
+        assert len(written_chunks) == 30, (
+            f"Expected 30 chunks, got {len(written_chunks)}"
+        )
 
         # Verify: Each chunk is unique (no duplicates from race conditions)
         chunk_ids = [c["chunk_id"] for c in written_chunks]
@@ -249,9 +252,7 @@ class TestConcurrentWriteOperations:
         async def add_relationships_batch(batch_id: int):
             for i in range(5):
                 await mock_add_relationship(
-                    f"entity_{batch_id}",
-                    f"entity_{batch_id}_{i}",
-                    "calls"
+                    f"entity_{batch_id}", f"entity_{batch_id}_{i}", "calls"
                 )
 
         # Execute: 20 concurrent batches
@@ -268,7 +269,9 @@ class TestConcurrentReadWriteScenarios:
     """Test mixed concurrent read/write operations."""
 
     @pytest.mark.asyncio
-    async def test_search_during_indexing_no_errors(self, search_service, mock_storage_facade):
+    async def test_search_during_indexing_no_errors(
+        self, search_service, mock_storage_facade
+    ):
         """Test that searches work correctly during concurrent indexing."""
         # Simulate indexing operations
         indexing_count = 0
@@ -309,7 +312,9 @@ class TestConcurrentReadWriteScenarios:
         # but we test the deduplicator which uses internal state
         from agentic_inquiry.search.deduplicator import SearchDeduplicator
 
-        deduplicator = SearchDeduplicator(max_results_per_file=3, min_diversity_ratio=0.3)
+        deduplicator = SearchDeduplicator(
+            max_results_per_file=3, min_diversity_ratio=0.3
+        )
 
         # Create test results
         def create_results(batch_id: int) -> List[dict]:
@@ -362,8 +367,7 @@ class TestDeadlockPrevention:
         # Should complete within 10 seconds (generous timeout)
         try:
             results = await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True),
-                timeout=10.0
+                asyncio.gather(*tasks, return_exceptions=True), timeout=10.0
             )
 
             # Verify: All completed (no deadlock)
@@ -378,7 +382,9 @@ class TestDeadlockPrevention:
             pytest.fail("Operations timed out - possible deadlock detected")
 
     @pytest.mark.asyncio
-    async def test_no_deadlock_with_graph_reranking(self, search_service, mock_storage_facade):
+    async def test_no_deadlock_with_graph_reranking(
+        self, search_service, mock_storage_facade
+    ):
         """Test that concurrent searches with graph reranking don't deadlock."""
 
         # Mock graph reranking with some delay
@@ -402,15 +408,16 @@ class TestDeadlockPrevention:
         # Should complete without deadlock
         try:
             results = await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True),
-                timeout=5.0
+                asyncio.gather(*tasks, return_exceptions=True), timeout=5.0
             )
             assert len(results) == 20
         except asyncio.TimeoutError:
             pytest.fail("Graph reranking caused deadlock")
 
     @pytest.mark.asyncio
-    async def test_no_circular_wait_in_mixed_operations(self, search_service, mock_storage_facade):
+    async def test_no_circular_wait_in_mixed_operations(
+        self, search_service, mock_storage_facade
+    ):
         """Test that mixed read/write operations don't cause circular waits."""
         operation_count = {"read": 0, "write": 0}
         op_lock = asyncio.Lock()
@@ -440,8 +447,7 @@ class TestDeadlockPrevention:
         # Should complete without circular wait
         try:
             await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True),
-                timeout=5.0
+                asyncio.gather(*tasks, return_exceptions=True), timeout=5.0
             )
 
             # Verify: All operations executed
@@ -506,7 +512,9 @@ class TestRaceConditionDetection:
         assert len(filters_used) == 30
 
     @pytest.mark.asyncio
-    async def test_concurrent_project_id_isolation(self, search_service, mock_storage_facade):
+    async def test_concurrent_project_id_isolation(
+        self, search_service, mock_storage_facade
+    ):
         """Test that concurrent searches with different project IDs maintain isolation."""
         # Track which project_id was used in each call
         call_project_ids = []
@@ -545,7 +553,9 @@ class TestExceptionHandling:
     """Test exception handling in concurrent scenarios."""
 
     @pytest.mark.asyncio
-    async def test_exception_in_one_search_doesnt_affect_others(self, search_service, mock_storage_facade):
+    async def test_exception_in_one_search_doesnt_affect_others(
+        self, search_service, mock_storage_facade
+    ):
         """Test that an exception in one search doesn't break other concurrent searches."""
         call_count = 0
 
@@ -580,8 +590,11 @@ class TestExceptionHandling:
         assert len(successes) == 20, "Expected 20 successful searches"
 
     @pytest.mark.asyncio
-    async def test_timeout_handling_in_concurrent_operations(self, search_service, mock_storage_facade):
+    async def test_timeout_handling_in_concurrent_operations(
+        self, search_service, mock_storage_facade
+    ):
         """Test that timeouts in some operations don't affect others."""
+
         async def mock_vector_search_with_delays(*args, **kwargs):
             query_vector = kwargs.get("query_vector", [])
 
@@ -603,7 +616,7 @@ class TestExceptionHandling:
                         query_vector=[vector_value] * 384,
                         limit=5,
                     ),
-                    timeout=0.05
+                    timeout=0.05,
                 )
             except asyncio.TimeoutError:
                 return "TIMEOUT"
@@ -628,8 +641,11 @@ class TestConcurrentCancellation:
     """Test behavior when operations are cancelled concurrently."""
 
     @pytest.mark.asyncio
-    async def test_graceful_cancellation_cleanup(self, search_service, mock_storage_facade):
+    async def test_graceful_cancellation_cleanup(
+        self, search_service, mock_storage_facade
+    ):
         """Test that cancelled operations clean up gracefully."""
+
         # Make searches take longer so they can be cancelled
         async def slow_vector_search(*args, **kwargs):
             await asyncio.sleep(0.5)  # Long enough to cancel

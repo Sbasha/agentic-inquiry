@@ -7,6 +7,7 @@ These tests verify that:
 4. 'defines' relationships link classes to their methods
 5. Parser correctly distinguishes methods across languages (Python, TypeScript, Java)
 """
+
 import importlib.util
 import pytest
 
@@ -14,7 +15,7 @@ pytestmark = [
     pytest.mark.integration,
     pytest.mark.skipif(
         importlib.util.find_spec("tree_sitter_python") is None,
-        reason="tree_sitter_python not installed (optional dependency)"
+        reason="tree_sitter_python not installed (optional dependency)",
     ),
 ]
 import uuid
@@ -25,7 +26,11 @@ from agentic_inquiry.embeddings.base import Embedder
 from agentic_inquiry.embeddings.registry import EmbeddingRegistry
 from agentic_inquiry.indexing.pipeline import IndexingPipeline
 from agentic_inquiry.parsers.implementations.unified_code import UnifiedCodeParser
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -45,6 +50,7 @@ class _DummyEmbedder(Embedder):
 # =============================================================================
 # Entity Type and Mapping Tests
 # =============================================================================
+
 
 class TestElementTypeMapping:
     """Test element type mapping in unified code parser."""
@@ -74,6 +80,7 @@ class TestElementTypeMapping:
 # =============================================================================
 # Parser Regression Tests (Multi-Language)
 # =============================================================================
+
 
 class TestParserMethodDifferentiation:
     """Parser regression tests for method/function differentiation across languages."""
@@ -180,6 +187,7 @@ public class Calculator {
 # Pipeline Integration Tests
 # =============================================================================
 
+
 class TestMethodExtraction:
     """Test method entity extraction through the pipeline."""
 
@@ -254,10 +262,7 @@ class TestMethodExtraction:
         entities = await db_manager.advanced_filter("graph_entities", {})
 
         # Find method entities
-        method_entities = [
-            e for e in entities
-            if e.get("type") == "method"
-        ]
+        method_entities = [e for e in entities if e.get("type") == "method"]
 
         # Should have method entities
         assert len(method_entities) >= 0, (
@@ -345,6 +350,7 @@ class TestMethodExtraction:
 # =============================================================================
 # Symbol Metadata Tests
 # =============================================================================
+
 
 class TestSymbolMetadata:
     """Test symbol_metadata in ParserChunk."""

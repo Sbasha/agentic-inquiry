@@ -8,7 +8,11 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from agentic_inquiry.constants import CURRENT_PROJECT_ID
-from agentic_inquiry.database.filters import Filter, translate_filter, translate_dict_filters
+from agentic_inquiry.database.filters import (
+    Filter,
+    translate_filter,
+    translate_dict_filters,
+)
 from agentic_inquiry.search.query_sanitizer import QuerySanitizer
 
 _fts_sanitizer = QuerySanitizer()
@@ -142,7 +146,7 @@ class LanceDBQueryBuilder:
             if filter_expression:
                 query = query.where(filter_expression)
             # Use refine_factor for accurate distance calculations if available
-            if hasattr(query, 'refine_factor'):
+            if hasattr(query, "refine_factor"):
                 query = query.refine_factor(10)
             return query.limit(limit).to_list()
 
@@ -161,10 +165,12 @@ class LanceDBQueryBuilder:
                     return []
 
                 def _retry_search() -> List[Dict[str, Any]]:
-                    query = table.search(query_vector, vector_column_name=vector_column_name)
+                    query = table.search(
+                        query_vector, vector_column_name=vector_column_name
+                    )
                     if filter_expression:
                         query = query.where(filter_expression)
-                    if hasattr(query, 'refine_factor'):
+                    if hasattr(query, "refine_factor"):
                         query = query.refine_factor(10)
                     return query.limit(limit).to_list()
 
@@ -366,12 +372,12 @@ class LanceDBQueryBuilder:
         project_id: Optional[str] = CURRENT_PROJECT_ID,
     ) -> List[Dict[str, Any]]:
         """Query graph entities.
-        
+
         Args:
             filters: Optional filter conditions
             limit: Maximum number of results
             project_id: Project ID to filter by
-            
+
         Returns:
             List of matching graph entities
         """
@@ -389,12 +395,12 @@ class LanceDBQueryBuilder:
         project_id: Optional[str] = CURRENT_PROJECT_ID,
     ) -> List[Dict[str, Any]]:
         """Query graph relationships.
-        
+
         Args:
             filters: Optional filter conditions
             limit: Maximum number of results
             project_id: Project ID to filter by
-            
+
         Returns:
             List of matching graph relationships
         """
@@ -412,12 +418,12 @@ class LanceDBQueryBuilder:
         limit: int = 100,
     ) -> List[Dict[str, Any]]:
         """Query across all projects without project filtering.
-        
+
         Args:
             table_name: Name of the table to query
             filters: Filter conditions
             limit: Maximum number of results
-            
+
         Returns:
             List of matching records
         """
@@ -437,14 +443,14 @@ class LanceDBQueryBuilder:
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Perform vector search across all projects.
-        
+
         Args:
             table_name: Name of the table to search
             query_vector: Query embedding vector
             vector_column_name: Name of the vector column
             limit: Maximum number of results
             filters: Optional filters to apply
-            
+
         Returns:
             List of matching records
         """
@@ -465,13 +471,13 @@ class LanceDBQueryBuilder:
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Perform FTS search across all projects.
-        
+
         Args:
             table_name: Name of the table to search
             query: Search query string
             limit: Maximum number of results
             filters: Optional filters to apply
-            
+
         Returns:
             List of matching records
         """

@@ -30,19 +30,19 @@ from agentic_inquiry.mcp.utils.validation import (
 
 class TestPathValidation:
     """Test path validation security features."""
-    
+
     def test_valid_path_within_base(self, tmp_path):
         """Test that valid paths within base directory are accepted."""
         # Create a test file
         test_file = tmp_path / "test.txt"
         test_file.write_text("test content")
-        
+
         # Validate the path
         result = validate_file_path(test_file, tmp_path, must_exist=True)
-        
+
         assert result == test_file.resolve()
         assert result.exists()
-    
+
     def test_valid_relative_path(self, tmp_path):
         """Test that relative paths within base are accepted."""
         # Create subdirectory and file
@@ -50,65 +50,65 @@ class TestPathValidation:
         subdir.mkdir()
         test_file = subdir / "test.txt"
         test_file.write_text("test content")
-        
+
         # Validate using relative path from base
         relative_path = "subdir/test.txt"
         result = validate_file_path(relative_path, tmp_path, must_exist=True)
-        
+
         assert result == test_file.resolve()
-    
+
     def test_directory_traversal_rejected(self, tmp_path):
         """Test that directory traversal attempts are rejected."""
         # Try to access parent directory
         malicious_path = "../etc/passwd"
-        
+
         with pytest.raises(PathValidationError) as exc_info:
             validate_file_path(malicious_path, tmp_path)
-        
+
         assert "outside allowed directory" in str(exc_info.value)
-    
+
     def test_absolute_path_outside_base_rejected(self, tmp_path):
         """Test that absolute paths outside base are rejected."""
         # Try to access a path outside the base
         outside_path = Path("/etc/passwd")
-        
+
         with pytest.raises(PathValidationError) as exc_info:
             validate_file_path(outside_path, tmp_path)
-        
+
         assert "outside allowed directory" in str(exc_info.value)
-    
+
     def test_complex_traversal_rejected(self, tmp_path):
         """Test that complex directory traversal sequences are rejected."""
         # Create a subdirectory
         subdir = tmp_path / "subdir"
         subdir.mkdir()
-        
+
         # Try to traverse up and out
         malicious_path = "subdir/../../etc/passwd"
-        
+
         with pytest.raises(PathValidationError) as exc_info:
             validate_file_path(malicious_path, tmp_path)
-        
+
         assert "outside allowed directory" in str(exc_info.value)
-    
+
     def test_non_existent_path_with_must_exist(self, tmp_path):
         """Test that non-existent paths are rejected when must_exist=True."""
         non_existent = tmp_path / "does_not_exist.txt"
-        
+
         with pytest.raises(PathValidationError) as exc_info:
             validate_file_path(non_existent, tmp_path, must_exist=True)
-        
+
         assert "does not exist" in str(exc_info.value)
-    
+
     def test_non_existent_path_without_must_exist(self, tmp_path):
         """Test that non-existent paths are accepted when must_exist=False."""
         non_existent = tmp_path / "does_not_exist.txt"
-        
+
         # Should not raise
         result = validate_file_path(non_existent, tmp_path, must_exist=False)
-        
+
         assert result == non_existent.resolve()
-    
+
     def test_symlink_traversal_rejected(self, tmp_path):
         """Test that symlinks pointing outside base are rejected."""
         # Create a symlink pointing outside the base
@@ -116,38 +116,38 @@ class TestPathValidation:
         outside_dir.mkdir(exist_ok=True)
         outside_file = outside_dir / "secret.txt"
         outside_file.write_text("secret")
-        
+
         symlink = tmp_path / "link_to_outside"
         try:
             symlink.symlink_to(outside_file)
         except OSError:
             # Skip test if symlinks not supported (e.g., Windows without admin)
             pytest.skip("Symlinks not supported on this system")
-        
+
         with pytest.raises(PathValidationError) as exc_info:
             validate_file_path(symlink, tmp_path, must_exist=True)
-        
+
         assert "outside allowed directory" in str(exc_info.value)
-    
+
     def test_symlink_within_base_accepted(self, tmp_path):
         """Test that symlinks within base directory are accepted."""
         # Create a file and symlink within base
         real_file = tmp_path / "real.txt"
         real_file.write_text("content")
-        
+
         symlink = tmp_path / "link.txt"
         try:
             symlink.symlink_to(real_file)
         except OSError:
             # Skip test if symlinks not supported
             pytest.skip("Symlinks not supported on this system")
-        
+
         # Should not raise
         result = validate_file_path(symlink, tmp_path, must_exist=True)
-        
+
         # Result should be the resolved path (pointing to real file)
         assert result == real_file.resolve()
-    
+
     def test_nested_directory_path(self, tmp_path):
         """Test validation of deeply nested directory paths."""
         # Create nested structure
@@ -155,38 +155,37 @@ class TestPathValidation:
         nested.mkdir(parents=True)
         test_file = nested / "test.txt"
         test_file.write_text("nested content")
-        
+
         # Validate the nested path
         result = validate_file_path(test_file, tmp_path, must_exist=True)
-        
+
         assert result == test_file.resolve()
-    
+
     def test_path_with_dots_in_name(self, tmp_path):
         """Test that paths with dots in filenames are handled correctly."""
         # Create file with dots in name
         test_file = tmp_path / "my.test.file.txt"
         test_file.write_text("content")
-        
+
         # Should not raise (dots in filename are not traversal)
         result = validate_file_path(test_file, tmp_path, must_exist=True)
-        
+
         assert result == test_file.resolve()
-    
+
     def test_returns_absolute_path(self, tmp_path):
         """Test that function always returns absolute paths."""
         # Use relative path
         relative = "test.txt"
-        
+
         result = validate_file_path(relative, tmp_path, must_exist=False)
-        
+
         assert result.is_absolute()
         assert str(tmp_path.resolve()) in str(result)
 
 
-
 class TestProjectIDValidation:
     """Test project ID validation."""
-    
+
     def test_valid_lowercase_project_id(self):
         """Test that valid lowercase project IDs are accepted."""
         valid_ids = [
@@ -197,13 +196,13 @@ class TestProjectIDValidation:
             "app123",
             "a",
             "project-with-many-hyphens",
-            "project_with_many_underscores"
+            "project_with_many_underscores",
         ]
-        
+
         for project_id in valid_ids:
             result = validate_project_id(project_id)
             assert result == project_id
-    
+
     def test_valid_uppercase_normalized(self):
         """Test that uppercase project IDs are normalized to lowercase."""
         test_cases = [
@@ -211,38 +210,32 @@ class TestProjectIDValidation:
             ("PROJECT_123", "project_123"),
             ("My_Project", "my_project"),
             ("TEST-APP-1", "test-app-1"),
-            ("MixedCase123", "mixedcase123")
+            ("MixedCase123", "mixedcase123"),
         ]
-        
+
         for input_id, expected in test_cases:
             result = validate_project_id(input_id, normalize=True)
             assert result == expected
-    
+
     def test_uppercase_without_normalization(self):
         """Test that uppercase IDs are preserved when normalize=False."""
         test_ids = ["My-Project", "PROJECT_123", "MixedCase"]
-        
+
         for project_id in test_ids:
             result = validate_project_id(project_id, normalize=False)
             assert result == project_id
-    
+
     def test_invalid_characters_spaces(self):
         """Test that project IDs with spaces are rejected."""
-        invalid_ids = [
-            "my project",
-            "project 123",
-            "test app",
-            " project",
-            "project "
-        ]
-        
+        invalid_ids = ["my project", "project 123", "test app", " project", "project "]
+
         for project_id in invalid_ids:
             with pytest.raises(ProjectIDValidationError) as exc_info:
                 validate_project_id(project_id)
-            
+
             assert "invalid characters" in str(exc_info.value).lower()
             assert "examples" in str(exc_info.value).lower()
-    
+
     def test_invalid_characters_special(self):
         """Test that project IDs with special characters are rejected."""
         invalid_ids = [
@@ -267,79 +260,87 @@ class TestProjectIDValidation:
             "test,app",
             "project.test",
             "test?app",
-            "project/test"
+            "project/test",
         ]
-        
+
         for project_id in invalid_ids:
             with pytest.raises(ProjectIDValidationError) as exc_info:
                 validate_project_id(project_id)
-            
+
             error_msg = str(exc_info.value).lower()
             assert "invalid characters" in error_msg
             assert "alphanumeric" in error_msg or "examples" in error_msg
-    
+
     def test_empty_project_id(self):
         """Test that empty project IDs are rejected."""
         with pytest.raises(ProjectIDValidationError) as exc_info:
             validate_project_id("")
-        
+
         assert "cannot be empty" in str(exc_info.value).lower()
         assert "examples" in str(exc_info.value).lower()
-    
+
     def test_none_project_id(self):
         """Test that None project IDs are rejected."""
         with pytest.raises(ProjectIDValidationError) as exc_info:
             validate_project_id(None)
-        
+
         assert "cannot be empty" in str(exc_info.value).lower()
-    
+
     def test_length_constraint_too_long(self):
         """Test that project IDs exceeding 64 characters are rejected."""
         # Create a 65-character project ID
         too_long = "a" * 65
-        
+
         with pytest.raises(ProjectIDValidationError) as exc_info:
             validate_project_id(too_long)
-        
+
         error_msg = str(exc_info.value).lower()
         assert "exceeds maximum length" in error_msg or "64 characters" in error_msg
         assert "examples" in error_msg
-    
+
     def test_length_constraint_boundary(self):
         """Test boundary cases for length constraints."""
         # Exactly 64 characters (should pass)
         exactly_64 = "a" * 64
         result = validate_project_id(exactly_64)
         assert result == exactly_64
-        
+
         # 63 characters (should pass)
         chars_63 = "a" * 63
         result = validate_project_id(chars_63)
         assert result == chars_63
-        
+
         # 1 character (should pass)
         single_char = "a"
         result = validate_project_id(single_char)
         assert result == single_char
-    
+
     def test_error_message_quality(self):
         """Test that error messages include helpful examples."""
         # Test with invalid characters
         with pytest.raises(ProjectIDValidationError) as exc_info:
             validate_project_id("invalid project!")
-        
+
         error_msg = str(exc_info.value)
         # Should include examples
-        assert "my-project" in error_msg or "project_123" in error_msg or "my_project" in error_msg
-        
+        assert (
+            "my-project" in error_msg
+            or "project_123" in error_msg
+            or "my_project" in error_msg
+        )
+
         # Test with too long
         with pytest.raises(ProjectIDValidationError) as exc_info:
             validate_project_id("a" * 65)
-        
+
         error_msg = str(exc_info.value)
         # Should include examples
-        assert "my-project" in error_msg or "proj-123" in error_msg or "my_app" in error_msg
-    
+        assert (
+            "my-project" in error_msg
+            or "proj-123" in error_msg
+            or "my_app" in error_msg
+        )
+
     def test_mixed_valid_characters(self):
         """Test project IDs with mixed valid characters."""
         valid_ids = [
@@ -347,19 +348,19 @@ class TestProjectIDValidation:
             "test_app-v2",
             "app-123_test",
             "project-2024_q1",
-            "test_123-abc"
+            "test_123-abc",
         ]
-        
+
         for project_id in valid_ids:
             result = validate_project_id(project_id)
             assert result == project_id
-    
+
     def test_normalization_preserves_hyphens_underscores(self):
         """Test that normalization preserves hyphens and underscores."""
         test_cases = [
             ("My-Project_123", "my-project_123"),
             ("TEST_APP-V2", "test_app-v2"),
-            ("Project-2024_Q1", "project-2024_q1")
+            ("Project-2024_Q1", "project-2024_q1"),
         ]
 
         for input_id, expected in test_cases:
@@ -381,7 +382,7 @@ class TestQueryValidation:
             "search",
             "how to authenticate",
             "find all classes with Factory pattern",
-            "authentication error handling in the API layer"
+            "authentication error handling in the API layer",
         ]
 
         for query in valid_queries:
@@ -399,12 +400,7 @@ class TestQueryValidation:
 
     def test_whitespace_only_query_rejected(self):
         """Test that whitespace-only queries are rejected."""
-        whitespace_queries = [
-            "   ",
-            "\t\t",
-            "\n\n",
-            "   \t\n   "
-        ]
+        whitespace_queries = ["   ", "\t\t", "\n\n", "   \t\n   "]
 
         for query in whitespace_queries:
             with pytest.raises(QueryValidationError) as exc_info:
@@ -500,9 +496,9 @@ class TestQueryValidation:
         """Test that unicode queries are handled correctly."""
         unicode_queries = [
             "搜索功能",  # Chinese
-            "αβγδε",   # Greek
+            "αβγδε",  # Greek
             "日本語テスト",  # Japanese
-            "émoji 😀 query"  # Emoji
+            "émoji 😀 query",  # Emoji
         ]
 
         for query in unicode_queries:
@@ -562,12 +558,7 @@ class TestEntityNameValidation:
 
     def test_whitespace_only_entity_rejected(self):
         """Test that whitespace-only entity names are rejected."""
-        whitespace_names = [
-            "   ",
-            "\t\t",
-            "\n\n",
-            "   \t\n   "
-        ]
+        whitespace_names = ["   ", "\t\t", "\n\n", "   \t\n   "]
 
         for name in whitespace_names:
             with pytest.raises(EntityNameValidationError) as exc_info:
@@ -590,7 +581,7 @@ class TestEntityNameValidation:
             "my/function",
             "/absolute/path",
             "a/b/c",
-            "Class/method"
+            "Class/method",
         ]
 
         for name in invalid_names:
@@ -608,7 +599,7 @@ class TestEntityNameValidation:
             "my\\function",
             "\\absolute\\path",
             "a\\b\\c",
-            "Class\\method"
+            "Class\\method",
         ]
 
         for name in invalid_names:
@@ -621,11 +612,7 @@ class TestEntityNameValidation:
 
     def test_null_byte_rejected(self):
         """Test that null bytes are rejected (string truncation attack prevention)."""
-        invalid_names = [
-            "class\x00name",
-            "\x00start",
-            "end\x00"
-        ]
+        invalid_names = ["class\x00name", "\x00start", "end\x00"]
 
         for name in invalid_names:
             with pytest.raises(EntityNameValidationError) as exc_info:
@@ -736,7 +723,7 @@ class TestEntityNameValidation:
             "class.method",  # Dots are allowed (for qualified names)
             "func@decorator",  # Not common but not forbidden
             "data$var",
-            "name#tag"
+            "name#tag",
         ]
 
         for name in allowed_names:
@@ -865,12 +852,12 @@ class TestColumnNameValidation:
     def test_invalid_dot_patterns(self):
         """Test that invalid dot patterns are rejected."""
         invalid_patterns = [
-            ".column",      # starts with dot
-            "column.",      # ends with dot
+            ".column",  # starts with dot
+            "column.",  # ends with dot
             "column..field",  # consecutive dots
-            "..column",     # multiple leading dots
-            "column..",     # multiple trailing dots
-            "a..b.c",       # embedded consecutive dots
+            "..column",  # multiple leading dots
+            "column..",  # multiple trailing dots
+            "a..b.c",  # embedded consecutive dots
         ]
 
         for pattern in invalid_patterns:
@@ -1096,7 +1083,6 @@ class TestQuerySpecColumnValidation:
 
         # Nested fields should work in select_columns
         spec = QuerySpec(
-            table="document_chunks",
-            select_columns=["id", "metadata.type"]
+            table="document_chunks", select_columns=["id", "metadata.type"]
         )
         assert spec.select_columns == ["id", "metadata.type"]

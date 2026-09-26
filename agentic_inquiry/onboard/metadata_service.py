@@ -58,7 +58,11 @@ class OnboardMetadataService:
         """
         pid = "default"
         if config is not None:
-            pid = project_id or getattr(config.storage, "default_project_id", None) or "default"
+            pid = (
+                project_id
+                or getattr(config.storage, "default_project_id", None)
+                or "default"
+            )
         elif project_id:
             pid = project_id
 
@@ -90,13 +94,12 @@ class OnboardMetadataService:
         if ".agentic-inquiry" in str(root):
             db_path = Path(root) / "onboard_metadata.db"
 
-        provider = SQLiteOnboardMetadataProvider(
-            db_path=db_path, project_id=project_id
-        )
+        provider = SQLiteOnboardMetadataProvider(db_path=db_path, project_id=project_id)
         await provider.initialize()
         logger.info(
             "Onboard metadata service initialized (SQLite): project=%s, db=%s",
-            project_id, db_path,
+            project_id,
+            db_path,
         )
         return provider
 
@@ -124,7 +127,9 @@ class OnboardMetadataService:
             artifact_path=artifact_path,
         )
         await self._provider.create_run(run)
-        logger.info("Created onboard run %s for project %s", run.run_id, self._project_id)
+        logger.info(
+            "Created onboard run %s for project %s", run.run_id, self._project_id
+        )
         return run
 
     async def complete_onboard_run(
@@ -151,16 +156,22 @@ class OnboardMetadataService:
                 entity_count=entity_count,
             )
         else:
-            await self._provider.update_run(run_id, {
-                "status": "completed",
-                "file_count": file_count,
-                "chunk_count": chunk_count,
-                "entity_count": entity_count,
-            })
+            await self._provider.update_run(
+                run_id,
+                {
+                    "status": "completed",
+                    "file_count": file_count,
+                    "chunk_count": chunk_count,
+                    "entity_count": entity_count,
+                },
+            )
             await self._provider.mark_latest(run_id)
         logger.info(
             "Completed onboard run %s: %s files, %s chunks, %s entities",
-            run_id, file_count, chunk_count, entity_count,
+            run_id,
+            file_count,
+            chunk_count,
+            entity_count,
         )
 
     async def fail_onboard_run(self, run_id: str, error: str) -> None:
@@ -170,10 +181,13 @@ class OnboardMetadataService:
             run_id: Run that failed.
             error: Error message.
         """
-        await self._provider.update_run(run_id, {
-            "status": "failed",
-            "error_message": error,
-        })
+        await self._provider.update_run(
+            run_id,
+            {
+                "status": "failed",
+                "error_message": error,
+            },
+        )
         logger.warning("Failed onboard run %s: %s", run_id, error)
 
     async def get_latest_onboard(self) -> Optional[OnboardRun]:

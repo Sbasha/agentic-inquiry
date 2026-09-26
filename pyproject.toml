@@ -149,8 +149,11 @@ module = [
 ignore_missing_imports = true
 
 [tool.ruff]
-# Extend exclude to include intentionally broken test files
+# Intentionally broken parser samples, and the agent packs under .claude/.
+# Pack files are managed by the pack installer; reformatting them makes them
+# diverge from the pack seeds and forces *.upstream.* collisions on reinstall.
 extend-exclude = [
+    ".claude/",
     "tests/parsers/samples/corrupted.py",
     "tests/parsers/samples/partial.py",
 ]

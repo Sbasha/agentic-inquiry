@@ -14,13 +14,19 @@ from agentic_inquiry.embeddings.base import Embedder
 from agentic_inquiry.executors import get_embedding_executor
 from agentic_inquiry.models.graph_entity import GraphEntity
 from agentic_inquiry.models.graph_relationship import GraphRelationship
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
 from agentic_inquiry.database.lancedb_manager import LanceDBManager
 from agentic_inquiry.mcp.utils.validation import validate_file_path
 
 from agentic_inquiry.indexing.external_entity_manager import ExternalEntityManager
-from agentic_inquiry.indexing.relationship_batch_processor import RelationshipBatchProcessor
+from agentic_inquiry.indexing.relationship_batch_processor import (
+    RelationshipBatchProcessor,
+)
 from agentic_inquiry.indexing.relationship_queue_manager import RelationshipQueueManager
 
 # Python 3.10 compatibility: asyncio.timeout was added in 3.11
@@ -42,7 +48,7 @@ else:
             f"asyncio.timeout not available on Python {sys.version_info.major}.{sys.version_info.minor}. "
             "Timeout protection disabled for flush operations. Upgrade to Python 3.11+ for full support.",
             RuntimeWarning,
-            stacklevel=3
+            stacklevel=3,
         )
         yield
 
@@ -59,11 +65,11 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GraphBuilderConfig:
     """Configuration for GraphBuilder performance tuning.
-    
+
     This configuration controls the batched relationship flush operation,
     including batch processing, progress tracking, incremental commits,
     timeouts, and memory management.
-    
+
     Attributes:
         batch_size: Number of relationships per batch (default: 100)
         max_concurrent_batches: Semaphore limit for concurrent processing (default: 10)
@@ -77,21 +83,21 @@ class GraphBuilderConfig:
         slow_operation_threshold_ms: Log warning if operation exceeds this (default: 500.0)
         embedding_dimensions: Embedding vector dimensions for relationships (default: 384)
     """
-    
+
     # Batch processing
     batch_size: int = 100
     max_concurrent_batches: int = 10
-    
+
     # Progress tracking
     progress_log_interval: int = 1000
-    
+
     # Incremental commits
     batch_commit_interval: int = 100
     auto_flush_threshold: int = 50000
-    
+
     # Timeouts
     flush_timeout_seconds: int = 3600
-    
+
     # Memory management
     external_entity_flush_threshold: int = 10000
     external_entity_embedding_batch_size: int = 100  # Max entities per embedding call
@@ -100,35 +106,35 @@ class GraphBuilderConfig:
     enable_cache_prewarming: bool = True
     enable_performance_monitoring: bool = True
     slow_operation_threshold_ms: float = 500.0
-    
+
     # Embedding configuration
     embedding_dimensions: int = 384
-    
+
     @classmethod
     def from_config(cls, config: Any) -> "GraphBuilderConfig":
         """Create GraphBuilderConfig from a Config object.
-        
+
         Reads configuration from the indexing.relationship_flush section.
         Invalid values are logged and defaults are used.
-        
+
         Args:
             config: Configuration object with indexing settings
-            
+
         Returns:
             GraphBuilderConfig with values from config or defaults
         """
         defaults = cls()
-        
+
         # Get relationship_flush section, defaulting to empty dict
         try:
-            indexing_config = getattr(config, 'indexing', None) or {}
+            indexing_config = getattr(config, "indexing", None) or {}
             if isinstance(indexing_config, dict):
-                flush_config = indexing_config.get('relationship_flush', {})
+                flush_config = indexing_config.get("relationship_flush", {})
             else:
-                flush_config = getattr(indexing_config, 'relationship_flush', {}) or {}
+                flush_config = getattr(indexing_config, "relationship_flush", {}) or {}
         except (AttributeError, TypeError):
             flush_config = {}
-        
+
         def get_int(key: str, default: int, min_val: int = 1) -> int:
             """Get an integer value with validation."""
             try:
@@ -139,17 +145,19 @@ class GraphBuilderConfig:
                 if value < min_val:
                     logger.warning(
                         "Invalid %s value %d (< %d), using default %d",
-                        key, value, min_val, default
+                        key,
+                        value,
+                        min_val,
+                        default,
                     )
                     return default
                 return value
             except (ValueError, TypeError) as e:
                 logger.warning(
-                    "Invalid %s configuration: %s, using default %d",
-                    key, e, default
+                    "Invalid %s configuration: %s, using default %d", key, e, default
                 )
                 return default
-        
+
         def get_float(key: str, default: float, min_val: float = 0.0) -> float:
             """Get a float value with validation."""
             try:
@@ -160,17 +168,19 @@ class GraphBuilderConfig:
                 if value < min_val:
                     logger.warning(
                         "Invalid %s value %f (< %f), using default %f",
-                        key, value, min_val, default
+                        key,
+                        value,
+                        min_val,
+                        default,
                     )
                     return default
                 return value
             except (ValueError, TypeError) as e:
                 logger.warning(
-                    "Invalid %s configuration: %s, using default %f",
-                    key, e, default
+                    "Invalid %s configuration: %s, using default %f", key, e, default
                 )
                 return default
-        
+
         def get_bool(key: str, default: bool) -> bool:
             """Get a boolean value with validation."""
             try:
@@ -180,56 +190,83 @@ class GraphBuilderConfig:
                 if isinstance(value, bool):
                     return value
                 if isinstance(value, str):
-                    return value.lower() in ('true', '1', 'yes')
+                    return value.lower() in ("true", "1", "yes")
                 return bool(value)
             except (ValueError, TypeError) as e:
                 logger.warning(
-                    "Invalid %s configuration: %s, using default %s",
-                    key, e, default
+                    "Invalid %s configuration: %s, using default %s", key, e, default
                 )
                 return default
-        
+
         # Get embedding dimensions from config.embeddings.default_dimensions
         embedding_dimensions = defaults.embedding_dimensions
         try:
-            embeddings_config = getattr(config, 'embeddings', None) or {}
+            embeddings_config = getattr(config, "embeddings", None) or {}
             if isinstance(embeddings_config, dict):
-                dim_value = embeddings_config.get('default_dimensions', defaults.embedding_dimensions)
+                dim_value = embeddings_config.get(
+                    "default_dimensions", defaults.embedding_dimensions
+                )
             else:
-                dim_value = getattr(embeddings_config, 'default_dimensions', defaults.embedding_dimensions)
-            
+                dim_value = getattr(
+                    embeddings_config,
+                    "default_dimensions",
+                    defaults.embedding_dimensions,
+                )
+
             # Validate that we got an integer
             if isinstance(dim_value, int):
                 embedding_dimensions = dim_value
         except (AttributeError, TypeError):
             pass  # Use default
-        
+
         return cls(
-            batch_size=get_int('batch_size', defaults.batch_size),
-            max_concurrent_batches=get_int('max_concurrent_batches', defaults.max_concurrent_batches),
-            progress_log_interval=get_int('progress_log_interval', defaults.progress_log_interval),
-            batch_commit_interval=get_int('batch_commit_interval', defaults.batch_commit_interval),
-            auto_flush_threshold=get_int('auto_flush_threshold', defaults.auto_flush_threshold),
-            flush_timeout_seconds=get_int('flush_timeout_seconds', defaults.flush_timeout_seconds),
-            external_entity_flush_threshold=get_int('external_entity_flush_threshold', defaults.external_entity_flush_threshold),
-            external_entity_embedding_batch_size=get_int('external_entity_embedding_batch_size', defaults.external_entity_embedding_batch_size),
-            enable_cache_prewarming=get_bool('enable_cache_prewarming', defaults.enable_cache_prewarming),
-            enable_performance_monitoring=get_bool('enable_performance_monitoring', defaults.enable_performance_monitoring),
-            slow_operation_threshold_ms=get_float('slow_operation_threshold_ms', defaults.slow_operation_threshold_ms),
+            batch_size=get_int("batch_size", defaults.batch_size),
+            max_concurrent_batches=get_int(
+                "max_concurrent_batches", defaults.max_concurrent_batches
+            ),
+            progress_log_interval=get_int(
+                "progress_log_interval", defaults.progress_log_interval
+            ),
+            batch_commit_interval=get_int(
+                "batch_commit_interval", defaults.batch_commit_interval
+            ),
+            auto_flush_threshold=get_int(
+                "auto_flush_threshold", defaults.auto_flush_threshold
+            ),
+            flush_timeout_seconds=get_int(
+                "flush_timeout_seconds", defaults.flush_timeout_seconds
+            ),
+            external_entity_flush_threshold=get_int(
+                "external_entity_flush_threshold",
+                defaults.external_entity_flush_threshold,
+            ),
+            external_entity_embedding_batch_size=get_int(
+                "external_entity_embedding_batch_size",
+                defaults.external_entity_embedding_batch_size,
+            ),
+            enable_cache_prewarming=get_bool(
+                "enable_cache_prewarming", defaults.enable_cache_prewarming
+            ),
+            enable_performance_monitoring=get_bool(
+                "enable_performance_monitoring", defaults.enable_performance_monitoring
+            ),
+            slow_operation_threshold_ms=get_float(
+                "slow_operation_threshold_ms", defaults.slow_operation_threshold_ms
+            ),
             embedding_dimensions=embedding_dimensions,
         )
 
 
 class GraphBuilder:
     """Handles graph entity and relationship construction.
-    
+
     This component is responsible for:
     - Creating graph entities from parsed document chunks
     - Managing pending relationships
     - Resolving import targets using RelationshipResolver
     - Building graph relationships with confidence tracking
     - Two-pass resolution for improved accuracy
-    
+
     Args:
         db_manager: Database manager for storing graph data
         symbol_registry: Registry for tracking symbols and imports
@@ -238,7 +275,7 @@ class GraphBuilder:
         project_id: Project identifier
         project_hash: Project hash for entity IDs
     """
-    
+
     def __init__(
         self,
         db_manager: Union[LanceDBManager, LanceDBAdapter],
@@ -265,7 +302,10 @@ class GraphBuilder:
         if capabilities is not None:
             _caps = capabilities
         else:
-            from agentic_inquiry.storage.capabilities import get_capabilities_for_backend
+            from agentic_inquiry.storage.capabilities import (
+                get_capabilities_for_backend,
+            )
+
             _caps = get_capabilities_for_backend(backend_type)
         self._capabilities = _caps
         self._skip_local_embedding = _caps.uses_server_side_embedding
@@ -274,7 +314,10 @@ class GraphBuilder:
         if external_entity_resolver is not None:
             self._external_resolver = external_entity_resolver
         else:
-            from agentic_inquiry.indexing.external_entity_resolver import ExternalEntityResolver
+            from agentic_inquiry.indexing.external_entity_resolver import (
+                ExternalEntityResolver,
+            )
+
             self._external_resolver = ExternalEntityResolver(project_hash)
 
         # Create ExternalEntityManager for handling external entities (composition)
@@ -323,10 +366,10 @@ class GraphBuilder:
     @property
     def pending_relationships(self) -> List[Tuple[ParserRelationship, str]]:
         """Get a copy of pending relationships.
-        
+
         This is the public API for accessing pending relationships.
         Returns a copy of the list to prevent external modification.
-        
+
         Returns:
             List of (ParserRelationship, source_file_path) tuples
         """
@@ -334,9 +377,9 @@ class GraphBuilder:
 
     def get_pending_relationship_count(self) -> int:
         """Return count of pending relationships.
-        
+
         Use this for progress reporting instead of accessing the list directly.
-        
+
         Returns:
             Number of pending relationships
         """
@@ -352,8 +395,7 @@ class GraphBuilder:
 
     @staticmethod
     def _generate_relationship_id(
-        relationship: ParserRelationship,
-        source_file_path: str
+        relationship: ParserRelationship, source_file_path: str
     ) -> str:
         """Generate a unique ID for a relationship for deduplication.
 
@@ -370,7 +412,9 @@ class GraphBuilder:
             relationship, source_file_path
         )
 
-    def add_pending_relationship(self, relationship: ParserRelationship, source_file_path: str) -> None:
+    def add_pending_relationship(
+        self, relationship: ParserRelationship, source_file_path: str
+    ) -> None:
         """Add a relationship to the pending queue for later resolution.
 
         Delegates to RelationshipQueueManager.
@@ -443,7 +487,7 @@ class GraphBuilder:
             relationships: List of (relationship, source_file_path) tuples
         """
         self._relationship_queue_manager.mark_relationships_committed(relationships)
-    
+
     def remove_pending_relationships_for_file(self, file_path: str) -> int:
         """Remove pending relationships for a specific file.
 
@@ -458,10 +502,10 @@ class GraphBuilder:
         return self._relationship_queue_manager.remove_pending_relationships_for_file(
             file_path
         )
-    
+
     def get_resolution_stats(self) -> Optional[Dict[str, Any]]:
         """Get statistics from the last relationship resolution.
-        
+
         Returns:
             Dictionary containing resolution statistics, or None if no resolution has been performed yet.
             Returns a copy to prevent external modifications.
@@ -469,13 +513,13 @@ class GraphBuilder:
         # Return None if no resolution has been performed yet
         if not self._last_resolution_stats:
             return None
-        
+
         # Return a copy without internal tracking data
         stats_copy = self._last_resolution_stats.copy()
-        
+
         # Remove internal tracking data that shouldn't be exposed
         stats_copy.pop("confidence_scores", None)
-        
+
         return stats_copy
 
     def _check_memory_pressure(
@@ -686,7 +730,7 @@ class GraphBuilder:
 
         Returns:
             Tuple of (list of graph entities, statistics dictionary)
-            
+
         Raises:
             PathValidationError: If file_path in parsed_document is outside the project root
         """
@@ -702,8 +746,10 @@ class GraphBuilder:
             entity_embedder, entity_dims = None, 768  # text-embedding-005
             logger.debug("AlloyDB backend: skipping local entity embedding generation")
         else:
-            entity_embedder, entity_dims = self.embedding_service.get_embedder_configuration(
-                "graph_entities", "vector"
+            entity_embedder, entity_dims = (
+                self.embedding_service.get_embedder_configuration(
+                    "graph_entities", "vector"
+                )
             )
 
         # Create file entity for this document
@@ -713,7 +759,9 @@ class GraphBuilder:
 
         # Validate file path to prevent directory traversal attacks
         # This ensures the file is within the project root
-        validated_file_path = str(validate_file_path(file_path, Path(self.project_root)))
+        validated_file_path = str(
+            validate_file_path(file_path, Path(self.project_root))
+        )
         file_path = validated_file_path
         file_entity_id = f"file::{self.project_hash}::{file_path}::{file_path}"
 
@@ -728,12 +776,12 @@ class GraphBuilder:
         else:
             loop = asyncio.get_running_loop()
             file_vectors = await loop.run_in_executor(
-                get_embedding_executor(),
-                entity_embedder.generate,
-                [file_path]
+                get_embedding_executor(), entity_embedder.generate, [file_path]
             )
             file_vector = file_vectors[0]
-            document_processor._validate_vector("graph_entities", "vector", file_vector, entity_dims)
+            document_processor._validate_vector(
+                "graph_entities", "vector", file_vector, entity_dims
+            )
 
         file_entity = GraphEntity(
             id=file_entity_id,
@@ -762,16 +810,16 @@ class GraphBuilder:
             line_start=-1,
             line_end=-1,
             parent_scope=None,
-            is_exported=True
+            is_exported=True,
         )
-        
+
         # Track relationship count during processing (Requirements 7.1, 7.2, 7.3, 7.4)
         total_pending_added = 0
-        
+
         for chunk in chunks:
             element_name = chunk.element_name
             element_type = chunk.element_type
-            
+
             # Register document entities (chunks with element_name but no symbols)
             if element_name and not chunk.symbols:
                 stats["document_entities"] += 1
@@ -779,7 +827,7 @@ class GraphBuilder:
                     f"Document entity: {element_name} (type: {element_type}) "
                     f"in {parsed_document.file_path}"
                 )
-                
+
                 # Extract metadata for entity registration
                 language = chunk.language or ""
                 line_start = chunk.line_start if chunk.line_start is not None else -1
@@ -789,8 +837,12 @@ class GraphBuilder:
                 # Normalize entity type by stripping code_ prefix for ontology compatibility
                 # TreeSitterCodeParser uses "code_class", "code_function" etc. but we want "class", "function"
                 raw_entity_type = element_type or "section"
-                entity_type = raw_entity_type.removeprefix("code_") if raw_entity_type.startswith("code_") else raw_entity_type
-                
+                entity_type = (
+                    raw_entity_type.removeprefix("code_")
+                    if raw_entity_type.startswith("code_")
+                    else raw_entity_type
+                )
+
                 # Register document entity in symbol registry
                 await self.symbol_registry.register(
                     name=element_name,
@@ -800,14 +852,14 @@ class GraphBuilder:
                     line_start=line_start,
                     line_end=line_end,
                     parent_scope=parent_scope,
-                    is_exported=is_exported
+                    is_exported=is_exported,
                 )
-                
+
                 logger.debug(
                     f"Registered document entity: {element_name} (type: {entity_type}) "
                     f"in {parsed_document.file_path} with parent_scope: {parent_scope}"
                 )
-                
+
                 # Create graph entity for document element
                 if self._skip_local_embedding:
                     vector_entity = [0.0] * entity_dims
@@ -815,11 +867,13 @@ class GraphBuilder:
                     vectors = await loop.run_in_executor(
                         get_embedding_executor(),
                         entity_embedder.generate,
-                        [element_name]
+                        [element_name],
                     )
                     vector_entity = vectors[0]
-                    document_processor._validate_vector("graph_entities", "vector", vector_entity, entity_dims)
-                
+                    document_processor._validate_vector(
+                        "graph_entities", "vector", vector_entity, entity_dims
+                    )
+
                 entity = GraphEntity(
                     id=f"{entity_type}::{self.project_hash}::{parsed_document.file_path}::{element_name}",
                     name=element_name,
@@ -836,7 +890,7 @@ class GraphBuilder:
                     has_ranking_signals=False,
                 )
                 graph_entities.append(entity)
-            
+
             # Register code entities (chunks with symbols)
             if chunk.symbols:
                 stats["code_entities"] += len(chunk.symbols)
@@ -846,18 +900,18 @@ class GraphBuilder:
                         vector_entity = [0.0] * entity_dims
                     else:
                         vectors = await loop.run_in_executor(
-                            get_embedding_executor(),
-                            entity_embedder.generate,
-                            [symbol]
+                            get_embedding_executor(), entity_embedder.generate, [symbol]
                         )
                         vector_entity = vectors[0]
-                        document_processor._validate_vector("graph_entities", "vector", vector_entity, entity_dims)
+                        document_processor._validate_vector(
+                            "graph_entities", "vector", vector_entity, entity_dims
+                        )
                     ranking = (chunk.symbol_rankings or {}).get(symbol, {})
                     has_ranking = bool(ranking)
                     pagerank = ranking.get("pagerank", 0.0)
                     symbol_metadata = (chunk.symbol_metadata or {}).get(symbol, {})
                     symbol_type = symbol_metadata.get("type", "function")
-                    
+
                     # Extract metadata for symbol registration
                     language = chunk.language or ""
                     # Prefer symbol-level line numbers from symbol_metadata
@@ -865,7 +919,9 @@ class GraphBuilder:
                     if symbol_start_line is not None:
                         line_start = int(symbol_start_line)
                     else:
-                        line_start = chunk.line_start if chunk.line_start is not None else -1
+                        line_start = (
+                            chunk.line_start if chunk.line_start is not None else -1
+                        )
 
                     symbol_end_line = symbol_metadata.get("end_line")
                     if symbol_end_line is not None:
@@ -874,7 +930,7 @@ class GraphBuilder:
                         line_end = chunk.line_end if chunk.line_end is not None else -1
                     parent_scope = chunk.parent_id if chunk.parent_id else None
                     is_exported = symbol_metadata.get("is_exported", True)
-                    
+
                     # Register symbol with rich metadata
                     await self.symbol_registry.register(
                         name=symbol,
@@ -884,9 +940,9 @@ class GraphBuilder:
                         line_start=line_start,
                         line_end=line_end,
                         parent_scope=parent_scope,
-                        is_exported=is_exported
+                        is_exported=is_exported,
                     )
-                    
+
                     entity = GraphEntity(
                         id=f"{symbol_type}::{self.project_hash}::{parsed_document.file_path}::{symbol}",
                         name=symbol,
@@ -903,7 +959,7 @@ class GraphBuilder:
                         has_ranking_signals=has_ranking,
                     )
                     graph_entities.append(entity)
-            
+
             # Store relationships for later processing
             chunk_relationships = list(self._chunk_relationships(chunk))
             if chunk_relationships:
@@ -913,13 +969,15 @@ class GraphBuilder:
                     logger.debug(
                         f"Document entity {element_name} has {len(chunk_relationships)} relationships"
                     )
-                
+
                 # Track count during processing (Requirements 7.1, 7.3, 7.4)
                 total_pending_added += len(chunk_relationships)
-                
+
                 for relationship in chunk_relationships:
-                    self.add_pending_relationship(relationship, parsed_document.file_path)
-        
+                    self.add_pending_relationship(
+                        relationship, parsed_document.file_path
+                    )
+
         # Log entity creation statistics (using tracked count instead of recomputing)
         if graph_entities or total_pending_added > 0:
             logger.info(
@@ -929,40 +987,37 @@ class GraphBuilder:
                 parsed_document.doc_id,
                 stats["file_entities"],
                 stats["document_entities"],
-                stats["code_entities"]
+                stats["code_entities"],
             )
-            
+
             # Log sample entity names for debugging
             entity_names = [e.name for e in graph_entities[:10]]
-            logger.debug(
-                "Sample entity names: %s",
-                ", ".join(entity_names)
-            )
-        
+            logger.debug("Sample entity names: %s", ", ".join(entity_names))
+
         return graph_entities, stats
-    
+
     def _chunk_relationships(self, chunk: ParserChunk) -> List[ParserRelationship]:
         """Extract relationships from a parser chunk.
-        
+
         Args:
             chunk: Parser chunk to extract relationships from
-            
+
         Returns:
             List of relationships
         """
         return chunk.relationships if chunk.relationships else []
-    
+
     def _build_metadata_payload(
         self,
         metadata: Optional[Dict[str, Any]],
         ranking_signals: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """Build metadata payload for graph relationships.
-        
+
         Args:
             metadata: Optional metadata dictionary
             ranking_signals: Optional ranking signals dictionary
-            
+
         Returns:
             Combined metadata payload
         """
@@ -972,98 +1027,109 @@ class GraphBuilder:
         if ranking_signals:
             payload["ranking_signals"] = ranking_signals
         return payload
-    
-    def _normalise_relationship(self, relationship: ParserRelationship) -> ParserRelationship:
+
+    def _normalise_relationship(
+        self, relationship: ParserRelationship
+    ) -> ParserRelationship:
         """Normalize a relationship (placeholder for future normalization logic).
-        
+
         Args:
             relationship: Relationship to normalize
-            
+
         Returns:
             Normalized relationship
         """
         return relationship
-    
+
     async def flush_pending_relationships(
-        self,
-        document_processor: Any,
-        use_two_pass: bool = True
+        self, document_processor: Any, use_two_pass: bool = True
     ) -> int:
         """Create all pending relationships after all documents are indexed.
-        
+
         This resolves import targets using the RelationshipResolver service
         and creates the graph relationships in the database.
-        
+
         Enhanced with two-pass resolution:
         - First pass: Resolve high-confidence relationships (>= 0.8)
         - Learn from first pass: Track successful resolutions
         - Second pass: Re-resolve low-confidence relationships using learned patterns
-        
+
         Args:
             document_processor: Document processor for validation
             use_two_pass: Whether to use two-pass resolution (default: True)
-        
+
         Returns:
             Number of relationships created
         """
         if not self._pending_relationships:
             logger.info("No pending relationships to flush")
             return 0
-        
+
         # Start timing resolution
         resolution_start_time = time.time()
-        
+
         # Count relationship types for initial summary
         rel_type_counts: Dict[str, int] = {}
         for rel, _ in self._pending_relationships:
             rel_type_counts[rel.type] = rel_type_counts.get(rel.type, 0) + 1
-        
+
         logger.info(
             "Flushing %d pending relationships: %s",
-            len(self._pending_relationships), dict(rel_type_counts)
+            len(self._pending_relationships),
+            dict(rel_type_counts),
         )
-        logger.debug("Symbol registry contains %d unique symbols", self.symbol_registry.get_symbol_count())
-        
+        logger.debug(
+            "Symbol registry contains %d unique symbols",
+            self.symbol_registry.get_symbol_count(),
+        )
+
         if self._skip_local_embedding:
             relationship_embedder, relationship_dims = None, 768
         else:
-            relationship_embedder, relationship_dims = self.embedding_service.get_embedder_configuration(
-                "graph_relationships", "vector"
+            relationship_embedder, relationship_dims = (
+                self.embedding_service.get_embedder_configuration(
+                    "graph_relationships", "vector"
+                )
             )
 
         # Pre-compute embeddings for all relationship types (batch generation)
         # This optimization reduces embedding calls from N relationships to ~5-10 unique types
         unique_rel_types = list({rel.type for rel, _ in self._pending_relationships})
         if self._skip_local_embedding:
-            rel_type_embedding_cache: Dict[str, List[float]] = {t: [0.0] * relationship_dims for t in unique_rel_types}
+            rel_type_embedding_cache: Dict[str, List[float]] = {
+                t: [0.0] * relationship_dims for t in unique_rel_types
+            }
         else:
             # Run batch embedding in executor to avoid blocking
             loop = asyncio.get_running_loop()
             rel_type_vectors = await loop.run_in_executor(
                 get_embedding_executor(),
                 relationship_embedder.generate,
-                unique_rel_types
+                unique_rel_types,
             )
             rel_type_embedding_cache = dict(zip(unique_rel_types, rel_type_vectors))
 
         logger.info(
             "Pre-computed embeddings for %d unique relationship types: %s",
-            len(unique_rel_types), unique_rel_types
+            len(unique_rel_types),
+            unique_rel_types,
         )
 
         graph_relationships: List[GraphRelationship] = []
 
         # Track resolution statistics
         stats = self._initialize_resolution_stats(use_two_pass)
-        
+
         # Two-pass resolution: Track low-confidence relationships for second pass
         low_confidence_relationships: List[Tuple[ParserRelationship, str]] = []
-        
+
         # FIRST PASS: Resolve all relationships
         total_relationships = len(self._pending_relationships)
         progress_interval = max(1000, total_relationships // 20)  # Log every 1000 or 5%
-        
-        for i, (relationship, source_file_path) in enumerate(self._pending_relationships):
+
+        for i, (relationship, source_file_path) in enumerate(
+            self._pending_relationships
+        ):
             # Progress logging
             if i > 0 and i % progress_interval == 0:
                 elapsed = time.time() - resolution_start_time
@@ -1071,7 +1137,11 @@ class GraphBuilder:
                 remaining = (total_relationships - i) / rate if rate > 0 else 0
                 logger.info(
                     "Relationship resolution progress: %d/%d (%.1f%%) - %.1f/sec - ETA: %.0fs",
-                    i, total_relationships, (i / total_relationships) * 100, rate, remaining
+                    i,
+                    total_relationships,
+                    (i / total_relationships) * 100,
+                    rate,
+                    remaining,
                 )
             result = await self._resolve_single_relationship(
                 relationship,
@@ -1100,25 +1170,26 @@ class GraphBuilder:
                 rel_type_embedding_cache=rel_type_embedding_cache,
             )
             graph_relationships.extend(improved_relationships)
-        
+
         # Insert all relationships
         if graph_relationships:
             await self.db_manager.add_graph_relationships(graph_relationships)
-        
+
         # End timing and log statistics
         resolution_end_time = time.time()
         resolution_time = resolution_end_time - resolution_start_time
-        
-        await self._log_resolution_statistics(stats, resolution_time, len(graph_relationships))
-        
+
+        await self._log_resolution_statistics(
+            stats, resolution_time, len(graph_relationships)
+        )
+
         # Store statistics for later retrieval
         self._last_resolution_stats = stats
-        
+
         # Clear pending relationships
         self.clear_pending_relationships()
-        
-        return len(graph_relationships)
 
+        return len(graph_relationships)
 
     async def flush_pending_relationships_batched(
         self,
@@ -1184,8 +1255,8 @@ class GraphBuilder:
 
         # Filter out already-committed relationships for idempotent resume
         # This enables resuming after interruption without duplicating work
-        relationships_to_process, skipped_count = self._filter_uncommitted_relationships(
-            self._pending_relationships
+        relationships_to_process, skipped_count = (
+            self._filter_uncommitted_relationships(self._pending_relationships)
         )
 
         total_relationships = len(self._pending_relationships)
@@ -1194,11 +1265,15 @@ class GraphBuilder:
         if skipped_count > 0:
             logger.info(
                 "Resume mode: skipping %d already-committed relationships, processing %d remaining",
-                skipped_count, uncommitted_count
+                skipped_count,
+                uncommitted_count,
             )
 
         if not relationships_to_process:
-            logger.info("All %d relationships already committed, nothing to do", total_relationships)
+            logger.info(
+                "All %d relationships already committed, nothing to do",
+                total_relationships,
+            )
             return [], {
                 "total_relationships": total_relationships,
                 "relationships_created": 0,
@@ -1216,44 +1291,53 @@ class GraphBuilder:
         if self._skip_local_embedding:
             relationship_embedder, relationship_dims = None, 768
         else:
-            relationship_embedder, relationship_dims = self.embedding_service.get_embedder_configuration(
-                "graph_relationships", "vector"
+            relationship_embedder, relationship_dims = (
+                self.embedding_service.get_embedder_configuration(
+                    "graph_relationships", "vector"
+                )
             )
 
         # Pre-compute embeddings for all relationship types (batch generation)
         # This optimization reduces embedding calls from N relationships to ~5-10 unique types
         unique_rel_types = list({rel.type for rel, _ in relationships_to_process})
         if self._skip_local_embedding:
-            rel_type_embedding_cache: Dict[str, List[float]] = {t: [0.0] * relationship_dims for t in unique_rel_types}
+            rel_type_embedding_cache: Dict[str, List[float]] = {
+                t: [0.0] * relationship_dims for t in unique_rel_types
+            }
         else:
             # Run batch embedding in executor to avoid blocking
             loop = asyncio.get_running_loop()
             rel_type_vectors = await loop.run_in_executor(
                 get_embedding_executor(),
                 relationship_embedder.generate,
-                unique_rel_types
+                unique_rel_types,
             )
             rel_type_embedding_cache = dict(zip(unique_rel_types, rel_type_vectors))
 
         logger.info(
             "Pre-computed embeddings for %d unique relationship types: %s",
-            len(unique_rel_types), unique_rel_types
+            len(unique_rel_types),
+            unique_rel_types,
         )
 
         # Create semaphore for concurrency control
         semaphore = asyncio.Semaphore(config.max_concurrent_batches)
 
         # Split relationships into batches
-        batches = list(self._chunk_relationships_batched(
-            relationships_to_process,
-            config.batch_size
-        ))
+        batches = list(
+            self._chunk_relationships_batched(
+                relationships_to_process, config.batch_size
+            )
+        )
 
         stats["batch_count"] = len(batches)
 
         logger.info(
             "Flushing %d pending relationships in %d batches (batch_size=%d, timeout=%ds)",
-            uncommitted_count, len(batches), config.batch_size, config.flush_timeout_seconds
+            uncommitted_count,
+            len(batches),
+            config.batch_size,
+            config.flush_timeout_seconds,
         )
 
         # Track all created relationships
@@ -1329,7 +1413,8 @@ class GraphBuilder:
                         await operation_tracker.progress(
                             relationships_processed=len(all_relationships),
                             total_relationships=uncommitted_count,
-                            rate_per_second=len(all_relationships) / max(time.time() - start_time, 0.001),
+                            rate_per_second=len(all_relationships)
+                            / max(time.time() - start_time, 0.001),
                             eta_seconds=0,
                         )
                 else:
@@ -1409,7 +1494,11 @@ class GraphBuilder:
         total_time = time.time() - start_time
         stats["total_time_seconds"] = total_time
         stats["relationships_created"] = len(all_relationships)
-        stats["average_batch_time"] = sum(stats["batch_times"]) / len(stats["batch_times"]) if stats["batch_times"] else 0
+        stats["average_batch_time"] = (
+            sum(stats["batch_times"]) / len(stats["batch_times"])
+            if stats["batch_times"]
+            else 0
+        )
 
         # Get cache statistics
         cache_stats = self.relationship_resolver.get_resolution_stats()
@@ -1432,8 +1521,14 @@ class GraphBuilder:
             low_count = stats["low_confidence_count"]
             total_conf = stats["relationships_created"]
             stats["average_confidence"] = (
-                (high_count * 1.0 + (total_conf - high_count - low_count) * 0.7 + low_count * 0.3)
-                / total_conf if total_conf > 0 else 0.0
+                (
+                    high_count * 1.0
+                    + (total_conf - high_count - low_count) * 0.7
+                    + low_count * 0.3
+                )
+                / total_conf
+                if total_conf > 0
+                else 0.0
             )
 
         # Log final summary (include timeout status)
@@ -1448,7 +1543,9 @@ class GraphBuilder:
                 config.flush_timeout_seconds,
             )
         else:
-            await self._log_resolution_statistics_batched(stats, total_time, len(all_relationships))
+            await self._log_resolution_statistics_batched(
+                stats, total_time, len(all_relationships)
+            )
 
             # Emit completion event with all metrics (Property 35: Requirements 11.4)
             if event_system is not None:
@@ -1479,9 +1576,7 @@ class GraphBuilder:
         return all_relationships, stats
 
     def _initialize_batched_stats(
-        self,
-        config: GraphBuilderConfig,
-        total_relationships: int
+        self, config: GraphBuilderConfig, total_relationships: int
     ) -> Dict[str, Any]:
         """Initialize statistics tracking for batched flush.
 
@@ -1500,9 +1595,7 @@ class GraphBuilder:
         )
 
     def _chunk_relationships_batched(
-        self,
-        relationships: List[Tuple[ParserRelationship, str]],
-        batch_size: int
+        self, relationships: List[Tuple[ParserRelationship, str]], batch_size: int
     ) -> Generator[List[Tuple[ParserRelationship, str]], None, None]:
         """Split relationships into batches for processing.
 
@@ -1547,7 +1640,10 @@ class GraphBuilder:
         Returns:
             List of successfully created GraphRelationship objects
         """
-        async def process_single(rel_tuple: Tuple[ParserRelationship, str]) -> Optional[GraphRelationship]:
+
+        async def process_single(
+            rel_tuple: Tuple[ParserRelationship, str],
+        ) -> Optional[GraphRelationship]:
             relationship, source_file_path = rel_tuple
             async with semaphore:
                 try:
@@ -1570,17 +1666,16 @@ class GraphBuilder:
                         relationship.source_name,
                         relationship.target_name,
                         e,
-                        exc_info=True
+                        exc_info=True,
                     )
                     stats["relationships_failed"] += 1
                     return None
-        
+
         # Process all relationships in batch concurrently
         results = await asyncio.gather(
-            *[process_single(rel_tuple) for rel_tuple in batch],
-            return_exceptions=True
+            *[process_single(rel_tuple) for rel_tuple in batch], return_exceptions=True
         )
-        
+
         # Filter out None and exceptions
         created_relationships: List[GraphRelationship] = []
         for result in results:
@@ -1589,12 +1684,14 @@ class GraphBuilder:
                 stats["relationships_failed"] += 1
             elif isinstance(result, GraphRelationship):
                 created_relationships.append(result)
-        
+
         logger.debug(
             "Batch %d: processed %d relationships, created %d",
-            batch_number, len(batch), len(created_relationships)
+            batch_number,
+            len(batch),
+            len(created_relationships),
         )
-        
+
         return created_relationships
 
     async def _commit_batch(
@@ -1605,16 +1702,16 @@ class GraphBuilder:
         event_system: Optional[Any] = None,
     ) -> bool:
         """Commit a batch of relationships to the database.
-        
+
         A failed ``add_graph_relationships`` call is re-raised so the
         index cannot report success after a graph write failure.
-        
+
         Args:
             relationships: Relationships to commit
             batch_number: Batch number for logging
             stats: Statistics dictionary to update
             event_system: Optional event system for batch_complete events
-            
+
         Returns:
             True if commit succeeded.
 
@@ -1627,9 +1724,11 @@ class GraphBuilder:
             stats["committed_count"] += len(relationships)
             logger.debug(
                 "Committed batch %d (%d relationships, total committed: %d)",
-                batch_number, len(relationships), stats["committed_count"]
+                batch_number,
+                len(relationships),
+                stats["committed_count"],
             )
-            
+
             # Emit batch_complete event (Property 34: Requirements 11.2)
             if event_system is not None:
                 try:
@@ -1643,13 +1742,11 @@ class GraphBuilder:
                     )
                 except Exception as e:
                     logger.error("Failed to emit batch_complete event: %s", e)
-            
+
             return True
         except Exception as e:
             logger.error(
-                "Batch commit failed for batch %d: %s",
-                batch_number, e,
-                exc_info=True
+                "Batch commit failed for batch %d: %s", batch_number, e, exc_info=True
             )
             stats["commit_failures"] += 1
             stats["last_commit_error"] = str(e)
@@ -1689,14 +1786,16 @@ class GraphBuilder:
             total_time: Total operation time in seconds
             relationships_created: Total relationships created
         """
-        await self._batch_processor.log_statistics(stats, total_time, relationships_created)
-    
+        await self._batch_processor.log_statistics(
+            stats, total_time, relationships_created
+        )
+
     def _initialize_resolution_stats(self, use_two_pass: bool) -> Dict[str, Any]:
         """Initialize statistics tracking for relationship resolution.
-        
+
         Args:
             use_two_pass: Whether two-pass resolution is enabled
-            
+
         Returns:
             Statistics dictionary
         """
@@ -1714,9 +1813,9 @@ class GraphBuilder:
                 "external_entity": 0,
             },
             "confidence_levels": {
-                "high": 0,      # >= 0.8
-                "medium": 0,    # >= 0.6
-                "low": 0,       # < 0.6
+                "high": 0,  # >= 0.8
+                "medium": 0,  # >= 0.6
+                "low": 0,  # < 0.6
             },
             "ambiguous_resolutions": 0,
             "confidence_scores": [],
@@ -1731,7 +1830,7 @@ class GraphBuilder:
             "medium_confidence_count": 0,
             "low_confidence_count": 0,
         }
-    
+
     async def _resolve_single_relationship(
         self,
         relationship: ParserRelationship,
@@ -1761,17 +1860,19 @@ class GraphBuilder:
             GraphRelationship if resolved, None otherwise
         """
         source_id = f"{relationship.source_type}::{self.project_hash}::{source_file_path}::{relationship.source_name}"
-        
+
         target_path = relationship.target_path
         target_type = relationship.target_type
         confidence = None
         resolution_strategy = None
-        
+
         # Extract import_path from relationship metadata if available
         import_path = None
-        if hasattr(relationship, 'metadata') and isinstance(relationship.metadata, dict):
-            import_path = relationship.metadata.get('import_path')
-        
+        if hasattr(relationship, "metadata") and isinstance(
+            relationship.metadata, dict
+        ):
+            import_path = relationship.metadata.get("import_path")
+
         if not target_path and relationship.type == "imports":
             # Resolve import using RelationshipResolver
             resolved = await self._resolve_import(
@@ -1779,25 +1880,25 @@ class GraphBuilder:
                 source_file_path,
                 import_path,
             )
-            
+
             if resolved:
                 target_path, target_type, confidence = resolved
                 resolution_strategy = self._determine_resolution_strategy(confidence)
                 stats["by_strategy"][resolution_strategy] += 1
-                
+
                 # Track import frequency for two-pass resolution
                 await self.symbol_registry.track_import(
                     symbol_name=relationship.target_name,
                     source_file=source_file_path,
-                    target_file=target_path
+                    target_file=target_path,
                 )
-                
+
                 logger.debug(
                     f"Resolved {relationship.target_name} from {source_file_path} "
                     f"to {target_path} with confidence {confidence:.2f} "
                     f"using strategy '{resolution_strategy}'"
                 )
-            
+
             if target_path and confidence is not None:
                 self._track_confidence_stats(
                     confidence,
@@ -1809,7 +1910,7 @@ class GraphBuilder:
                     low_confidence_relationships,
                     use_two_pass,
                 )
-                
+
                 if target_path != source_file_path:
                     stats["cross_file_resolutions"] += 1
                 else:
@@ -1820,7 +1921,7 @@ class GraphBuilder:
                 stats["by_strategy"]["external_entity"] += 1
 
                 # Detect language from file or metadata
-                rel_metadata = getattr(relationship, 'metadata', None) or {}
+                rel_metadata = getattr(relationship, "metadata", None) or {}
                 language = self._detect_language(source_file_path, rel_metadata)
 
                 # Resolve via external entity resolver
@@ -1840,7 +1941,8 @@ class GraphBuilder:
 
                 logger.debug(
                     "Created external entity for unresolved import: %s -> %s",
-                    relationship.source_name, ext_info.entity_id
+                    relationship.source_name,
+                    ext_info.entity_id,
                 )
                 # Continue to create relationship with external_target_id
                 return await self._create_graph_relationship(
@@ -1864,9 +1966,11 @@ class GraphBuilder:
                 # if the target actually exists in the symbol registry
                 if relationship.type == "calls":
                     # Look up the target in the symbol registry
-                    candidates = self.symbol_registry.lookup_by_name(relationship.target_name)
+                    candidates = self.symbol_registry.lookup_by_name(
+                        relationship.target_name
+                    )
                     if candidates:
-                        rel_metadata = getattr(relationship, 'metadata', None) or {}
+                        rel_metadata = getattr(relationship, "metadata", None) or {}
 
                         # If calling self.method(), prioritize same-file methods
                         # This enables proper resolution of intra-class method calls
@@ -1880,7 +1984,7 @@ class GraphBuilder:
                                 logger.debug(
                                     "Filtered 'calls' candidates for self.%s to same-file: %d candidates",
                                     relationship.target_name,
-                                    len(candidates)
+                                    len(candidates),
                                 )
 
                         target_path = candidates[0].file_path
@@ -1888,11 +1992,11 @@ class GraphBuilder:
                         logger.debug(
                             "Resolved 'calls' target %s to %s via symbol registry",
                             relationship.target_name,
-                            target_path
+                            target_path,
                         )
                     else:
                         # Target not found - create external entity instead of dropping
-                        rel_metadata = getattr(relationship, 'metadata', None) or {}
+                        rel_metadata = getattr(relationship, "metadata", None) or {}
                         language = self._detect_language(source_file_path, rel_metadata)
 
                         ext_info = self._queue_external_entity(
@@ -1910,7 +2014,8 @@ class GraphBuilder:
 
                         logger.debug(
                             "Created external entity for unresolved call: %s -> %s",
-                            relationship.target_name, ext_info.entity_id
+                            relationship.target_name,
+                            ext_info.entity_id,
                         )
                         # Continue to create relationship with external_target_id
                         return await self._create_graph_relationship(
@@ -1927,7 +2032,12 @@ class GraphBuilder:
                             target_id=ext_info.entity_id,
                             rel_type_embedding_cache=rel_type_embedding_cache,
                         )
-                elif relationship.type in ("contains", "follows", "next_sibling", "previous_sibling"):
+                elif relationship.type in (
+                    "contains",
+                    "follows",
+                    "next_sibling",
+                    "previous_sibling",
+                ):
                     # Document structural relationships - target is within same file
                     target_path = source_file_path
                     # Use provided target_type or infer from relationship type
@@ -1975,17 +2085,17 @@ class GraphBuilder:
         import_path: Optional[str],
     ) -> Optional[Tuple[str, str, float]]:
         """Resolve an import relationship.
-        
+
         Args:
             relationship: The relationship to resolve
             source_file_path: Path to the source file
             import_path: Optional import path from metadata
-            
+
         Returns:
             Tuple of (target_path, target_type, confidence) or None
         """
         from pathlib import Path
-        
+
         # Determine source language from file extension
         source_language = ""
         try:
@@ -2010,9 +2120,9 @@ class GraphBuilder:
                 "Failed to determine source language for %s: %s",
                 source_file_path,
                 e,
-                exc_info=True
+                exc_info=True,
             )
-        
+
         # Use RelationshipResolver to resolve the import
         return await self.relationship_resolver.resolve_import(
             target_name=relationship.target_name,
@@ -2021,13 +2131,13 @@ class GraphBuilder:
             source_language=source_language,
             import_path=import_path,
         )
-    
+
     def _determine_resolution_strategy(self, confidence: float) -> str:
         """Determine resolution strategy from confidence level.
-        
+
         Args:
             confidence: Confidence score
-            
+
         Returns:
             Strategy name
         """
@@ -2039,7 +2149,7 @@ class GraphBuilder:
             return "module_path"
         else:
             return "proximity"
-    
+
     def _track_confidence_stats(
         self,
         confidence: float,
@@ -2052,7 +2162,7 @@ class GraphBuilder:
         use_two_pass: bool,
     ) -> None:
         """Track confidence statistics and store low-confidence relationships.
-        
+
         Args:
             confidence: Confidence score
             stats: Statistics dictionary to update
@@ -2064,17 +2174,16 @@ class GraphBuilder:
             use_two_pass: Whether two-pass resolution is enabled
         """
         stats["confidence_scores"].append(confidence)
-        
+
         if confidence >= 0.8:
             stats["high_confidence_count"] += 1
             stats["first_pass_resolved"] += 1
             # Track successful high-confidence resolutions
             import asyncio
+
             asyncio.create_task(
                 self.symbol_registry.track_import(
-                    relationship.target_name,
-                    source_file_path,
-                    target_path
+                    relationship.target_name, source_file_path, target_path
                 )
             )
         elif confidence >= 0.6:
@@ -2083,28 +2192,29 @@ class GraphBuilder:
             stats["first_pass_resolved"] += 1
             # Track medium-confidence resolutions
             import asyncio
+
             asyncio.create_task(
                 self.symbol_registry.track_import(
-                    relationship.target_name,
-                    source_file_path,
-                    target_path
+                    relationship.target_name, source_file_path, target_path
                 )
             )
         else:
             stats["low_confidence_count"] += 1
             stats["ambiguous_resolutions"] += 1
-            
+
             # Store for second pass if enabled
             if use_two_pass:
-                low_confidence_relationships.append((
-                    relationship,
-                    source_file_path,
-                    target_path,
-                    relationship.target_type,
-                    confidence,
-                    resolution_strategy
-                ))
-            
+                low_confidence_relationships.append(
+                    (
+                        relationship,
+                        source_file_path,
+                        target_path,
+                        relationship.target_type,
+                        confidence,
+                        resolution_strategy,
+                    )
+                )
+
             logger.warning(
                 f"Ambiguous resolution: {relationship.target_name} ({relationship.target_type}) "
                 f"from {source_file_path} resolved to {target_path} "
@@ -2117,7 +2227,7 @@ class GraphBuilder:
                     "strategy": resolution_strategy,
                 },
             )
-    
+
     async def _create_graph_relationship(
         self,
         relationship: ParserRelationship,
@@ -2159,7 +2269,10 @@ class GraphBuilder:
         rel_id = f"edge_{hashlib.md5(rel_hash_input.encode('utf-8')).hexdigest()[:8]}"
 
         # Use cached embedding if available, otherwise generate and cache
-        if rel_type_embedding_cache is not None and relationship.type in rel_type_embedding_cache:
+        if (
+            rel_type_embedding_cache is not None
+            and relationship.type in rel_type_embedding_cache
+        ):
             rel_vector = rel_type_embedding_cache[relationship.type]
         elif self._skip_local_embedding:
             rel_vector = [0.0] * relationship_dims
@@ -2171,7 +2284,7 @@ class GraphBuilder:
             vectors = await loop.run_in_executor(
                 get_embedding_executor(),
                 relationship_embedder.generate,
-                [relationship.type]
+                [relationship.type],
             )
             rel_vector = vectors[0]
             # Cache for future use if cache is provided
@@ -2179,21 +2292,27 @@ class GraphBuilder:
                 rel_type_embedding_cache[relationship.type] = rel_vector
 
         if not self._skip_local_embedding:
-            document_processor._validate_vector("graph_relationships", "vector", rel_vector, relationship_dims)
+            document_processor._validate_vector(
+                "graph_relationships", "vector", rel_vector, relationship_dims
+            )
 
         # Build metadata payload
         rel_metadata_payload = self._build_metadata_payload(
             getattr(relationship, "metadata", None),
             getattr(relationship, "ranking_signals", None),
         )
-        
+
         # Add resolution metadata if available
         if confidence is not None and resolution_strategy is not None:
             rel_metadata_payload["resolution_confidence"] = confidence
             rel_metadata_payload["resolution_strategy"] = resolution_strategy
-        
-        rel_metadata_str = json.dumps(rel_metadata_payload, sort_keys=True) if rel_metadata_payload else None
-        
+
+        rel_metadata_str = (
+            json.dumps(rel_metadata_payload, sort_keys=True)
+            if rel_metadata_payload
+            else None
+        )
+
         return GraphRelationship(
             id=rel_id,
             source_id=source_id,
@@ -2294,49 +2413,55 @@ class GraphBuilder:
             f"Starting second pass: Re-resolving {len(low_confidence_relationships)} "
             f"low-confidence relationships using learned patterns"
         )
-        
+
         # Clear resolution cache to force re-evaluation
         self.symbol_registry.clear_cache()
         self.relationship_resolver.clear_cache()
-        
+
         improved_relationships = []
         improved_count = 0
-        
-        for (relationship, source_file_path, old_target_path,
-             old_target_type, old_confidence, old_strategy) in low_confidence_relationships:
-            
+
+        for (
+            relationship,
+            source_file_path,
+            old_target_path,
+            old_target_type,
+            old_confidence,
+            old_strategy,
+        ) in low_confidence_relationships:
             # Extract import_path from relationship metadata
             import_path = None
-            if hasattr(relationship, 'metadata') and isinstance(relationship.metadata, dict):
-                import_path = relationship.metadata.get('import_path')
-            
+            if hasattr(relationship, "metadata") and isinstance(
+                relationship.metadata, dict
+            ):
+                import_path = relationship.metadata.get("import_path")
+
             # Re-resolve with enhanced scoring
             resolved = await self._resolve_import(
                 relationship,
                 source_file_path,
                 import_path,
             )
-            
+
             if resolved:
                 new_target_path, new_target_type, new_confidence = resolved
-                
+
                 # Check if resolution improved
                 if new_confidence > old_confidence:
                     improved_count += 1
                     stats["second_pass_improved"] += 1
-                    
+
                     # Remove old relationship from graph_relationships list
                     source_id = f"{relationship.source_type}::{self.project_hash}::{source_file_path}::{relationship.source_name}"
                     old_target_id = f"{old_target_type}::{self.project_hash}::{old_target_path}::{relationship.target_name}"
                     old_rel_hash = f"{source_id}:{old_target_id}:{relationship.type}"
                     old_rel_id = f"edge_{hashlib.md5(old_rel_hash.encode('utf-8')).hexdigest()[:8]}"
-                    
+
                     # Remove old relationship
                     graph_relationships[:] = [
-                        rel for rel in graph_relationships
-                        if rel.id != old_rel_id
+                        rel for rel in graph_relationships if rel.id != old_rel_id
                     ]
-                    
+
                     # Create improved relationship
                     new_rel = await self._create_improved_relationship(
                         relationship,
@@ -2352,14 +2477,12 @@ class GraphBuilder:
                         rel_type_embedding_cache=rel_type_embedding_cache,
                     )
                     improved_relationships.append(new_rel)
-                    
+
                     # Track the improved resolution
                     await self.symbol_registry.track_import(
-                        relationship.target_name,
-                        source_file_path,
-                        new_target_path
+                        relationship.target_name, source_file_path, new_target_path
                     )
-                    
+
                     # Update confidence level stats
                     if new_confidence >= 0.8:
                         stats["confidence_levels"]["high"] += 1
@@ -2367,25 +2490,25 @@ class GraphBuilder:
                     elif new_confidence >= 0.6:
                         stats["confidence_levels"]["medium"] += 1
                         stats["confidence_levels"]["low"] -= 1
-                    
+
                     stats["confidence_scores"].append(new_confidence)
-                    
+
                     logger.info(
                         f"Second pass improved: {relationship.target_name} from {source_file_path} "
                         f"confidence {old_confidence:.2f} → {new_confidence:.2f} "
                         f"(target: {old_target_path} → {new_target_path})"
                     )
-        
+
         if improved_count > 0:
             logger.info(
                 f"Second pass complete: Improved {improved_count}/{len(low_confidence_relationships)} "
-                f"low-confidence resolutions ({improved_count/len(low_confidence_relationships)*100:.1f}%)"
+                f"low-confidence resolutions ({improved_count / len(low_confidence_relationships) * 100:.1f}%)"
             )
         else:
             logger.info("Second pass complete: No improvements found")
-        
+
         return improved_relationships
-    
+
     async def _create_improved_relationship(
         self,
         relationship: ParserRelationship,
@@ -2423,7 +2546,10 @@ class GraphBuilder:
         new_rel_id = f"edge_{hashlib.md5(new_rel_hash.encode('utf-8')).hexdigest()[:8]}"
 
         # Use cached embedding if available, otherwise generate and cache
-        if rel_type_embedding_cache is not None and relationship.type in rel_type_embedding_cache:
+        if (
+            rel_type_embedding_cache is not None
+            and relationship.type in rel_type_embedding_cache
+        ):
             rel_vector = rel_type_embedding_cache[relationship.type]
         elif self._skip_local_embedding:
             rel_vector = [0.0] * relationship_dims
@@ -2434,7 +2560,7 @@ class GraphBuilder:
             vectors = await loop.run_in_executor(
                 get_embedding_executor(),
                 relationship_embedder.generate,
-                [relationship.type]
+                [relationship.type],
             )
             rel_vector = vectors[0]
             # Cache for future use if cache is provided
@@ -2449,7 +2575,7 @@ class GraphBuilder:
         rel_metadata_payload["resolution_strategy"] = "two_pass_enhanced"
         rel_metadata_payload["first_pass_confidence"] = old_confidence
         rel_metadata_str = json.dumps(rel_metadata_payload, sort_keys=True)
-        
+
         return GraphRelationship(
             id=new_rel_id,
             source_id=source_id,
@@ -2459,7 +2585,7 @@ class GraphBuilder:
             vector=rel_vector,
             metadata=rel_metadata_str,
         )
-    
+
     async def _log_resolution_statistics(
         self,
         stats: Dict[str, Any],
@@ -2467,7 +2593,7 @@ class GraphBuilder:
         relationship_count: int,
     ) -> None:
         """Log comprehensive resolution statistics.
-        
+
         Args:
             stats: Statistics dictionary
             resolution_time: Time taken for resolution
@@ -2479,37 +2605,39 @@ class GraphBuilder:
             if stats["confidence_scores"]
             else 0.0
         )
-        
+
         # Get cache statistics from RelationshipResolver
         resolver_stats = self.relationship_resolver.get_resolution_stats()
-        
+
         # Add computed statistics
         stats["average_confidence"] = avg_confidence
         stats["resolution_time_seconds"] = resolution_time
-        
+
         # Calculate resolution rates
         internal_imports = stats["resolved_cross_file"] + stats["same_file_fallback"]
         if internal_imports > 0:
-            stats["cross_file_resolution_rate"] = (stats["resolved_cross_file"] / internal_imports) * 100
+            stats["cross_file_resolution_rate"] = (
+                stats["resolved_cross_file"] / internal_imports
+            ) * 100
         else:
             stats["cross_file_resolution_rate"] = 0.0
-        
+
         total_resolved = stats["resolved_cross_file"] + stats["same_file_fallback"]
         total_attempted = total_resolved + stats["unresolved_external"]
         if total_attempted > 0:
             stats["overall_resolution_rate"] = (total_resolved / total_attempted) * 100
         else:
             stats["overall_resolution_rate"] = 0.0
-        
+
         stats["resolver_cache_statistics"] = {
             "hits": resolver_stats["cache_hits"],
             "misses": resolver_stats["cache_misses"],
             "size": resolver_stats["cache_size"],
         }
-        
+
         # Get symbol registry stats
         registry_stats = await self.symbol_registry.get_stats()
-        
+
         # Build two-pass statistics message
         two_pass_msg = ""
         if stats["two_pass_enabled"]:
@@ -2518,7 +2646,7 @@ class GraphBuilder:
                 f"  - First pass resolved: {stats['first_pass_resolved']}\n"
                 f"  - Second pass improved: {stats['second_pass_improved']}\n"
             )
-        
+
         # Log comprehensive statistics
         logger.info(
             f"Created {relationship_count} relationships in {resolution_time:.2f}s:\n"
@@ -2549,24 +2677,26 @@ class GraphBuilder:
                 "resolution_stats": stats,
             },
         )
-        
+
         # Log resolution rates
         if stats["total"] > 0:
             if internal_imports > 0:
-                cross_file_rate = (stats["resolved_cross_file"] / internal_imports) * 100
+                cross_file_rate = (
+                    stats["resolved_cross_file"] / internal_imports
+                ) * 100
                 logger.info(
                     f"Cross-file resolution rate: {cross_file_rate:.1f}% "
                     f"({stats['resolved_cross_file']}/{internal_imports} internal imports)"
                 )
-            
+
             if total_attempted > 0:
                 overall_rate = (total_resolved / total_attempted) * 100
                 logger.info(
                     f"Overall resolution success: {overall_rate:.1f}% "
                     f"({total_resolved}/{total_attempted} relationships)"
                 )
-            
+
             logger.info(
                 f"External dependencies identified: {stats['unresolved_external']} "
-                f"({stats['unresolved_external']/stats['total']*100:.1f}% of total)"
+                f"({stats['unresolved_external'] / stats['total'] * 100:.1f}% of total)"
             )

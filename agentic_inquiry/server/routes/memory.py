@@ -115,7 +115,7 @@ async def memory_recall(request: Request, body: MemoryRecallRequest) -> dict:
     memories = version_manager.check_staleness(memories)
     cache_manager.put_memories(cache_key, memories)
 
-    return {"memories": memories[:body.limit], "cached": False}
+    return {"memories": memories[: body.limit], "cached": False}
 
 
 @router.get("/memory/list")
@@ -123,7 +123,7 @@ async def memory_list(request: Request) -> dict:
     """List all stored memories."""
     services = request.app.state.services
     memory_system = services.get("memory_system")
-    
+
     memories = []
     if memory_system:
         try:
@@ -137,8 +137,9 @@ async def memory_list(request: Request) -> dict:
                     memories.append(memory)
         except Exception:
             logger.debug("Memory list failed", exc_info=True)
-            
+
     return {"memories": memories}
+
 
 def _format_memory(item) -> dict | None:
     """Format a memory retrieval result."""
@@ -164,7 +165,13 @@ def _format_memory(item) -> dict | None:
                 "category": item.get("category", "unknown"),
             }
         else:
-            return {"content": str(item), "created": "unknown", "importance": 0.5,
-                    "confidence": 1.0, "file_paths": [], "category": "unknown"}
+            return {
+                "content": str(item),
+                "created": "unknown",
+                "importance": 0.5,
+                "confidence": 1.0,
+                "file_paths": [],
+                "category": "unknown",
+            }
     except Exception:
         return None

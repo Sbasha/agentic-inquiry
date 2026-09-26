@@ -20,10 +20,7 @@ class TestSymbolRegistryPublicAPI:
     @pytest.fixture
     def registry(self, tmp_path):
         """Create a symbol registry for testing."""
-        return SymbolRegistry(
-            project_root=str(tmp_path),
-            project_id="test_project"
-        )
+        return SymbolRegistry(project_root=str(tmp_path), project_id="test_project")
 
     @pytest.mark.asyncio
     async def test_register_and_lookup_by_name(self, registry):
@@ -35,7 +32,7 @@ class TestSymbolRegistryPublicAPI:
             entity_type="class",
             language="python",
             line_start=10,
-            line_end=50
+            line_end=50,
         )
 
         # Lookup by name
@@ -53,13 +50,13 @@ class TestSymbolRegistryPublicAPI:
             name="process",
             file_path="src/module.py",
             entity_type="function",
-            language="python"
+            language="python",
         )
         await registry.register(
             name="process",
             file_path="src/other.py",
             entity_type="class",
-            language="python"
+            language="python",
         )
 
         # Lookup by name and type (using the exact type names that were registered)
@@ -78,7 +75,7 @@ class TestSymbolRegistryPublicAPI:
             name="MyClass",
             file_path="src/module.py",
             entity_type="class",
-            language="python"
+            language="python",
         )
 
         # Lookup without type hint
@@ -98,16 +95,10 @@ class TestSymbolRegistryPublicAPI:
 
         # Register symbols
         await registry.register(
-            name="ClassA",
-            file_path="src/a.py",
-            entity_type="class",
-            language="python"
+            name="ClassA", file_path="src/a.py", entity_type="class", language="python"
         )
         await registry.register(
-            name="ClassB",
-            file_path="src/b.py",
-            entity_type="class",
-            language="python"
+            name="ClassB", file_path="src/b.py", entity_type="class", language="python"
         )
 
         # Check count
@@ -121,22 +112,13 @@ class TestSymbolRegistryPublicAPI:
 
         # Register symbols from different files
         await registry.register(
-            name="ClassA",
-            file_path="src/a.py",
-            entity_type="class",
-            language="python"
+            name="ClassA", file_path="src/a.py", entity_type="class", language="python"
         )
         await registry.register(
-            name="ClassB",
-            file_path="src/a.py",
-            entity_type="class",
-            language="python"
+            name="ClassB", file_path="src/a.py", entity_type="class", language="python"
         )
         await registry.register(
-            name="ClassC",
-            file_path="src/b.py",
-            entity_type="class",
-            language="python"
+            name="ClassC", file_path="src/b.py", entity_type="class", language="python"
         )
 
         # Check file count (2 unique files)
@@ -147,22 +129,16 @@ class TestSymbolRegistryPublicAPI:
         """Test getting comprehensive statistics through public API."""
         # Register various symbols
         await registry.register(
-            name="ClassA",
-            file_path="src/a.py",
-            entity_type="class",
-            language="python"
+            name="ClassA", file_path="src/a.py", entity_type="class", language="python"
         )
         await registry.register(
             name="func_a",
             file_path="src/a.py",
             entity_type="function",
-            language="python"
+            language="python",
         )
         await registry.register(
-            name="ClassB",
-            file_path="src/b.py",
-            entity_type="class",
-            language="python"
+            name="ClassB", file_path="src/b.py", entity_type="class", language="python"
         )
 
         # Track some imports
@@ -186,10 +162,7 @@ class TestSymbolRegistryPublicAPI:
     async def test_get_stats_protocol_method(self, registry):
         """Test the async get_stats method (protocol-compatible)."""
         await registry.register(
-            name="ClassA",
-            file_path="src/a.py",
-            entity_type="class",
-            language="python"
+            name="ClassA", file_path="src/a.py", entity_type="class", language="python"
         )
 
         stats = await registry.get_stats()
@@ -205,16 +178,10 @@ class TestSymbolRegistryPublicAPI:
         """Test removing symbols from a file through public API."""
         # Register symbols
         await registry.register(
-            name="ClassA",
-            file_path="src/a.py",
-            entity_type="class",
-            language="python"
+            name="ClassA", file_path="src/a.py", entity_type="class", language="python"
         )
         await registry.register(
-            name="ClassB",
-            file_path="src/b.py",
-            entity_type="class",
-            language="python"
+            name="ClassB", file_path="src/b.py", entity_type="class", language="python"
         )
 
         assert registry.get_symbol_count() == 2
@@ -237,16 +204,10 @@ class TestSymbolRegistryPublicAPI:
         """Test clearing all symbols through public API."""
         # Register symbols
         await registry.register(
-            name="ClassA",
-            file_path="src/a.py",
-            entity_type="class",
-            language="python"
+            name="ClassA", file_path="src/a.py", entity_type="class", language="python"
         )
         await registry.register(
-            name="ClassB",
-            file_path="src/b.py",
-            entity_type="class",
-            language="python"
+            name="ClassB", file_path="src/b.py", entity_type="class", language="python"
         )
 
         assert registry.get_symbol_count() == 2
@@ -264,7 +225,7 @@ class TestSymbolRegistryPublicAPI:
             name="MyClass",
             file_path="src/module.py",
             entity_type="class",
-            language="python"
+            language="python",
         )
 
         # Initially no imports
@@ -285,7 +246,7 @@ class TestSymbolRegistryPublicAPI:
             name="MyClass",
             file_path="src/module.py",
             entity_type="class",
-            language="python"
+            language="python",
         )
 
         # Initially no co-occurrence
@@ -306,7 +267,7 @@ class TestSymbolRegistryPublicAPI:
             name="MyClass",
             file_path="src/module.py",
             entity_type="class",
-            language="python"
+            language="python",
         )
 
         # Resolve symbol
@@ -325,7 +286,7 @@ class TestSymbolRegistryPublicAPI:
             name="MyClass",
             file_path="src/module.py",
             entity_type="class",
-            language="python"
+            language="python",
         )
 
         # First resolution (cache miss)
@@ -368,28 +329,28 @@ class TestSymbolRegistryEncapsulation:
 
     def test_public_methods_provide_sufficient_functionality(self):
         """Verify that public methods provide all necessary functionality.
-        
+
         This test documents that external code should use public methods
         instead of accessing private attributes directly.
         """
         registry = SymbolRegistry(project_root=".", project_id="test")
 
         # Public methods that should be used instead of private attribute access:
-        
+
         # Instead of accessing _by_file, use:
         assert callable(registry.get_file_count)
         assert callable(registry.remove_file_symbols)
         assert callable(registry.get_statistics)
-        
+
         # Instead of accessing _module_paths, use:
         assert callable(registry.lookup_by_name)
         assert callable(registry.lookup_by_name_and_type)
         assert callable(registry.resolve_with_cache)
-        
+
         # Instead of accessing _by_name, use:
         assert callable(registry.lookup_by_name)
         assert callable(registry.get_symbol_count)
-        
+
         # General statistics and info:
         assert callable(registry.get_stats)
         assert callable(registry.get_statistics)
@@ -397,7 +358,7 @@ class TestSymbolRegistryEncapsulation:
     @pytest.mark.asyncio
     async def test_external_code_pattern_file_symbols(self):
         """Test the correct pattern for checking if a file has symbols.
-        
+
         This demonstrates the correct way to check if a file has registered symbols
         without accessing _by_file directly.
         """
@@ -408,7 +369,7 @@ class TestSymbolRegistryEncapsulation:
             name="MyClass",
             file_path="src/module.py",
             entity_type="class",
-            language="python"
+            language="python",
         )
 
         # CORRECT: Use get_statistics to check file count
@@ -426,7 +387,7 @@ class TestSymbolRegistryEncapsulation:
     @pytest.mark.asyncio
     async def test_external_code_pattern_module_lookup(self):
         """Test the correct pattern for looking up symbols by module path.
-        
+
         This demonstrates the correct way to resolve symbols without accessing
         _module_paths directly.
         """
@@ -437,7 +398,7 @@ class TestSymbolRegistryEncapsulation:
             name="MyClass",
             file_path="src/module.py",
             entity_type="class",
-            language="python"
+            language="python",
         )
 
         # CORRECT: Use resolve_with_cache for resolution
@@ -463,22 +424,16 @@ class TestSymbolRegistryIntegration:
 
         # 1. Register symbols
         await registry.register(
-            name="ClassA",
-            file_path="src/a.py",
-            entity_type="class",
-            language="python"
+            name="ClassA", file_path="src/a.py", entity_type="class", language="python"
         )
         await registry.register(
-            name="ClassB",
-            file_path="src/b.py",
-            entity_type="class",
-            language="python"
+            name="ClassB", file_path="src/b.py", entity_type="class", language="python"
         )
         await registry.register(
             name="func_a",
             file_path="src/a.py",
             entity_type="function",
-            language="python"
+            language="python",
         )
 
         # 2. Query statistics

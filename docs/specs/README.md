@@ -31,3 +31,5 @@ files inside any feature dir are gitignored — see
 [`salesforce-apex-parsing`](salesforce-apex-parsing/spec.md) - Apex class and trigger extraction.
 
 [`salesforce-intelligence`](salesforce-intelligence/spec.md) - Salesforce recognizer and metadata allowlist.
+
+[`ruff-format-baseline`](ruff-format-baseline/spec.md) - Repo-wide `ruff format` baseline and pre-commit ruff hooks pinned to `uv.lock`.

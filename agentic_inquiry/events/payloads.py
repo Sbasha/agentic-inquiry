@@ -23,6 +23,7 @@ class BaseEventPayload(BaseModel):
 
     Provides common configuration and validation for event payloads.
     """
+
     model_config = ConfigDict(
         # Allow extra fields for backwards compatibility
         extra="allow",
@@ -45,6 +46,7 @@ class BaseEventPayload(BaseModel):
 # Indexing Event Payloads
 # ============================================================================
 
+
 class IndexingStartedPayload(BaseEventPayload):
     """Payload for indexing.started event.
 
@@ -53,6 +55,7 @@ class IndexingStartedPayload(BaseEventPayload):
         content_type: Type of content (code, file, directory, etc.)
         file_count: Optional number of files to be indexed
     """
+
     path: str = Field(..., description="Path to file or directory being indexed")
     content_type: str = Field(..., description="Type of content being indexed")
     file_count: Optional[int] = Field(None, description="Number of files to be indexed")
@@ -68,11 +71,18 @@ class IndexingProgressPayload(BaseEventPayload):
         entities_created: Number of entities created so far
         relationships_created: Number of relationships created so far
     """
-    files_processed: Optional[int] = Field(None, description="Number of files processed")
+
+    files_processed: Optional[int] = Field(
+        None, description="Number of files processed"
+    )
     files_discovered: Optional[int] = Field(None, description="Total files discovered")
     chunks_created: Optional[int] = Field(None, description="Number of chunks created")
-    entities_created: Optional[int] = Field(None, description="Number of entities created")
-    relationships_created: Optional[int] = Field(None, description="Number of relationships created")
+    entities_created: Optional[int] = Field(
+        None, description="Number of entities created"
+    )
+    relationships_created: Optional[int] = Field(
+        None, description="Number of relationships created"
+    )
 
 
 class IndexingCompletedPayload(BaseEventPayload):
@@ -86,10 +96,13 @@ class IndexingCompletedPayload(BaseEventPayload):
         duration_seconds: Optional duration of indexing operation
         success: Whether indexing completed successfully
     """
+
     files_processed: int = Field(..., description="Number of files processed")
     chunks_created: int = Field(..., description="Number of chunks created")
     entities_created: int = Field(..., description="Number of entities created")
-    relationships_created: int = Field(..., description="Number of relationships created")
+    relationships_created: int = Field(
+        ..., description="Number of relationships created"
+    )
     duration_seconds: Optional[float] = Field(None, description="Duration of operation")
     success: bool = Field(True, description="Whether operation succeeded")
 
@@ -108,12 +121,19 @@ class IndexingStoredPayload(BaseEventPayload):
         duration_seconds: Optional duration of storage operation
         embedding_strategy: Whether embeddings are local or server_side
     """
+
     files_processed: int = Field(..., description="Number of files processed")
     chunks_created: int = Field(..., description="Number of chunks created")
     entities_created: int = Field(..., description="Number of entities created")
-    relationships_created: int = Field(..., description="Number of relationships created")
-    duration_seconds: Optional[float] = Field(None, description="Duration of storage operation")
-    embedding_strategy: Optional[str] = Field(None, description="Embedding strategy (local or server_side)")
+    relationships_created: int = Field(
+        ..., description="Number of relationships created"
+    )
+    duration_seconds: Optional[float] = Field(
+        None, description="Duration of storage operation"
+    )
+    embedding_strategy: Optional[str] = Field(
+        None, description="Embedding strategy (local or server_side)"
+    )
 
 
 class IndexingReadyPayload(BaseEventPayload):
@@ -131,12 +151,19 @@ class IndexingReadyPayload(BaseEventPayload):
         duration_seconds: Optional total duration including embedding generation
         embedding_duration_seconds: Optional duration of embedding generation only
     """
+
     files_processed: int = Field(..., description="Number of files processed")
     chunks_created: int = Field(..., description="Number of chunks created")
     entities_created: int = Field(..., description="Number of entities created")
-    relationships_created: int = Field(..., description="Number of relationships created")
-    duration_seconds: Optional[float] = Field(None, description="Total duration including embeddings")
-    embedding_duration_seconds: Optional[float] = Field(None, description="Duration of embedding generation")
+    relationships_created: int = Field(
+        ..., description="Number of relationships created"
+    )
+    duration_seconds: Optional[float] = Field(
+        None, description="Total duration including embeddings"
+    )
+    embedding_duration_seconds: Optional[float] = Field(
+        None, description="Duration of embedding generation"
+    )
 
 
 class IndexingFailedPayload(BaseEventPayload):
@@ -148,10 +175,13 @@ class IndexingFailedPayload(BaseEventPayload):
         path: Optional path where error occurred
         files_processed: Optional number of files processed before failure
     """
+
     error: str = Field(..., description="Error message")
     error_type: Optional[str] = Field(None, description="Type of error")
     path: Optional[str] = Field(None, description="Path where error occurred")
-    files_processed: Optional[int] = Field(None, description="Files processed before failure")
+    files_processed: Optional[int] = Field(
+        None, description="Files processed before failure"
+    )
 
 
 class IndexingFileIndexedPayload(BaseEventPayload):
@@ -163,6 +193,7 @@ class IndexingFileIndexedPayload(BaseEventPayload):
         entities_created: Number of entities created from this file
         duration_ms: Optional duration in milliseconds
     """
+
     file_path: str = Field(..., description="Path to indexed file")
     chunks_created: int = Field(..., description="Number of chunks created")
     entities_created: int = Field(..., description="Number of entities created")
@@ -176,6 +207,7 @@ class IndexingFileSkippedPayload(BaseEventPayload):
         file_path: Path to the skipped file
         reason: Reason for skipping (e.g., "unchanged", "ignored", "unsupported")
     """
+
     file_path: str = Field(..., description="Path to skipped file")
     reason: str = Field(..., description="Reason for skipping")
 
@@ -188,6 +220,7 @@ class IndexingFileFailedPayload(BaseEventPayload):
         error: Error message describing the failure
         error_type: Optional type of error
     """
+
     file_path: str = Field(..., description="Path to failed file")
     error: str = Field(..., description="Error message")
     error_type: Optional[str] = Field(None, description="Type of error")
@@ -197,6 +230,7 @@ class IndexingFileFailedPayload(BaseEventPayload):
 # Search Event Payloads
 # ============================================================================
 
+
 class SearchQueryStartedPayload(BaseEventPayload):
     """Payload for search.query.started event.
 
@@ -205,6 +239,7 @@ class SearchQueryStartedPayload(BaseEventPayload):
         query_text: Optional text query
         limit: Maximum number of results
     """
+
     search_type: Literal["vector", "fts", "hybrid", "graph"] = Field(
         ..., description="Type of search"
     )
@@ -220,6 +255,7 @@ class SearchQueryCompletedPayload(BaseEventPayload):
         result_count: Number of results returned
         duration_ms: Duration in milliseconds
     """
+
     search_type: str = Field(..., description="Type of search")
     result_count: int = Field(..., description="Number of results")
     duration_ms: Optional[float] = Field(None, description="Duration in milliseconds")
@@ -233,6 +269,7 @@ class SearchQueryFailedPayload(BaseEventPayload):
         error: Error message
         error_type: Optional type of error
     """
+
     search_type: str = Field(..., description="Type of search")
     error: str = Field(..., description="Error message")
     error_type: Optional[str] = Field(None, description="Type of error")
@@ -245,6 +282,7 @@ class SearchResultsReturnedPayload(BaseEventPayload):
         result_count: Number of results returned
         search_type: Type of search performed
     """
+
     result_count: int = Field(..., description="Number of results")
     search_type: str = Field(..., description="Type of search")
 
@@ -252,6 +290,7 @@ class SearchResultsReturnedPayload(BaseEventPayload):
 # ============================================================================
 # Memory Event Payloads
 # ============================================================================
+
 
 class MemoryStoredPayload(BaseEventPayload):
     """Payload for memory.stored event.
@@ -264,6 +303,7 @@ class MemoryStoredPayload(BaseEventPayload):
         importance: Importance score (0.0-1.0)
         content_length: Length of stored content
     """
+
     memory_id: str = Field(..., description="Memory identifier")
     tier: Literal["working", "episodic", "semantic"] = Field(
         ..., description="Memory tier"
@@ -284,6 +324,7 @@ class MemoryRetrievedPayload(BaseEventPayload):
         agent_id: Agent identifier
         session_id: Optional session identifier
     """
+
     query: str = Field(..., description="Query text")
     result_count: int = Field(..., ge=0, description="Number of results")
     strategy: str = Field(..., description="Retrieval strategy")
@@ -301,6 +342,7 @@ class MemoryConsolidatedPayload(BaseEventPayload):
         session_id: Optional session identifier
         duration_seconds: Optional duration of consolidation
     """
+
     items_promoted: int = Field(..., ge=0, description="Items promoted")
     concepts_extracted: int = Field(..., ge=0, description="Concepts extracted")
     agent_id: str = Field(..., description="Agent identifier")
@@ -312,6 +354,7 @@ class MemoryConsolidatedPayload(BaseEventPayload):
 # Watching Event Payloads
 # ============================================================================
 
+
 class WatchingStartedPayload(BaseEventPayload):
     """Payload for watching.started event.
 
@@ -320,6 +363,7 @@ class WatchingStartedPayload(BaseEventPayload):
         recursive: Whether watching recursively
         ignore_patterns: Optional list of ignore patterns
     """
+
     path: str = Field(..., description="Path being watched")
     recursive: bool = Field(..., description="Recursive watching")
     ignore_patterns: Optional[list[str]] = Field(None, description="Ignore patterns")
@@ -332,6 +376,7 @@ class WatchingStoppedPayload(BaseEventPayload):
         path: Path that was being watched
         events_processed: Optional number of events processed
     """
+
     path: str = Field(..., description="Path that was watched")
     events_processed: Optional[int] = Field(None, description="Events processed")
 
@@ -344,6 +389,7 @@ class WatchingFileChangedPayload(BaseEventPayload):
         event_type: Type of change (created, modified, deleted)
         change_hash: Optional hash of file content
     """
+
     file_path: str = Field(..., description="Path to changed file")
     event_type: Literal["created", "modified", "deleted"] = Field(
         ..., description="Type of change"
@@ -355,6 +401,7 @@ class WatchingFileChangedPayload(BaseEventPayload):
 # Parsing Event Payloads
 # ============================================================================
 
+
 class ParsingStartedPayload(BaseEventPayload):
     """Payload for parsing.started event.
 
@@ -362,6 +409,7 @@ class ParsingStartedPayload(BaseEventPayload):
         file_path: Path to file being parsed
         parser_type: Optional type of parser being used
     """
+
     file_path: str = Field(..., description="Path to file")
     parser_type: Optional[str] = Field(None, description="Parser type")
 
@@ -375,6 +423,7 @@ class ParsingCompletedPayload(BaseEventPayload):
         parser_type: Type of parser used
         duration_ms: Optional duration in milliseconds
     """
+
     file_path: str = Field(..., description="Path to file")
     chunks_created: int = Field(..., description="Number of chunks")
     parser_type: str = Field(..., description="Parser type")
@@ -390,6 +439,7 @@ class ParsingFailedPayload(BaseEventPayload):
         error_type: Optional type of error
         parser_type: Optional type of parser that failed
     """
+
     file_path: str = Field(..., description="Path to file")
     error: str = Field(..., description="Error message")
     error_type: Optional[str] = Field(None, description="Error type")
@@ -404,6 +454,7 @@ class ParserSelectedPayload(BaseEventPayload):
         parser_type: Type of parser selected
         parser_priority: Parser priority value
     """
+
     file_path: str = Field(..., description="Path to file")
     parser_type: str = Field(..., description="Parser type")
     parser_priority: int = Field(..., description="Parser priority")
@@ -413,6 +464,7 @@ class ParserSelectedPayload(BaseEventPayload):
 # Project Lifecycle Event Payloads
 # ============================================================================
 
+
 class ProjectInitializedPayload(BaseEventPayload):
     """Payload for project.initialized event.
 
@@ -420,6 +472,7 @@ class ProjectInitializedPayload(BaseEventPayload):
         project_id: Project identifier
         root_path: Optional root path of project
     """
+
     project_id: str = Field(..., description="Project identifier")
     root_path: Optional[str] = Field(None, description="Project root path")
 
@@ -432,6 +485,7 @@ class ProjectLoadedPayload(BaseEventPayload):
         chunk_count: Optional number of chunks loaded
         entity_count: Optional number of entities loaded
     """
+
     project_id: str = Field(..., description="Project identifier")
     chunk_count: Optional[int] = Field(None, description="Number of chunks")
     entity_count: Optional[int] = Field(None, description="Number of entities")
@@ -444,6 +498,7 @@ class ProjectClosedPayload(BaseEventPayload):
         project_id: Project identifier
         reason: Optional reason for closing
     """
+
     project_id: str = Field(..., description="Project identifier")
     reason: Optional[str] = Field(None, description="Reason for closing")
 
@@ -452,6 +507,7 @@ class ProjectClosedPayload(BaseEventPayload):
 # System Event Payloads
 # ============================================================================
 
+
 class SystemStartedPayload(BaseEventPayload):
     """Payload for system.started event.
 
@@ -459,6 +515,7 @@ class SystemStartedPayload(BaseEventPayload):
         component: Component that started
         version: Optional version string
     """
+
     component: str = Field(..., description="Component name")
     version: Optional[str] = Field(None, description="Version string")
 
@@ -470,6 +527,7 @@ class SystemStoppedPayload(BaseEventPayload):
         component: Component that stopped
         reason: Optional reason for stopping
     """
+
     component: str = Field(..., description="Component name")
     reason: Optional[str] = Field(None, description="Reason for stopping")
 
@@ -483,6 +541,7 @@ class SystemErrorPayload(BaseEventPayload):
         error_type: Optional type of error
         severity: Error severity (low, medium, high, critical)
     """
+
     component: str = Field(..., description="Component name")
     error: str = Field(..., description="Error message")
     error_type: Optional[str] = Field(None, description="Error type")

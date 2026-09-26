@@ -10,6 +10,7 @@ Tests cover:
 - Query execution via execute()
 - Result conversion and score normalization
 """
+
 from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock
@@ -55,7 +56,9 @@ class TestAdapterLifecycle:
     """Tests for adapter initialization and cleanup."""
 
     @pytest.mark.asyncio
-    async def test_initialize(self, adapter: LanceDBAdapter, mock_manager: MagicMock) -> None:
+    async def test_initialize(
+        self, adapter: LanceDBAdapter, mock_manager: MagicMock
+    ) -> None:
         """Initialize connects and creates tables."""
         await adapter.initialize()
 
@@ -77,7 +80,9 @@ class TestAdapterLifecycle:
         assert mock_manager.create_tables_and_indexes.call_count == 1
 
     @pytest.mark.asyncio
-    async def test_close(self, adapter: LanceDBAdapter, mock_manager: MagicMock) -> None:
+    async def test_close(
+        self, adapter: LanceDBAdapter, mock_manager: MagicMock
+    ) -> None:
         """Close releases resources."""
         await adapter.initialize()
         await adapter.close()
@@ -90,7 +95,9 @@ class TestCRUDOperations:
     """Tests for add, delete, get_by_ids, upsert."""
 
     @pytest.mark.asyncio
-    async def test_add_records(self, adapter: LanceDBAdapter, mock_manager: MagicMock) -> None:
+    async def test_add_records(
+        self, adapter: LanceDBAdapter, mock_manager: MagicMock
+    ) -> None:
         """Add forwards to manager."""
         records = [{"id": "1", "content": "test"}]
         await adapter.add("document_chunks", records)
@@ -156,7 +163,9 @@ class TestCRUDOperations:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_upsert(self, adapter: LanceDBAdapter, mock_manager: MagicMock) -> None:
+    async def test_upsert(
+        self, adapter: LanceDBAdapter, mock_manager: MagicMock
+    ) -> None:
         """Upsert forwards to manager."""
         records = [{"id": "1", "content": "updated"}]
         await adapter.upsert("document_chunks", records)
@@ -225,9 +234,7 @@ class TestVectorSearch:
         mock_manager.vector_search.return_value = []
 
         vector = [0.1] * 384
-        await adapter.vector_search(
-            "document_chunks", vector, project_ids=["proj_001"]
-        )
+        await adapter.vector_search("document_chunks", vector, project_ids=["proj_001"])
 
         call_kwargs = mock_manager.vector_search.call_args[1]
         assert call_kwargs["project_id"] == "proj_001"
@@ -245,7 +252,9 @@ class TestFTSSearch:
             {"id": "1", "content": "authentication", "_score": 0.9}
         ]
 
-        results = await adapter.fts_search("document_chunks", "authentication", limit=10)
+        results = await adapter.fts_search(
+            "document_chunks", "authentication", limit=10
+        )
 
         mock_manager.fts_search.assert_called_once()
         call_kwargs = mock_manager.fts_search.call_args[1]
@@ -265,9 +274,7 @@ class TestFTSSearch:
         mock_manager.fts_search.return_value = []
 
         filter_ast = gt("score", 0.5)
-        await adapter.fts_search(
-            "document_chunks", "test query", filters=filter_ast
-        )
+        await adapter.fts_search("document_chunks", "test query", filters=filter_ast)
 
         call_kwargs = mock_manager.fts_search.call_args[1]
         assert "_sql" in call_kwargs["filters"]
@@ -362,7 +369,9 @@ class TestGraphRanking:
             SearchResult(id="2", data={}, score=0.7, source="vector"),
         ]
 
-        boosted = await adapter.apply_graph_boost(results, "document_chunks", boost_factor=0.5)
+        boosted = await adapter.apply_graph_boost(
+            results, "document_chunks", boost_factor=0.5
+        )
 
         assert len(boosted) == 2
         # Result with higher pagerank (0.8) should be boosted more
@@ -389,7 +398,9 @@ class TestGraphRanking:
         """Graph boost with factor=0 returns unchanged results."""
         results = [SearchResult(id="1", data={}, score=0.5, source="vector")]
 
-        boosted = await adapter.apply_graph_boost(results, "document_chunks", boost_factor=0.0)
+        boosted = await adapter.apply_graph_boost(
+            results, "document_chunks", boost_factor=0.0
+        )
 
         assert boosted == results
         mock_manager.advanced_filter.assert_not_called()
@@ -531,9 +542,9 @@ class TestScoreNormalization:
     ) -> None:
         """Distance is converted to normalized score."""
         mock_manager.vector_search.return_value = [
-            {"id": "1", "_distance": 0.0},   # Perfect match → ~1.0
-            {"id": "2", "_distance": 1.0},   # Some distance → 0.5
-            {"id": "3", "_distance": 9.0},   # Far → 0.1
+            {"id": "1", "_distance": 0.0},  # Perfect match → ~1.0
+            {"id": "2", "_distance": 1.0},  # Some distance → 0.5
+            {"id": "3", "_distance": 9.0},  # Far → 0.1
         ]
 
         results = await adapter.vector_search("document_chunks", [0.1] * 384)
@@ -564,7 +575,7 @@ class TestScoreNormalization:
     ) -> None:
         """Scores are clamped to 0.0-1.0 range."""
         mock_manager.fts_search.return_value = [
-            {"id": "1", "_score": 1.5},   # Above max
+            {"id": "1", "_score": 1.5},  # Above max
             {"id": "2", "_score": -0.1},  # Below min
         ]
 
@@ -598,9 +609,7 @@ class TestProjectIdResolution:
         """Empty project_ids list means all projects."""
         mock_manager.vector_search.return_value = []
 
-        await adapter.vector_search(
-            "document_chunks", [0.1] * 384, project_ids=[]
-        )
+        await adapter.vector_search("document_chunks", [0.1] * 384, project_ids=[])
 
         call_kwargs = mock_manager.vector_search.call_args[1]
         assert call_kwargs["project_id"] is None
@@ -612,9 +621,7 @@ class TestProjectIdResolution:
         """None project_ids means all projects."""
         mock_manager.vector_search.return_value = []
 
-        await adapter.vector_search(
-            "document_chunks", [0.1] * 384, project_ids=None
-        )
+        await adapter.vector_search("document_chunks", [0.1] * 384, project_ids=None)
 
         call_kwargs = mock_manager.vector_search.call_args[1]
         assert call_kwargs["project_id"] is None
@@ -650,9 +657,7 @@ class TestFilterTranslation:
         mock_manager.vector_search.return_value = []
 
         filter_ast = eq("status", "active")
-        await adapter.vector_search(
-            "document_chunks", [0.1] * 384, filters=filter_ast
-        )
+        await adapter.vector_search("document_chunks", [0.1] * 384, filters=filter_ast)
 
         call_kwargs = mock_manager.vector_search.call_args[1]
         sql = call_kwargs["filters"]["_sql"]
@@ -667,9 +672,7 @@ class TestFilterTranslation:
         mock_manager.vector_search.return_value = []
 
         filter_ast = and_(eq("status", "active"), gt("score", 0.5))
-        await adapter.vector_search(
-            "document_chunks", [0.1] * 384, filters=filter_ast
-        )
+        await adapter.vector_search("document_chunks", [0.1] * 384, filters=filter_ast)
 
         call_kwargs = mock_manager.vector_search.call_args[1]
         sql = call_kwargs["filters"]["_sql"]
@@ -685,9 +688,7 @@ class TestFilterTranslation:
         mock_manager.vector_search.return_value = []
 
         filter_ast = is_in("type", ["code", "doc"])
-        await adapter.vector_search(
-            "document_chunks", [0.1] * 384, filters=filter_ast
-        )
+        await adapter.vector_search("document_chunks", [0.1] * 384, filters=filter_ast)
 
         call_kwargs = mock_manager.vector_search.call_args[1]
         sql = call_kwargs["filters"]["_sql"]
@@ -758,9 +759,7 @@ class TestConfigBasedWeights:
     """Tests for config-based hybrid search weights in execute()."""
 
     @pytest.mark.asyncio
-    async def test_execute_uses_config_weights(
-        self, mock_manager: MagicMock
-    ) -> None:
+    async def test_execute_uses_config_weights(self, mock_manager: MagicMock) -> None:
         """Execute uses weights from config when available."""
         # Create mock config with custom weights
         mock_config = MagicMock()
@@ -768,9 +767,7 @@ class TestConfigBasedWeights:
         mock_config.search.hybrid_search.fts_weight = 0.2
 
         adapter = LanceDBAdapter(mock_manager, config=mock_config)
-        mock_manager.hybrid_search.return_value = [
-            {"id": "1", "_score": 0.9}
-        ]
+        mock_manager.hybrid_search.return_value = [{"id": "1", "_score": 0.9}]
 
         spec = QuerySpec(
             table="document_chunks",
@@ -791,9 +788,7 @@ class TestConfigBasedWeights:
         self, adapter: LanceDBAdapter, mock_manager: MagicMock
     ) -> None:
         """Execute uses default weights (0.7/0.3) when no config."""
-        mock_manager.hybrid_search.return_value = [
-            {"id": "1", "_score": 0.9}
-        ]
+        mock_manager.hybrid_search.return_value = [{"id": "1", "_score": 0.9}]
 
         spec = QuerySpec(
             table="document_chunks",
@@ -808,9 +803,7 @@ class TestConfigBasedWeights:
         mock_manager.hybrid_search.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_from_config_passes_config(
-        self, mock_manager: MagicMock
-    ) -> None:
+    async def test_from_config_passes_config(self, mock_manager: MagicMock) -> None:
         """from_config passes config to constructor."""
         mock_config = MagicMock()
         mock_config.search.hybrid_search.vector_weight = 0.6

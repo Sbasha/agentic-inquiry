@@ -148,12 +148,12 @@ public:
 
     calls = await _calls(parser, tmp_path / "order.cpp")
     unit_price_edges = [r for r in calls if r.target_name == "unitPrice"]
-    assert len(unit_price_edges) == 1, [
-        (r.source_name, r.target_name) for r in calls
-    ]
+    assert len(unit_price_edges) == 1, [(r.source_name, r.target_name) for r in calls]
     # C++'s field_expression names the receiver `argument` (not Rust's
     # `value`); the accessor map tries both, so the receiver is preserved.
-    assert unit_price_edges[0].metadata.get("object") == "calc", unit_price_edges[0].metadata
+    assert unit_price_edges[0].metadata.get("object") == "calc", unit_price_edges[
+        0
+    ].metadata
 
 
 @pytest.mark.asyncio
@@ -182,7 +182,7 @@ func helper() int { return 1 }
     calls = await _calls(parser, tmp_path / "order.go")
     names = [r.target_name for r in calls]
     assert "applyTax" in names, names  # method call via selector_expression
-    assert "helper" in names, names    # simple function call
+    assert "helper" in names, names  # simple function call
 
     method_edge = next(r for r in calls if r.target_name == "applyTax")
     assert method_edge.metadata.get("object") == "o", method_edge.metadata

@@ -15,7 +15,9 @@ def _make_search_results(dicts: list, source: str = "test") -> list[SearchResult
     """Helper to create SearchResult objects from dict test data."""
     results = []
     for d in dicts:
-        result_id = d.get("id") or d.get("doc_id") or d.get("chunk_id") or str(hash(str(d)))
+        result_id = (
+            d.get("id") or d.get("doc_id") or d.get("chunk_id") or str(hash(str(d)))
+        )
         # Use score if present, else calculate from _distance
         if "score" in d:
             score = d["score"]
@@ -25,13 +27,15 @@ def _make_search_results(dicts: list, source: str = "test") -> list[SearchResult
             score = d["_score"]
         else:
             score = 0.5
-        results.append(SearchResult(
-            id=str(result_id),
-            data=d,
-            score=score,
-            source=source,
-            distance=d.get("_distance"),
-        ))
+        results.append(
+            SearchResult(
+                id=str(result_id),
+                data=d,
+                score=score,
+                source=source,
+                distance=d.get("_distance"),
+            )
+        )
     return results
 
 
@@ -109,6 +113,7 @@ class TestHybridSearchService:
     @pytest.mark.unit
     async def test_hybrid_search_both_empty(self, hybrid_search_service):
         """Test hybrid search when both vector and FTS return empty results."""
+
         # Setup mock functions
         async def mock_vector_search(**kwargs):
             return []
@@ -130,7 +135,9 @@ class TestHybridSearchService:
         assert result == []
 
     @pytest.mark.unit
-    async def test_hybrid_search_vector_only(self, hybrid_search_service, mock_deduplicator):
+    async def test_hybrid_search_vector_only(
+        self, hybrid_search_service, mock_deduplicator
+    ):
         """Test hybrid search when only vector search returns results."""
         # Setup mock data as SearchResult objects (what vector_search now returns)
         vector_dicts = [
@@ -162,7 +169,9 @@ class TestHybridSearchService:
         assert result[0]["doc_id"] == "doc_1"
 
     @pytest.mark.unit
-    async def test_hybrid_search_fts_only(self, hybrid_search_service, mock_deduplicator):
+    async def test_hybrid_search_fts_only(
+        self, hybrid_search_service, mock_deduplicator
+    ):
         """Test hybrid search when only FTS returns results."""
         # Setup mock data as SearchResult objects (what fts_search now returns)
         fts_dicts = [
@@ -205,7 +214,9 @@ class TestHybridSearchService:
         ]
 
         # Execute
-        result = hybrid_search_service._simple_merge(vector_results, fts_results, limit=10)
+        result = hybrid_search_service._simple_merge(
+            vector_results, fts_results, limit=10
+        )
 
         # Verify
         assert len(result) == 2
@@ -224,7 +235,9 @@ class TestHybridSearchService:
         ]
 
         # Execute
-        result = hybrid_search_service._simple_merge(vector_results, fts_results, limit=10)
+        result = hybrid_search_service._simple_merge(
+            vector_results, fts_results, limit=10
+        )
 
         # Verify - should only have one result
         assert len(result) == 1
@@ -240,7 +253,9 @@ class TestHybridSearchService:
         results = _make_search_results(results_dicts, source="vector")
 
         # Execute
-        boosted = hybrid_search_service._apply_overview_boosting(results, boost_overview=True)
+        boosted = hybrid_search_service._apply_overview_boosting(
+            results, boost_overview=True
+        )
 
         # Verify - boosted returns SearchResult objects
         # README should be boosted, but code.py has better original score (lower distance)
@@ -252,7 +267,9 @@ class TestHybridSearchService:
         assert boosted[0].data.get("_overview_boosted") is True
 
     @pytest.mark.unit
-    def test_apply_deduplication_called_with_results(self, hybrid_search_service, mock_deduplicator):
+    def test_apply_deduplication_called_with_results(
+        self, hybrid_search_service, mock_deduplicator
+    ):
         """Test that deduplication delegates to the deduplicator.
 
         Note: Detailed deduplication logic is tested in test_deduplicator.py.
@@ -331,7 +348,9 @@ class TestRRFScoringFormula:
 
         # doc2 should have highest score (appears in both)
         result_ids = [r.id for r in results]
-        assert result_ids[0] == "doc2", "doc2 should rank first (appears in both results)"
+        assert result_ids[0] == "doc2", (
+            "doc2 should rank first (appears in both results)"
+        )
 
         # doc1 should rank second (higher vector weight, rank 0 in vector)
         assert result_ids[1] == "doc1", "doc1 should rank second (vector rank 0)"
@@ -346,7 +365,9 @@ class TestRRFScoringFormula:
 
         # Same results but appearing at rank 0 in each list
         vector_results = [
-            SearchResult(id="vec_doc", data={"content": "v"}, score=0.9, source="vector"),
+            SearchResult(
+                id="vec_doc", data={"content": "v"}, score=0.9, source="vector"
+            ),
         ]
         fts_results = [
             SearchResult(id="fts_doc", data={"content": "f"}, score=0.9, source="fts"),
@@ -363,7 +384,9 @@ class TestRRFScoringFormula:
         )
         # vec_doc: 0.9/(60+1) ≈ 0.01475
         # fts_doc: 0.1/(60+1) ≈ 0.00164
-        assert results_vector_heavy[0].id == "vec_doc", "Vector doc should rank first with vector-heavy weights"
+        assert results_vector_heavy[0].id == "vec_doc", (
+            "Vector doc should rank first with vector-heavy weights"
+        )
 
         # With FTS-heavy weights (0.1, 0.9)
         results_fts_heavy = reranker.rerank(
@@ -374,7 +397,9 @@ class TestRRFScoringFormula:
         )
         # vec_doc: 0.1/(60+1) ≈ 0.00164
         # fts_doc: 0.9/(60+1) ≈ 0.01475
-        assert results_fts_heavy[0].id == "fts_doc", "FTS doc should rank first with FTS-heavy weights"
+        assert results_fts_heavy[0].id == "fts_doc", (
+            "FTS doc should rank first with FTS-heavy weights"
+        )
 
     @pytest.mark.unit
     def test_rrf_scores_are_normalized(self):

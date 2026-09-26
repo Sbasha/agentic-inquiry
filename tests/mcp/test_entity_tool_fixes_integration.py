@@ -74,7 +74,7 @@ class TestEntityTypeSystemFix:
             file_path="/test/path.py",
             doc_id="doc-1",
             project_id="test-project",
-            vector=[0.1] * 384
+            vector=[0.1] * 384,
         )
 
         # Domain should default to "code"
@@ -89,7 +89,7 @@ class TestEntityTypeSystemFix:
             file_path="/test/ontology.owl",
             doc_id="doc-2",
             project_id="test-project",
-            vector=[0.1] * 384
+            vector=[0.1] * 384,
         )
         assert entity_with_domain.domain == "ontology"
 
@@ -130,6 +130,7 @@ class TestFindSimilarDiversity:
     def test_diversify_function_exists(self):
         """diversify_entity_results function should be importable."""
         from agentic_inquiry.mcp.tools.search import diversify_entity_results
+
         assert callable(diversify_entity_results)
 
     def test_diversify_limits_per_file(self):
@@ -184,11 +185,13 @@ class TestFindSimilarDiversity:
         entities = []
         for i in range(5):
             for j in range(2):
-                entities.append({
-                    "name": f"Entity_{i}_{j}",
-                    "file_path": f"/file_{i}.py",
-                    "similarity": 0.9 - i * 0.1
-                })
+                entities.append(
+                    {
+                        "name": f"Entity_{i}_{j}",
+                        "file_path": f"/file_{i}.py",
+                        "similarity": 0.9 - i * 0.1,
+                    }
+                )
 
         result = diversify_entity_results(entities, limit=5, max_per_file=2)
 
@@ -300,7 +303,7 @@ class TestEndToEndIntegration:
 
         # Verify diversity filter is called for entities scope
         assert "diversify_entity_results" in source
-        assert "effective_scope == \"entities\"" in source
+        assert 'effective_scope == "entities"' in source
 
     def test_entity_type_normalization_in_filters(self):
         """Filter helpers should use EntityType.normalize for type filtering."""

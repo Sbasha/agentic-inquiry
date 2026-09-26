@@ -86,6 +86,7 @@ class TestCallTracker:
 
         # Manually add old timestamps (simulating time passage)
         import time
+
         old_time = time.monotonic() - 120  # 2 minutes ago
         tracker.timestamps = [old_time, old_time + 1]
         tracker.record_call()  # Current time
@@ -120,7 +121,7 @@ class TestRateLimitResult:
             allowed=False,
             error_message="Rate limit exceeded",
             retry_after_seconds=30.0,
-            limit_type="session"
+            limit_type="session",
         )
 
         assert result.allowed is False
@@ -133,7 +134,7 @@ class TestRateLimitResult:
             allowed=False,
             error_message="Rate limit exceeded",
             retry_after_seconds=30.5,
-            limit_type="tool"
+            limit_type="tool",
         )
 
         response = result.to_error_response()

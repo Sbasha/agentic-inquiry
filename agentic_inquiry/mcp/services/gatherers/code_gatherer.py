@@ -1,5 +1,6 @@
 # agentic_inquiry/mcp/services/gatherers/code_gatherer.py
 """Code context gatherer implementation."""
+
 import logging
 from typing import Any, Dict, List
 
@@ -11,11 +12,30 @@ from .protocol import ContextGathererProtocol, GatherContext
 logger = logging.getLogger(__name__)
 
 # Code file extensions
-CODE_EXTENSIONS = frozenset({
-    '.py', '.ts', '.js', '.tsx', '.jsx', '.java', '.cpp', '.c', '.go',
-    '.rs', '.rb', '.php', '.swift', '.kt', '.cs', '.scala', '.r', '.m',
-    '.h', '.hpp'
-})
+CODE_EXTENSIONS = frozenset(
+    {
+        ".py",
+        ".ts",
+        ".js",
+        ".tsx",
+        ".jsx",
+        ".java",
+        ".cpp",
+        ".c",
+        ".go",
+        ".rs",
+        ".rb",
+        ".php",
+        ".swift",
+        ".kt",
+        ".cs",
+        ".scala",
+        ".r",
+        ".m",
+        ".h",
+        ".hpp",
+    }
+)
 
 
 class CodeGatherer(ContextGathererProtocol):
@@ -26,9 +46,7 @@ class CodeGatherer(ContextGathererProtocol):
     """
 
     def __init__(
-        self,
-        search_service: SearchService,
-        token_optimizer: TokenOptimizer
+        self, search_service: SearchService, token_optimizer: TokenOptimizer
     ) -> None:
         """Initialize code gatherer.
 
@@ -63,14 +81,19 @@ class CodeGatherer(ContextGathererProtocol):
 
         logger.info(
             "Searching for code: query=%s, limit=%s, project_id=%s, include_overview=%s",
-            context.query, limit, context.project_id, context.include_overview
+            context.query,
+            limit,
+            context.project_id,
+            context.include_overview,
         )
 
         try:
             # Use pre-computed query vector if provided, otherwise compute it
             query_vector = context.query_vector
             if query_vector is None:
-                query_vector_array = await self.search.embedding_service.embed_async(context.query)
+                query_vector_array = await self.search.embedding_service.embed_async(
+                    context.query
+                )
                 query_vector = query_vector_array.tolist()
 
             # Search for code - increase limit to allow for filtering
@@ -80,15 +103,19 @@ class CodeGatherer(ContextGathererProtocol):
                 query_fts=context.query,
                 limit=search_limit,
                 project_id=context.project_id,
-                boost_overview=context.include_overview
+                boost_overview=context.include_overview,
             )
 
             logger.info("Search returned %s results", len(results))
 
             # Filter for code files
             code_results = [
-                r for r in results
-                if isinstance(r, SearchResult) and any(r.data.get("file_path", "").endswith(ext) for ext in CODE_EXTENSIONS)
+                r
+                for r in results
+                if isinstance(r, SearchResult)
+                and any(
+                    r.data.get("file_path", "").endswith(ext) for ext in CODE_EXTENSIONS
+                )
             ]
 
             logger.info("Filtered to %s code results", len(code_results))
@@ -104,7 +131,7 @@ class CodeGatherer(ContextGathererProtocol):
                     context.budget.add(item_text)
                     code_items.append(item)
                 else:
-                    logger.debug("Skipping code item %s - budget exceeded", item['id'])
+                    logger.debug("Skipping code item %s - budget exceeded", item["id"])
                     break
 
             logger.info("Converted to %s code context items", len(code_items))
@@ -115,9 +142,7 @@ class CodeGatherer(ContextGathererProtocol):
             return []
 
     def _result_to_context_item(
-        self,
-        result: Dict[str, Any],
-        query: str
+        self, result: Dict[str, Any], query: str
     ) -> Dict[str, Any]:
         """Convert search result to context item dictionary.
 
@@ -142,17 +167,14 @@ class CodeGatherer(ContextGathererProtocol):
         # Extract metadata
         metadata: Dict[str, Any] = {}
         metadata["language"] = result.get(
-            "language",
-            result.get("metadata", {}).get("language", "unknown")
+            "language", result.get("metadata", {}).get("language", "unknown")
         )
         metadata["type"] = result.get("type", "")
         metadata["line_start"] = result.get(
-            "line_start",
-            result.get("metadata", {}).get("line_start", 0)
+            "line_start", result.get("metadata", {}).get("line_start", 0)
         )
         metadata["line_end"] = result.get(
-            "line_end",
-            result.get("metadata", {}).get("line_end", 0)
+            "line_end", result.get("metadata", {}).get("line_end", 0)
         )
 
         # Extract symbols if available
@@ -169,14 +191,10 @@ class CodeGatherer(ContextGathererProtocol):
             "location": result.get("file_path", result.get("location", "")),
             "snippet": snippet,
             "metadata": metadata,
-            "why_relevant": why_relevant
+            "why_relevant": why_relevant,
         }
 
-    def _explain_relevance(
-        self,
-        result: Dict[str, Any],
-        relevance_score: float
-    ) -> str:
+    def _explain_relevance(self, result: Dict[str, Any], relevance_score: float) -> str:
         """Generate explanation of why item is relevant.
 
         Args:

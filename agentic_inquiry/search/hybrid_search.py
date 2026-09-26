@@ -1,4 +1,5 @@
 """Hybrid search service combining vector and full-text search with RRF."""
+
 from __future__ import annotations
 
 import logging
@@ -34,13 +35,15 @@ logger = logging.getLogger(__name__)
 
 # Valid reranker types for configuration validation
 # These are the officially supported reranker implementations
-VALID_RERANKER_TYPES: FrozenSet[str] = frozenset({
-    "rrf",                   # Reciprocal Rank Fusion (default, lightweight)
-    "linear_combination",    # Weighted score combination (lightweight)
-    "cross_encoder",         # Joint query-document encoding (requires model)
-    "colbert",               # Late interaction reranking (requires model)
-    "cohere",                # Cohere API reranking (requires API key)
-})
+VALID_RERANKER_TYPES: FrozenSet[str] = frozenset(
+    {
+        "rrf",  # Reciprocal Rank Fusion (default, lightweight)
+        "linear_combination",  # Weighted score combination (lightweight)
+        "cross_encoder",  # Joint query-document encoding (requires model)
+        "colbert",  # Late interaction reranking (requires model)
+        "cohere",  # Cohere API reranking (requires API key)
+    }
+)
 
 
 class HybridSearchService:
@@ -204,7 +207,9 @@ class HybridSearchService:
         )
         return RRFReranker()
 
-    def _apply_deduplication(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _apply_deduplication(
+        self, results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Apply deduplication to search results."""
         return self.deduplicator.deduplicate_results(results)
 
@@ -270,13 +275,52 @@ class HybridSearchService:
         return boosted_results
 
     # Stop words excluded from content boost matching
-    _CONTENT_BOOST_STOP_WORDS = frozenset({
-        'a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been',
-        'do', 'does', 'did', 'have', 'has', 'had', 'how', 'what',
-        'when', 'where', 'which', 'who', 'this', 'that', 'and', 'or',
-        'but', 'if', 'for', 'of', 'to', 'in', 'on', 'at', 'by',
-        'with', 'from', 'it', 'its', 'can', 'will', 'not', 'no',
-    })
+    _CONTENT_BOOST_STOP_WORDS = frozenset(
+        {
+            "a",
+            "an",
+            "the",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "been",
+            "do",
+            "does",
+            "did",
+            "have",
+            "has",
+            "had",
+            "how",
+            "what",
+            "when",
+            "where",
+            "which",
+            "who",
+            "this",
+            "that",
+            "and",
+            "or",
+            "but",
+            "if",
+            "for",
+            "of",
+            "to",
+            "in",
+            "on",
+            "at",
+            "by",
+            "with",
+            "from",
+            "it",
+            "its",
+            "can",
+            "will",
+            "not",
+            "no",
+        }
+    )
 
     def _apply_query_content_boost(
         self,
@@ -303,18 +347,19 @@ class HybridSearchService:
             return results
 
         # Tokenize query: split CamelCase, snake_case, and spaces
-        raw_terms = re.split(r'[\s_\-]+', query)
+        raw_terms = re.split(r"[\s_\-]+", query)
         terms = []
         for t in raw_terms:
             # Split CamelCase
-            parts = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', t).split()
-            parts = [re.sub(r'(?<=[A-Z])(?=[A-Z][a-z])', ' ', p).split() for p in parts]
+            parts = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", t).split()
+            parts = [re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", " ", p).split() for p in parts]
             for part_list in parts:
                 terms.extend(part_list)
 
         # Filter stop words and short terms
         significant = [
-            t for t in terms
+            t
+            for t in terms
             if len(t) >= 2 and t.lower() not in self._CONTENT_BOOST_STOP_WORDS
         ]
         if not significant:
@@ -395,13 +440,15 @@ class HybridSearchService:
         boosted = []
         for result, raw_score in scored:
             normalized = min(1.0, raw_score / max_score)
-            boosted.append(SearchResult(
-                id=result.id,
-                data=result.data,
-                score=normalized,
-                source=result.source,
-                distance=result.distance,
-            ))
+            boosted.append(
+                SearchResult(
+                    id=result.id,
+                    data=result.data,
+                    score=normalized,
+                    source=result.source,
+                    distance=result.distance,
+                )
+            )
 
         # Re-sort by boosted score
         boosted.sort(key=lambda r: r.score, reverse=True)
@@ -409,7 +456,10 @@ class HybridSearchService:
         if boost_count > 0 or floor_count > 0:
             logger.debug(
                 "Content boost: %d/%d boosted, %d floored (query terms: %s)",
-                boost_count, len(results), floor_count, unique_terms,
+                boost_count,
+                len(results),
+                floor_count,
+                unique_terms,
             )
 
         return boosted
@@ -529,35 +579,35 @@ class HybridSearchService:
 
         # Sort by combined score (descending)
         sorted_results = sorted(
-            merged.values(),
-            key=lambda x: x.get("score", 0.0),
-            reverse=True
+            merged.values(), key=lambda x: x.get("score", 0.0), reverse=True
         )
 
         return sorted_results[:limit]
 
-    def _apply_secondary_ranking(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _apply_secondary_ranking(
+        self, results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Apply secondary ranking for results with similar scores.
-        
+
         When scores are within 0.01, use file type and recency as tiebreakers.
-        
+
         Args:
             results: List of search results sorted by score
-            
+
         Returns:
             Results with secondary ranking applied
         """
         if len(results) <= 1:
             return results
-        
+
         # Group results by similar scores (within 0.01)
         groups = []
         current_group = [results[0]]
-        
+
         for i in range(1, len(results)):
-            prev_score = results[i-1].get("score", 0.0)
+            prev_score = results[i - 1].get("score", 0.0)
             curr_score = results[i].get("score", 0.0)
-            
+
             if abs(prev_score - curr_score) <= 0.01:
                 # Similar score - add to current group
                 current_group.append(results[i])
@@ -565,10 +615,10 @@ class HybridSearchService:
                 # Different score - start new group
                 groups.append(current_group)
                 current_group = [results[i]]
-        
+
         # Add last group
         groups.append(current_group)
-        
+
         # Apply secondary ranking within each group
         ranked_results = []
         for group in groups:
@@ -581,41 +631,50 @@ class HybridSearchService:
                     key=lambda x: (
                         self._get_file_type_priority(x.get("file_path", "")),
                         -x.get("timestamp", 0),  # Negative for descending (newer first)
-                    )
+                    ),
                 )
                 ranked_results.extend(sorted_group)
-        
+
         return ranked_results
-    
+
     def _get_file_type_priority(self, file_path: str) -> int:
         """Get priority for file type (lower is better).
-        
+
         Priority order:
         1. Documentation files (README, docs)
         2. Source code files (.py, .js, .ts, etc.)
         3. Configuration files (.yaml, .json, .toml)
         4. Other files
-        
+
         Args:
             file_path: Path to the file
-            
+
         Returns:
             Priority value (lower is better)
         """
         file_path_lower = file_path.lower()
-        
+
         # Documentation files (highest priority)
-        if any(keyword in file_path_lower for keyword in ["readme", "doc", "guide", "tutorial"]):
+        if any(
+            keyword in file_path_lower
+            for keyword in ["readme", "doc", "guide", "tutorial"]
+        ):
             return 0
-        
+
         # Source code files
-        if any(file_path_lower.endswith(ext) for ext in [".py", ".js", ".ts", ".java", ".cpp", ".c", ".go", ".rs"]):
+        if any(
+            file_path_lower.endswith(ext)
+            for ext in [".py", ".js", ".ts", ".java", ".cpp", ".c", ".go", ".rs"]
+        ):
             return 1
-        
+
         # Configuration files
-        if any(file_path_lower.endswith(ext) for ext in [".yaml", ".yml", ".json", ".toml", ".ini", ".conf"]):
+        if any(
+            file_path_lower.endswith(ext)
+            for ext in [".yaml", ".yml", ".json", ".toml", ".ini", ".conf"]
+        ):
             return 2
-        
+
         # Other files (lowest priority)
         return 3
 
@@ -691,26 +750,28 @@ class HybridSearchService:
 
                 # Track component timings for latency attribution
                 component_timings = {}
-                
+
                 # Run vector and FTS searches separately to enable fallback
                 start_time = time.perf_counter()
                 vector_results = await vector_search_fn(
                     query_vector=query_vector,
-                    limit=limit * 3,  # Get more results for better reranking + content boost
+                    limit=limit
+                    * 3,  # Get more results for better reranking + content boost
                     filters=filters,
                     vector_column_name=vector_column_name,
                     project_id=project_id,
                 )
-                component_timings['vector_search'] = time.perf_counter() - start_time
+                component_timings["vector_search"] = time.perf_counter() - start_time
 
                 start_time = time.perf_counter()
                 fts_results = await fts_search_fn(
                     query_fts=query_fts,  # fts_search will sanitize internally
-                    limit=limit * 3,  # Get more results for better reranking + content boost
+                    limit=limit
+                    * 3,  # Get more results for better reranking + content boost
                     filters=filters,
                     project_id=project_id,
                 )
-                component_timings['fts_search'] = time.perf_counter() - start_time
+                component_timings["fts_search"] = time.perf_counter() - start_time
 
                 logger.debug(
                     "Hybrid search input: vector_results=%d, fts_results=%d",
@@ -733,13 +794,19 @@ class HybridSearchService:
                 for r in fts_results:
                     r.data["_raw_fts_score"] = r.score
 
-                vector_results = [r for r in vector_results if r.score >= MIN_VECTOR_SCORE]
+                vector_results = [
+                    r for r in vector_results if r.score >= MIN_VECTOR_SCORE
+                ]
                 fts_results = [r for r in fts_results if r.score >= MIN_FTS_SCORE]
-                if pre_filter_vector != len(vector_results) or pre_filter_fts != len(fts_results):
+                if pre_filter_vector != len(vector_results) or pre_filter_fts != len(
+                    fts_results
+                ):
                     logger.debug(
                         "Pre-filter: vector %d->%d, FTS %d->%d",
-                        pre_filter_vector, len(vector_results),
-                        pre_filter_fts, len(fts_results),
+                        pre_filter_vector,
+                        len(vector_results),
+                        pre_filter_fts,
+                        len(fts_results),
                     )
 
                 # Normalize scores before combining (Task 8.3)
@@ -748,8 +815,12 @@ class HybridSearchService:
 
                 # Apply overview boosting to both result sets before merging
                 if boost_overview:
-                    vector_results = self._apply_overview_boosting(vector_results, boost_overview=True)
-                    fts_results = self._apply_overview_boosting(fts_results, boost_overview=True)
+                    vector_results = self._apply_overview_boosting(
+                        vector_results, boost_overview=True
+                    )
+                    fts_results = self._apply_overview_boosting(
+                        fts_results, boost_overview=True
+                    )
 
                 # Fallback strategies when one search returns no results
                 # Note: vector_results and fts_results are now List[SearchResult]
@@ -764,10 +835,15 @@ class HybridSearchService:
                     # Filter out results with score <= 0.0 (Task 8.3)
                     fallback = [r for r in fts_results if r.score > 0.0]
                     # Convert to dicts for deduplicator (uses Mapping protocol)
-                    fallback_dicts = [self._search_result_to_dict(r) for r in fallback[:limit]]
+                    fallback_dicts = [
+                        self._search_result_to_dict(r) for r in fallback[:limit]
+                    ]
                     deduped = self._apply_deduplication(fallback_dicts)
                     if return_ambiguity:
-                        return {"results": deduped, "ambiguity": detect_ambiguity(deduped)}
+                        return {
+                            "results": deduped,
+                            "ambiguity": detect_ambiguity(deduped),
+                        }
                     return deduped
 
                 if not fts_results and vector_results:
@@ -775,10 +851,15 @@ class HybridSearchService:
                     # Filter out results with score <= 0.0 (Task 8.3)
                     fallback = [r for r in vector_results if r.score > 0.0]
                     # Convert to dicts for deduplicator
-                    fallback_dicts = [self._search_result_to_dict(r) for r in fallback[:limit]]
+                    fallback_dicts = [
+                        self._search_result_to_dict(r) for r in fallback[:limit]
+                    ]
                     deduped = self._apply_deduplication(fallback_dicts)
                     if return_ambiguity:
-                        return {"results": deduped, "ambiguity": detect_ambiguity(deduped)}
+                        return {
+                            "results": deduped,
+                            "ambiguity": detect_ambiguity(deduped),
+                        }
                     return deduped
 
                 # Both strategies returned results - proceed with reranking
@@ -814,7 +895,9 @@ class HybridSearchService:
                 # This ensures chunks with class declarations and method bodies
                 # rank higher than import-only chunks from the same file.
                 results = self._apply_query_content_boost(
-                    results, query_fts, boost_factor=1.5,
+                    results,
+                    query_fts,
+                    boost_factor=1.5,
                 )
 
                 # Limit results (results is List[SearchResult])
@@ -822,7 +905,9 @@ class HybridSearchService:
 
                 # Apply overview boosting after reranking (works with SearchResult)
                 if boost_overview:
-                    results = self._apply_overview_boosting(results, boost_overview=True)
+                    results = self._apply_overview_boosting(
+                        results, boost_overview=True
+                    )
 
                 # Check if reranker eliminated all results
                 if not results and (vector_results or fts_results):
@@ -864,12 +949,11 @@ class HybridSearchService:
                 if total_time > 1.0:
                     # Find which components contributed most to latency
                     slowest_components = sorted(
-                        component_timings.items(),
-                        key=lambda x: x[1],
-                        reverse=True
+                        component_timings.items(), key=lambda x: x[1], reverse=True
                     )
                     component_breakdown = ", ".join(
-                        f"{name}={duration:.3f}s" for name, duration in slowest_components
+                        f"{name}={duration:.3f}s"
+                        for name, duration in slowest_components
                     )
                     logger.warning(
                         "Slow hybrid search detected: total=%.3fs, components: %s",
@@ -878,8 +962,8 @@ class HybridSearchService:
                         extra={
                             "operation": "hybrid_search",
                             "total_duration": total_time,
-                            "component_timings": component_timings
-                        }
+                            "component_timings": component_timings,
+                        },
                     )
 
                 # Emit results event
@@ -893,10 +977,7 @@ class HybridSearchService:
 
                 if return_ambiguity:
                     ambiguity_info = detect_ambiguity(results_dicts)
-                    return {
-                        "results": results_dicts,
-                        "ambiguity": ambiguity_info
-                    }
+                    return {"results": results_dicts, "ambiguity": ambiguity_info}
 
                 return results_dicts
 

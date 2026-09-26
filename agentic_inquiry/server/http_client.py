@@ -41,7 +41,9 @@ class InquiryClient:
         if not self._base_url:
             if auto_start:
                 self._base_url = ensure_server(
-                    project_id=project_id, workspace=workspace, env=env,
+                    project_id=project_id,
+                    workspace=workspace,
+                    env=env,
                 )
             else:
                 self._base_url = get_server_url(env)
@@ -61,7 +63,9 @@ class InquiryClient:
             return None
         return self._request("GET", path, timeout=timeout)
 
-    def post(self, path: str, data: dict | None = None, timeout: float | None = None) -> dict | None:
+    def post(
+        self, path: str, data: dict | None = None, timeout: float | None = None
+    ) -> dict | None:
         """Send a POST request.
 
         Returns:
@@ -142,7 +146,9 @@ class HookClient:
     def available(self) -> bool:
         return self._client.available
 
-    def post(self, path: str, data: dict | None = None, timeout: float | None = None) -> dict | None:
+    def post(
+        self, path: str, data: dict | None = None, timeout: float | None = None
+    ) -> dict | None:
         return self._client.post(path, data, timeout=timeout)
 
     def fire_and_forget(self, path: str, data: dict) -> bool:

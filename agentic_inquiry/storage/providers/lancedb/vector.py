@@ -565,7 +565,9 @@ class LanceDBVectorProvider:
 
         return results
 
-    def _dict_to_document_chunk(self, record: Dict[str, Any]) -> Optional[DocumentChunk]:
+    def _dict_to_document_chunk(
+        self, record: Dict[str, Any]
+    ) -> Optional[DocumentChunk]:
         """Convert a dict record to DocumentChunk.
 
         Args:

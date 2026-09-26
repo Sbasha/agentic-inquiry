@@ -22,6 +22,7 @@ class CustomManager:
     async def remove_custom_records(self, payload):
         self.rollbacks.append(list(payload))
 
+
 def test_transaction_commit_with_custom_manager_methods():
     async def run_test():
         manager = CustomManager()

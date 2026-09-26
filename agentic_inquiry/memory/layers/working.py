@@ -11,7 +11,12 @@ from typing import Any
 
 import numpy as np
 
-from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier, RetrievalResult
+from agentic_inquiry.memory.models import (
+    MemoryContext,
+    MemoryItem,
+    MemoryTier,
+    RetrievalResult,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -133,7 +138,11 @@ class WorkingMemory:
             del self._storage[item_id]
 
         count = len(items_to_remove)
-        logger.info("Cleared session from working memory: session=%s, count=%d", session_id, count)
+        logger.info(
+            "Cleared session from working memory: session=%s, count=%d",
+            session_id,
+            count,
+        )
         return count
 
     async def retrieve(
@@ -247,5 +256,7 @@ class WorkingMemory:
         return {
             "capacity": self.capacity,
             "size": len(self._storage),
-            "utilization": len(self._storage) / self.capacity if self.capacity > 0 else 0.0,
+            "utilization": len(self._storage) / self.capacity
+            if self.capacity > 0
+            else 0.0,
         }

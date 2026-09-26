@@ -42,7 +42,7 @@ async def mock_storage_with_lancedb(lancedb_manager):
     storage = AsyncMock()
     # The method called by MaintenanceManager is run_maintenance
     storage.run_maintenance = AsyncMock(return_value={"summary": "mocked success"})
-    
+
     # Still need to provide the underlying manager for some tests
     provider = MagicMock()
     provider._db_manager = lancedb_manager
@@ -85,9 +85,7 @@ class TestMaintenanceIntegration:
 
         # Schedule maintenance
         manager.schedule_maintenance(
-            project_id="test_project",
-            db_manager=lancedb_manager,
-            retention_minutes=60
+            project_id="test_project", db_manager=lancedb_manager, retention_minutes=60
         )
 
         # Wait for task to start
@@ -112,27 +110,24 @@ class TestMaintenanceIntegration:
         """Test full event-driven maintenance flow."""
         # Create manager with event system and the mock storage
         manager = MaintenanceManager(
-            event_system=event_system,
-            storage=mock_storage_with_lancedb
+            event_system=event_system, storage=mock_storage_with_lancedb
         )
 
         # Emit project.closed event
         await event_system.emit(
-            EventTypes.Project.CLOSED,
-            source="test",
-            project_id="test_project"
+            EventTypes.Project.CLOSED, source="test", project_id="test_project"
         )
 
         # Wait for the event to be processed
         await asyncio.sleep(0.2)
 
         # Verify that the mock's run_maintenance method was called
-        mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(project_id="test_project")
+        mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(
+            project_id="test_project"
+        )
 
     @pytest.mark.asyncio
-    async def test_maintenance_with_actual_tables(
-        self, lancedb_manager, temp_db_path
-    ):
+    async def test_maintenance_with_actual_tables(self, lancedb_manager, temp_db_path):
         """Test maintenance with actual LanceDB tables."""
         # Create a test table
         import lancedb
@@ -141,28 +136,22 @@ class TestMaintenanceIntegration:
         db = lancedb.connect(str(temp_db_path))
 
         # Create schema
-        schema = pa.schema([
-            pa.field("id", pa.string()),
-            pa.field("text", pa.string()),
-            pa.field("embedding", pa.list_(pa.float32(), 128))
-        ])
+        schema = pa.schema(
+            [
+                pa.field("id", pa.string()),
+                pa.field("text", pa.string()),
+                pa.field("embedding", pa.list_(pa.float32(), 128)),
+            ]
+        )
 
         # Create table with some data
-        data = [
-            {
-                "id": "1",
-                "text": "test",
-                "embedding": [0.1] * 128
-            }
-        ]
+        data = [{"id": "1", "text": "test", "embedding": [0.1] * 128}]
         db.create_table("test_table", data, schema=schema, mode="overwrite")
 
         # Run maintenance
         manager = MaintenanceManager()
         result = await manager._run_maintenance_task(
-            project_id="test_project",
-            db_manager=lancedb_manager,
-            retention_minutes=60
+            project_id="test_project", db_manager=lancedb_manager, retention_minutes=60
         )
 
         # Verify result
@@ -180,8 +169,7 @@ class TestMaintenanceConfigIntegration:
     ):
         """Test different trigger configs change behavior."""
         manager = MaintenanceManager(
-            event_system=event_system,
-            storage=mock_storage_with_lancedb
+            event_system=event_system, storage=mock_storage_with_lancedb
         )
 
         # Test 1: project.closed trigger
@@ -193,12 +181,12 @@ class TestMaintenanceConfigIntegration:
             mock_load.return_value = mock_config
 
             await event_system.emit(
-                EventTypes.Project.CLOSED,
-                source="test",
-                project_id="project1"
+                EventTypes.Project.CLOSED, source="test", project_id="project1"
             )
             await asyncio.sleep(0.1)
-            mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(project_id="project1")
+            mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(
+                project_id="project1"
+            )
 
         # Test 2: indexing.completed trigger
         mock_storage_with_lancedb.run_maintenance.reset_mock()
@@ -209,20 +197,18 @@ class TestMaintenanceConfigIntegration:
             mock_load.return_value = mock_config
 
             await event_system.emit(
-                EventTypes.Project.CLOSED,
-                source="test",
-                project_id="project2"
+                EventTypes.Project.CLOSED, source="test", project_id="project2"
             )
             await asyncio.sleep(0.1)
             mock_storage_with_lancedb.run_maintenance.assert_not_awaited()
 
             await event_system.emit(
-                EventTypes.Indexing.COMPLETED,
-                source="test",
-                project_id="project3"
+                EventTypes.Indexing.COMPLETED, source="test", project_id="project3"
             )
             await asyncio.sleep(0.1)
-            mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(project_id="project3")
+            mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(
+                project_id="project3"
+            )
 
 
 class TestMaintenanceConcurrency:
@@ -235,19 +221,13 @@ class TestMaintenanceConcurrency:
 
         # Schedule maintenance for multiple projects
         manager.schedule_maintenance(
-            project_id="project1",
-            db_manager=lancedb_manager,
-            retention_minutes=60
+            project_id="project1", db_manager=lancedb_manager, retention_minutes=60
         )
         manager.schedule_maintenance(
-            project_id="project2",
-            db_manager=lancedb_manager,
-            retention_minutes=60
+            project_id="project2", db_manager=lancedb_manager, retention_minutes=60
         )
         manager.schedule_maintenance(
-            project_id="project3",
-            db_manager=lancedb_manager,
-            retention_minutes=60
+            project_id="project3", db_manager=lancedb_manager, retention_minutes=60
         )
 
         # Wait for tasks to start
@@ -262,7 +242,7 @@ class TestMaintenanceConcurrency:
         await asyncio.gather(
             manager._running_tasks["project1"],
             manager._running_tasks["project2"],
-            manager._running_tasks["project3"]
+            manager._running_tasks["project3"],
         )
 
         # All should complete successfully
@@ -292,9 +272,7 @@ class TestMaintenanceConcurrency:
         # Schedule twice for same project
         task1 = asyncio.create_task(
             manager._run_maintenance_task(
-                project_id="project1",
-                db_manager=lancedb_manager,
-                retention_minutes=60
+                project_id="project1", db_manager=lancedb_manager, retention_minutes=60
             )
         )
 
@@ -303,9 +281,7 @@ class TestMaintenanceConcurrency:
 
         task2 = asyncio.create_task(
             manager._run_maintenance_task(
-                project_id="project1",
-                db_manager=lancedb_manager,
-                retention_minutes=60
+                project_id="project1", db_manager=lancedb_manager, retention_minutes=60
             )
         )
 
@@ -334,7 +310,7 @@ class TestMaintenanceErrorRecovery:
         manager.schedule_maintenance(
             project_id="failing_project",
             db_manager=failing_manager,
-            retention_minutes=60
+            retention_minutes=60,
         )
 
         # Wait for task
@@ -356,7 +332,7 @@ class TestMaintenanceErrorRecovery:
         manager.schedule_maintenance(
             project_id="working_project",
             db_manager=working_manager,
-            retention_minutes=60
+            retention_minutes=60,
         )
 
         await asyncio.sleep(0.1)
@@ -383,9 +359,7 @@ class TestMaintenanceBackendSupport:
         assert manager._supports_maintenance(provider) is True
 
     @pytest.mark.asyncio
-    async def test_non_lancedb_backend_skips_maintenance(
-        self, event_system
-    ):
+    async def test_non_lancedb_backend_skips_maintenance(self, event_system):
         """Test non-LanceDB backends skip maintenance."""
         # Create storage with non-LanceDB provider
         storage = MagicMock()
@@ -393,10 +367,7 @@ class TestMaintenanceBackendSupport:
         provider._db_manager = MagicMock(spec=[])  # No maintenance methods
         storage._graph_provider = provider
 
-        manager = MaintenanceManager(
-            event_system=event_system,
-            storage=storage
-        )
+        manager = MaintenanceManager(event_system=event_system, storage=storage)
 
         # Mock config
         with patch("agentic_inquiry.config.Config.load") as mock_load:
@@ -407,9 +378,7 @@ class TestMaintenanceBackendSupport:
 
             # Trigger event
             await event_system.emit(
-                EventTypes.Project.CLOSED,
-                source="test",
-                project_id="test_project"
+                EventTypes.Project.CLOSED, source="test", project_id="test_project"
             )
 
             await asyncio.sleep(0.1)

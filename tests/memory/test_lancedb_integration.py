@@ -66,7 +66,9 @@ class TestLanceDBTableCreation:
 
     @pytest.mark.asyncio
     async def test_episodic_table_creation(
-        self, episodic_adapter: LanceDBMemoryAdapter, embedding_service: EmbeddingService
+        self,
+        episodic_adapter: LanceDBMemoryAdapter,
+        embedding_service: EmbeddingService,
     ):
         """Test episodic memory table is created and can store/retrieve data."""
         episodic = EpisodicMemory(storage=episodic_adapter, limit=100)
@@ -106,7 +108,9 @@ class TestLanceDBTableCreation:
 
     @pytest.mark.asyncio
     async def test_semantic_table_creation(
-        self, semantic_adapter: LanceDBMemoryAdapter, embedding_service: EmbeddingService
+        self,
+        semantic_adapter: LanceDBMemoryAdapter,
+        embedding_service: EmbeddingService,
     ):
         """Test semantic memory table is created and can store/retrieve data."""
         semantic = SemanticMemory(storage=semantic_adapter, limit=100)
@@ -121,7 +125,9 @@ class TestLanceDBTableCreation:
             session_id="test_session",
             conversation_id="test_conversation",
         )
-        embedding = await embedding_service.embed_async("Python is a programming language")
+        embedding = await embedding_service.embed_async(
+            "Python is a programming language"
+        )
         summary_embedding = await embedding_service.embed_async("Python definition")
 
         item = MemoryItem(
@@ -153,7 +159,9 @@ class TestLanceDBTableCreation:
     ):
         """Test that tables persist across instances."""
         # Create adapter and first memory instance
-        adapter = LanceDBMemoryAdapter(db_manager, table_name="memory_episodic_persistence")
+        adapter = LanceDBMemoryAdapter(
+            db_manager, table_name="memory_episodic_persistence"
+        )
         episodic1 = EpisodicMemory(storage=adapter, limit=100)
         await episodic1.initialize()
 
@@ -196,7 +204,10 @@ class TestLanceDBVectorSearch:
 
     @pytest.mark.asyncio
     async def test_episodic_vector_search(
-        self, episodic_adapter: LanceDBMemoryAdapter, embedding_service: EmbeddingService, test_context: MemoryContext
+        self,
+        episodic_adapter: LanceDBMemoryAdapter,
+        embedding_service: EmbeddingService,
+        test_context: MemoryContext,
     ):
         """Test vector similarity search in episodic memory."""
         episodic = EpisodicMemory(storage=episodic_adapter, limit=100)
@@ -242,7 +253,10 @@ class TestLanceDBVectorSearch:
 
     @pytest.mark.asyncio
     async def test_semantic_vector_search(
-        self, semantic_adapter: LanceDBMemoryAdapter, embedding_service: EmbeddingService, test_context: MemoryContext
+        self,
+        semantic_adapter: LanceDBMemoryAdapter,
+        embedding_service: EmbeddingService,
+        test_context: MemoryContext,
     ):
         """Test vector similarity search in semantic memory."""
         semantic = SemanticMemory(storage=semantic_adapter, limit=100)
@@ -297,7 +311,10 @@ class TestLanceDBConcurrentAccess:
 
     @pytest.mark.asyncio
     async def test_concurrent_writes(
-        self, episodic_adapter: LanceDBMemoryAdapter, embedding_service: EmbeddingService, test_context: MemoryContext
+        self,
+        episodic_adapter: LanceDBMemoryAdapter,
+        embedding_service: EmbeddingService,
+        test_context: MemoryContext,
     ):
         """Test concurrent write operations."""
         episodic = EpisodicMemory(storage=episodic_adapter, limit=100)
@@ -338,7 +355,10 @@ class TestLanceDBConcurrentAccess:
 
     @pytest.mark.asyncio
     async def test_concurrent_reads(
-        self, episodic_adapter: LanceDBMemoryAdapter, embedding_service: EmbeddingService, test_context: MemoryContext
+        self,
+        episodic_adapter: LanceDBMemoryAdapter,
+        embedding_service: EmbeddingService,
+        test_context: MemoryContext,
     ):
         """Test concurrent read operations."""
         episodic = EpisodicMemory(storage=episodic_adapter, limit=100)
@@ -381,7 +401,10 @@ class TestLanceDBDataPersistence:
 
     @pytest.mark.asyncio
     async def test_update_persistence(
-        self, episodic_adapter: LanceDBMemoryAdapter, embedding_service: EmbeddingService, test_context: MemoryContext
+        self,
+        episodic_adapter: LanceDBMemoryAdapter,
+        embedding_service: EmbeddingService,
+        test_context: MemoryContext,
     ):
         """Test that updates persist correctly."""
         episodic = EpisodicMemory(storage=episodic_adapter, limit=100)
@@ -416,7 +439,10 @@ class TestLanceDBDataPersistence:
 
     @pytest.mark.asyncio
     async def test_delete_persistence(
-        self, episodic_adapter: LanceDBMemoryAdapter, embedding_service: EmbeddingService, test_context: MemoryContext
+        self,
+        episodic_adapter: LanceDBMemoryAdapter,
+        embedding_service: EmbeddingService,
+        test_context: MemoryContext,
     ):
         """Test that deletes persist correctly."""
         episodic = EpisodicMemory(storage=episodic_adapter, limit=100)

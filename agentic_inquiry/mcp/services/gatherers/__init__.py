@@ -31,6 +31,7 @@ Usage:
 
     code_items = await code_gatherer.gather(context)
 """
+
 from .protocol import ContextGathererProtocol, GatherContext
 from .code_gatherer import CodeGatherer
 from .docs_gatherer import DocsGatherer

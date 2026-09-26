@@ -1,5 +1,6 @@
 # agentic_inquiry/mcp/services/gatherers/graph_gatherer.py
 """Graph relationship context gatherer implementation."""
+
 import logging
 from typing import Any, Dict, List, Set
 
@@ -90,7 +91,7 @@ class GraphGatherer(ContextGathererProtocol):
                     direction="both",
                     max_depth=max_depth,
                     project_id=context.project_id,
-                    include_metadata=True
+                    include_metadata=True,
                 )
 
                 if not result.get("relationships"):
@@ -122,23 +123,28 @@ class GraphGatherer(ContextGathererProtocol):
                         entity_data=entity_data,
                         new_entity_id=new_entity_id,
                         connected_to=entity_id,
-                        connected_to_name=_get_attr(result["entity"], "name", "")
+                        connected_to_name=_get_attr(result["entity"], "name", ""),
                     )
 
                     # Create snippet for token budget
-                    snippet_text = f"{rel_item['name']} ({rel_item['relationship_type']})"
+                    snippet_text = (
+                        f"{rel_item['name']} ({rel_item['relationship_type']})"
+                    )
 
                     # Check budget
                     if context.budget.can_add(snippet_text):
                         context.budget.add(snippet_text)
                         relationship_items.append(rel_item)
                     else:
-                        logger.debug("Skipping relationship %s - budget exceeded", new_entity_id)
+                        logger.debug(
+                            "Skipping relationship %s - budget exceeded", new_entity_id
+                        )
                         break
 
             logger.info(
                 "Expanded via relationships: found %s related entities from %s source entities",
-                len(relationship_items), len(entity_ids)
+                len(relationship_items),
+                len(entity_ids),
             )
             return relationship_items
 
@@ -152,7 +158,7 @@ class GraphGatherer(ContextGathererProtocol):
         entity_data: Dict[str, Any],
         new_entity_id: str,
         connected_to: str,
-        connected_to_name: str
+        connected_to_name: str,
     ) -> Dict[str, Any]:
         """Convert relationship to context item dictionary.
 
@@ -181,5 +187,5 @@ class GraphGatherer(ContextGathererProtocol):
             "metadata": _get_attr(rel, "metadata", {}),
             "relevance_score": 0.5,  # Default for relationships
             "snippet": "",
-            "why_relevant": f"Related via {_get_attr(rel, 'type', 'unknown')} relationship"
+            "why_relevant": f"Related via {_get_attr(rel, 'type', 'unknown')} relationship",
         }

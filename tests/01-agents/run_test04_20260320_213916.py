@@ -1,4 +1,5 @@
 """Runner for TEST_04 Bug Investigation - run 20260320_213916."""
+
 import asyncio
 import json
 import logging
@@ -23,7 +24,9 @@ sys.path.insert(0, str(PROTOCOLS_DIR))
 
 RUN_ID = "20260320_213916"
 OUTPUT_DIR = PROJECT_ROOT / "test_results" / "ai" / RUN_ID / "bug_investigation"
-CONFIG_PATH = str(PROJECT_ROOT / ".agentic-inquiry" / "envs" / "ai-prod" / "config.yaml")
+CONFIG_PATH = str(
+    PROJECT_ROOT / ".agentic-inquiry" / "envs" / "ai-prod" / "config.yaml"
+)
 
 
 async def main():

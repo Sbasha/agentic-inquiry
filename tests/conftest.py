@@ -10,7 +10,7 @@ indicate their dependencies and usage:
    - Use these for fast unit tests that don't need real implementations
    - These fixtures use in-memory databases, dummy embedders, etc.
 
-2. **integration_*** - Fixtures using real dependencies  
+2. **integration_*** - Fixtures using real dependencies
    - Example: integration_config
    - Use these for integration tests that need real implementations
    - These fixtures may load actual models, connect to real services, etc.
@@ -25,6 +25,7 @@ The naming convention helps developers quickly understand:
 - What dependencies are being used
 - Expected test execution speed and resource requirements
 """
+
 from __future__ import annotations
 
 import os
@@ -46,7 +47,7 @@ def pytest_configure(config):
         "ignore",
         category=Warning,
         message=".*Number of distinct clusters.*found smaller than n_clusters.*",
-        module="sklearn.base"
+        module="sklearn.base",
     )
 
     # Suppress RuntimeWarnings about unawaited coroutines from mock cleanup
@@ -58,9 +59,13 @@ def pytest_configure(config):
     )
 
     # Register custom markers
-    config.addinivalue_line("markers", "smoke: critical path tests for quick validation")
+    config.addinivalue_line(
+        "markers", "smoke: critical path tests for quick validation"
+    )
     config.addinivalue_line("markers", "unit: unit tests (fast, no I/O)")
-    config.addinivalue_line("markers", "integration: integration tests (component interactions)")
+    config.addinivalue_line(
+        "markers", "integration: integration tests (component interactions)"
+    )
     config.addinivalue_line("markers", "e2e: end-to-end tests (real models)")
     config.addinivalue_line("markers", "golden: search quality regression tests")
     config.addinivalue_line("markers", "stress: concurrency and load tests")
@@ -116,6 +121,7 @@ def pytest_sessionfinish(session, exitstatus):
     # 1. Shutdown agentic-inquiry executors (primary source of stuck threads)
     try:
         from agentic_inquiry.executors import shutdown_executors
+
         shutdown_executors(wait=True, cancel_futures=True)
     except Exception:
         pass
@@ -137,8 +143,7 @@ def pytest_sessionfinish(session, exitstatus):
                     table.optimize.compact_files()
                     # Aggressive cleanup: 60 seconds (removes almost all test versions)
                     table.cleanup_old_versions(
-                        older_than=timedelta(seconds=60),
-                        delete_unverified=True
+                        older_than=timedelta(seconds=60), delete_unverified=True
                     )
                 except Exception:
                     pass  # Ignore individual table errors
@@ -151,6 +156,7 @@ def pytest_sessionfinish(session, exitstatus):
     # 4. Shutdown any remaining ThreadPoolExecutors
     try:
         import concurrent.futures.thread
+
         for executor in list(concurrent.futures.thread._threads_queues.keys()):
             try:
                 executor.shutdown(wait=False, cancel_futures=True)
@@ -164,11 +170,12 @@ def pytest_sessionfinish(session, exitstatus):
     start = time.time()
     while time.time() - start < 3.0:
         non_daemon = [
-            t for t in threading.enumerate()
+            t
+            for t in threading.enumerate()
             if t is not threading.main_thread()
             and not t.daemon
             and t.is_alive()
-            and not t.name.startswith('pytest')
+            and not t.name.startswith("pytest")
         ]
         if not non_daemon:
             break
@@ -176,24 +183,24 @@ def pytest_sessionfinish(session, exitstatus):
 
     # 6. Force exit if threads still stuck (prevents hanging in CI)
     non_daemon = [
-        t for t in threading.enumerate()
-        if t is not threading.main_thread()
-        and not t.daemon
-        and t.is_alive()
+        t
+        for t in threading.enumerate()
+        if t is not threading.main_thread() and not t.daemon and t.is_alive()
     ]
     if non_daemon:
         import os
+
         # Don't print - just exit cleanly
         os._exit(exitstatus)
 
 
 class _DummyEmbedder:
     """Dummy embedder for testing."""
-    
+
     def generate(self, texts):
         """Generate dummy embeddings."""
         return [[0.1] * 384 for _ in texts]
-    
+
     def ndims(self):
         """Return embedding dimensions."""
         return 384
@@ -232,26 +239,34 @@ def reset_embedding_registry():
 def mock_config():
     """Provide a test configuration instance."""
     from agentic_inquiry.config import Config
+
     return Config.load()
 
 
 @pytest.fixture
 def mock_temp_config(tmp_path):
     """Create a Config instance with temporary storage root.
-    
+
     This fixture provides a Config object configured to use a temporary
     directory for all storage operations, ensuring test isolation.
-    
+
     Args:
         tmp_path: pytest's tmp_path fixture providing a temporary directory
-        
+
     Returns:
         Config instance with storage.root set to temporary directory
     """
-    from agentic_inquiry.config import Config, StorageConfig, CacheConfig, DocumentCacheConfig
-    
+    from agentic_inquiry.config import (
+        Config,
+        StorageConfig,
+        CacheConfig,
+        DocumentCacheConfig,
+    )
+
     config = Config()
-    config.storage = StorageConfig(root=str(tmp_path), default_project_id="test_default", backend="lancedb")
+    config.storage = StorageConfig(
+        root=str(tmp_path), default_project_id="test_default", backend="lancedb"
+    )
     # Add required cache configuration
     config.cache = CacheConfig(
         document_cache=DocumentCacheConfig(
@@ -266,14 +281,14 @@ def mock_temp_config(tmp_path):
 @pytest.fixture
 def integration_config(tmp_path):
     """Provide a complete, schema-valid configuration for tests.
-    
+
     This fixture creates a Config instance with all required properties
     per the configuration schema, ensuring tests don't fail due to
     missing required fields.
-    
+
     Args:
         tmp_path: pytest's tmp_path fixture providing a temporary directory
-        
+
     Returns:
         Config instance with all required schema properties
     """
@@ -315,7 +330,7 @@ def integration_config(tmp_path):
         file_tracker=FileTrackerConfig(path="file_tracker.db"),
         document_cache=DocumentCacheStorageConfig(enabled=False, path="document_cache"),
     )
-    
+
     # Cache configuration (required)
     config.cache = CacheConfig(
         document_cache=DocumentCacheConfig(
@@ -324,7 +339,7 @@ def integration_config(tmp_path):
             eviction_policy="lru",
         )
     )
-    
+
     # Search configuration (required)
     config.search = SearchConfig(
         default_limit=10,
@@ -341,7 +356,7 @@ def integration_config(tmp_path):
             relationship_types=["calls", "imports", "contains", "references"],
         ),
     )
-    
+
     # Embeddings configuration (required)
     config.embeddings = EmbeddingsConfig(
         default_provider="sentence_transformer",
@@ -350,14 +365,14 @@ def integration_config(tmp_path):
             ndims=384,
         ),
     )
-    
+
     # Parsers configuration (required)
     config.parsers = ParsersConfig(
         unified_code=ParserConfig(enabled=True, priority=100),
         document=ParserConfig(enabled=True, priority=50),
         fallback_text=ParserConfig(enabled=True, priority=0),
     )
-    
+
     # Memory configuration (optional but commonly used)
     config.memory = MemoryConfig(
         working_memory=WorkingMemoryConfig(capacity=50, eviction_policy="lru"),
@@ -378,11 +393,7 @@ def integration_config(tmp_path):
             cache_enabled=True,
             cache_ttl_seconds=300,
             cache_size=1000,
-            ranking_weights={
-                "relevance": 0.5,
-                "recency": 0.3,
-                "importance": 0.2
-            },
+            ranking_weights={"relevance": 0.5, "recency": 0.3, "importance": 0.2},
         ),
         summary=SummaryConfig(auto_threshold=150),
     )
@@ -409,12 +420,12 @@ def integration_config(tmp_path):
 @pytest_asyncio.fixture
 async def mock_embedding_registry():
     """Create an embedding registry with dummy embedder.
-    
+
     Returns:
         EmbeddingRegistry instance configured with a dummy embedder for testing
     """
     from agentic_inquiry.embeddings.registry import EmbeddingRegistry
-    
+
     return EmbeddingRegistry(default_embedder=_DummyEmbedder())
 
 
@@ -513,7 +524,9 @@ async def mock_storage_facade(mock_db_manager, mock_temp_config):
 
 
 @pytest_asyncio.fixture
-async def mock_indexing_pipeline(mock_db_manager, mock_temp_config, mock_embedding_registry, mock_event_system):
+async def mock_indexing_pipeline(
+    mock_db_manager, mock_temp_config, mock_embedding_registry, mock_event_system
+):
     """Create an IndexingPipeline instance with test configuration.
 
     This is the primary fixture for tests that need an IndexingPipeline.
@@ -540,7 +553,7 @@ async def mock_indexing_pipeline(mock_db_manager, mock_temp_config, mock_embeddi
         config=mock_temp_config,
         project_id=project_id,
         event_system=mock_event_system,
-        registry=mock_embedding_registry
+        registry=mock_embedding_registry,
     )
 
 
@@ -550,15 +563,15 @@ def create_test_episodic_item(
     context,
     importance: float = 0.7,
     event_type: str = "test",
-    embedding = None,
-    summary_embedding = None,
-    **kwargs
+    embedding=None,
+    summary_embedding=None,
+    **kwargs,
 ):
     """Create a test episodic memory item with all required fields.
-    
+
     This helper function simplifies creating episodic MemoryItem instances
     in tests by providing sensible defaults for all required fields.
-    
+
     Args:
         content: The memory content
         summary: Brief summary of the content
@@ -568,13 +581,13 @@ def create_test_episodic_item(
         embedding: Content embedding vector (optional)
         summary_embedding: Summary embedding vector (optional)
         **kwargs: Additional fields to pass to MemoryItem constructor
-        
+
     Returns:
         MemoryItem instance configured for episodic memory
     """
     import uuid
     from agentic_inquiry.memory import MemoryItem, MemoryTier
-    
+
     return MemoryItem(
         id=str(uuid.uuid4()),
         content=content,
@@ -587,7 +600,7 @@ def create_test_episodic_item(
         event_type=event_type,
         embedding=embedding,
         summary_embedding=summary_embedding,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -600,15 +613,15 @@ def create_test_semantic_item(
     relationship: str | None = None,
     object: str | None = None,
     confidence: float = 0.9,
-    embedding = None,
-    summary_embedding = None,
-    **kwargs
+    embedding=None,
+    summary_embedding=None,
+    **kwargs,
 ):
     """Create a test semantic memory item with all required fields.
-    
+
     This helper function simplifies creating semantic MemoryItem instances
     in tests by providing sensible defaults for all required fields.
-    
+
     Args:
         content: The memory content
         summary: Brief summary of the content
@@ -621,13 +634,13 @@ def create_test_semantic_item(
         embedding: Content embedding vector (optional)
         summary_embedding: Summary embedding vector (optional)
         **kwargs: Additional fields to pass to MemoryItem constructor
-        
+
     Returns:
         MemoryItem instance configured for semantic memory
     """
     import uuid
     from agentic_inquiry.memory import MemoryItem, MemoryTier
-    
+
     return MemoryItem(
         id=str(uuid.uuid4()),
         content=content,
@@ -643,5 +656,5 @@ def create_test_semantic_item(
         confidence=confidence,
         embedding=embedding,
         summary_embedding=summary_embedding,
-        **kwargs
+        **kwargs,
     )

@@ -35,32 +35,38 @@ class TestRelationshipVisibility:
 
         # Mock memory system
         memory_system = MagicMock()
-        memory_system.get_stats = AsyncMock(return_value={
-            "working_memory": {"size": 0},
-            "episodic_memory": {"size": 0},
-            "semantic_memory": {"size": 0}
-        })
+        memory_system.get_stats = AsyncMock(
+            return_value={
+                "working_memory": {"size": 0},
+                "episodic_memory": {"size": 0},
+                "semantic_memory": {"size": 0},
+            }
+        )
 
         return {
             "session_manager": session_manager,
             "storage": db_manager,
             "memory_system": memory_system,
-            "cache_manager": None  # No cache for unit tests
+            "cache_manager": None,  # No cache for unit tests
         }
 
     @pytest.mark.asyncio
-    async def test_relationship_count_uses_count_relationships_by_type(self, mock_services):
+    async def test_relationship_count_uses_count_relationships_by_type(
+        self, mock_services
+    ):
         """Verify count_relationships_by_type() is called for relationship count, not advanced_filter().
 
         AC-1.3: Relationship count uses count_relationships_by_type() not advanced_filter().
         This ensures we don't hit the 100-item limit bug that affects advanced_filter.
         """
         # Mock check_project_state to avoid dependency
-        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state") as mock_check:
+        with patch(
+            "agentic_inquiry.mcp.utils.project_state.check_project_state"
+        ) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
-                "warnings": []
+                "warnings": [],
             }
 
             # Set up count_relationships_by_type to return counts by type (sums to 881)
@@ -70,12 +76,13 @@ class TestRelationshipVisibility:
 
             # Call get_project_info
             result = await get_project_info(
-                services=mock_services,
-                session_id="test_session"
+                services=mock_services, session_id="test_session"
             )
 
             # Verify count_relationships_by_type was called
-            mock_services["storage"].count_relationships_by_type.assert_called_once_with(
+            mock_services[
+                "storage"
+            ].count_relationships_by_type.assert_called_once_with(
                 project_id="test_project"
             )
 
@@ -85,7 +92,9 @@ class TestRelationshipVisibility:
                 args, kwargs = call
                 # Ensure no call was made to graph_relationships table
                 if kwargs.get("table_name") == "graph_relationships":
-                    pytest.fail("advanced_filter should not be called for graph_relationships")
+                    pytest.fail(
+                        "advanced_filter should not be called for graph_relationships"
+                    )
 
             # Verify the count is in the result (sum of all types)
             assert result["statistics"]["relationships_created"] == 881
@@ -99,11 +108,13 @@ class TestRelationshipVisibility:
         Using count_relationships_by_type() ensures we get the actual count regardless of size.
         """
         # Mock check_project_state
-        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state") as mock_check:
+        with patch(
+            "agentic_inquiry.mcp.utils.project_state.check_project_state"
+        ) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 1000,
                 "entity_count": 200,
-                "warnings": []
+                "warnings": [],
             }
 
             # Set up count_relationships_by_type to return 500+ relationships (654 total)
@@ -113,8 +124,7 @@ class TestRelationshipVisibility:
 
             # Call get_project_info
             result = await get_project_info(
-                services=mock_services,
-                session_id="test_session"
+                services=mock_services, session_id="test_session"
             )
 
             # Verify full count is returned (no truncation at 100)
@@ -137,11 +147,13 @@ class TestRelationshipVisibility:
         Related to INV-6.4: StorageFacade routing fix for graph tables.
         """
         # Mock check_project_state
-        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state") as mock_check:
+        with patch(
+            "agentic_inquiry.mcp.utils.project_state.check_project_state"
+        ) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
-                "warnings": []
+                "warnings": [],
             }
 
             # Set up count_relationships_by_type
@@ -151,8 +163,7 @@ class TestRelationshipVisibility:
 
             # Call get_project_info
             result = await get_project_info(
-                services=mock_services,
-                session_id="test_session"
+                services=mock_services, session_id="test_session"
             )
 
             # Verify count_relationships_by_type was called with correct project_id
@@ -187,11 +198,13 @@ class TestProjectInfoCaching:
 
         # Mock memory system
         memory_system = MagicMock()
-        memory_system.get_stats = AsyncMock(return_value={
-            "working_memory": {"size": 0},
-            "episodic_memory": {"size": 0},
-            "semantic_memory": {"size": 0}
-        })
+        memory_system.get_stats = AsyncMock(
+            return_value={
+                "working_memory": {"size": 0},
+                "episodic_memory": {"size": 0},
+                "semantic_memory": {"size": 0},
+            }
+        )
 
         # Mock cache manager
         cache_manager = MagicMock()
@@ -202,7 +215,7 @@ class TestProjectInfoCaching:
             "session_manager": session_manager,
             "storage": db_manager,
             "memory_system": memory_system,
-            "cache_manager": cache_manager
+            "cache_manager": cache_manager,
         }
 
     @pytest.mark.asyncio
@@ -213,30 +226,33 @@ class TestProjectInfoCaching:
         to avoid performance impact on frequent get_project_info calls.
         """
         # Mock check_project_state
-        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state") as mock_check:
+        with patch(
+            "agentic_inquiry.mcp.utils.project_state.check_project_state"
+        ) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
-                "warnings": []
+                "warnings": [],
             }
 
             # Mock storage with get_db_manager that has table statistics
             mock_lance_manager = MagicMock()
-            mock_lance_manager.get_table_statistics = AsyncMock(return_value={
-                "document_chunks": {
-                    "status": "success",
-                    "size_bytes": 1000000,
-                    "version_count": 5
+            mock_lance_manager.get_table_statistics = AsyncMock(
+                return_value={
+                    "document_chunks": {
+                        "status": "success",
+                        "size_bytes": 1000000,
+                        "version_count": 5,
+                    }
                 }
-            })
+            )
             mock_services_with_cache["storage"].get_db_manager = MagicMock(
                 return_value=mock_lance_manager
             )
 
             # Call get_project_info
             result = await get_project_info(
-                services=mock_services_with_cache,
-                session_id="test_session"
+                services=mock_services_with_cache, session_id="test_session"
             )
 
             # Verify cache was checked for storage_metrics
@@ -251,7 +267,9 @@ class TestProjectInfoCaching:
                     storage_metrics_call = call
                     break
 
-            assert storage_metrics_call is not None, "storage_metrics cache set not found"
+            assert storage_metrics_call is not None, (
+                "storage_metrics cache set not found"
+            )
             assert storage_metrics_call.kwargs.get("ttl") == 60
 
             # Verify storage_metrics in result

@@ -193,9 +193,17 @@ class MemorySystem:
         # Initialize context manager with config values
         context_mgr_config = getattr(config.memory, "context_manager", None)
         self.context_manager = ContextManager(
-            max_concurrent_contexts=getattr(context_mgr_config, "max_concurrent_contexts", 100) if context_mgr_config else 100,
-            cleanup_interval=getattr(context_mgr_config, "cleanup_interval", 300) if context_mgr_config else 300,
-            context_ttl=getattr(context_mgr_config, "context_ttl", 3600) if context_mgr_config else 3600,
+            max_concurrent_contexts=getattr(
+                context_mgr_config, "max_concurrent_contexts", 100
+            )
+            if context_mgr_config
+            else 100,
+            cleanup_interval=getattr(context_mgr_config, "cleanup_interval", 300)
+            if context_mgr_config
+            else 300,
+            context_ttl=getattr(context_mgr_config, "context_ttl", 3600)
+            if context_mgr_config
+            else 3600,
         )
 
         # Initialization state
@@ -277,7 +285,11 @@ class MemorySystem:
 
             # Start background consolidation task if enabled
             consolidation_config = getattr(self.config.memory, "consolidation", None)
-            consolidation_enabled = getattr(consolidation_config, "enabled", True) if consolidation_config else True
+            consolidation_enabled = (
+                getattr(consolidation_config, "enabled", True)
+                if consolidation_config
+                else True
+            )
             if consolidation_enabled:
                 logger.debug("Starting background consolidation task...")
                 self._consolidation_task = asyncio.create_task(
@@ -310,8 +322,12 @@ class MemorySystem:
         Runs consolidation at configured intervals for all active contexts.
         """
         consolidation_config = getattr(self.config.memory, "consolidation", None)
-        interval_seconds = getattr(consolidation_config, "interval_seconds", 300) if consolidation_config else 300
-        
+        interval_seconds = (
+            getattr(consolidation_config, "interval_seconds", 300)
+            if consolidation_config
+            else 300
+        )
+
         logger.info("Consolidation loop started with interval %ds", interval_seconds)
 
         while self._initialized:
@@ -334,7 +350,9 @@ class MemorySystem:
                 for context in active_contexts:
                     try:
                         if self.consolidation_engine.should_consolidate(context):
-                            result = await self.consolidation_engine.consolidate(context)
+                            result = await self.consolidation_engine.consolidate(
+                                context
+                            )
                             logger.debug(
                                 "Consolidated context %s: promoted=%d, concepts=%d",
                                 context.context_key,
@@ -448,12 +466,18 @@ class MemorySystem:
 
         # Validate importance
         if not 0.0 <= importance <= 1.0:
-            raise ValueError(f"importance must be between 0.0 and 1.0, got {importance}")
+            raise ValueError(
+                f"importance must be between 0.0 and 1.0, got {importance}"
+            )
 
         # Auto-generate summary if not provided
         if summary is None:
             summary_config = getattr(self.config.memory, "summary", None)
-            auto_threshold = getattr(summary_config, "auto_threshold", 150) if summary_config else 150
+            auto_threshold = (
+                getattr(summary_config, "auto_threshold", 150)
+                if summary_config
+                else 150
+            )
             if len(content) <= auto_threshold:
                 summary = content
             else:
@@ -541,14 +565,16 @@ class MemorySystem:
                 agent_id=context.agent_id,
                 session_id=context.session_id,
                 importance=importance,
-                content_length=len(content)
+                content_length=len(content),
             )
 
         return item
 
     async def batch_store(
         self,
-        items: list[tuple[str, MemoryContext, float, str | None, dict[str, Any] | None]],
+        items: list[
+            tuple[str, MemoryContext, float, str | None, dict[str, Any] | None]
+        ],
     ) -> list[MemoryItem]:
         """
         Store multiple memory items in parallel.
@@ -640,8 +666,10 @@ class MemorySystem:
             strategy=strategy,
             limit=limit,
         )
-        
-        results_count = len(results["results"]) if isinstance(results, dict) else len(results)
+
+        results_count = (
+            len(results["results"]) if isinstance(results, dict) else len(results)
+        )
 
         # Update agent profile with query pattern
         # Simple pattern: first word of query
@@ -672,7 +700,7 @@ class MemorySystem:
                 query=query[:100],  # Truncate long queries
                 strategy=strategy,
                 results_count=results_count,
-                limit=limit
+                limit=limit,
             )
 
         return results
@@ -747,11 +775,15 @@ class MemorySystem:
             )
 
         # Search in specified tier or all tiers
-        tiers_to_search = [tier] if tier else [
-            MemoryTier.WORKING,
-            MemoryTier.EPISODIC,
-            MemoryTier.SEMANTIC,
-        ]
+        tiers_to_search = (
+            [tier]
+            if tier
+            else [
+                MemoryTier.WORKING,
+                MemoryTier.EPISODIC,
+                MemoryTier.SEMANTIC,
+            ]
+        )
 
         for search_tier in tiers_to_search:
             item = None
@@ -759,9 +791,13 @@ class MemorySystem:
             if search_tier == MemoryTier.WORKING:
                 item = await self.working_memory.get_by_id(item_id)
             elif search_tier == MemoryTier.EPISODIC:
-                item = await self.episodic_memory.get_by_id(item_id, update_access=False)
+                item = await self.episodic_memory.get_by_id(
+                    item_id, update_access=False
+                )
             else:  # SEMANTIC
-                item = await self.semantic_memory.get_by_id(item_id, update_access=False)
+                item = await self.semantic_memory.get_by_id(
+                    item_id, update_access=False
+                )
 
             if item:
                 # Update importance
@@ -868,11 +904,15 @@ class MemorySystem:
             raise ValueError("MemorySystem not initialized. Call initialize() first.")
 
         # Search in specified tier or all tiers
-        tiers_to_search = [tier] if tier else [
-            MemoryTier.WORKING,
-            MemoryTier.EPISODIC,
-            MemoryTier.SEMANTIC,
-        ]
+        tiers_to_search = (
+            [tier]
+            if tier
+            else [
+                MemoryTier.WORKING,
+                MemoryTier.EPISODIC,
+                MemoryTier.SEMANTIC,
+            ]
+        )
 
         for search_tier in tiers_to_search:
             deleted = False
@@ -997,7 +1037,7 @@ class MemorySystem:
 
         # Search all tiers
         tiers = [MemoryTier.WORKING, MemoryTier.EPISODIC, MemoryTier.SEMANTIC]
-        
+
         for tier in tiers:
             # Check for item
             success = await self.update_importance(item_id, 0.0, tier=tier)
@@ -1005,29 +1045,33 @@ class MemorySystem:
                 # We reuse update_importance to find the item, but we need to set status
                 # Since update_importance doesn't allow setting arbitrary fields, we need
                 # to do it manually here.
-                
+
                 # Re-fetch to update status
                 item = None
                 if tier == MemoryTier.WORKING:
                     item = await self.working_memory.get_by_id(item_id)
                 elif tier == MemoryTier.EPISODIC:
-                    item = await self.episodic_memory.get_by_id(item_id, update_access=False)
+                    item = await self.episodic_memory.get_by_id(
+                        item_id, update_access=False
+                    )
                 else:
-                    item = await self.semantic_memory.get_by_id(item_id, update_access=False)
-                
+                    item = await self.semantic_memory.get_by_id(
+                        item_id, update_access=False
+                    )
+
                 if item:
                     item.status = MemoryStatus.NEGATED
                     item.modified_at = datetime.now(timezone.utc)
-                    
+
                     if tier == MemoryTier.WORKING:
                         await self.working_memory.store(item)
                     elif tier == MemoryTier.EPISODIC:
                         await self.episodic_memory.update(item)
                     else:
                         await self.semantic_memory.update(item)
-                        
+
                     logger.info("Negated memory item: id=%s", item_id)
-                    
+
                     # Emit memory.negated event
                     if self.event_system:
                         await self.event_system.emit(
@@ -1035,17 +1079,14 @@ class MemorySystem:
                             source="MemorySystem",
                             status=EventStatus.COMPLETED,
                             memory_id=item_id,
-                            tier=tier.value
+                            tier=tier.value,
                         )
                     return True
-        
+
         return False
 
     async def supersede_memory(
-        self, 
-        old_item_id: str, 
-        new_content: str,
-        new_importance: float | None = None
+        self, old_item_id: str, new_content: str, new_importance: float | None = None
     ) -> MemoryItem | None:
         """
         Supersede an old memory with a new one.
@@ -1066,20 +1107,24 @@ class MemorySystem:
         # Find old item
         old_item = None
         old_tier = None
-        
+
         tiers = [MemoryTier.WORKING, MemoryTier.EPISODIC, MemoryTier.SEMANTIC]
         for tier in tiers:
             if tier == MemoryTier.WORKING:
                 old_item = await self.working_memory.get_by_id(old_item_id)
             elif tier == MemoryTier.EPISODIC:
-                old_item = await self.episodic_memory.get_by_id(old_item_id, update_access=False)
+                old_item = await self.episodic_memory.get_by_id(
+                    old_item_id, update_access=False
+                )
             else:
-                old_item = await self.semantic_memory.get_by_id(old_item_id, update_access=False)
-            
+                old_item = await self.semantic_memory.get_by_id(
+                    old_item_id, update_access=False
+                )
+
             if old_item:
                 old_tier = tier
                 break
-        
+
         if not old_item:
             logger.warning("Old item not found for supersede: id=%s", old_item_id)
             return None
@@ -1087,34 +1132,32 @@ class MemorySystem:
         # Create new item
         # Use old item's context but update timestamps
         new_context = old_item.context
-        importance = new_importance if new_importance is not None else old_item.importance
-        
+        importance = (
+            new_importance if new_importance is not None else old_item.importance
+        )
+
         new_item = await self.store(
             content=new_content,
             context=new_context,
             importance=importance,
-            summary=None, # Auto-generate
-            metadata=old_item.metadata.copy()
+            summary=None,  # Auto-generate
+            metadata=old_item.metadata.copy(),
         )
-        
+
         # Update old item status
         old_item.status = MemoryStatus.SUPERSEDED
         old_item.superseded_by = new_item.id
         old_item.modified_at = datetime.now(timezone.utc)
-        
+
         if old_tier == MemoryTier.WORKING:
             await self.working_memory.store(old_item)
         elif old_tier == MemoryTier.EPISODIC:
             await self.episodic_memory.update(old_item)
         else:
             await self.semantic_memory.update(old_item)
-            
-        logger.info(
-            "Superseded memory: old_id=%s, new_id=%s",
-            old_item_id,
-            new_item.id
-        )
-        
+
+        logger.info("Superseded memory: old_id=%s, new_id=%s", old_item_id, new_item.id)
+
         return new_item
 
     async def consolidate(
@@ -1149,7 +1192,7 @@ class MemorySystem:
                 result.items_promoted,
                 result.concepts_extracted,
             )
-            
+
             # Emit memory.consolidated event
             if self.event_system:
                 await self.event_system.emit(
@@ -1163,9 +1206,9 @@ class MemorySystem:
                     items_demoted=result.items_demoted,
                     concepts_extracted=result.concepts_extracted,
                     relationships_created=result.relationships_created,
-                    duration_ms=result.duration_ms
+                    duration_ms=result.duration_ms,
                 )
-            
+
             return result
         else:
             # Consolidate all active contexts
@@ -1228,7 +1271,7 @@ class MemorySystem:
                     items_demoted=total_demoted,
                     concepts_extracted=total_concepts,
                     relationships_created=total_relationships,
-                    duration_ms=total_duration
+                    duration_ms=total_duration,
                 )
 
             # Return aggregated result
@@ -1465,11 +1508,15 @@ class MemorySystem:
         }
 
         # Determine tiers to clear
-        tiers_to_clear = [tier] if tier else [
-            MemoryTier.WORKING,
-            MemoryTier.EPISODIC,
-            MemoryTier.SEMANTIC,
-        ]
+        tiers_to_clear = (
+            [tier]
+            if tier
+            else [
+                MemoryTier.WORKING,
+                MemoryTier.EPISODIC,
+                MemoryTier.SEMANTIC,
+            ]
+        )
 
         # Create a context for filtering
         filter_context = MemoryContext(

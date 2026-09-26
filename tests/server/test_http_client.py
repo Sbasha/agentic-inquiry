@@ -12,6 +12,7 @@ from agentic_inquiry.server.http_client import InquiryClient, HookClient
 @pytest.fixture
 def mock_server():
     """Start a simple HTTP server for testing."""
+
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self):
             self.send_response(200)
@@ -61,7 +62,9 @@ class TestInquiryClient:
 
     def test_fire_and_forget(self, mock_server):
         client = InquiryClient(base_url=mock_server, auto_start=False)
-        assert client.fire_and_forget("/api/v1/hooks/post_write", {"file_path": "test.py"})
+        assert client.fire_and_forget(
+            "/api/v1/hooks/post_write", {"file_path": "test.py"}
+        )
 
     def test_unavailable_returns_none(self):
         client = InquiryClient(base_url=None, auto_start=False)
@@ -88,6 +91,7 @@ class TestHookClient:
         """HookClient can make POST requests when server available."""
         # Manually construct with available base URL
         from agentic_inquiry.server.http_client import InquiryClient
+
         inner = InquiryClient(base_url=mock_server, auto_start=False)
         # Use inner client directly since HookClient wraps it
         result = inner.post("/api/v1/hooks/post_bash", data={"command": "ls"})

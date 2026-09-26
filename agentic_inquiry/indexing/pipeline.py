@@ -1,4 +1,5 @@
 """Indexing pipeline that materialises parser output into LanceDB tables."""
+
 from __future__ import annotations
 
 import asyncio
@@ -15,12 +16,17 @@ from agentic_inquiry.exceptions import SchemaValidationError
 from agentic_inquiry.indexing.symbol_registry import SymbolRegistry
 from agentic_inquiry.indexing.schema_processor import SchemaProcessor
 from agentic_inquiry.models import DocumentChunk, GraphRelationship
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 from agentic_inquiry.cache import CacheProtocol, get_cache
 from agentic_inquiry.watching import WatcherProtocol
 
 # TYPE_CHECKING import to avoid circular dependency
 from typing import TYPE_CHECKING, cast
+
 if TYPE_CHECKING:
     from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
     from agentic_inquiry.indexing.models import IndexingResult
@@ -170,13 +176,20 @@ class IndexingPipeline:
 
             # Backend type is now irrelevant - StorageFacade provides unified access
             # to all backends through the protocol layer
-            backend_type = facade.get_backend_type() if hasattr(facade, "get_backend_type") else "lancedb"
+            backend_type = (
+                facade.get_backend_type()
+                if hasattr(facade, "get_backend_type")
+                else "lancedb"
+            )
             logger.info("IndexingPipeline using backend: %s", backend_type)
 
             # For LanceDB, extract underlying manager for adapter compatibility.
             # Lazy import: only executed when LanceDB is the active backend (ADR-003).
             if backend_type == "lancedb" and hasattr(facade, "get_db_manager"):
-                from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+                from agentic_inquiry.database.adapters.lancedb_adapter import (
+                    LanceDBAdapter,
+                )
+
                 manager = facade.get_db_manager()
                 adapter = LanceDBAdapter(manager, config)
                 logger.debug(
@@ -187,9 +200,11 @@ class IndexingPipeline:
                 adapter = facade  # type: ignore[assignment]
                 logger.info(
                     "IndexingPipeline using StorageFacade directly for backend: %s",
-                    backend_type
+                    backend_type,
                 )
-        elif hasattr(db_manager, "_manager") and hasattr(db_manager, "add_document_chunks"):
+        elif hasattr(db_manager, "_manager") and hasattr(
+            db_manager, "add_document_chunks"
+        ):
             # Quacks like LanceDBAdapter (has _manager and add_document_chunks) - use directly
             adapter = db_manager
             logger.debug("IndexingPipeline using provided LanceDBAdapter (duck-typed)")
@@ -201,27 +216,36 @@ class IndexingPipeline:
             # Quacks like LanceDBManager (has _conn_manager, distinguishing it from test mocks).
             # Wrap in adapter lazily (ADR-003).
             from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+
             adapter = LanceDBAdapter(db_manager, config)
-            logger.debug("IndexingPipeline wrapped LanceDBManager in LanceDBAdapter (duck-typed)")
+            logger.debug(
+                "IndexingPipeline wrapped LanceDBManager in LanceDBAdapter (duck-typed)"
+            )
         else:
             # Unknown type - assume it implements the protocol (for testing with mocks)
             adapter = db_manager  # type: ignore[assignment]
             logger.warning(
                 "IndexingPipeline received unknown db_manager type: %s. "
                 "Assuming it implements IndexingStorageProtocol.",
-                type(db_manager).__name__
+                type(db_manager).__name__,
             )
 
         self.db_manager = adapter
         self.config = config
-        self.project_root = project_root if project_root is not None else str(Path.cwd())
+        self.project_root = (
+            project_root if project_root is not None else str(Path.cwd())
+        )
         self.project_id = project_id
         self.event_system = event_system
 
         # Track backend type for embedding strategy decisions
         # AlloyDB uses server-side embeddings, so local embedding generation is skipped
-        if hasattr(self, '_storage_facade') and self._storage_facade is not None:
-            self._backend_type = self._storage_facade.get_backend_type() if hasattr(self._storage_facade, 'get_backend_type') else "lancedb"
+        if hasattr(self, "_storage_facade") and self._storage_facade is not None:
+            self._backend_type = (
+                self._storage_facade.get_backend_type()
+                if hasattr(self._storage_facade, "get_backend_type")
+                else "lancedb"
+            )
         else:
             self._backend_type = "lancedb"
 
@@ -229,55 +253,62 @@ class IndexingPipeline:
         if capabilities is not None:
             self._capabilities = capabilities
         else:
-            from agentic_inquiry.storage.capabilities import get_capabilities_for_backend
+            from agentic_inquiry.storage.capabilities import (
+                get_capabilities_for_backend,
+            )
+
             self._capabilities = get_capabilities_for_backend(self._backend_type)
 
         # Keep project_hash as alias for project_id for any internal code that uses it
         self.project_hash = self.project_id
         self._registry = registry
-        
+
         # Document processor: handles document validation, normalization, and chunk transformation
         self.document_processor = DocumentProcessor(
-            project_hash=self.project_hash,
-            project_id=self.project_id
+            project_hash=self.project_hash, project_id=self.project_id
         )
-        
+
         # Embedding service: handles embedding generation and configuration
         self.embedding_service = EmbeddingService(registry=registry)
-        
+
         # Schema processor: unified validation, transformation, and sanitization
         self.schema_processor = SchemaProcessor(adapter)
-        
+
         # Symbol registry service: manages symbol definitions with rich metadata for cross-file resolution
         self.symbol_registry = SymbolRegistry(self.project_root, self.project_hash)
-        
+
         # Metrics tracker: track operation latencies and performance
         self._metrics = get_metrics_tracker()
-        
+
         # Concurrency control: limit concurrent document processing
         import asyncio
+
         # Read from config, with backward compatibility for max_concurrent parameter
         if max_concurrent is not None:
             import warnings
+
             warnings.warn(
                 "The max_concurrent parameter is deprecated. "
                 "Use config.indexing.processing_semaphore_limit instead.",
                 DeprecationWarning,
-                stacklevel=2
+                stacklevel=2,
             )
             semaphore_limit = max_concurrent
         else:
             semaphore_limit = config.indexing.processing_semaphore_limit
-        
+
         self._processing_semaphore = asyncio.Semaphore(semaphore_limit)
-        
+
         # Get embedding dimensions from config
-        embedding_dimensions = getattr(config.embeddings, 'default_dimensions', 384)
-        
+        embedding_dimensions = getattr(config.embeddings, "default_dimensions", 384)
+
         # Relationship resolver: handles import resolution using multiple strategies
         if relationship_resolver is None:
             # Create default RelationshipResolver if not provided
-            from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
+            from agentic_inquiry.indexing.relationship_resolver import (
+                RelationshipResolver,
+            )
+
             relationship_resolver = RelationshipResolver(
                 symbol_registry=self.symbol_registry,
                 project_root=self.project_root,
@@ -285,9 +316,10 @@ class IndexingPipeline:
                 embedding_dimensions=embedding_dimensions,
             )
         self.relationship_resolver = relationship_resolver
-        
+
         # Graph builder: handles graph entity and relationship construction
         from agentic_inquiry.indexing.graph_builder import GraphBuilder
+
         self.graph_builder = GraphBuilder(
             db_manager=adapter,
             symbol_registry=self.symbol_registry,
@@ -300,7 +332,7 @@ class IndexingPipeline:
             backend_type=self._backend_type,
             capabilities=self._capabilities,
         )
-        
+
         # Pending relationships: now managed by GraphBuilder (accessed via property)
         # Resolution statistics from last flush
         self._last_resolution_stats: Optional[Dict[str, Any]] = None
@@ -311,13 +343,17 @@ class IndexingPipeline:
                 self.cache = get_cache(cache_name)
                 logger.info("IndexingPipeline using cache: %s", cache_name)
             except (ValueError, KeyError) as e:
-                logger.warning("Failed to get cache '%s': %s. Proceeding without cache.", cache_name, e, exc_info=True)
+                logger.warning(
+                    "Failed to get cache '%s': %s. Proceeding without cache.",
+                    cache_name,
+                    e,
+                    exc_info=True,
+                )
                 self.cache = None
 
         # File watch manager: handles file watching for automatic re-indexing
         self._file_watch_manager = FileWatchManager(
-            project_root=self.project_root,
-            cache=self.cache
+            project_root=self.project_root, cache=self.cache
         )
 
         # Setup file watching if requested
@@ -329,7 +365,9 @@ class IndexingPipeline:
 
         # Connector support: optional connector for pluggable file discovery
         self.connector: Optional["ConnectorProtocol"] = connector
-        self.content_materializer: Optional["ContentMaterializer"] = content_materializer
+        self.content_materializer: Optional["ContentMaterializer"] = (
+            content_materializer
+        )
 
         # Validate connector/materializer configuration
         if connector is not None and content_materializer is None:
@@ -409,6 +447,7 @@ class IndexingPipeline:
             Unique operation identifier string
         """
         import uuid
+
         return str(uuid.uuid4())
 
     async def _generate_server_side_embeddings(
@@ -453,7 +492,8 @@ class IndexingPipeline:
             if remaining == 0:
                 elapsed = time.time() - start
                 logger.info(
-                    "All embeddings complete after %.1f seconds", elapsed,
+                    "All embeddings complete after %.1f seconds",
+                    elapsed,
                 )
                 return
 
@@ -462,7 +502,8 @@ class IndexingPipeline:
                 logger.warning(
                     "Embedding polling timed out after %.1f seconds "
                     "with %d chunks still pending",
-                    elapsed, remaining,
+                    elapsed,
+                    remaining,
                 )
                 raise TimeoutError(
                     f"Embedding generation timed out after {elapsed:.0f}s "
@@ -470,9 +511,10 @@ class IndexingPipeline:
                 )
 
             logger.debug(
-                "Embedding poll: %d chunks pending, waiting %.1fs "
-                "(elapsed: %.1fs)",
-                remaining, interval, elapsed,
+                "Embedding poll: %d chunks pending, waiting %.1fs (elapsed: %.1fs)",
+                remaining,
+                interval,
+                elapsed,
             )
             await asyncio.sleep(interval)
             interval = min(interval * backoff_factor, max_interval)
@@ -528,11 +570,32 @@ class IndexingPipeline:
 
         # Fallback: direct filesystem access (original behavior)
         binary_extensions = {
-            '.mp3', '.mp4', '.wav', '.avi', '.mov', '.mkv',
-            '.zip', '.tar', '.gz', '.rar', '.7z',
-            '.exe', '.dll', '.so', '.dylib', '.bin',
-            '.pyc', '.pyo', '.class', '.o', '.obj',
-            '.woff', '.woff2', '.ttf', '.otf', '.eot'
+            ".mp3",
+            ".mp4",
+            ".wav",
+            ".avi",
+            ".mov",
+            ".mkv",
+            ".zip",
+            ".tar",
+            ".gz",
+            ".rar",
+            ".7z",
+            ".exe",
+            ".dll",
+            ".so",
+            ".dylib",
+            ".bin",
+            ".pyc",
+            ".pyo",
+            ".class",
+            ".o",
+            ".obj",
+            ".woff",
+            ".woff2",
+            ".ttf",
+            ".otf",
+            ".eot",
         }
         ignore_handler = get_ignore_handler(str(path))
 
@@ -588,7 +651,9 @@ class IndexingPipeline:
             logger.debug(
                 "Sample ignored files: %s%s",
                 sample,
-                f" (+{len(ignored_files) - 10} more)" if len(ignored_files) > 10 else "",
+                f" (+{len(ignored_files) - 10} more)"
+                if len(ignored_files) > 10
+                else "",
             )
 
         # Warn if nothing to index
@@ -612,14 +677,14 @@ class IndexingPipeline:
         operation_id: str,
         timeout: int = 300,
         timeout_per_file: int = 5,
-        base_timeout: int = 60
+        base_timeout: int = 60,
     ) -> "IndexingResult":
         """Synchronous indexing that waits for completion.
-        
+
         This method blocks until all files are indexed and all writes are
         committed to the database. It ensures data is immediately queryable
         upon return.
-        
+
         Args:
             path: Path to file or directory to index
             content_type: Type of content ("file", "directory", "text")
@@ -627,10 +692,10 @@ class IndexingPipeline:
             timeout: Fixed timeout in seconds (used if > 0, otherwise dynamic)
             timeout_per_file: Seconds allowed per file for dynamic timeout
             base_timeout: Base seconds for setup/flush in dynamic timeout
-            
+
         Returns:
             IndexingResult with status="completed" and counts
-            
+
         Raises:
             asyncio.TimeoutError: If indexing exceeds timeout
             Exception: If indexing fails
@@ -645,9 +710,9 @@ class IndexingPipeline:
                 source="IndexingPipeline",
                 operation_id=operation_id,
                 path=str(path),
-                content_type=content_type
+                content_type=content_type,
             )
-        
+
         # Track progress
         _indexing_start_time = time.time()
         chunks_created = 0
@@ -671,7 +736,9 @@ class IndexingPipeline:
                 # Handle remote file via connector if available
                 if self.connector is not None:
                     from agentic_inquiry.connectors.types import SourceItem
-                    from agentic_inquiry.connectors.protocols import ChangeDetectionCapability
+                    from agentic_inquiry.connectors.protocols import (
+                        ChangeDetectionCapability,
+                    )
 
                     # Create a SourceItem for the single file
                     # Note: For single file indexing, we create a minimal SourceItem
@@ -687,7 +754,7 @@ class IndexingPipeline:
                                 chunks_created=0,
                                 entities_created=0,
                                 files_processed=0,
-                                message="File unchanged, skipping"
+                                message="File unchanged, skipping",
                             )
 
                     # Materialize remote content to local path if needed
@@ -701,7 +768,7 @@ class IndexingPipeline:
                             return IndexingResult(
                                 operation_id=operation_id,
                                 status="failed",
-                                message=f"Failed to materialize remote content: {e}"
+                                message=f"Failed to materialize remote content: {e}",
                             )
 
                 chain = create_parser_chain(config=self.config)
@@ -709,7 +776,7 @@ class IndexingPipeline:
                     local_path,
                     db_manager=self.db_manager,
                     embedding_service=self.embedding_service,
-                    project_id=self.project_id
+                    project_id=self.project_id,
                 )
                 # Disable per-document flush during batch indexing for performance
                 # Relationships will be flushed at the end of the batch operation
@@ -724,7 +791,9 @@ class IndexingPipeline:
                     await self.connector.mark_processed(source_item)
 
                 chunks_created = len(parsed_doc.chunks)
-                entities_created = sum(len(chunk.symbols or []) for chunk in parsed_doc.chunks)
+                entities_created = sum(
+                    len(chunk.symbols or []) for chunk in parsed_doc.chunks
+                )
                 files_processed = 1
 
                 # Flush relationships and capture count
@@ -769,7 +838,9 @@ class IndexingPipeline:
                 async def _do_indexing() -> None:
                     nonlocal chunks_created, entities_created, files_processed
                     nonlocal relationships_created, fast_path_complete, fast_path_count
-                    from agentic_inquiry.connectors.protocols import ChangeDetectionCapability
+                    from agentic_inquiry.connectors.protocols import (
+                        ChangeDetectionCapability,
+                    )
 
                     processed_paths: Set[str] = set()
                     chain = create_parser_chain(config=self.config)
@@ -789,16 +860,21 @@ class IndexingPipeline:
                                 local_path,
                                 db_manager=self.db_manager,
                                 embedding_service=self.embedding_service,
-                                project_id=self.project_id
+                                project_id=self.project_id,
                             )
                             # Disable per-document flush during batch indexing for performance
                             # Relationships will be flushed at the end of the batch operation
-                            await self.process_document(parsed_doc, flush_relationships=False)
+                            await self.process_document(
+                                parsed_doc, flush_relationships=False
+                            )
 
                             # Update counters under lock for thread safety
                             async with _progress_lock:
                                 chunks_created += len(parsed_doc.chunks)
-                                entities_created += sum(len(chunk.symbols or []) for chunk in parsed_doc.chunks)
+                                entities_created += sum(
+                                    len(chunk.symbols or [])
+                                    for chunk in parsed_doc.chunks
+                                )
                                 files_processed += 1
                                 processed_paths.add(local_path)
                                 current_processed = files_processed
@@ -807,7 +883,9 @@ class IndexingPipeline:
                             if (
                                 source_item is not None
                                 and self.connector is not None
-                                and isinstance(self.connector, ChangeDetectionCapability)
+                                and isinstance(
+                                    self.connector, ChangeDetectionCapability
+                                )
                             ):
                                 await self.connector.mark_processed(source_item)
 
@@ -825,7 +903,9 @@ class IndexingPipeline:
                                             EventTypes.Indexing.FAST_PATH_COMPLETE,
                                             source="IndexingPipeline",
                                             operation_id=operation_id,
-                                            files_indexed=[str(f) for f in fast_path_files],
+                                            files_indexed=[
+                                                str(f) for f in fast_path_files
+                                            ],
                                             fast_path_count=len(fast_path_files),
                                             elapsed_seconds=round(elapsed, 3),
                                         )
@@ -837,9 +917,9 @@ class IndexingPipeline:
 
                             # Emit progress periodically
                             should_emit_progress = (
-                                total_files <= 100 or
-                                current_processed % 10 == 0 or
-                                current_processed == total_files
+                                total_files <= 100
+                                or current_processed % 10 == 0
+                                or current_processed == total_files
                             )
 
                             if self.event_system and should_emit_progress:
@@ -855,14 +935,18 @@ class IndexingPipeline:
                                     )
 
                             # Periodic maintenance to prevent LanceDB storage bloat
-                            maintenance_interval = self.config.indexing.maintenance_interval_files
+                            maintenance_interval = (
+                                self.config.indexing.maintenance_interval_files
+                            )
                             if (
                                 maintenance_interval > 0
                                 and current_processed > 0
                                 and current_processed % maintenance_interval == 0
                             ):
                                 try:
-                                    maint_result = await self.db_manager.run_maintenance()
+                                    maint_result = (
+                                        await self.db_manager.run_maintenance()
+                                    )
                                     logger.info(
                                         "Periodic maintenance at %d files: removed %d versions",
                                         current_processed,
@@ -875,12 +959,14 @@ class IndexingPipeline:
                                     )
                         except Exception as e:
                             logger.error("Failed to index file %s: %s", local_path, e)
-                            errors.append(IndexingError(
-                                file_path=local_path,
-                                error_type=type(e).__name__,
-                                error_message=str(e),
-                                suggestion="Verify file is valid and accessible"
-                            ))
+                            errors.append(
+                                IndexingError(
+                                    file_path=local_path,
+                                    error_type=type(e).__name__,
+                                    error_message=str(e),
+                                    suggestion="Verify file is valid and accessible",
+                                )
+                            )
 
                     # Process all files concurrently — _processing_semaphore
                     # inside process_document() limits actual concurrency
@@ -898,7 +984,7 @@ class IndexingPipeline:
                         errors.append(_graph_write_indexing_error(e))
 
                 await asyncio.wait_for(_do_indexing(), timeout=effective_timeout)
-            
+
             # Determine appropriate status based on results
             diagnostics: Dict[str, Any] = {
                 "files_discovered": files_discovered,
@@ -932,7 +1018,9 @@ class IndexingPipeline:
                     status = "completed"
                     message = f"Successfully indexed {files_processed} file(s). Created {chunks_created} chunks."
 
-            graph_errors = [err for err in errors if err.error_type == "GraphWriteError"]
+            graph_errors = [
+                err for err in errors if err.error_type == "GraphWriteError"
+            ]
             if graph_errors:
                 message = (
                     f"{message} Graph relationship write failed: "
@@ -942,8 +1030,7 @@ class IndexingPipeline:
             # --- Split event emission: STORED -> embeddings -> READY ---
             storage_duration = time.time() - _indexing_start_time
             embedding_strategy = (
-                "server_side" if self._capabilities.needs_embedding_polling
-                else "local"
+                "server_side" if self._capabilities.needs_embedding_polling else "local"
             )
 
             # Emit indexing.stored — chunks are written to storage
@@ -981,7 +1068,8 @@ class IndexingPipeline:
                     await self._poll_embedding_completion()
                 except Exception as poll_err:
                     logger.warning(
-                        "Embedding polling failed (non-fatal): %s", poll_err,
+                        "Embedding polling failed (non-fatal): %s",
+                        poll_err,
                     )
                     diagnostics["embedding_poll_error"] = str(poll_err)
                 embedding_duration = time.time() - embed_start
@@ -1047,7 +1135,7 @@ class IndexingPipeline:
                 message=message,
                 diagnostics=diagnostics,
             )
-            
+
         except asyncio.TimeoutError:
             logger.warning("Indexing timed out: operation_id=%s", operation_id)
 
@@ -1063,7 +1151,8 @@ class IndexingPipeline:
                     await self._generate_server_side_embeddings(timeout_diagnostics)
                 except Exception as embed_err:
                     logger.warning(
-                        "Post-timeout embedding generation failed: %s", embed_err,
+                        "Post-timeout embedding generation failed: %s",
+                        embed_err,
                     )
                     timeout_diagnostics["embedding_error"] = str(embed_err)
 
@@ -1120,7 +1209,12 @@ class IndexingPipeline:
                     },
                 )
 
-            logger.error("Indexing failed: operation_id=%s, error=%s", operation_id, e, exc_info=True)
+            logger.error(
+                "Indexing failed: operation_id=%s, error=%s",
+                operation_id,
+                e,
+                exc_info=True,
+            )
 
             if self.event_system:
                 await self.event_system.emit(
@@ -1155,14 +1249,14 @@ class IndexingPipeline:
         operation_id: str,
         timeout: int = 300,
         timeout_per_file: int = 5,
-        base_timeout: int = 60
+        base_timeout: int = 60,
     ) -> "IndexingResult":
         """Asynchronous indexing that returns immediately.
-        
+
         This method starts indexing in the background and returns immediately
         with status="in_progress". The caller can poll events to check for
         completion.
-        
+
         Args:
             path: Path to file or directory to index
             content_type: Type of content ("file", "directory", "text")
@@ -1170,12 +1264,12 @@ class IndexingPipeline:
             timeout: Fixed timeout in seconds (used if > 0, otherwise dynamic)
             timeout_per_file: Seconds allowed per file for dynamic timeout
             base_timeout: Base seconds for setup/flush in dynamic timeout
-            
+
         Returns:
             IndexingResult with status="in_progress" and operation_id
         """
         from agentic_inquiry.indexing.models import IndexingResult
-        
+
         # Start indexing in background
         asyncio.create_task(
             self._index_sync(
@@ -1184,15 +1278,15 @@ class IndexingPipeline:
                 operation_id=operation_id,
                 timeout=timeout,
                 timeout_per_file=timeout_per_file,
-                base_timeout=base_timeout
+                base_timeout=base_timeout,
             )
         )
-        
+
         # Return immediately
         return IndexingResult(
             operation_id=operation_id,
             status="in_progress",
-            message=f"Indexing started for {path}"
+            message=f"Indexing started for {path}",
         )
 
     async def index_directory(
@@ -1202,13 +1296,13 @@ class IndexingPipeline:
         wait: bool = False,
         timeout: int = 300,
         timeout_per_file: int = 5,
-        base_timeout: int = 60
+        base_timeout: int = 60,
     ) -> dict:
         """Index a directory with optional synchronous completion.
-        
+
         This is the main entry point for directory indexing. It supports both
         synchronous (blocking) and asynchronous (background) modes.
-        
+
         Args:
             path: Path to directory to index
             content_type: Type of content (default: "directory")
@@ -1216,7 +1310,7 @@ class IndexingPipeline:
             timeout: Fixed timeout in seconds (used if > 0, otherwise dynamic)
             timeout_per_file: Seconds allowed per file for dynamic timeout
             base_timeout: Base seconds for setup/flush in dynamic timeout
-            
+
         Returns:
             Dictionary with:
                 - operation_id: Unique operation identifier
@@ -1225,12 +1319,12 @@ class IndexingPipeline:
                 - entities_created: Number of entities created (if wait=True)
                 - files_processed: Number of files processed (if wait=True)
                 - message: Human-readable status message
-                
+
         Example:
             >>> # Synchronous indexing
             >>> result = await pipeline.index_directory("./src", wait=True)
             >>> print(f"Indexed {result['files_processed']} files")
-            
+
             >>> # Asynchronous indexing
             >>> result = await pipeline.index_directory("./src", wait=False)
             >>> print(f"Started indexing: {result['operation_id']}")
@@ -1239,10 +1333,10 @@ class IndexingPipeline:
 
         # Generate operation ID
         operation_id = self._generate_operation_id()
-        
+
         # Convert path to Path object
         dir_path = Path(path)
-        
+
         # Route to sync or async based on wait parameter
         if wait:
             result = await self._index_sync(
@@ -1251,7 +1345,7 @@ class IndexingPipeline:
                 operation_id=operation_id,
                 timeout=timeout,
                 timeout_per_file=timeout_per_file,
-                base_timeout=base_timeout
+                base_timeout=base_timeout,
             )
         else:
             result = await self._index_async(
@@ -1260,21 +1354,21 @@ class IndexingPipeline:
                 operation_id=operation_id,
                 timeout=timeout,
                 timeout_per_file=timeout_per_file,
-                base_timeout=base_timeout
+                base_timeout=base_timeout,
             )
-        
+
         return result.to_dict()
 
     @property
     def _pending_relationships(self) -> List[Tuple[ParserRelationship, str]]:
         """Access pending relationships from GraphBuilder.
-        
+
         This property provides backward compatibility by exposing the GraphBuilder's
         pending relationships list through the IndexingPipeline interface.
-        
+
         Note: This uses the public GraphBuilder.pending_relationships property
         instead of accessing internal state directly.
-        
+
         Returns:
             List of (relationship, file_path) tuples
         """
@@ -1308,7 +1402,10 @@ class IndexingPipeline:
             config = GraphBuilderConfig.from_config(self.config)
 
         # Delegate to GraphBuilder for batched relationship resolution
-        relationships, stats = await self.graph_builder.flush_pending_relationships_batched(
+        (
+            relationships,
+            stats,
+        ) = await self.graph_builder.flush_pending_relationships_batched(
             document_processor=self.document_processor,
             use_two_pass=use_two_pass,
             config=config,
@@ -1353,10 +1450,10 @@ class IndexingPipeline:
         if return_stats:
             return len(relationships), stats  # type: ignore[return-value]
         return len(relationships)
-    
+
     def get_resolution_stats(self) -> Optional[Dict[str, Any]]:
         """Get statistics from the last relationship resolution.
-        
+
         Returns:
             Dictionary containing resolution statistics including:
             - total: Total relationships processed
@@ -1370,37 +1467,38 @@ class IndexingPipeline:
             - two_pass_enabled: Whether two-pass resolution was used
             - first_pass_resolved: Relationships resolved in first pass
             - second_pass_improved: Relationships improved in second pass
-            
+
             Returns None if no resolution has been performed yet.
         """
         # Delegate to GraphBuilder
         return self.graph_builder.get_resolution_stats()
 
-    
     def _infer_type_from_file(self, file_path: str) -> Optional[str]:
         """Infer the most common entity type from a file using Symbol Registry.
-        
+
         This is useful when we know a file path but need to determine what type
         of entity it represents (e.g., is it a module, class, or function file?).
-        
+
         The method looks up all symbols registered from the file and returns
         the most common entity type. If the file has no registered symbols,
         it returns "module" as a default.
-        
+
         Args:
             file_path: Path to the file
-            
+
         Returns:
             Most common entity type (e.g., "class", "function", "module") or None
         """
         # Check if file has any registered symbols
         if file_path not in self.symbol_registry._by_file:
-            logger.debug("No symbols found for file %s, inferring type as 'module'", file_path)
+            logger.debug(
+                "No symbols found for file %s, inferring type as 'module'", file_path
+            )
             return "module"  # Default to module for files with no symbols
-        
+
         # Get all symbols from this file
         symbol_names = self.symbol_registry._by_file[file_path]
-        
+
         # Count entity types
         type_counts: Dict[str, int] = {}
         for symbol_name in symbol_names:
@@ -1409,20 +1507,20 @@ class IndexingPipeline:
                 if metadata.file_path == file_path:
                     entity_type = metadata.entity_type
                     type_counts[entity_type] = type_counts.get(entity_type, 0) + 1
-        
+
         if not type_counts:
-            logger.debug("No entity types found for file %s, inferring type as 'module'", file_path)
+            logger.debug(
+                "No entity types found for file %s, inferring type as 'module'",
+                file_path,
+            )
             return "module"
-        
+
         # Return most common type
         most_common_type = max(type_counts.items(), key=lambda x: x[1])[0]
         logger.debug(
-            f"Inferred type for {file_path}: {most_common_type} "
-            f"(counts: {type_counts})"
+            f"Inferred type for {file_path}: {most_common_type} (counts: {type_counts})"
         )
         return most_common_type
-    
-
 
     def _build_metadata_payload(
         self,
@@ -1430,11 +1528,11 @@ class IndexingPipeline:
         ranking_signals: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """Build a metadata payload by merging metadata and ranking signals.
-        
+
         Args:
             metadata: Optional metadata dictionary
             ranking_signals: Optional ranking signals dictionary
-            
+
         Returns:
             Merged metadata payload with ranking_signals nested under "ranking_signals" key
         """
@@ -1453,13 +1551,13 @@ class IndexingPipeline:
 
     def _normalise_relationship(self, relationship: Any) -> ParserRelationship:
         """Normalize a relationship to ParserRelationship type.
-        
+
         Args:
             relationship: Relationship object (ParserRelationship or dict)
-            
+
         Returns:
             ParserRelationship object
-            
+
         Raises:
             TypeError: If relationship is not a ParserRelationship or dict
         """
@@ -1467,16 +1565,18 @@ class IndexingPipeline:
             return relationship
         if isinstance(relationship, dict):
             allowed = {field.name for field in dataclass_fields(ParserRelationship)}
-            filtered = {key: value for key, value in relationship.items() if key in allowed}
+            filtered = {
+                key: value for key, value in relationship.items() if key in allowed
+            }
             return ParserRelationship(**filtered)
         raise TypeError("Unsupported relationship type %r" % (relationship,))
 
     def _chunk_relationships(self, chunk: ParserChunk) -> Iterable[ParserRelationship]:
         """Extract and normalize relationships from a parser chunk.
-        
+
         Args:
             chunk: ParserChunk containing relationships
-            
+
         Yields:
             Normalized ParserRelationship objects
         """
@@ -1503,11 +1603,11 @@ class IndexingPipeline:
         symbols_data: List[Dict[str, Any]],
     ) -> None:
         """Register multiple symbols in parallel with error handling.
-        
+
         This method registers symbols in parallel using asyncio.gather()
         with proper error handling. If any registration fails, it logs
         the error but continues with other registrations.
-        
+
         Args:
             symbols_data: List of dictionaries containing symbol registration data
                 Each dict should have: name, file_path, entity_type, language,
@@ -1515,16 +1615,13 @@ class IndexingPipeline:
         """
         if not symbols_data:
             return
-        
+
         # Create registration tasks
-        tasks = [
-            self.symbol_registry.register(**data)
-            for data in symbols_data
-        ]
-        
+        tasks = [self.symbol_registry.register(**data) for data in symbols_data]
+
         # Run registrations in parallel with error handling
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # Log any errors
         for i, result in enumerate(results):
             if isinstance(result, Exception):
@@ -1535,78 +1632,78 @@ class IndexingPipeline:
                     exc_info=result,
                 )
 
-
-
-
-
-
-
-
-
-
-
-
-
     @validate_path()
     async def remove_file_data(self, file_path: str) -> None:
         """Remove all data associated with a file for incremental updates.
-        
+
         This method removes:
         - Symbols from the symbol registry
         - Document chunks from the database
         - Graph entities from the database
         - Graph relationships from the database
-        
+
         This should be called before re-indexing a file to ensure no stale
         data remains.
-        
+
         Args:
             file_path: Path to the file whose data should be removed.
                       Must be within the project root directory.
                       Path validation is performed automatically to prevent
                       directory traversal attacks.
-        
+
         Raises:
             PathValidationError: If file_path is outside the project root
         """
         logger.info("Removing data for file: %s", file_path)
-        
+
         # Step 1: Remove symbols from symbol registry
         # This must be done first to prevent resolution of stale symbols
         self.symbol_registry.remove_file_symbols(file_path)
         logger.debug("Removed symbols from registry for %s", file_path)
-        
+
         # Step 2: Clear resolution cache to invalidate cached resolutions
         # that may reference the removed symbols
         self.symbol_registry.clear_cache()
         logger.debug("Cleared resolution cache after removing %s", file_path)
-        
+
         # Step 3: Find and delete document chunks for this file
         try:
             chunks = await self.db_manager.query_raw(
-                table_name="document_chunks",
-                filters={"file_path": file_path}
+                table_name="document_chunks", filters={"file_path": file_path}
             )
             chunk_ids = [chunk["id"] for chunk in chunks]
             if chunk_ids:
                 await self.db_manager.delete_document_chunks(chunk_ids)
-                logger.debug("Deleted %s document chunks for %s", len(chunk_ids), file_path)
+                logger.debug(
+                    "Deleted %s document chunks for %s", len(chunk_ids), file_path
+                )
         except Exception as e:
-            logger.warning("Failed to delete document chunks for %s: %s", file_path, e, exc_info=True)
-        
+            logger.warning(
+                "Failed to delete document chunks for %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+
         # Step 4: Find and delete graph entities for this file
         try:
             entities = await self.db_manager.query_raw(
-                table_name="graph_entities",
-                filters={"file_path": file_path}
+                table_name="graph_entities", filters={"file_path": file_path}
             )
             entity_ids = [entity["id"] for entity in entities]
             if entity_ids:
                 await self.db_manager.delete_graph_entities(entity_ids)
-                logger.debug("Deleted %s graph entities for %s", len(entity_ids), file_path)
+                logger.debug(
+                    "Deleted %s graph entities for %s", len(entity_ids), file_path
+                )
         except Exception as e:
-            logger.warning("Failed to delete graph entities for %s: %s", file_path, e, exc_info=True)
-        
+            logger.warning(
+                "Failed to delete graph entities for %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+
         # Step 5: Find and delete graph relationships originating from this file
         # Relationships are identified by source_id which contains the file path
         try:
@@ -1614,52 +1711,66 @@ class IndexingPipeline:
             all_relationships = await self.db_manager.query_raw(
                 table_name="graph_relationships"
             )
-            
+
             # Filter relationships that originate from this file
             # source_id format: "{type}::{project_hash}::{file_path}::{name}"
             relationship_ids = [
-                rel["id"] for rel in all_relationships
+                rel["id"]
+                for rel in all_relationships
                 if f"::{self.project_hash}::{file_path}::" in rel.get("source_id", "")
             ]
-            
+
             if relationship_ids:
                 await self.db_manager.delete_graph_relationships(relationship_ids)
-                logger.debug("Deleted %s graph relationships for %s", len(relationship_ids), file_path)
+                logger.debug(
+                    "Deleted %s graph relationships for %s",
+                    len(relationship_ids),
+                    file_path,
+                )
         except Exception as e:
-            logger.warning("Failed to delete graph relationships for %s: %s", file_path, e, exc_info=True)
-        
+            logger.warning(
+                "Failed to delete graph relationships for %s: %s",
+                file_path,
+                e,
+                exc_info=True,
+            )
+
         # Step 6: Remove any pending relationships for this file
         # This prevents stale relationships from being flushed later
-        removed_count = self.graph_builder.remove_pending_relationships_for_file(file_path)
+        removed_count = self.graph_builder.remove_pending_relationships_for_file(
+            file_path
+        )
         if removed_count > 0:
-            logger.debug("Removed %s pending relationships for %s", removed_count, file_path)
-        
+            logger.debug(
+                "Removed %s pending relationships for %s", removed_count, file_path
+            )
+
         logger.info("Successfully removed all data for file: %s", file_path)
-    
+
     async def reindex_document(self, parsed_document: ParsedDocument) -> None:
         """Re-index a document by removing old data and processing the new version.
-        
+
         This is a convenience method that combines remove_file_data() and
         process_document() to handle incremental updates. It ensures that:
         1. Old symbols are removed from the registry
         2. Resolution cache is cleared
         3. Old database entries are deleted
         4. New data is indexed
-        
+
         After calling this method, you should call flush_pending_relationships()
         to update the graph relationships.
-        
+
         Args:
             parsed_document: The newly parsed document to index.
                            The file_path in parsed_document must be within
                            the project root directory. Path validation is
                            performed automatically to prevent directory
                            traversal attacks.
-            
+
         Raises:
             PathValidationError: If file_path in parsed_document is outside
                                the project root
-            
+
         Example:
             >>> # File was modified, re-parse and re-index
             >>> parsed_doc = parser.parse(file_path)
@@ -1668,35 +1779,34 @@ class IndexingPipeline:
         """
         file_path = parsed_document.file_path
         logger.info("Re-indexing document: %s", file_path)
-        
+
         # Remove old data (path validation happens in remove_file_data)
         await self.remove_file_data(file_path)
-        
+
         # Process new version
         await self.process_document(parsed_document)
-        
+
         logger.info("Successfully re-indexed document: %s", file_path)
-    
+
     async def validate_relationships(
-        self,
-        check_circular_dependencies: bool = False
+        self, check_circular_dependencies: bool = False
     ) -> Dict[str, Any]:
         """Validate relationship integrity and check for broken links.
-        
+
         This method performs comprehensive validation of the graph relationships:
         1. Verifies all target entities exist in the database
         2. Checks for broken links (target_id points to non-existent entity)
         3. Reports validation issues with details
         4. Optionally detects circular dependencies
-        
+
         The validation is performed on the database state, not pending relationships.
         Call flush_pending_relationships() before validation to ensure all
         relationships are materialized.
-        
+
         Args:
             check_circular_dependencies: If True, detect circular dependency chains.
                                         This can be expensive for large graphs.
-        
+
         Returns:
             Dictionary containing validation results:
             {
@@ -1726,7 +1836,7 @@ class IndexingPipeline:
                     "health_percentage": float
                 }
             }
-        
+
         Example:
             >>> # After indexing and flushing relationships
             >>> validation_results = await pipeline.validate_relationships()
@@ -1737,168 +1847,184 @@ class IndexingPipeline:
             >>> print(f"Graph health: {validation_results['summary']['health_percentage']:.1f}%")
         """
         logger.info("Starting relationship validation...")
-        
+
         # Initialize results structure
         results: Dict[str, Any] = {
             "total_relationships": 0,
             "valid_relationships": 0,
             "broken_links": [],
-            "summary": {}
+            "summary": {},
         }
-        
+
         # Step 1: Get all relationships from database
         try:
-            all_relationships = await self.db_manager.query_raw(table_name="graph_relationships")
+            all_relationships = await self.db_manager.query_raw(
+                table_name="graph_relationships"
+            )
             results["total_relationships"] = len(all_relationships)
             logger.info("Validating %s relationships", results["total_relationships"])
         except Exception as e:
-            logger.error("Failed to fetch relationships for validation: %s", e, exc_info=True)
+            logger.error(
+                "Failed to fetch relationships for validation: %s", e, exc_info=True
+            )
             results["summary"] = {
                 "broken_count": 0,
                 "health_percentage": 0.0,
-                "error": str(e)
+                "error": str(e),
             }
             return results
-        
+
         if not all_relationships:
             logger.info("No relationships to validate")
-            results["summary"] = {
-                "broken_count": 0,
-                "health_percentage": 100.0
-            }
+            results["summary"] = {"broken_count": 0, "health_percentage": 100.0}
             return results
-        
+
         # Step 2: Get all entity IDs for existence checking
         try:
             all_entities = await self.db_manager.query_raw(table_name="graph_entities")
             entity_ids = {entity["id"] for entity in all_entities}
             logger.debug("Found %s entities in database", len(entity_ids))
         except Exception as e:
-            logger.error("Failed to fetch entities for validation: %s", e, exc_info=True)
+            logger.error(
+                "Failed to fetch entities for validation: %s", e, exc_info=True
+            )
             results["summary"] = {
                 "broken_count": 0,
                 "health_percentage": 0.0,
-                "error": str(e)
+                "error": str(e),
             }
             return results
-        
+
         # Step 3: Validate each relationship
         broken_links = []
         valid_count = 0
-        
+
         for rel in all_relationships:
             rel_id = rel.get("id", "unknown")
             source_id = rel.get("source_id", "")
             target_id = rel.get("target_id", "")
             rel_type = rel.get("type", "unknown")
-            
+
             # Check if source entity exists
             source_exists = source_id in entity_ids
-            
+
             # Check if target entity exists
             target_exists = target_id in entity_ids
-            
+
             # Report issues
             if not source_exists and not target_exists:
-                broken_links.append({
-                    "relationship_id": rel_id,
-                    "source_id": source_id,
-                    "target_id": target_id,
-                    "type": rel_type,
-                    "issue": "both_missing",
-                    "details": f"Both source entity '{source_id}' and target entity '{target_id}' do not exist"
-                })
+                broken_links.append(
+                    {
+                        "relationship_id": rel_id,
+                        "source_id": source_id,
+                        "target_id": target_id,
+                        "type": rel_type,
+                        "issue": "both_missing",
+                        "details": f"Both source entity '{source_id}' and target entity '{target_id}' do not exist",
+                    }
+                )
             elif not source_exists:
-                broken_links.append({
-                    "relationship_id": rel_id,
-                    "source_id": source_id,
-                    "target_id": target_id,
-                    "type": rel_type,
-                    "issue": "source_missing",
-                    "details": f"Source entity '{source_id}' does not exist"
-                })
+                broken_links.append(
+                    {
+                        "relationship_id": rel_id,
+                        "source_id": source_id,
+                        "target_id": target_id,
+                        "type": rel_type,
+                        "issue": "source_missing",
+                        "details": f"Source entity '{source_id}' does not exist",
+                    }
+                )
             elif not target_exists:
-                broken_links.append({
-                    "relationship_id": rel_id,
-                    "source_id": source_id,
-                    "target_id": target_id,
-                    "type": rel_type,
-                    "issue": "target_missing",
-                    "details": f"Target entity '{target_id}' does not exist"
-                })
+                broken_links.append(
+                    {
+                        "relationship_id": rel_id,
+                        "source_id": source_id,
+                        "target_id": target_id,
+                        "type": rel_type,
+                        "issue": "target_missing",
+                        "details": f"Target entity '{target_id}' does not exist",
+                    }
+                )
             else:
                 valid_count += 1
-        
+
         results["valid_relationships"] = valid_count
         results["broken_links"] = broken_links
-        
+
         # Log broken links
         if broken_links:
             logger.warning("Found %s broken links:", len(broken_links))
             for issue in broken_links[:10]:  # Log first 10
                 logger.warning(
                     "  - %s (%s): %s - %s",
-                    issue['relationship_id'],
-                    issue['type'],
-                    issue['issue'],
-                    issue['details']
+                    issue["relationship_id"],
+                    issue["type"],
+                    issue["issue"],
+                    issue["details"],
                 )
             if len(broken_links) > 10:
                 logger.warning("  ... and %s more", len(broken_links) - 10)
         else:
             logger.info("No broken links found")
-        
+
         # Step 4: Optional circular dependency detection
         if check_circular_dependencies:
             logger.info("Checking for circular dependencies...")
-            circular_deps = self._detect_circular_dependencies(all_relationships, entity_ids)
+            circular_deps = self._detect_circular_dependencies(
+                all_relationships, entity_ids
+            )
             results["circular_dependencies"] = circular_deps
-            
+
             if circular_deps:
-                logger.warning("Found %s circular dependency chains:", len(circular_deps))
+                logger.warning(
+                    "Found %s circular dependency chains:", len(circular_deps)
+                )
                 for cycle_info in circular_deps[:5]:  # Log first 5
                     cycle = cycle_info["cycle"]
-                    logger.warning("  - Cycle of length %s: %s...", cycle_info['length'], ' -> '.join(cycle[:4]))
+                    logger.warning(
+                        "  - Cycle of length %s: %s...",
+                        cycle_info["length"],
+                        " -> ".join(cycle[:4]),
+                    )
                 if len(circular_deps) > 5:
                     logger.warning("  ... and %s more", len(circular_deps) - 5)
             else:
                 logger.info("No circular dependencies found")
-        
+
         # Step 5: Calculate summary statistics
         broken_count = len(broken_links)
-        health_percentage = (valid_count / results["total_relationships"] * 100) if results["total_relationships"] > 0 else 100.0
-        
-        summary = {
-            "broken_count": broken_count,
-            "health_percentage": health_percentage
-        }
-        
+        health_percentage = (
+            (valid_count / results["total_relationships"] * 100)
+            if results["total_relationships"] > 0
+            else 100.0
+        )
+
+        summary = {"broken_count": broken_count, "health_percentage": health_percentage}
+
         if check_circular_dependencies:
             summary["circular_count"] = len(results.get("circular_dependencies", []))
-        
+
         results["summary"] = summary
-        
+
         logger.info(
             f"Validation complete: {valid_count}/{results['total_relationships']} valid "
             f"({health_percentage:.1f}% health), {broken_count} broken links"
         )
-        
+
         return results
-    
+
     def _detect_circular_dependencies(
-        self,
-        relationships: List[Dict[str, Any]],
-        entity_ids: Set[str]
+        self, relationships: List[Dict[str, Any]], entity_ids: Set[str]
     ) -> List[Dict[str, Any]]:
         """Detect circular dependency chains in the relationship graph.
-        
+
         Uses depth-first search to find cycles in the directed graph.
         Only considers relationships where both source and target exist.
-        
+
         Args:
             relationships: List of relationship dictionaries
             entity_ids: Set of valid entity IDs
-        
+
         Returns:
             List of circular dependency information:
             [
@@ -1914,24 +2040,24 @@ class IndexingPipeline:
         for rel in relationships:
             source_id = rel.get("source_id", "")
             target_id = rel.get("target_id", "")
-            
+
             # Only include if both entities exist
             if source_id in entity_ids and target_id in entity_ids:
                 if source_id not in graph:
                     graph[source_id] = []
                 graph[source_id].append(target_id)
-        
+
         # Find cycles using DFS
         visited: Set[str] = set()
         rec_stack: Set[str] = set()
         cycles: List[Dict[str, Any]] = []
-        
+
         def dfs(node: str, path: List[str]) -> None:
             """Depth-first search to detect cycles."""
             visited.add(node)
             rec_stack.add(node)
             path.append(node)
-            
+
             # Visit all neighbors
             for neighbor in graph.get(node, []):
                 if neighbor not in visited:
@@ -1940,57 +2066,62 @@ class IndexingPipeline:
                     # Found a cycle
                     cycle_start_idx = path.index(neighbor)
                     cycle = path[cycle_start_idx:] + [neighbor]
-                    
+
                     # Avoid duplicate cycles (same cycle in different order)
                     # Normalize by rotating to start with smallest ID
-                    normalized = self._normalize_cycle(cycle[:-1])  # Remove duplicate end node
-                    
+                    normalized = self._normalize_cycle(
+                        cycle[:-1]
+                    )  # Remove duplicate end node
+
                     # Check if we already found this cycle
                     if not any(c["cycle"][:-1] == normalized for c in cycles):
-                        cycles.append({
-                            "cycle": normalized + [normalized[0]],  # Add end node back
-                            "length": len(normalized)
-                        })
-            
+                        cycles.append(
+                            {
+                                "cycle": normalized
+                                + [normalized[0]],  # Add end node back
+                                "length": len(normalized),
+                            }
+                        )
+
             path.pop()
             rec_stack.remove(node)
-        
+
         # Run DFS from each unvisited node
         for node in graph:
             if node not in visited:
                 dfs(node, [])
-        
+
         return cycles
-    
+
     def _normalize_cycle(self, cycle: List[str]) -> List[str]:
         """Normalize a cycle by rotating to start with the smallest ID.
-        
+
         This ensures that cycles like [A, B, C] and [B, C, A] are treated as the same.
-        
+
         Args:
             cycle: List of entity IDs forming a cycle
-        
+
         Returns:
             Normalized cycle starting with smallest ID
         """
         if not cycle:
             return cycle
-        
+
         min_idx = cycle.index(min(cycle))
         return cycle[min_idx:] + cycle[:min_idx]
-    
+
     async def get_cached_document(self, file_path: str) -> Optional[ParsedDocument]:
         """Check if a parsed document is available in cache.
-        
+
         Args:
             file_path: Path to the file
-            
+
         Returns:
             Cached ParsedDocument if available and valid, None otherwise
         """
         if self.cache is None:
             return None
-        
+
         try:
             cached_doc = await self.cache.get(file_path)
             if cached_doc is not None:
@@ -2002,22 +2133,27 @@ class IndexingPipeline:
         except Exception as e:
             logger.warning("Cache lookup failed for %s: %s", file_path, e)
             return None
-    
+
     async def cache_document(self, parsed_document: ParsedDocument) -> None:
         """Store a parsed document in cache.
-        
+
         Args:
             parsed_document: The parsed document to cache
         """
         if self.cache is None:
             return
-        
+
         try:
             await self.cache.put(parsed_document.file_path, parsed_document)
             logger.debug("Cached parsed document for %s", parsed_document.file_path)
         except Exception as e:
-            logger.warning("Failed to cache document %s: %s", parsed_document.file_path, e, exc_info=True)
-    
+            logger.warning(
+                "Failed to cache document %s: %s",
+                parsed_document.file_path,
+                e,
+                exc_info=True,
+            )
+
     async def invalidate_cache(self, file_path: str) -> None:
         """Invalidate cache entry for a file.
 
@@ -2046,7 +2182,7 @@ class IndexingPipeline:
         """
         # Delegate to file watch manager
         self._file_watch_manager.stop_watching()
-    
+
     async def process_document(
         self,
         parsed_document: ParsedDocument,
@@ -2072,20 +2208,32 @@ class IndexingPipeline:
             try:
                 # Cache the parsed document if caching is enabled
                 await self.cache_document(parsed_document)
-                
+
                 doc_chunks: List[DocumentChunk] = []
                 graph_relationships: List[GraphRelationship] = []
 
                 # Check if backend uses server-side embeddings (e.g. AlloyDB)
-                from agentic_inquiry.storage.capabilities import get_capabilities_for_backend
+                from agentic_inquiry.storage.capabilities import (
+                    get_capabilities_for_backend,
+                )
+
                 _caps = get_capabilities_for_backend(self._backend_type)
                 _skip_local_embedding = _caps.uses_server_side_embedding
 
                 if _skip_local_embedding:
-                    chunk_embedder, chunk_dims = None, 768  # text-embedding-005 dimensionality
-                    logger.debug("Server-side embedding backend: skipping local chunk embedding generation")
+                    chunk_embedder, chunk_dims = (
+                        None,
+                        768,
+                    )  # text-embedding-005 dimensionality
+                    logger.debug(
+                        "Server-side embedding backend: skipping local chunk embedding generation"
+                    )
                 else:
-                    chunk_embedder, chunk_dims = self.embedding_service.get_embedder_configuration("document_chunks", "vector")
+                    chunk_embedder, chunk_dims = (
+                        self.embedding_service.get_embedder_configuration(
+                            "document_chunks", "vector"
+                        )
+                    )
 
                 stats = {
                     "skipped_chunks": 0,
@@ -2107,6 +2255,7 @@ class IndexingPipeline:
                     from agentic_inquiry.indexing.chunk_splitter import (
                         split_parser_chunks,
                     )
+
                     chunks_for_processing = split_parser_chunks(
                         chunks_for_processing, max_chunk_size
                     )
@@ -2160,7 +2309,11 @@ class IndexingPipeline:
                         vectors_to_process.append([0.0] * chunk_dims)
                         continue
 
-                    embedding_text, used_fallback = self.document_processor._resolve_embedding_text(chunk, chunk_embedder)
+                    embedding_text, used_fallback = (
+                        self.document_processor._resolve_embedding_text(
+                            chunk, chunk_embedder
+                        )
+                    )
                     if embedding_text is None:
                         stats["skipped_chunks"] += 1
                         # Emit event for skipped chunk
@@ -2186,7 +2339,7 @@ class IndexingPipeline:
                         logger.debug(
                             "Using fallback embedding text for chunk %s of document %s",
                             doc_chunk_id,
-                            parsed_document.doc_id
+                            parsed_document.doc_id,
                         )
                         # Update chunk's content field with fallback text so it passes validation
                         chunk.content = embedding_text
@@ -2262,7 +2415,7 @@ class IndexingPipeline:
                         )
                         chunks_to_process.append(chunk)
                         vectors_to_process.append(vector)
-                
+
                 # Step 2: Process all chunks with SchemaProcessor (validates, transforms, sanitizes)
                 # Note: SchemaProcessor now handles database writes internally via transaction
                 if chunks_to_process:
@@ -2274,48 +2427,53 @@ class IndexingPipeline:
                             parsed_document=parsed_document,
                             vectors=vectors_to_process,
                             project_id=self.project_id,
-                            original_total_chunks=original_total_chunks
+                            original_total_chunks=original_total_chunks,
                         )
-                        
+
                         # Convert records to DocumentChunk objects for use in graph building
                         for record in chunk_records:
                             doc_chunk = DocumentChunk(**record)
                             doc_chunks.append(doc_chunk)
-                            
+
                     except Exception as e:
                         logger.error(
                             "Schema processing failed for document %s: %s",
                             parsed_document.doc_id,
                             e,
-                            exc_info=True
+                            exc_info=True,
                         )
                         raise
-                
+
                 # Emit progress event after processing chunks
                 await op.progress(
                     chunks_processed=len(doc_chunks),
                     chunks_skipped=stats["skipped_chunks"],
                     chunks_fallback=stats["fallback_chunks"],
                 )
-                
+
                 # Use GraphBuilder to create graph entities from chunks
-                graph_entities, entity_stats = await self.graph_builder.create_graph_entities(
+                (
+                    graph_entities,
+                    entity_stats,
+                ) = await self.graph_builder.create_graph_entities(
                     parsed_document=parsed_document,
                     chunks=parsed_document.chunks,
                     document_processor=self.document_processor,
                 )
-                
+
                 # De-duplicate entities before adding to transaction
                 unique_entities: Dict[str, Any] = {}
                 for entity in graph_entities:
                     if entity.id in unique_entities:
                         stats["duplicate_entities"] += 1
-                        logger.warning("Duplicate entity ID found and removed: %s", entity.id)
+                        logger.warning(
+                            "Duplicate entity ID found and removed: %s", entity.id
+                        )
                     else:
                         unique_entities[entity.id] = entity
-                
+
                 deduplicated_entities = list(unique_entities.values())
-                
+
                 # Note: doc_chunks are already written to DB by SchemaProcessor
                 # Only write graph entities and relationships here
                 async with Transaction(self.db_manager) as transaction:
@@ -2331,7 +2489,9 @@ class IndexingPipeline:
                             self.db_manager.add_graph_relationships,
                             graph_relationships,
                             rollback_operation=self.db_manager.delete_graph_relationships,
-                            rollback_data=[relationship.id for relationship in graph_relationships],
+                            rollback_data=[
+                                relationship.id for relationship in graph_relationships
+                            ],
                         )
                     await transaction.commit()
 
@@ -2379,35 +2539,35 @@ class IndexingPipeline:
                     logger.warning(
                         "Document %s: skipped %d chunk(s) lacking embedding text",
                         parsed_document.doc_id,
-                        stats["skipped_chunks"]
+                        stats["skipped_chunks"],
                     )
                 if stats["fallback_chunks"]:
                     logger.debug(
                         "Document %s: fallback embedding text used for %d chunk(s)",
                         parsed_document.doc_id,
-                        stats["fallback_chunks"]
+                        stats["fallback_chunks"],
                     )
-                
+
                 # Log entity registration statistics
                 if stats.get("document_entities", 0) > 0:
                     logger.info(
                         "Document %s: registered %d document entities (headings, sections, tables, figures) in symbol registry",
                         parsed_document.doc_id,
-                        stats["document_entities"]
+                        stats["document_entities"],
                     )
                 if stats.get("code_entities", 0) > 0:
                     logger.info(
                         "Document %s: registered %d code entities (functions, classes, etc.) in symbol registry",
                         parsed_document.doc_id,
-                        stats["code_entities"]
+                        stats["code_entities"],
                     )
                 if stats.get("document_relationships", 0) > 0:
                     logger.info(
                         "Document %s: collected %d document relationships (contains, follows) for later processing",
                         parsed_document.doc_id,
-                        stats["document_relationships"]
+                        stats["document_relationships"],
                     )
-            
+
             except SchemaValidationError as e:
                 # Log detailed schema validation error
                 logger.error(
@@ -2421,9 +2581,9 @@ class IndexingPipeline:
                         "table_name": e.table_name,
                         "missing_fields": e.missing_fields,
                         "type_mismatches": e.type_mismatches,
-                    }
+                    },
                 )
-                
+
                 # Emit failure event with schema details
                 if self.event_system is not None:
                     await self.event_system.emit(

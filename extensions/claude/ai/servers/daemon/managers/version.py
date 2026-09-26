@@ -67,9 +67,7 @@ class VersionManager:
             )
             if result.returncode == 0:
                 return [
-                    f.strip()
-                    for f in result.stdout.strip().split("\n")
-                    if f.strip()
+                    f.strip() for f in result.stdout.strip().split("\n") if f.strip()
                 ]
         except (subprocess.TimeoutExpired, FileNotFoundError):
             pass
@@ -109,22 +107,18 @@ class VersionManager:
                             {
                                 "sha": current_sha,
                                 "files_changed": current_files,
-                                "is_bulk": len(current_files)
-                                >= self.bulk_change_files,
+                                "is_bulk": len(current_files) >= self.bulk_change_files,
                             }
                         )
                     current_sha = None
                     current_files = []
-                elif len(line) == 40 and all(
-                    c in "0123456789abcdef" for c in line
-                ):
+                elif len(line) == 40 and all(c in "0123456789abcdef" for c in line):
                     if current_sha:
                         commits.append(
                             {
                                 "sha": current_sha,
                                 "files_changed": current_files,
-                                "is_bulk": len(current_files)
-                                >= self.bulk_change_files,
+                                "is_bulk": len(current_files) >= self.bulk_change_files,
                             }
                         )
                     current_sha = line
@@ -138,8 +132,7 @@ class VersionManager:
                     {
                         "sha": current_sha,
                         "files_changed": current_files,
-                        "is_bulk": len(current_files)
-                        >= self.bulk_change_files,
+                        "is_bulk": len(current_files) >= self.bulk_change_files,
                     }
                 )
 

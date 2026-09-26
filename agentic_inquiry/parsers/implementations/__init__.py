@@ -12,23 +12,26 @@ logger = logging.getLogger(__name__)
 
 def _register_parsers() -> List[str]:
     """Register all available parser implementations.
-    
+
     Attempts to register each parser with graceful failure handling.
     If a parser fails to register due to missing dependencies, logs
     a warning with installation instructions but continues registering
     other parsers.
-    
+
     Returns:
         List of successfully registered parser names.
     """
     from agentic_inquiry.parsers.executor import register_parser
-    
+
     registered: List[str] = []
     failed: List[Tuple[str, str, str]] = []  # (name, error, install_cmd)
-    
+
     # Try to register UnifiedCodeParser
     try:
-        from agentic_inquiry.parsers.implementations.unified_code import UnifiedCodeParser
+        from agentic_inquiry.parsers.implementations.unified_code import (
+            UnifiedCodeParser,
+        )
+
         code_parser = UnifiedCodeParser()
         register_parser("unified_code", code_parser)
         registered.append("unified_code")
@@ -43,10 +46,11 @@ def _register_parsers() -> List[str]:
         error_msg = str(e)
         failed.append(("unified_code", error_msg, ""))
         logger.warning("✗ Failed to register unified_code: %s", error_msg)
-    
+
     # Try to register DocumentParser
     try:
         from agentic_inquiry.parsers.implementations.document import DocumentParser
+
         doc_parser = DocumentParser()
         register_parser("document", doc_parser)
         registered.append("document")
@@ -61,7 +65,7 @@ def _register_parsers() -> List[str]:
         error_msg = str(e)
         failed.append(("document", error_msg, ""))
         logger.warning("✗ Failed to register document: %s", error_msg)
-    
+
     try:
         from agentic_inquiry.parsers.implementations.salesforce_metadata import (
             SalesforceMetadataParser,
@@ -77,7 +81,10 @@ def _register_parsers() -> List[str]:
 
     # Try to register FallbackTextParser as "fallback_text" (no external dependencies)
     try:
-        from agentic_inquiry.parsers.implementations.fallback_text import FallbackTextParser
+        from agentic_inquiry.parsers.implementations.fallback_text import (
+            FallbackTextParser,
+        )
+
         text_parser = FallbackTextParser()
         register_parser("fallback_text", text_parser)
         registered.append("fallback_text")
@@ -86,19 +93,23 @@ def _register_parsers() -> List[str]:
         error_msg = str(e)
         failed.append(("fallback_text", error_msg, ""))
         logger.warning("✗ Failed to register fallback_text: %s", error_msg)
-    
+
     # Log summary
     if registered:
-        logger.info("Successfully registered %s parser(s): %s", len(registered), ', '.join(registered))
+        logger.info(
+            "Successfully registered %s parser(s): %s",
+            len(registered),
+            ", ".join(registered),
+        )
     else:
         logger.error("No parsers were successfully registered!")
-    
+
     if failed:
         logger.warning("Failed to register %s parser(s)", len(failed))
         for name, error, install_cmd in failed:
             if install_cmd:
                 logger.warning("  %s: %s (install: %s)", name, error, install_cmd)
-    
+
     return registered
 
 

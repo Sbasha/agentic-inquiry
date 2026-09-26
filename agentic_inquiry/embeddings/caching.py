@@ -47,6 +47,7 @@ Design notes:
 - **Pass-through on empty input**: returns ``[]`` without touching the
   cache or underlying embedder.
 """
+
 from __future__ import annotations
 
 import hashlib

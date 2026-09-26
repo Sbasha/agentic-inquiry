@@ -4,6 +4,7 @@ This module defines the RerankerProtocol interface that all reranker
 implementations must follow. SearchResult is imported from the canonical
 database.results module.
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable

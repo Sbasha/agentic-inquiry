@@ -28,8 +28,7 @@ class SessionState:
         """Increment turn counter and check for checkpoint."""
         self.turn_count += 1
         is_checkpoint = (
-            self.turn_count > 0
-            and self.turn_count % self._checkpoint_interval == 0
+            self.turn_count > 0 and self.turn_count % self._checkpoint_interval == 0
         )
         return {
             "turn": self.turn_count,
@@ -38,11 +37,13 @@ class SessionState:
 
     def add_query(self, query: str, topic: str = "") -> None:
         """Record a recent query."""
-        self.recent_queries.append({
-            "query": query[:200],
-            "turn": self.turn_count,
-            "timestamp": time.time(),
-        })
+        self.recent_queries.append(
+            {
+                "query": query[:200],
+                "turn": self.turn_count,
+                "timestamp": time.time(),
+            }
+        )
         # Keep last 20 queries
         if len(self.recent_queries) > 20:
             self.recent_queries = self.recent_queries[-20:]
@@ -51,11 +52,13 @@ class SessionState:
 
     def record_file_change(self, file_path: str, change_type: str) -> None:
         """Record a file change event."""
-        self._session_changes.append({
-            "file_path": file_path,
-            "change_type": change_type,
-            "timestamp": time.time(),
-        })
+        self._session_changes.append(
+            {
+                "file_path": file_path,
+                "change_type": change_type,
+                "timestamp": time.time(),
+            }
+        )
 
     def get_state(self) -> dict:
         """Get current session state."""
@@ -67,7 +70,12 @@ class SessionState:
             "file_changes": len(self._session_changes),
         }
 
-    def update_state(self, turn: int | None = None, query: str | None = None, topic: str | None = None) -> dict:
+    def update_state(
+        self,
+        turn: int | None = None,
+        query: str | None = None,
+        topic: str | None = None,
+    ) -> dict:
         """Update session state."""
         if turn is not None:
             self.turn_count = turn

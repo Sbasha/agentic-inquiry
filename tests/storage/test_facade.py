@@ -536,11 +536,25 @@ class TestStorageFacadeLegacyMethods:
         config = MockConfig()
         vector = MockVectorProvider()
         # Mock LanceDB-style return with compaction/cleanup/summary
-        vector.run_maintenance = AsyncMock(return_value={
-            "compaction": {"document_chunks": {"status": "success", "fragments_before": 10, "fragments_after": 2}},
-            "cleanup": {"document_chunks": {"status": "success", "versions_before": 5, "versions_after": 1}},
-            "summary": {"fragments_reduced": 8, "versions_removed": 4},
-        })
+        vector.run_maintenance = AsyncMock(
+            return_value={
+                "compaction": {
+                    "document_chunks": {
+                        "status": "success",
+                        "fragments_before": 10,
+                        "fragments_after": 2,
+                    }
+                },
+                "cleanup": {
+                    "document_chunks": {
+                        "status": "success",
+                        "versions_before": 5,
+                        "versions_after": 1,
+                    }
+                },
+                "summary": {"fragments_reduced": 8, "versions_removed": 4},
+            }
+        )
         graph = MockGraphProvider()
         events = MockEventsProvider()
 
@@ -627,12 +641,15 @@ class TestStorageFacadeFromConfig:
             # skip them without failing.
             raise BackendResolutionError(f"no {role} backend")
 
-        with patch(
-            "agentic_inquiry.storage.registry.create_provider",
-            side_effect=_fake_create_provider,
-        ), patch(
-            "agentic_inquiry.storage.registry.resolve_backend",
-            return_value=("default", {"type": "lancedb"}),
+        with (
+            patch(
+                "agentic_inquiry.storage.registry.create_provider",
+                side_effect=_fake_create_provider,
+            ),
+            patch(
+                "agentic_inquiry.storage.registry.resolve_backend",
+                return_value=("default", {"type": "lancedb"}),
+            ),
         ):
             facade = await StorageFacade.from_config(
                 config=config,
@@ -644,7 +661,6 @@ class TestStorageFacadeFromConfig:
         assert facade._graph_provider is mock_graph
         assert mock_vector.initialized is True
         assert mock_graph.initialized is True
-
 
     @pytest.mark.asyncio
     async def test_from_config_skips_pool_manager_for_file_based_backends(
@@ -666,12 +682,15 @@ class TestStorageFacadeFromConfig:
                 return mock_graph
             raise BackendResolutionError(f"no {role} backend")
 
-        with patch(
-            "agentic_inquiry.storage.registry.create_provider",
-            side_effect=_fake_create_provider,
-        ), patch(
-            "agentic_inquiry.storage.registry.resolve_backend",
-            return_value=("default", {"type": "lancedb"}),
+        with (
+            patch(
+                "agentic_inquiry.storage.registry.create_provider",
+                side_effect=_fake_create_provider,
+            ),
+            patch(
+                "agentic_inquiry.storage.registry.resolve_backend",
+                return_value=("default", {"type": "lancedb"}),
+            ),
         ):
             facade = await StorageFacade.from_config(
                 config=config,
@@ -681,9 +700,7 @@ class TestStorageFacadeFromConfig:
         assert facade._pool_manager is None
 
     @pytest.mark.asyncio
-    async def test_from_config_ignores_legacy_provider_name_kwarg(
-        self, caplog
-    ) -> None:
+    async def test_from_config_ignores_legacy_provider_name_kwarg(self, caplog) -> None:
         """``provider_name`` is retained on the signature for callers that
         still pass it, but no longer influences backend resolution. Passing
         it should emit BOTH a ``DeprecationWarning`` (for external test
@@ -713,13 +730,17 @@ class TestStorageFacadeFromConfig:
             raise BackendResolutionError(f"no {role} backend")
 
         caplog.set_level(logging.WARNING, logger="agentic_inquiry.storage.facade")
-        with patch(
-            "agentic_inquiry.storage.registry.create_provider",
-            side_effect=_fake_create_provider,
-        ), patch(
-            "agentic_inquiry.storage.registry.resolve_backend",
-            return_value=("default", {"type": "lancedb"}),
-        ), pytest.warns(DeprecationWarning, match="provider_name"):
+        with (
+            patch(
+                "agentic_inquiry.storage.registry.create_provider",
+                side_effect=_fake_create_provider,
+            ),
+            patch(
+                "agentic_inquiry.storage.registry.resolve_backend",
+                return_value=("default", {"type": "lancedb"}),
+            ),
+            pytest.warns(DeprecationWarning, match="provider_name"),
+        ):
             facade = await StorageFacade.from_config(
                 config=config,
                 project_id="test-project",
@@ -814,7 +835,6 @@ class TestStorageFacadeFromConfig:
             await facade.close()
 
 
-
 class TestStorageFacadeTransaction:
     """Tests for StorageFacade.transaction() method."""
 
@@ -842,7 +862,6 @@ class TestStorageFacadeTransaction:
 
         assert "MockVectorProvider" in str(exc_info.value)
         assert "does not support transactions" in str(exc_info.value)
-
 
     def test_transaction_uses_default_timeout_from_config(self) -> None:
         """Test that transaction() uses timeout from config when not specified."""

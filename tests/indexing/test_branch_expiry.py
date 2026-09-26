@@ -26,6 +26,7 @@ from unittest.mock import AsyncMock, MagicMock
 # Helpers — mock storage facade (PostgreSQL path)
 # ---------------------------------------------------------------------------
 
+
 def _make_pg_provider(rows: list[dict], execute_error: Exception | None = None):
     """Create a mock vector_provider that looks like a PostgreSQL provider."""
     vp = MagicMock()
@@ -86,6 +87,7 @@ class TestExpireStalesBranchesUnsupported:
 # Tests — prune_expired_branches (PostgreSQL path)
 # ---------------------------------------------------------------------------
 
+
 def _make_pg_prune_storage(deleted_count: int, fetch_error: Exception | None = None):
     """Create a mock StorageFacade for prune testing (PostgreSQL path)."""
     vp = MagicMock()
@@ -98,7 +100,6 @@ def _make_pg_prune_storage(deleted_count: int, fetch_error: Exception | None = N
         vp._fetch = AsyncMock(return_value=[{"deleted_count": deleted_count}])
 
     return MagicMock(_vector_provider=vp)
-
 
 
 class TestPruneExpiredBranchesUnsupported:
@@ -118,6 +119,7 @@ class TestPruneExpiredBranchesUnsupported:
 # ---------------------------------------------------------------------------
 # Tests — HARD_DELETE_RETENTION_DAYS constant
 # ---------------------------------------------------------------------------
+
 
 class TestRetentionConstants:
     """Verify the module-level constant is sane."""
