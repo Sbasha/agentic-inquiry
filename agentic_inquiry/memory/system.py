@@ -771,16 +771,7 @@ class MemorySystem:
                     "modifier_agent_id": item.context.agent_id,
                 }
 
-                if search_tier == MemoryTier.WORKING:
-                    for field, value in changes.items():
-                        setattr(item, field, value)
-                    await self.working_memory.store(item)
-                    updated = True
-                elif search_tier == MemoryTier.EPISODIC:
-                    updated = await self.episodic_memory.update_fields(item_id, changes)
-                else:  # SEMANTIC
-                    updated = await self.semantic_memory.update_fields(item_id, changes)
-
+                updated = await self._write_fields(search_tier, item, changes)
                 if not updated:
                     # Gone since the read: deleted, or promoted to a later tier.
                     continue
@@ -1007,50 +998,42 @@ class MemorySystem:
         if not self._initialized:
             raise ValueError("MemorySystem not initialized. Call initialize() first.")
 
-        # Search all tiers
-        tiers = [MemoryTier.WORKING, MemoryTier.EPISODIC, MemoryTier.SEMANTIC]
-        
-        for tier in tiers:
-            # Check for item
-            success = await self.update_importance(item_id, 0.0, tier=tier)
-            if success:
-                # We reuse update_importance to find the item, but we need to set status
-                # Since update_importance doesn't allow setting arbitrary fields, we need
-                # to do it manually here.
-                
-                # Re-fetch to update status
-                item = None
-                if tier == MemoryTier.WORKING:
-                    item = await self.working_memory.get_by_id(item_id)
-                elif tier == MemoryTier.EPISODIC:
-                    item = await self.episodic_memory.get_by_id(item_id, update_access=False)
-                else:
-                    item = await self.semantic_memory.get_by_id(item_id, update_access=False)
-                
-                if item:
-                    item.status = MemoryStatus.NEGATED
-                    item.modified_at = datetime.now(timezone.utc)
-                    
-                    if tier == MemoryTier.WORKING:
-                        await self.working_memory.store(item)
-                    elif tier == MemoryTier.EPISODIC:
-                        await self.episodic_memory.update(item)
-                    else:
-                        await self.semantic_memory.update(item)
-                        
-                    logger.info("Negated memory item: id=%s", item_id)
-                    
-                    # Emit memory.negated event
-                    if self.event_system:
-                        await self.event_system.emit(
-                            "memory.negated",
-                            source="MemorySystem",
-                            status=EventStatus.COMPLETED,
-                            memory_id=item_id,
-                            tier=tier.value
-                        )
-                    return True
-        
+        now = datetime.now(timezone.utc)
+        for tier in (MemoryTier.WORKING, MemoryTier.EPISODIC, MemoryTier.SEMANTIC):
+            if tier == MemoryTier.WORKING:
+                item = await self.working_memory.get_by_id(item_id)
+            elif tier == MemoryTier.EPISODIC:
+                item = await self.episodic_memory.get_by_id(item_id, update_access=False)
+            else:
+                item = await self.semantic_memory.get_by_id(item_id, update_access=False)
+            if item is None:
+                continue
+
+            negated = await self._write_fields(
+                tier,
+                item,
+                {
+                    "importance": 0.0,
+                    "status": MemoryStatus.NEGATED,
+                    "modified_at": now,
+                    "modifier_agent_id": item.context.agent_id,
+                },
+            )
+            if not negated:
+                # Gone since the read: deleted, or promoted to a later tier.
+                continue
+
+            logger.info("Negated memory item: id=%s", item_id)
+            if self.event_system:
+                await self.event_system.emit(
+                    "memory.negated",
+                    source="MemorySystem",
+                    status=EventStatus.COMPLETED,
+                    memory_id=item_id,
+                    tier=tier.value,
+                )
+            return True
+
         return False
 
     async def supersede_memory(
@@ -1092,7 +1075,7 @@ class MemorySystem:
                 old_tier = tier
                 break
         
-        if not old_item:
+        if old_item is None or old_tier is None:
             logger.warning("Old item not found for supersede: id=%s", old_item_id)
             return None
 
@@ -1109,18 +1092,23 @@ class MemorySystem:
             metadata=old_item.metadata.copy()
         )
         
-        # Update old item status
-        old_item.status = MemoryStatus.SUPERSEDED
-        old_item.superseded_by = new_item.id
-        old_item.modified_at = datetime.now(timezone.utc)
-        
-        if old_tier == MemoryTier.WORKING:
-            await self.working_memory.store(old_item)
-        elif old_tier == MemoryTier.EPISODIC:
-            await self.episodic_memory.update(old_item)
-        else:
-            await self.semantic_memory.update(old_item)
-            
+        superseded = await self._write_fields(
+            old_tier,
+            old_item,
+            {
+                "status": MemoryStatus.SUPERSEDED,
+                "superseded_by": new_item.id,
+                "modified_at": datetime.now(timezone.utc),
+            },
+        )
+        if not superseded:
+            logger.warning(
+                "Old item gone before it could be marked superseded: old_id=%s, new_id=%s",
+                old_item_id,
+                new_item.id,
+            )
+            return new_item
+
         logger.info(
             "Superseded memory: old_id=%s, new_id=%s",
             old_item_id,
@@ -1128,6 +1116,31 @@ class MemorySystem:
         )
         
         return new_item
+
+    async def _write_fields(
+        self, tier: MemoryTier, item: MemoryItem, changes: Dict[str, Any]
+    ) -> bool:
+        """Set fields on a stored item, writing only those fields.
+
+        Episodic and semantic items change in one commit that leaves every
+        other column as stored, so a concurrent writer of other fields (such
+        as access statistics) keeps its change.
+
+        Returns:
+            False if a persistent item no longer exists, for example because
+            it was deleted or promoted after the caller read it
+        """
+        if tier == MemoryTier.WORKING:
+            for field, value in changes.items():
+                setattr(item, field, value)
+            await self.working_memory.store(item)
+            return True
+        layer = (
+            self.episodic_memory
+            if tier == MemoryTier.EPISODIC
+            else self.semantic_memory
+        )
+        return await layer.update_fields(item.id, changes)
 
     async def consolidate(
         self,

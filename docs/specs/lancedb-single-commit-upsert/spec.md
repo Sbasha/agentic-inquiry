@@ -1,6 +1,6 @@
 # Spec: LanceDB row replacement is one commit
 
-- **Status:** Implementing
+- **Status:** Shipped
 - **Owner:** sbasha
 - **Plan:** [`plan.md`](plan.md)
 - **Constrained by:** [`memory-update-atomicity`](../memory-update-atomicity/spec.md), [`index-memory-reliability`](../index-memory-reliability/spec.md)
@@ -87,11 +87,11 @@ directly: a lone write raises the table's `version` by exactly one.
       row is unchanged.
 - [x] `LanceDBMemoryAdapter.store()` of an item whose id is already stored
       replaces that row; the table still holds one row for the id.
-- [ ] `negate_memory()` sets `importance` to 0.0 and `status` to `NEGATED`
+- [x] `negate_memory()` sets `importance` to 0.0 and `status` to `NEGATED`
       on an item in any tier. On an episodic or semantic item it does so in
       one commit without rewriting other columns: an `access_count` written by
       another task before that commit survives.
-- [ ] `supersede_memory()` on an episodic or semantic item sets `status` to
+- [x] `supersede_memory()` on an episodic or semantic item sets `status` to
       `SUPERSEDED` and `superseded_by` to the new item's id without rewriting
       other columns: an `access_count` written by another task before that
       commit survives. If the old item is deleted between supersede's read and
@@ -138,7 +138,6 @@ directly: a lone write raises the table's `version` by exactly one.
   [backlog](../../backlog.md#lancedb-single-commit-upsert)).
 - Product: `store()` upserts by id although the `merge_insert` adds a flat
   ~8 ms per call over an append (source: user confirmation 2026-09-26).
-- Process: `update_fields()` and `LanceDBManager.update_by_ids()` land on
-  `feature/memory-update-lost-write`, and this branch rebases onto it before
-  T4 (source: message from the session implementing memory-update-atomicity,
-  2026-09-26).
+- Process: `update_fields()` and `LanceDBManager.update_by_ids()` come from
+  memory-update-atomicity, which this change is built on (source:
+  `feature/memory-update-lost-write` at `f5b36af`).

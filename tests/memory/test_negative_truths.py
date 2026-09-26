@@ -37,13 +37,13 @@ async def test_negate_memory():
     
     system.working_memory.get_by_id = AsyncMock(return_value=mock_item)
     system.working_memory.store = AsyncMock()
-    system.update_importance = AsyncMock(return_value=True) # Pretend found
     
     # Execute negate
     result = await system.negate_memory("test_id")
     
     assert result is True
     assert mock_item.status == MemoryStatus.NEGATED
+    assert mock_item.importance == 0.0
     system.working_memory.store.assert_called_with(mock_item)
 
 @pytest.mark.asyncio
