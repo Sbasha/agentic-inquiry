@@ -1,11 +1,13 @@
 """On-disk LanceDB tests for whole-row memory writes.
 
 Replacing a stored memory item is one commit, so two writers of the same item
-leave one row (docs/specs/lancedb-single-commit-upsert/spec.md).
+leave one row, and negate/supersede write only their own columns
+(docs/specs/lancedb-single-commit-upsert/spec.md).
 """
 
 from __future__ import annotations
 
+import logging
 import uuid
 from pathlib import Path
 from typing import Any, AsyncIterator, Dict, List, Union
@@ -18,7 +20,13 @@ from agentic_inquiry.database.lancedb_manager import LanceDBManager
 from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 from agentic_inquiry.memory.layers.episodic import EpisodicMemory
 from agentic_inquiry.memory.layers.semantic import SemanticMemory
-from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier
+from agentic_inquiry.memory.models import (
+    MemoryContext,
+    MemoryItem,
+    MemoryStatus,
+    MemoryTier,
+)
+from agentic_inquiry.memory.system import MemorySystem
 from tests.utils.commit_hook import commit_hook
 
 pytestmark = pytest.mark.integration
@@ -29,9 +37,14 @@ _TABLES = {"episodic": "memory_episodic_medium", "semantic": "memory_semantic_hi
 
 
 @pytest.fixture
-async def db_manager(tmp_path: Path) -> AsyncIterator[LanceDBManager]:
+def config(tmp_path: Path) -> Config:
     config = Config.load()
     config.storage.root = str(tmp_path / "storage")
+    return config
+
+
+@pytest.fixture
+async def db_manager(config: Config) -> AsyncIterator[LanceDBManager]:
     manager = LanceDBManager(config=config)
     try:
         yield manager
@@ -159,3 +172,149 @@ async def test_store_existing_id_replaces_row(
 
     rows = await _rows(db_manager, layer, item.id)
     assert [row["content"] for row in rows] == ["second"]
+
+
+class _StubEmbeddings:
+    """Random vectors, so MemorySystem.store() runs without loading a model."""
+
+    async def embed_async(self, text: str) -> np.ndarray:
+        return np.random.rand(384).astype(np.float32)
+
+
+@pytest.fixture
+async def system(
+    config: Config, db_manager: LanceDBManager
+) -> AsyncIterator[MemorySystem]:
+    memory = MemorySystem(
+        config=config,
+        embedding_service=_StubEmbeddings(),  # type: ignore[arg-type]
+        vector_store=db_manager,
+        episodic_storage=LanceDBMemoryAdapter(
+            db_manager, table_name=_TABLES["episodic"]
+        ),
+        semantic_storage=LanceDBMemoryAdapter(
+            db_manager, table_name=_TABLES["semantic"]
+        ),
+    )
+    await memory.initialize()
+    try:
+        yield memory
+    finally:
+        await memory.shutdown()
+
+
+def _tier_layer(system: MemorySystem, tier: str) -> Layer:
+    return system.episodic_memory if tier == "episodic" else system.semantic_memory
+
+
+class _AccessBumper:
+    """Before each commit on the item's table, record an access from another task.
+
+    ``writes`` counts the accesses that reached the row, so a writer that
+    rewrites the row from a stale read leaves ``access_count`` below it.
+    """
+
+    def __init__(self, manager: LanceDBManager, layer: Layer, item_id: str) -> None:
+        self._manager = manager
+        self._layer = layer
+        self._item_id = item_id
+        self.writes = 0
+
+    async def __call__(self, table_name: str) -> None:
+        if table_name != self._layer._storage.table_name:
+            return
+        stored = await self._layer._storage.get_by_id(self._item_id)
+        if stored is None:
+            return
+        self.writes += await self._manager.update_by_ids(
+            table_name, [self._item_id], {"access_count": stored.access_count + 1}
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tier", ["episodic", "semantic"])
+async def test_negate_keeps_concurrent_access_count(
+    system: MemorySystem, db_manager: LanceDBManager, tier: str
+) -> None:
+    layer = _tier_layer(system, tier)
+    item = _item(importance=0.6)
+    await layer.store(item)
+    bumper = _AccessBumper(db_manager, layer, item.id)
+
+    async with commit_hook(db_manager, on_enter=bumper):
+        assert await system.negate_memory(item.id)
+
+    stored = await layer.get_by_id(item.id, update_access=False)
+    assert stored is not None
+    assert bumper.writes >= 1
+    assert stored.access_count == bumper.writes
+    assert stored.status == MemoryStatus.NEGATED
+    assert stored.importance == 0.0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("tier", ["episodic", "semantic"])
+async def test_supersede_keeps_concurrent_access_count(
+    system: MemorySystem, db_manager: LanceDBManager, tier: str
+) -> None:
+    layer = _tier_layer(system, tier)
+    item = _item(importance=0.5)
+    await layer.store(item)
+    bumper = _AccessBumper(db_manager, layer, item.id)
+
+    async with commit_hook(db_manager, on_enter=bumper):
+        new_item = await system.supersede_memory(item.id, "Python 3.13 is current")
+
+    assert new_item is not None
+    stored = await layer.get_by_id(item.id, update_access=False)
+    assert stored is not None
+    assert bumper.writes >= 1
+    assert stored.access_count == bumper.writes
+    assert stored.status == MemoryStatus.SUPERSEDED
+    assert stored.superseded_by == new_item.id
+
+
+@pytest.mark.asyncio
+async def test_negate_working_item(system: MemorySystem) -> None:
+    item = _item(importance=0.6)
+    item.tier = MemoryTier.WORKING
+    await system.working_memory.store(item)
+
+    assert await system.negate_memory(item.id)
+
+    stored = await system.working_memory.get_by_id(item.id)
+    assert stored is not None
+    assert stored.status == MemoryStatus.NEGATED
+    assert stored.importance == 0.0
+
+
+@pytest.mark.asyncio
+async def test_supersede_returns_new_item_when_old_deleted(
+    system: MemorySystem,
+    caplog: pytest.LogCaptureFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    layer = system.episodic_memory
+    item = _item(importance=0.5)
+    await layer.store(item)
+    real_get_by_id = layer.get_by_id
+
+    async def get_then_delete(
+        item_id: str, update_access: bool = True
+    ) -> MemoryItem | None:
+        found = await real_get_by_id(item_id, update_access=update_access)
+        if found is not None:
+            await layer.delete(item_id)
+        return found
+
+    monkeypatch.setattr(layer, "get_by_id", get_then_delete)
+
+    with caplog.at_level(logging.WARNING, logger="agentic_inquiry.memory.system"):
+        new_item = await system.supersede_memory(item.id, "replacement")
+
+    assert new_item is not None
+    assert new_item.content == "replacement"
+    assert any(
+        record.levelno == logging.WARNING and item.id in record.getMessage()
+        for record in caplog.records
+    )
