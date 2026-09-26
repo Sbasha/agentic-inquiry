@@ -1,7 +1,5 @@
 # Repository Conventions
 
-> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](storage-backends.md).
-
 This document is the single source of truth for **how we work in Agentic Inquiry**.
 It exists so that contributors — human and agent — can answer "where does this
 information go?" and "how do I propose a change?" without guessing.
@@ -172,8 +170,8 @@ separate commits when the change is non-trivial.
 The typical mix follows the test pyramid — roughly 80% fast unit /
 construction tests, 15% integration, 5% end-to-end — a target shape,
 not a quota. For Agentic Inquiry, storage-layer changes must be verified
-against a real database (LanceDB on disk, PostgreSQL via the harness
-the suite already uses); do not mock the database.
+against a real database (LanceDB and SQLite on disk); do not mock the
+database.
 
 ---
 
@@ -210,9 +208,8 @@ subdirectory:
 Each piece belongs in exactly one bucket. When a tutorial wants to
 explain *why*, link out to an explanation page; when a how-to wants
 every option, link out to reference. Agentic Inquiry's current backend,
-storage-ops, MCP, and customization docs live under sibling
-directories of `docs/` (`backends/`, `storage/`, `mcp/`,
-`customization/`); migration into `guides/` is incremental — when a
+MCP, and customization docs live under sibling directories of
+`docs/` (`backends/`, `mcp/`, `customization/`); migration into `guides/` is incremental - when a
 page is touched, move it.
 
 ---

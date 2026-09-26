@@ -125,6 +125,70 @@ a defect found while qualifying and left for its own change.
 - **`tantivy` dependency:** no code imports it after the native FTS
   switch. Remove it from `pyproject.toml` with an ADR.
 
+## local-only-config-cleanup
+
+Open items from [`specs/local-only-config-cleanup/spec.md`](specs/local-only-config-cleanup/spec.md).
+The `.env.example` item is the deferred part of AC1; the rest are
+outside the spec's boundaries.
+
+- **`config/mcp.yaml` fails the schema:** no code loads it, yet
+  `docs/mcp/configuration.md`, `docs/mcp/deployment.md` and
+  `docs/mcp/security.md` say the MCP server reads it. The schema's
+  `mcp.relationships`, `mcp.tokens`, `mcp.defaults`, `mcp.behavior` and
+  `mcp.logging` are empty objects with `additionalProperties: false`, so
+  they reject every field the `MCPConfig` dataclasses define. Decide
+  whether to add those fields to the schema or retire the file and its
+  docs, then add `config/mcp.yaml` to the shipped-config test if it stays.
+- **Empty config section crashes `Config.load`:** a section header with
+  no keys (for example `search:`) reaches `_validate_config` as `None`,
+  which calls `.get` on it and raises `AttributeError` instead of
+  `ConfigurationError`. Read each section with `or {}` and let the schema
+  report the empty section.
+- **`ai search` ignores `--project` for its event system:**
+  `GraphSearchService.__init__` and `HybridSearchService.__init__` fall
+  back to a bare `EventSystem()` when `SearchService` passes `None`, and
+  that constructor reloads config and
+  raises "project_id must be provided or set as
+  storage.default_project_id" when the config leaves
+  `default_project_id` unset, even with `--project demo`. The example
+  config sets `default_project_id` to work around it. Pass the resolved
+  project id (or the caller's event system) through.
+- **`ai search` does not exit:** after printing results, the process
+  stays alive until killed (reproduced with `config/default.yaml` and the
+  example config, 170 s timeout). Find the non-daemon thread or executor
+  left running and shut it down before returning.
+- **`.env.example` still names PostgreSQL:** it carries a "PostgreSQL
+  Configuration (for test-postgresql.yaml)" block. Agent permission
+  settings block reading and editing the file, so remove the block by
+  hand.
+- **`docs/architecture/embeddings.md` describes removed embedders:** the
+  page is the embeddings subsystem's only architecture doc, but most of
+  it covers server-side embedding, `BedrockEmbedder` and the PostgreSQL
+  adapters, so it carries the historical-reference banner. Rewrite it
+  around the shipped local embedders.
+- **PostgreSQL-family code leftovers:** `agentic_inquiry/storage/schemas/`
+  still ships `postgresql`, `cloudsql`, `alloydb`, `rds` and `spanner`
+  schemas; `BackendConfig` keeps `alloydb` handling; `NoOpEmbedder`
+  documents an AlloyDB flow, and the per-backend
+  `embedding_strategy: server_side` setting is still honored on shipped
+  backends, where it makes indexing store zero vectors. The agent docs in
+  `agentic_inquiry/storage/providers/AGENTS.md`,
+  `providers/lancedb/AGENTS.md` and `providers/sqlite/AGENTS.md` still
+  describe `postgresql/`, `alloydb/` and `cloudsql/` provider directories
+  and a Postgres migration path, and cite a missing `docs/scaling.md`.
+  Decide per item whether it serves the external provider contract in
+  `storage-backends.md` or should go.
+- **LanceDB ignores `database_path`:** `BackendConfig` requires
+  `database_path` for a `lancedb` backend, but `LanceDBProvider` drops it
+  and the connection code always uses `storage.root` +
+  `storage.lancedb.path`. A user who changes it gets no error and no
+  effect. Either read it or stop requiring it.
+- **`ai index` ignores `embeddings.default_provider: hashing`:**
+  `configure_embedder_for_backend` handles only `fastembed` and
+  `local`/`local_model` and falls through to `SentenceTransformerEmbedder`
+  for everything else, while `EmbeddingService._create_embedder` builds a
+  `HashingEmbedder`, so index and query paths can disagree.
+
 <!-- Add one section per spec with open work, e.g.:
 
 ## <spec-name>

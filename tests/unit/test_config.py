@@ -7,9 +7,11 @@ Tests cover:
 - Validation of configuration limits
 """
 
+import re
 from pathlib import Path
 
 import pytest
+import yaml
 
 pytestmark = pytest.mark.unit
 
@@ -399,3 +401,58 @@ class TestPackagedConfigResolver:
         found = Config._find_config_file()
         assert found.name == "default.yaml"
         assert found.exists()
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+class TestShippedConfigs:
+    """Every full config the repo ships loads the way a user would load it."""
+
+    # config/mcp.yaml is left out: it holds only an `mcp` section, so it is not
+    # a full config, and nothing in the runtime loads it.
+    @pytest.mark.parametrize(
+        "relative_path",
+        [
+            "config/default.yaml",
+            "config/test-lancedb.yaml",
+            "agentic-inquiry.yaml.example",
+        ],
+    )
+    def test_copied_to_project_root_loads(
+        self, relative_path: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Copying the file to agentic-inquiry.yaml in the project root passes Config.load."""
+        monkeypatch.delenv("INQUIRY_CONFIG", raising=False)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "agentic-inquiry.yaml").write_text(
+            (REPO_ROOT / relative_path).read_text()
+        )
+
+        config = Config.load()
+
+        assert config.storage.root
+
+    @pytest.mark.parametrize("snippet_index", [0, 1])
+    def test_storage_backends_doc_snippet_loads(
+        self, snippet_index: int, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Each storage block in docs/storage-backends.md loads over config/default.yaml."""
+        doc = (REPO_ROOT / "docs" / "storage-backends.md").read_text()
+        snippets = re.findall(r"```yaml\n(.*?)```", doc, re.S)
+        assert len(snippets) == 2
+        storage_root = tmp_path / "data"
+        storage_root.mkdir()
+        snippet = snippets[snippet_index].replace(
+            "/data/agentic-inquiry", str(storage_root)
+        )
+
+        data = yaml.safe_load((REPO_ROOT / "config" / "default.yaml").read_text())
+        data["storage"] = yaml.safe_load(snippet)["storage"]
+        monkeypatch.delenv("INQUIRY_CONFIG", raising=False)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "agentic-inquiry.yaml").write_text(yaml.safe_dump(data))
+
+        config = Config.load()
+
+        assert config.storage.root == str(storage_root)
