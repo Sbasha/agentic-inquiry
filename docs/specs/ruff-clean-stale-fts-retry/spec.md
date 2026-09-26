@@ -21,7 +21,8 @@ locals, and bring `ruff check agentic_inquiry tests` to zero findings.
       instead of raising `NameError`. Verified against real LanceDB on disk.
 - [ ] The same recovery holds for `vector_search`, `hybrid_search` and
       `advanced_filter`.
-- [ ] The FTS query is sanitized once per call, not once per attempt.
+- [ ] A non-stale error, or a stale error with no cache invalidator,
+      propagates; a table gone after invalidation yields `[]`.
 - [ ] `facade.py` imports `ProviderCapabilities` under `TYPE_CHECKING`.
 - [ ] `uv run ruff check agentic_inquiry tests` reports zero findings.
 - [ ] Each F841 and E741 finding is reviewed by hand; none is fixed by
@@ -36,7 +37,7 @@ locals, and bring `ruff check agentic_inquiry tests` to zero findings.
 2. Route the four searches through one `_search_with_stale_retry(table_name,
    table, run)` where `run` receives the table; delete the unused
    `_execute_with_retry`, whose retry reused a closure bound to the stale
-   table.
+   table. Sanitize the FTS query before the search function, once per call.
 3. Add the `ProviderCapabilities` type-only import.
 4. `ruff check --fix` for F401/F541; hand-fix F841/E741 and the
    non-auto-fixable F401 in `tests/01-agents/protocols/__init__.py`.
