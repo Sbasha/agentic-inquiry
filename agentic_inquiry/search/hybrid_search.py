@@ -300,7 +300,7 @@ class HybridSearchService:
         so scores stay monotone with rank and on the fusion scale.
         """
         settings = self.config.search.hybrid_search
-        if not settings.rerank_model or len(results) < 2:
+        if not isinstance(settings.rerank_model, str) or not settings.rerank_model or len(results) < 2:
             return results
         head = results[: settings.rerank_top_n]
         pairs = [(query, _passage(r)) for r in head]
@@ -397,7 +397,7 @@ class HybridSearchService:
                 },
             )
             seeds = self.config.search.hybrid_search.graph_seeds
-            if seeds > 0 and isinstance(reranker, RRFReranker) and fused:
+            if isinstance(seeds, int) and seeds > 0 and isinstance(reranker, RRFReranker) and fused:
                 neighbours = await graph_candidates(
                     self._storage_facade, [r.data for r in fused[:seeds]],
                     self._resolve_project_id(project_id), limit=depth // 3,
