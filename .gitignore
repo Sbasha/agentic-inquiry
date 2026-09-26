@@ -239,3 +239,6 @@ results/
 .sf/
 .sf/**
 .sf/orgs/00DjW0000009VEUUA2/metadata-catalog/catalog.json
+
+# Committed evaluation results and the test-run ledger (RFC-0003)
+!evals/results/

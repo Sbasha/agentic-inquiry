@@ -272,7 +272,6 @@ search:
 - IDF weighting rescues results when vector search misses
 - Two-tier FTS captures both exact and partial matches
 - Configurable weights and reranker types
-- Achieved 10.0/10 relevance score at scale (140K+ chunks)
 
 **Disadvantages:**
 - Slower than individual strategies (typically 2-3× the latency)
@@ -612,12 +611,14 @@ results = await search.hybrid_search(query_vector, query_fts, limit=200)
 
 ## Search Strategies Comparison
 
-| Strategy | Speed | Semantic | Keyword | Relationships | Relevance | Use Case |
-|----------|-------|----------|---------|---------------|-----------|----------|
-| Vector   | Fast  | ✓        | ✗       | ✗             | 7/10      | Semantic search, concept matching |
-| FTS      | Fastest | ✗      | ✓       | ✗             | 6/10      | Exact keyword search |
-| **Hybrid** | **Medium** | **✓** | **✓** | **✗** | **10/10** | **General search (recommended)** |
-| Graph    | Slow  | ✗        | ✗       | ✓             | N/A       | Related content discovery |
+| Strategy | Speed | Semantic | Keyword | Relationships | Use Case |
+|----------|-------|----------|---------|---------------|----------|
+| Vector   | Fast  | ✓        | ✗       | ✗             | Semantic search, concept matching |
+| FTS      | Fastest | ✗      | ✓       | ✗             | Exact keyword search |
+| **Hybrid** | **Medium** | **✓** | **✓** | **✗** | **General search (recommended)** |
+| Graph    | Slow  | ✗        | ✗       | ✓             | Related content discovery |
+
+Measured relevance for each strategy lives in the evaluation harness ([`evals/`](../../evals/README.md)), not in this table.
 
 **Recommendation:** Use hybrid search for most use cases. It combines the strengths of both vector and FTS while mitigating their individual weaknesses through score-aware RRF and IDF-weighted content boosting.
 
@@ -744,21 +745,11 @@ async def test_hybrid_search():
 
 ## Search Relevance Enhancements
 
-Agentic Inquiry achieved **10.0/10 search relevance** through systematic improvements to the hybrid search pipeline. Starting from a baseline of 3.8/10 with default configuration, four phases of enhancements brought search to perfect relevance across keyword, conceptual, and structural queries.
+The enhancements below were tuned against a PostgreSQL backend and a private ten-query script, neither of which ships any more; their effect on the LanceDB pipeline is unmeasured. Current measurements come from [`evals/`](../../evals/README.md).
 
 **What changed:** The hybrid search pipeline now uses score-aware RRF (not rank-only), IDF-weighted content boosting (rare terms weighted 20× more than common terms), two-tier AND+OR FTS queries, pre-filtering of noisy candidates, proportional normalization, CamelCase/snake_case splitting, file path indexing, and wider candidate fetching. These changes address result dilution at scale, embedding drift, and the "import chunk" problem.
 
 This section documents the key enhancements and their impact.
-
-### Performance Results
-
-**Final Score: 10.0/10** (tested on AlloyDB with 140K+ chunks, 2,000+ source files)
-- **Overall**: 10.0/10
-- **Keyword queries**: 10.0/10 (exact terms, file paths, identifiers)
-- **Conceptual queries**: 10.0/10 (semantic understanding)
-- **Structural queries**: 10.0/10 (architecture patterns)
-
-All 10 test queries achieved perfect 10.0/10 scores. Test script: `scripts/deep_search_test.py`
 
 ### Search Pipeline Flow
 

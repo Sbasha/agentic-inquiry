@@ -31,3 +31,5 @@ files inside any feature dir are gitignored — see
 [`salesforce-apex-parsing`](salesforce-apex-parsing/spec.md) - Apex class and trigger extraction.
 
 [`salesforce-intelligence`](salesforce-intelligence/spec.md) - Salesforce recognizer and metadata allowlist.
+
+[`eval-harness`](eval-harness/spec.md) - Level A/B/C evaluation harness (`evals/`) scoring Agentic Inquiry against baselines and Graphify on externally labelled datasets.

@@ -435,7 +435,7 @@ Query → [Vector Search] + [Full-Text Search]
          Top-K results
 ```
 
-Naive vector search scores ~6-7/10 on large codebases due to embedding drift, result dilution, and keyword blindness. Agentic Inquiry scores **10.0/10** across keyword, conceptual, and structural queries on a 572K-chunk enterprise corpus.
+Search quality is measured, not asserted: the evaluation harness in [`evals/`](evals/README.md) scores this pipeline against BM25, dense, hybrid and Graphify baselines on externally labelled datasets ([RFC-0003](docs/rfc/0003-eval-harness-and-competitor-parity.md)).
 
 Key innovations:
 - **IDF-weighted content boost**: Rare query terms get up to 20x weight. Rescues results that vector search misses entirely.
@@ -452,7 +452,6 @@ Benchmarked on a Java EE monolith (16,706 source files + 98 documents) against a
 | Metric | Result |
 |--------|--------|
 | **Total indexed** | 572,457 chunks, 296,880 entities, 70,259 relationships |
-| **Search relevance** | 10.0/10 across keyword, conceptual, structural queries |
 | **Vector search latency** | <100ms (HNSW index, 140K+ chunks) |
 | **FTS latency** | <50ms (GIN index) |
 | **Hybrid search total** | <1s including reranking + content boost |

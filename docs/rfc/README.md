@@ -6,8 +6,9 @@
 
 | # | Title | Status |
 |---|-------|--------|
-| [0001](0001-golden-bench.md) | Golden bench: pin recall@10 + latency | accepted |
+| [0001](0001-golden-bench.md) | Golden bench: pin recall@10 + latency | accepted; superseded as a quality gate by 0003 |
 | [0002](0002-afp-lifecycle-contract.md) | AFP lifecycle contract: capabilities, integration hook, mcp | accepted |
+| [0003](0003-eval-harness-and-competitor-parity.md) | Evaluation harness and competitor parity | accepted |
 
 ## Adding a new RFC
 
