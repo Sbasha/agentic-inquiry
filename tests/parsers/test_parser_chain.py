@@ -387,8 +387,23 @@ def test_minified_files_are_skipped(tmp_path):
     from agentic_inquiry.parsers.chain import is_minified
 
     bundle = tmp_path / "app.min.js"
-    bundle.write_text("var a=1;" * 2000)
+    bundle.write_text("!function(e,t){e.fn.x=function(n){return this.each(function(){t(n)})}}(a,b);" * 200)
     source = tmp_path / "app.js"
     source.write_text("\n".join(f"var a{i} = {i};" for i in range(500)))
     assert is_minified(str(bundle))
     assert not is_minified(str(source))
+
+
+def test_long_line_prose_is_not_minified(tmp_path):
+    """A paragraph written on one line (soft-wrapped Markdown, an abstract) is indexed."""
+    from agentic_inquiry.parsers.chain import is_minified
+
+    paragraph = tmp_path / "notes.md"
+    paragraph.write_text("# Notes\n\n" + "The patients received a daily dose of the compound. " * 120 + "\n")
+    literal = tmp_path / "table.py"
+    literal.write_text("TABLE = [" + ", ".join(str(i) for i in range(2000)) + "]\n")
+    pasted = tmp_path / "chat.txt"
+    pasted.write_text("user: here is the bundle " + "a.b(c,d);" * 1000 + "\n")
+    assert not is_minified(str(paragraph))
+    assert not is_minified(str(literal))
+    assert not is_minified(str(pasted))

@@ -1417,3 +1417,17 @@ class TestMCPQueryConfigValidation:
             MCPQueryConfig(traversal_limit=500, batch_size=5)
 
         assert "batch_size must be between 10 and 500" in str(exc_info.value)
+
+
+def test_directly_read_environment_variables_are_not_config_overrides(monkeypatch, caplog):
+    """INQUIRY_HOME and its peers configure code directly; the loader neither warns nor maps them."""
+    import logging
+
+    from agentic_inquiry.config import Config
+
+    monkeypatch.setenv("INQUIRY_HOME", "/tmp/inquiry-home")
+    monkeypatch.setenv("INQUIRY_PROJECT_ID", "demo")
+    with caplog.at_level(logging.WARNING, logger="agentic_inquiry.config"):
+        data = Config._apply_env_overrides({})
+    assert not [r for r in caplog.records if "INQUIRY_HOME" in r.getMessage() or "INQUIRY_PROJECT_ID" in r.getMessage()]
+    assert "home" not in data and "project" not in data

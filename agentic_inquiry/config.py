@@ -1160,6 +1160,22 @@ class OverlayConfig:
     max_lines_total: int = 500
 
 
+# Environment variables with the INQUIRY_ prefix that are read where they are
+# used rather than mapped onto the config tree.
+_DIRECT_ENV_VARS = frozenset({
+    "INQUIRY_CONFIG",
+    "INQUIRY_EMBEDDING_DEVICE",
+    "INQUIRY_ENV",
+    "INQUIRY_HOME",
+    "INQUIRY_HOOK_DEADLINE_SECONDS",
+    "INQUIRY_NO_AUTO_START",
+    "INQUIRY_PROJECT_ID",
+    "INQUIRY_SERVER_ENV",
+    "INQUIRY_SERVER_HOST",
+    "INQUIRY_TEST_MODE",
+})
+
+
 @dataclass
 class Config:
     """Main configuration class for Agentic Inquiry.
@@ -1835,8 +1851,8 @@ class Config:
                     ignored_count += 1
                 continue
 
-            # Read directly by the embedder, not part of the config tree.
-            if env_key == "INQUIRY_EMBEDDING_DEVICE":
+            # Read directly by the code that uses them, not part of the config tree.
+            if env_key in _DIRECT_ENV_VARS:
                 continue
 
             # Convention-based lookup: INQUIRY_SECTION_SUBSECTION_KEY → ["section", "subsection", "key"]

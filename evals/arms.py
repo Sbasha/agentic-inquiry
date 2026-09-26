@@ -496,11 +496,13 @@ class Inquiry:
 
     def index(self, corpus: str, root: Path, suite: Suite) -> Any:
         target = CACHE / "index" / f"inquiry-{self.index_hash}" / _safe(corpus)
-        if (target / "index.json").exists():
-            return target, root
-        shutil.rmtree(target, ignore_errors=True)
-        target.mkdir(parents=True)
-        self._worker("index", str(root), str(target), timeout=INDEX_TIMEOUT_S)
+        if not (target / "index.json").exists():
+            shutil.rmtree(target, ignore_errors=True)
+            target.mkdir(parents=True)
+            self._worker("index", str(root), str(target), timeout=INDEX_TIMEOUT_S)
+        failed = json.loads((target / "index.json").read_text())["result"].get("files_failed", 0)
+        if failed:
+            print(f"  ! inquiry could not index {failed} file(s) in {corpus}", file=sys.stderr)
         return target, root
 
     def search(self, handle: Any, queries: list[str], k: int) -> list[tuple[list[Hit], float]]:

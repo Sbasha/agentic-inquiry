@@ -77,6 +77,7 @@ def score_case(case: Case, suite: Suite, hits: list[Hit], indexed: set[str]) -> 
         metrics["ndcg@10"] = ndcg_at(docs, case.gold_units, 10)
         metrics["recall@100"] = recall_at(docs, set(case.gold_units), 100)
         metrics["mrr@10"] = mrr_at(docs, set(case.gold_units), 10)
+        metrics["gold_indexed"] = len(set(case.gold_units) & indexed) / len(case.gold_units)
     else:
         gold = set(case.gold_units)
         pattern = suite.unit_pattern

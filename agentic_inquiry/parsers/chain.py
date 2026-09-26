@@ -9,6 +9,7 @@ via the optional can_parse method.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 from agentic_inquiry.config import Config
@@ -33,23 +34,36 @@ from .implementations.fallback_text import FallbackTextParser
 logger = logging.getLogger(__name__)
 
 
-# Minified bundles (one enormous line, or kilobytes of lines averaging hundreds of
-# characters) are slow to parse and useless to retrieve.
+# Minified bundles are slow to parse and useless to retrieve. Line length alone
+# does not identify them: prose paragraphs and data literals also run to
+# thousands of characters on one line. Packed lines are nearly free of
+# whitespace (minified JS and CSS measure 1-3%, English prose 10-18%). Prose
+# files are never skipped: they are cheap to line-chunk, and a pasted snippet
+# inside one looks packed without making the rest of the file useless.
 _MINIFIED_SNIFF_BYTES = 1 << 20
-_MINIFIED_MAX_LINE = 3000
-_MINIFIED_MEAN_LINE = 300
+_MINIFIED_MIN_BYTES = 3000
+_MINIFIED_LONG_LINE = 300
+_MINIFIED_MAX_SPACE_RATIO = 0.06
+_PROSE_SUFFIXES = frozenset({".txt", ".text", ".md", ".markdown", ".rst"})
 
 
 def is_minified(path: str) -> bool:
-    """True for a text file whose lines look machine-packed rather than written."""
+    """True for a non-prose file mostly made of long, nearly whitespace-free lines."""
+    if Path(path).suffix.lower() in _PROSE_SUFFIXES:
+        return False
     try:
         with open(path, "rb") as handle:
             sample = handle.read(_MINIFIED_SNIFF_BYTES)
     except OSError:
         return False
-    lines = sample.split(b"\n")
-    longest = max((len(line) for line in lines), default=0)
-    return longest > _MINIFIED_MAX_LINE or (len(sample) > 5000 and len(sample) / len(lines) > _MINIFIED_MEAN_LINE)
+    if len(sample) < _MINIFIED_MIN_BYTES:
+        return False
+    long_lines = [line for line in sample.split(b"\n") if len(line) > _MINIFIED_LONG_LINE]
+    packed = sum(len(line) for line in long_lines)
+    if packed * 2 < len(sample):
+        return False
+    spaces = sum(line.count(b" ") + line.count(b"\t") for line in long_lines)
+    return spaces < packed * _MINIFIED_MAX_SPACE_RATIO
 
 
 class NoOpEventSystem:
