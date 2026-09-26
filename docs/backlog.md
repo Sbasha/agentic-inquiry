@@ -125,6 +125,17 @@ a defect found while qualifying and left for its own change.
 - **`tantivy` dependency:** no code imports it after the native FTS
   switch. Remove it from `pyproject.toml` with an ADR.
 
+## lazy-default-watcher
+
+Open items found while implementing [`specs/lazy-default-watcher/spec.md`](specs/lazy-default-watcher/spec.md);
+no acceptance criterion is deferred.
+
+- **Cache default overrides the caller's default:** `agentic_inquiry/cache/__init__.py`
+  registers its lazily built `DocumentCache` with `set_default=True` and builds
+  it on every `get_cache()`, named lookups included, so a caller's
+  `set_default=True` cache is replaced and a construction error breaks named
+  lookups. Unblocked by applying the watcher fix (knowledge entry K-0007).
+
 <!-- Add one section per spec with open work, e.g.:
 
 ## <spec-name>
