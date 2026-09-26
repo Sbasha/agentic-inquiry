@@ -458,6 +458,16 @@
               "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 1.0,
               "default": 1.5
+            },
+            "rerank_model": {
+              "type": "string",
+              "description": "Cross-encoder that rescores the fused top rerank_top_n results; empty disables the second stage."
+            },
+            "rerank_top_n": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "How many fused results the second stage rescores."
             }
           },
           "additionalProperties": false

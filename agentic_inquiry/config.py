@@ -350,6 +350,11 @@ class HybridSearchConfig:
     reranker_type: str = "rrf"
     reranker_params: Dict[str, Any] = field(default_factory=lambda: {"k": 60})
 
+    # Optional second stage: a cross-encoder rescores the fused top
+    # rerank_top_n results and reorders only those. Empty disables it.
+    rerank_model: str = ""
+    rerank_top_n: int = 30
+
 
 @dataclass
 class GraphTimeoutsConfig:

@@ -7,6 +7,7 @@ many results it left out.
 """
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Optional
@@ -29,13 +30,26 @@ def _line(value: Any) -> int:
     return number if number > 0 else 0
 
 
+def scope_of(row: Mapping[str, Any]) -> str:
+    """The chunk's scope, from a parser-shaped ``metadata`` dict or a stored row's JSON ``metadata.data``."""
+    metadata = row.get("metadata")
+    if not isinstance(metadata, Mapping):
+        return ""
+    if "scope" in metadata:
+        return str(metadata.get("scope") or "")
+    try:
+        data = json.loads(metadata.get("data") or "{}")
+    except (TypeError, ValueError):
+        return ""
+    return str(data.get("scope") or "") if isinstance(data, dict) else ""
+
+
 def header(row: Mapping[str, Any], root: Optional[Path] = None) -> str:
     """``path:start-end  scope`` for one result row; ``path`` alone when lines are unknown."""
     path = _relative(str(row.get("file_path", "")), root)
     start, end = _line(row.get("line_start")), _line(row.get("line_end"))
     location = f"{path}:{start}-{max(start, end)}" if start else path
-    metadata = row.get("metadata") if isinstance(row.get("metadata"), Mapping) else {}
-    label = (metadata or {}).get("scope") or row.get("element_name") or ""
+    label = scope_of(row) or row.get("element_name") or ""
     return f"{location}  {label}" if label else location
 
 

@@ -1,8 +1,10 @@
 """Hybrid search service combining vector and full-text search with RRF."""
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
+from functools import lru_cache
 from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Optional
 
 from agentic_inquiry.config import Config
@@ -28,6 +30,25 @@ from agentic_inquiry.search.rerankers.rrf import DEFAULT_K
 from agentic_inquiry.utils.metacognition import detect_ambiguity
 
 logger = logging.getLogger(__name__)
+
+# Characters of a result the cross-encoder reads: its path, scope and content head.
+_PASSAGE_CHARS = 2000
+
+
+def _passage(row: Dict[str, Any]) -> str:
+    from agentic_inquiry.search.context_pack import scope_of
+
+    scope = scope_of(row)
+    head = f"{row.get('file_path', '')}\n{scope}\n" if scope else f"{row.get('file_path', '')}\n"
+    return (head + str(row.get("content") or ""))[:_PASSAGE_CHARS]
+
+
+@lru_cache(maxsize=2)
+def _cross_encoder(model_name: str) -> Any:
+    from sentence_transformers import CrossEncoder
+
+    return CrossEncoder(model_name, device="cpu", max_length=512)
+
 
 # Each retriever returns this many candidates per requested result, and at
 # least MIN_CANDIDATES, so fusion and the per-file cap have enough to choose from.
@@ -271,6 +292,29 @@ class HybridSearchService:
 
         return boosted_results
 
+    async def _rerank_head(self, query: str, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Reorder the fused top ``rerank_top_n`` by a cross-encoder, when one is configured.
+
+        The reordered results take over the fused scores in descending order,
+        so scores stay monotone with rank and on the fusion scale.
+        """
+        settings = self.config.search.hybrid_search
+        if not settings.rerank_model or len(results) < 2:
+            return results
+        head = results[: settings.rerank_top_n]
+        pairs = [(query, _passage(r)) for r in head]
+        loop = asyncio.get_running_loop()
+        scores = await loop.run_in_executor(None, _cross_encoder(settings.rerank_model).predict, pairs)
+        order = sorted(range(len(head)), key=lambda i: -float(scores[i]))
+        fused_scores = sorted((r.get("score", 0.0) for r in head), reverse=True)
+        reordered = []
+        for rank, index in enumerate(order):
+            row = dict(head[index])
+            row["score"] = fused_scores[rank]
+            row["_rerank_score"] = float(scores[index])
+            reordered.append(row)
+        return reordered + results[settings.rerank_top_n:]
+
     async def hybrid_search(
         self,
         query_vector: List[float],
@@ -351,6 +395,7 @@ class HybridSearchService:
                 },
             )
             results = [self._search_result_to_dict(r) for r in fused]
+            results = await self._rerank_head(query_fts, results)
             results = self._apply_content_preference(results, content_preference, content_preference_weight)
             results = self._apply_deduplication(results)[:limit]
 

@@ -72,3 +72,23 @@ class TestPipeline:
         vector_fn, fts_fn = fns([], [], seen)
         await service(1).hybrid_search([0.0], "q", "q", vector_fn, fts_fn, limit=50)
         assert seen["vector_limit"] == 150
+
+
+class TestRerankStage:
+    async def test_reorders_only_the_head_and_keeps_fused_scores(self, monkeypatch) -> None:
+        import agentic_inquiry.search.hybrid_search as hybrid
+
+        class Fake:
+            def predict(self, pairs):  # type: ignore[no-untyped-def]
+                # Prefer passages mentioning "b".
+                return [1.0 if "b.py" in text else 0.0 for _, text in pairs]
+
+        monkeypatch.setattr(hybrid, "_cross_encoder", lambda name: Fake())
+        svc = service(5)
+        svc.config.search.hybrid_search.rerank_model = "fake"
+        svc.config.search.hybrid_search.rerank_top_n = 2
+        vector = [result("a", "a.py"), result("b", "b.py"), result("c", "c.py")]
+        vector_fn, fts_fn = fns(vector, [], {})
+        out = await svc.hybrid_search([0.0], "q", "q", vector_fn, fts_fn, limit=3)
+        assert [r["id"] for r in out] == ["b", "a", "c"]
+        assert out[0]["score"] >= out[1]["score"] >= out[2]["score"]

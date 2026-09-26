@@ -59,7 +59,8 @@ Find the code that would need to change to resolve it. You cannot edit files or 
 Issue:
 {query}
 
-When you are done, end your reply with a line `LOCATIONS:` followed by up to 5 lines, each `path:line`
+You have at most {budget} tool calls. Answer before you run out, even if you are unsure.
+End your reply with a line `LOCATIONS:` followed by up to 5 lines, each `path:line`
 (the repository-relative path and the line number of code to change), most likely first."""
 
 QUESTION_PROMPT = """Answer this question about the code in the repository in your current working directory.
@@ -67,7 +68,8 @@ You cannot edit files or run commands.
 
 {query}
 
-When you are done, end your reply with a line `LOCATIONS:` followed by up to 5 lines, each `path:line`
+You have at most {budget} tool calls. Answer before you run out, even if you are unsure.
+End your reply with a line `LOCATIONS:` followed by up to 5 lines, each `path:line`
 (the repository-relative path and line number of code your answer relies on), most important first."""
 
 _CITATION = re.compile(r"([A-Za-z0-9_./\-]+\.[A-Za-z0-9]+):(\d+)")
@@ -208,7 +210,7 @@ def run_agents(arm_names: list[str], suite_names: list[str], split: str, n: int,
     def one(item: tuple[str, Suite, Case, int]) -> dict[str, Any]:
         arm, suite, case, repeat = item
         template = SWEBENCH_PROMPT if suite.name == "swebench" else QUESTION_PROMPT
-        prompt = template.format(query=case.query)
+        prompt = template.format(query=case.query, budget=MAX_TURNS - 2)
         key = hashlib.sha256(json.dumps([arm, case.id, repeat, model, prompt, MAX_TURNS, ARM_GUIDANCE[arm]]).encode()).hexdigest()
         cache = CACHE / "agent" / key[:2] / f"{key}.json"
         if cache.exists():

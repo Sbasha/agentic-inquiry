@@ -154,6 +154,9 @@ search:
     # For cross_encoder/colbert: model_name optional
     reranker_params:
       k: 60  # RRF constant
+    # Optional cross-encoder second stage over the fused top results ("" = off)
+    rerank_model: ""
+    rerank_top_n: 30
   # Entity matching configuration (for find_similar tool)
   entity_matching:
     # Enable semantic bridge for entity discovery

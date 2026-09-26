@@ -37,3 +37,10 @@ def test_unknown_lines_render_path_only(tmp_path: Path) -> None:
 
 def test_no_results() -> None:
     assert render_context_pack([], max_chars=100) == "No results."
+
+
+def test_reads_scope_from_stored_metadata(tmp_path: Path) -> None:
+    stored = {"file_path": str(tmp_path / "a.py"), "line_start": 3, "line_end": 4, "content": "x",
+              "metadata": {"data": '{"scope": "class A"}', "symbol_metadata": "{}"}}
+    assert render_context_pack([stored], max_chars=1000, root=tmp_path).splitlines()[0] == "a.py:3-4  class A"
+
