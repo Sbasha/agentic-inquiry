@@ -143,7 +143,6 @@ class DocumentParser:
         ".html",
         ".htm",
         ".xml",
-        ".rst",
     }
 
     def __init__(
