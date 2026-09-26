@@ -1,7 +1,7 @@
 # Plan: Clean process exit
 
 - **Spec:** [`spec.md`](spec.md)
-- **Status:** Executing
+- **Status:** Done
 
 ## Approach
 

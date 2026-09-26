@@ -1,6 +1,6 @@
 # Spec: Clean process exit
 
-- **Status:** Implementing
+- **Status:** Shipped (2026-09-26)
 - **Owner:** Sbasha
 - **Plan:** [`plan.md`](plan.md)
 - **Constrained by:** none
@@ -76,40 +76,40 @@ store. Leaks in other CLI commands and in `ai server` are tracked in
 
 ## Acceptance Criteria
 
-- [ ] `INQUIRY_EMBEDDING_DEVICE=cpu uv run pytest tests/database/test_factories.py tests/memory/test_memory_system.py`
+- [x] `INQUIRY_EMBEDDING_DEVICE=cpu uv run pytest tests/database/test_factories.py tests/memory/test_memory_system.py`
       prints its `=== ... in Ns ===` summary line.
-- [ ] `uv run pytest` over the full suite prints its summary line and
+- [x] `uv run pytest` over the full suite prints its summary line and
       exits with pytest's status.
-- [ ] At the end of a full-suite run no `aiosqlite` connection thread is
+- [x] At the end of a full-suite run no `aiosqlite` connection thread is
       alive.
-- [ ] When a test leaks a thread that blocks interpreter exit, the run
+- [x] When a test leaks a thread that blocks interpreter exit, the run
       prints pytest's summary, then, if a non-daemon thread is still alive
       10 seconds after interpreter shutdown starts, writes each such
       thread's name, type and stack to stderr and exits with pytest's
       status, or 1 when that status was 0 or no session was recorded. When
       no non-daemon thread remains, the watchdog does nothing and
       finalization completes normally.
-- [ ] `tests/conftest.py` neither opens nor compacts
+- [x] `tests/conftest.py` neither opens nor compacts
       `./.agentic-inquiry/lancedb` and does not touch `concurrent.futures`
       private state.
-- [ ] With `INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER=hashing` and
+- [x] With `INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER=hashing` and
       `INQUIRY_EMBEDDINGS_HASHING_NDIMS=384` in a fresh git project,
       `ai memory save "<text>" --importance 0.9`, then `ai memory list` and
       `ai memory recall "<text>"`, each exit 0 within 60 seconds. (384
       matches the size recall embeds at; see the recall item in
       [`docs/backlog.md`](../../backlog.md#clean-process-exit).)
-- [ ] With the default sentence-transformer model already cached,
+- [x] With the default sentence-transformer model already cached,
       `ai mcp --project-id demo` over stdio logs `MCP server ready`, then
       exits 0 within 30 seconds of its stdin closing.
-- [ ] After `create_mcp_services` then `close_mcp_services`, and after a
+- [x] After `create_mcp_services` then `close_mcp_services`, and after a
       `create_mcp_services` call that fails partway, no aiosqlite thread
       from those services is alive and the maintenance task is done.
-- [ ] After a reconcile pass that opened its runtime, whether the pass
+- [x] After a reconcile pass that opened its runtime, whether the pass
       commits, fails or raises, the memory system's background tasks are
       stopped without a final consolidation and the storage is closed.
-- [ ] When `create_memory_system` fails after opening storage, the
+- [x] When `create_memory_system` fails after opening storage, the
       storage is closed before the error propagates.
-- [ ] A full-suite run changes nothing under the cwd's `./.agentic-inquiry`
+- [x] A full-suite run changes nothing under the cwd's `./.agentic-inquiry`
       except creating that directory empty on import (backlog: importing
       `agentic_inquiry.watching`).
 
