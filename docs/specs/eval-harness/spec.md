@@ -53,24 +53,24 @@ pre-registered thresholds are RFC-0003.
 
 ## Acceptance Criteria
 
-- [ ] AC0 Query text is the dataset's question verbatim; for SWE-bench `problem_statement` only, never `hints_text`.
-- [ ] AC1 `python -m evals run --suite {swebench,erpnext,locomo,longmemeval,scifact} --arms ... --split {dev,test}` writes `evals/results/<suite>/<split>-<utc>-<sha8>.json` containing `schema: "InquiryEval/v1"`, provenance, per-query rows per arm and a summary with paired comparisons.
-- [ ] AC2 SWE-bench qrels come from the gold patch pre-image: changed files, changed line spans and enclosing Python function or class spans; unit tests cover add-only, delete-only, multi-hunk and new-file patches.
-- [ ] AC3 All five arms implement `index`/`retrieve`; `graphify` runs `graphifyy==0.9.68` from an isolated venv and its NODE output parses to hits; `inquiry` indexes through `IndexingPipeline` and queries `SearchService.hybrid_search`.
-- [ ] AC4 Metrics nDCG@10, MRR@10, recall@k, budgeted file / evidence recall (tiktoken `cl100k_base`) and function-level hit rate match hand-computed values in unit tests.
-- [ ] AC5 Paired bootstrap CI, sign-flip permutation p-value and MDE are deterministic under a fixed seed and unit-tested.
-- [ ] AC6 BM25 on SciFact test reproduces the published nDCG@10 within 0.03.
-- [ ] AC7 Deterministic arms produce identical per-query scores across two runs.
-- [ ] AC8 Level B: `python -m evals answer` produces answers from each arm's budgeted context, judged accuracy, LOCOMO token F1, and second-judge Cohen's kappa; model route is `claude-cli` by default and `moonshot` when `MOONSHOT_API_KEY` is set.
-- [ ] AC9 Level C: `python -m evals agent` runs a `claude -p` agent per arm with at most 14 turns, the floor tools plus exactly one MCP tool, parses `path:line` citations and scores cited gold-file recall and token usage.
-- [ ] AC10 `make eval-dev` runs Level A dev for every suite; `tests/golden/README.md` states the term-presence bench is a smoke test, not a quality measure.
-- [ ] AC11 The unmeasured "10/10" claims are removed from `README.md` and `docs/architecture/search.md`.
-- [ ] AC12 `evals/README.md` documents how to run each level, the cache layout and the results schema.
-- [ ] AC13 `--split test` refuses a dirty tree and appends `{utc, sha, suite, arms, rfc_sha256, summary, results}` to `evals/results/test-ledger.jsonl`; `evals/results/` is not gitignored.
-- [ ] AC14 LOCOMO splits by conversation (three lowest seeded hashes are dev); comparisons on SWE-bench and LOCOMO use a cluster bootstrap by repository and conversation.
-- [ ] AC15 Each dataset file is pinned by sha256 in `evals/data.py`; a mismatch refuses to run.
-- [ ] AC16 A comparison is marked invalid when either arm fails on more than 5% of its cases; per-arm failure counts appear in the summary.
-- [ ] AC17 Level C records the tool list each agent run reports and flags a run whose tools differ from its arm definition.
+- [x] AC0 Query text is the dataset's question verbatim; for SWE-bench `problem_statement` only, never `hints_text`.
+- [x] AC1 `python -m evals run --suite {swebench,erpnext,locomo,longmemeval,scifact} --arms ... --split {dev,test}` writes `evals/results/<suite>/<split>-<utc>-<sha8>.json` containing `schema: "InquiryEval/v1"`, provenance, per-query rows per arm and a summary with paired comparisons.
+- [x] AC2 SWE-bench qrels come from the gold patch pre-image: changed files, changed line spans and enclosing Python function or class spans; unit tests cover add-only, delete-only, multi-hunk and new-file patches.
+- [x] AC3 All five arms implement `index`/`retrieve`; `graphify` runs `graphifyy==0.9.68` from an isolated venv and its NODE output parses to hits; `inquiry` indexes through `IndexingPipeline` and queries `SearchService.hybrid_search`.
+- [x] AC4 Metrics nDCG@10, MRR@10, recall@k, budgeted file / evidence recall (tiktoken `cl100k_base`) and function-level hit rate match hand-computed values in unit tests.
+- [x] AC5 Paired bootstrap CI, sign-flip permutation p-value and MDE are deterministic under a fixed seed and unit-tested.
+- [x] AC6 BM25 on SciFact test reproduces the published nDCG@10 within 0.03.
+- [x] AC7 Deterministic arms produce identical per-query scores across two runs.
+- [x] AC8 Level B: `python -m evals answer` produces answers from each arm's budgeted context, judged accuracy, LOCOMO token F1, and second-judge Cohen's kappa; model route is `claude-cli` by default and `moonshot` when `MOONSHOT_API_KEY` is set.
+- [x] AC9 Level C: `python -m evals agent` runs a `claude -p` agent per arm with at most 14 turns, the floor tools plus exactly one MCP tool, parses `path:line` citations and scores cited gold-file recall and token usage.
+- [x] AC10 `make eval-dev` runs Level A dev for every suite; `tests/golden/README.md` states the term-presence bench is a smoke test, not a quality measure.
+- [x] AC11 The unmeasured "10/10" claims are removed from `README.md` and `docs/architecture/search.md`.
+- [x] AC12 `evals/README.md` documents how to run each level, the cache layout and the results schema.
+- [x] AC13 `--split test` refuses a dirty tree and appends `{utc, sha, suite, arms, rfc_sha256, summary, results}` to `evals/results/test-ledger.jsonl`; `evals/results/` is not gitignored.
+- [x] AC14 LOCOMO splits by conversation (three lowest seeded hashes are dev); comparisons on SWE-bench and LOCOMO use a cluster bootstrap by repository and conversation.
+- [x] AC15 Each dataset file is pinned by sha256 in `evals/data.py`; a mismatch refuses to run.
+- [x] AC16 A comparison is marked invalid when either arm fails on more than 5% of its cases; per-arm failure counts appear in the summary.
+- [x] AC17 Level C records the tool list each agent run reports and flags a run whose tools differ from its arm definition.
 
 Results schema `InquiryEval/v1`: `provenance` (`sha`, `dirty`, `started_utc`,
 `datasets` sha256, `arms{name: config}`, `seed`, `rfc_sha256`, `tokenizer`),
