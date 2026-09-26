@@ -2,7 +2,7 @@
 
 Mode: light (no risk trigger fired)
 
-- **Status:** Implementing
+- **Status:** Shipped (2026-09-26)
 
 ## Objective
 
@@ -16,19 +16,19 @@ locals, and bring `ruff check agentic_inquiry tests` to zero findings.
 
 ## Acceptance Criteria
 
-- [ ] After the table is dropped and re-created under a cached handle,
+- [x] After the table is dropped and re-created under a cached handle,
       `LanceDBManager.fts_search` returns results from the re-created table
       instead of raising `NameError`. Verified against real LanceDB on disk.
-- [ ] The same recovery holds for `vector_search`, `hybrid_search` and
+- [x] The same recovery holds for `vector_search`, `hybrid_search` and
       `advanced_filter`.
-- [ ] A non-stale error, or a stale error with no cache invalidator,
+- [x] A non-stale error, or a stale error with no cache invalidator,
       propagates; a table gone after invalidation yields `[]`.
-- [ ] `facade.py` imports `ProviderCapabilities` under `TYPE_CHECKING`.
-- [ ] `uv run ruff check agentic_inquiry tests` reports zero findings.
-- [ ] Each F841 and E741 finding is reviewed by hand; none is fixed by
+- [x] `facade.py` imports `ProviderCapabilities` under `TYPE_CHECKING`.
+- [x] `uv run ruff check agentic_inquiry tests` reports zero findings.
+- [x] Each F841 and E741 finding is reviewed by hand; none is fixed by
       `--unsafe-fixes`. A dead value is deleted; a construction kept for its
       side effect stays as a bare statement.
-- [ ] `mypy` reports no new errors in touched `agentic_inquiry/` files.
+- [x] `mypy` reports no new errors in touched `agentic_inquiry/` files.
 
 ## Tasks
 
