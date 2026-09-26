@@ -37,7 +37,9 @@ DENSE_MAX_TOKENS = 512
 RRF_K = 60
 FUSION_DEPTH = 100
 MAX_FILE_BYTES = 1_000_000
-INDEX_TIMEOUT_S = 1800
+# Guards against a hung worker; a large repo indexed while other jobs share the
+# machine can legitimately take over an hour.
+INDEX_TIMEOUT_S = 7200
 QUERY_TIMEOUT_S = 120
 _SKIP_DIRS = {".git", ".hg", ".svn", "node_modules", "__pycache__"}
 
