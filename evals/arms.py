@@ -456,7 +456,8 @@ def _inquiry_code_hash(index_only: bool = False) -> str:
     listed = subprocess.run(["git", "ls-files", "-co", "--exclude-standard", "--", *paths], cwd=REPO_ROOT,
                             capture_output=True, text=True, check=True).stdout.split()
     if index_only:
-        listed = [name for name in listed if not name.startswith(_SEARCH_ONLY)]
+        # Settings enter the index key as their non-search part (see Inquiry), not as file bytes.
+        listed = [name for name in listed if not name.startswith((*_SEARCH_ONLY, "config/"))]
     digest = hashlib.sha256()
     for name in sorted(listed):
         path = REPO_ROOT / name
