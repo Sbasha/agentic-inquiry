@@ -22,9 +22,10 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 # Salts every stored file hash with the shape of what indexing produces from a
-# file (chunk boundaries, index text). Changing it makes every tracked file
-# read as changed, so the next ``ai index`` rebuilds chunks written by an
-# older chunker instead of leaving them beside new ones.
+# file (chunk boundaries, index text) and, per tracker, the embedding model.
+# Changing either makes every tracked file read as changed, so the next
+# ``ai index`` rebuilds chunks written by an older chunker or embedder instead
+# of leaving them beside new ones.
 INDEX_FORMAT = "chunks:definition-partition-v1|lines-v1;index-text:path-scope-v1"
 
 
@@ -70,7 +71,10 @@ class FileTracker:
             config = Config.load()
         
         self.config = config
-        
+        from agentic_inquiry.embeddings.factory import embedder_identity
+
+        self._hash_salt = f"{INDEX_FORMAT};embedder:{embedder_identity(config)}".encode()
+
         # Resolve project_id
         if project_id is None:
             project_id = config.storage.default_project_id
@@ -232,9 +236,11 @@ class FileTracker:
             FileNotFoundError: If file doesn't exist
             IOError: If file cannot be read
         """
+        salt = self._hash_salt
+
         def _hash_file(path: str) -> str:
             """Synchronous hash computation to run in executor."""
-            sha256 = hashlib.sha256(INDEX_FORMAT.encode())
+            sha256 = hashlib.sha256(salt)
             with open(path, 'rb') as f:
                 # Read in chunks to handle large files efficiently
                 while chunk := f.read(8192):

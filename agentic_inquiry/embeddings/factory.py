@@ -19,6 +19,7 @@ from agentic_inquiry.storage.capabilities import (
 )
 
 if TYPE_CHECKING:
+    from agentic_inquiry.embeddings.base import Embedder
     from agentic_inquiry.config import Config
 
 logger = logging.getLogger(__name__)
@@ -151,6 +152,27 @@ def resolve_embedding_model(
     return capability_default
 
 
+def embedder_identity(config: "Config") -> str:
+    """Name the model that embeds indexed text, as ``configure_embedder_for_backend`` selects it.
+
+    Stored indexes carry this so that switching models re-embeds every file
+    instead of mixing vectors from two models in one table.
+    """
+    caps = get_capabilities_for_backend(resolve_backend_type(config))
+    if resolve_embedding_strategy(config, caps.embedding_strategy) == EmbeddingStrategy.SERVER_SIDE:
+        model = resolve_embedding_model(config, caps.embedding_model) or "server-side"
+        return f"server:{model}:{resolve_embedding_dimensions(config, caps.embedding_dimensions)}"
+    embeddings = config.embeddings
+    provider = embeddings.default_provider
+    if provider == "fastembed":
+        model = embeddings.fastembed.model_name
+    elif provider in ("local", "local_model"):
+        model = embeddings.local_model.model_path
+    else:
+        provider, model = "sentence_transformer", embeddings.sentence_transformer.model_name
+    return f"{provider}:{model}:{embeddings.default_dimensions}"
+
+
 def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> None:
     """Configure the global embedder based on storage backend capabilities.
 
@@ -197,7 +219,7 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
         # forward pass to cache. Skip the CachingEmbedder wrap here
         # regardless of ``embeddings.cache.enabled``; it wouldn't hurt
         # but the NoOpEmbedder's ``generate`` is a zero-cost stub.
-        embedder = NoOpEmbedder(ndims=ndims)
+        embedder: Embedder = NoOpEmbedder(ndims=ndims)
         embedding_registry.configure_default_embedder(embedder, ndims=ndims)
         if not quiet:
             logger.info(
