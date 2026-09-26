@@ -25,6 +25,11 @@ def _configure(store: Path) -> None:
     os.environ["INQUIRY_STORAGE_DEFAULT_PROJECT_ID"] = PROJECT_ID
     os.environ["INQUIRY_STORAGE_BACKEND"] = "lancedb"
     os.environ.setdefault("INQUIRY_LOGGING_LEVEL", "ERROR")
+    # Keep runtime state out of the real home; corpora share the persistent
+    # embedding cache kept there.
+    from evals.data import CACHE
+
+    os.environ.setdefault("INQUIRY_HOME", str(CACHE / "inquiry-home"))
 
 
 async def _index(root: Path, store: Path) -> None:

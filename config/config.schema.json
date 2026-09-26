@@ -823,6 +823,10 @@
               "description": "Cache capacity in unique entries. Vectors are stored as numpy float32 (~1.5 KB per 384-dim entry); 10k entries ≈ 15 MB. Raise for giant monorepos with high duplication; lower on memory-constrained hosts. Set to 0 to disable (same as enabled=false).",
               "minimum": 0,
               "default": 10000
+            },
+            "persist": {
+              "type": "boolean",
+              "description": "Keep embedding vectors on disk under INQUIRY_HOME/cache/embeddings so re-indexing reuses unchanged chunks."
             }
           },
           "additionalProperties": false

@@ -264,7 +264,13 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
         if cache_active:
             from agentic_inquiry.embeddings.caching import CachingEmbedder
 
-            embedder = CachingEmbedder(embedder, max_entries=cache_cfg.max_entries)
+            persist_path = None
+            if cache_cfg.persist:
+                from agentic_inquiry.integration.state import inquiry_home
+
+                safe_name = model_display_name.replace("/", "__")
+                persist_path = inquiry_home() / "cache" / "embeddings" / f"{safe_name}-{ndims}.sqlite"
+            embedder = CachingEmbedder(embedder, max_entries=cache_cfg.max_entries, persist_path=persist_path)
 
         embedding_registry.configure_default_embedder(embedder, ndims=ndims)
         if not quiet:

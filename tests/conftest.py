@@ -38,6 +38,13 @@ ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
+# Runtime state (ledgers, the persistent embedding cache) lives under
+# INQUIRY_HOME; tests must never write into the developer's real home.
+if "INQUIRY_HOME" not in os.environ:
+    import tempfile
+
+    os.environ["INQUIRY_HOME"] = tempfile.mkdtemp(prefix="inquiry-home-tests-")
+
 
 def pytest_configure(config):
     """Configure pytest with custom settings."""

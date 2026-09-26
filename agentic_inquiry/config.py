@@ -523,6 +523,11 @@ class EmbeddingsCacheConfig:
     # duplication can raise.
     max_entries: int = 10_000
 
+    # Keep vectors on disk under INQUIRY_HOME/cache/embeddings, per model and
+    # dimensions, so re-indexing another commit, branch or worktree embeds
+    # only the chunks whose text changed.
+    persist: bool = True
+
     def __post_init__(self) -> None:
         """Validate at construction so misconfigured YAML fails loudly
         at ``Config.load()`` rather than deep inside ``CachingEmbedder``.
