@@ -34,7 +34,7 @@ Evaluate for every change:
 
 - [ ] New public APIs have docstrings (params, returns, raises)
 - [ ] Changed behavior reflected in `docs/`
-- [ ] New/changed config options documented in `docs/storage/index-configuration.md`
+- [ ] New/changed config options added to `config/config.schema.json`, `config/default.yaml` and `agentic-inquiry.yaml.example`
 - [ ] README updated if setup/install/usage changed
 - [ ] Breaking changes noted with migration guidance
 

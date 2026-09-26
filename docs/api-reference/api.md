@@ -9,8 +9,6 @@ last_updated: 2025-10-28
 
 # API Reference
 
-> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
-
 This document provides comprehensive API documentation for all major components in Agentic Inquiry.
 
 ## Recommended Patterns
@@ -72,7 +70,7 @@ Agentic Inquiry uses concrete classes for database operations with clear interfa
 
 ### StorageFacade
 
-Provides unified storage operations across all backends (LanceDB, PostgreSQL, AlloyDB).
+Provides unified storage operations across the local providers (LanceDB, SQLite, in-memory).
 
 ```python
 from agentic_inquiry.config import Config
@@ -1892,7 +1890,7 @@ async def batch_search(queries: list[str]) -> list[list[dict]]:
 
 ## Database
 
-The database system supports multiple backends (LanceDB, PostgreSQL, AlloyDB) through the StorageFacade, providing vector search, full-text search, graph storage, and transaction support.
+The database system serves LanceDB, SQLite and in-memory providers through the StorageFacade, providing vector search, full-text search, graph storage, and transaction support.
 
 ### Core Classes
 
@@ -1938,21 +1936,7 @@ storage = await StorageFacade.from_config(
 
 **Backend Configuration:**
 
-StorageFacade automatically routes to the configured backend:
-
-```python
-# LanceDB (default)
-config.storage.backend = "lancedb"
-
-# PostgreSQL with local embedding
-config.storage.backend = "postgresql"
-config.storage.backends.postgresql.embedding_strategy = "local"
-
-# AlloyDB with server-side embedding
-config.storage.backend = "alloydb"
-config.storage.backends.alloydb.embedding_strategy = "server_side"
-config.storage.backends.alloydb.embedding_model = "text-embedding-005"
-```
+StorageFacade resolves each role (`vector_backend`, `graph_backend`, `events_backend`, `file_tracker_backend_v2`) to a named entry in `storage.backends`. [storage-backends.md](../storage-backends.md) shows the configuration and the shipped providers.
 
 **Project Isolation:**
 
@@ -2000,9 +1984,7 @@ chunks = [
         "chunk_id": "file.py:1-10",
         "file_path": "/path/to/file.py",
         "content": "chunk content",
-        "embedding": [0.1, 0.2, ...],  # For local embedding
-        # OR
-        # "embedding": None,  # For server-side embedding (AlloyDB)
+        "embedding": [0.1, 0.2, ...],
         "content_type": "CODE",
         "language": "python",
         "line_start": 1,
@@ -2021,7 +2003,7 @@ await storage.upsert_chunks(chunks)
 - `content_type`: "CODE", "PROSE", or "MIXED"
 
 **Optional Fields:**
-- `embedding`: Vector embedding (required for local embedding, NULL for server-side)
+- `embedding`: Vector embedding
 - `language`: Programming language or document type
 - `metadata`: Additional metadata dictionary
 - `line_start`, `line_end`: Line range

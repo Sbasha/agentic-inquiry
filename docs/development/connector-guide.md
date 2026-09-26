@@ -1,7 +1,5 @@
 # Connector Development Guide
 
-> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
-
 This guide explains how to implement a content source connector for Agentic Inquiry.
 
 ## Implementation Status

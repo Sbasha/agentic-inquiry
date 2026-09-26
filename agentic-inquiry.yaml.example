@@ -4,15 +4,21 @@
 #
 # TIP: `ai setup` generates the same shape as this example and writes it to
 # .agentic-inquiry/envs/<name>/config.yaml. This file is for hand-editing reference.
+#
+# This file is loaded as written; it is not merged over config/default.yaml.
+# storage, cache, search, embeddings and parsers are required. Every other
+# section is optional and commented out below: uncomment a section header
+# together with at least one key under it, because a header with no keys
+# is an empty value and fails validation.
 
 # Storage configuration
 storage:
   # Root directory for all persistent data
   root: "./.agentic-inquiry"
 
-  # Default project identifier for data isolation
-  # Used when no explicit project_id is provided to Config.for_project()
-  # default_project_id: "my-project"
+  # Default project identifier for data isolation, used when a command gets
+  # no --project. Search also needs it set; see docs/backlog.md.
+  default_project_id: "default"
 
   # Named backend configurations. Each entry is a concrete storage backend
   # with a type + its type-specific settings. Roles (vector / graph / events
@@ -21,6 +27,7 @@ storage:
   backends:
     default:
       type: "lancedb"
+      # Required but not read: LanceDB lives at <root>/<lancedb.path>.
       database_path: "./.agentic-inquiry/lancedb"
     metadata_store:
       type: "sqlite"
@@ -32,23 +39,6 @@ storage:
   graph_backend: "default"              # Same LanceDB also handles graph
   events_backend: "metadata_store"      # SQLite audit log
   file_tracker_backend_v2: "metadata_store"  # SQLite incremental-indexing state
-
-  # Example: Postgres for everything (uncomment + fill `backends` entry)
-  # backends:
-  #   primary:
-  #     type: "postgresql"
-  #     connection_string: "postgresql://user:pass@localhost:5432/ai"
-  #     pool_size: 10
-  #     table_prefix: "ai_"
-  # vector_backend: "primary"
-  # graph_backend: "primary"
-  # events_backend: "primary"
-  # file_tracker_backend_v2: "primary"
-
-  # Example: separate backends per role (LanceDB vectors + Postgres graph).
-  # Requires StorageFacade's registry path — legacy single-`storage.backend`
-  # shape (just `backend: "lancedb"` at this level with no `backends` dict)
-  # is not supported; `from_config` raises ConfigurationError if you try it.
 
   # Customize table names if needed (optional)
   # tables:
@@ -69,9 +59,9 @@ cache:
 
 # Search configuration
 search:
-  # Adjust default result limits
-  # default_limit: 10
-  # max_limit: 100
+  # Result limits (required)
+  default_limit: 10
+  max_limit: 100
   
   # Search result deduplication configuration
   # deduplication:
@@ -132,8 +122,8 @@ search:
 
 # Embedding configuration
 embeddings:
-  # Choose your embedding provider
-  # default_provider: "sentence_transformer"
+  # Embedding provider (required): sentence_transformer or local_model
+  default_provider: "sentence_transformer"
   
   # Default embedding dimensions for all components
   # Using 384 dimensions provides a good balance of accuracy and performance
@@ -155,39 +145,10 @@ embeddings:
   #   batch_size: 32
   #   ndims: 384  # Auto-detected if not specified
 
-  # Or use Amazon Bedrock (Titan v2 by default) for client-side cloud
-  # embeddings — pairs with any LOCAL-strategy backend (LanceDB,
-  # plain Postgres, RDS without aws_ml). Requires boto3:
-  #   pip install 'agentic-inquiry[aws]'
-  # AWS credentials use the standard boto3 chain (env vars, profile,
-  # instance role) — set AWS_ACCESS_KEY_ID / AWS_PROFILE outside this
-  # file. The Bedrock *region* must come from agentic-inquiry config
-  # (``embeddings.bedrock.region`` or ``INQUIRY_EMBEDDINGS_BEDROCK_REGION``);
-  # ``AWS_REGION`` does not satisfy the dispatcher requirement and the
-  # embedder will raise ConfigurationError if region is empty.
-  # RFC 0003 documents the full surface.
-  # default_provider: "bedrock"
-  # default_dimensions: 1024
-  # bedrock:
-  #   model_id: "amazon.titan-embed-text-v2:0"
-  #   region: "us-east-1"          # required when provider == bedrock
-  #   output_dim: 1024              # 256 | 512 | 1024 for Titan v2
-  #   normalize: true
-  #   batch_size: 16
-  #   max_retries: 3
-  #   timeout_seconds: 30
-  #   # Default is 1 (serial). Titan v2 takes one input per InvokeModel
-  #   # call, so a 1k-chunk index at 1 RPS means ~17 minutes of pure
-  #   # API wait. Bump this for any non-trivial corpus — bound by your
-  #   # Bedrock RPM quota (Titan v2 default 2000 RPM in us-east-1, so
-  #   # 16-32 is safe for most accounts; check the AWS console first).
-  #   request_concurrency: 1
-
   # Content-hash LRU cache for local embedders. Skips the model forward
   # pass on duplicate embedding text (generated files, vendored deps,
   # near-identical chunks across branches). Hit rate depends entirely
-  # on workload duplication. Disabled automatically for server-side
-  # backends (AlloyDB / RDS) since embeddings run in-database there.
+  # on workload duplication.
   # Vectors are stored as numpy float32 internally so ~1.5 KB per 384-dim
   # entry → ~15 MB at 10k entries. Raise for giant monorepos; lower on
   # memory-constrained hosts.
@@ -196,7 +157,7 @@ embeddings:
   #   max_entries: 10000
 
 # Indexing configuration
-indexing:
+# indexing:
   # Schema mapping configuration
   # schema_mapping:
   #   enabled: true
@@ -223,20 +184,20 @@ indexing:
 # Parser configuration
 parsers:
   # Enable/disable parsers or adjust priorities
-  # unified_code:
-  #   enabled: true
-  #   priority: 100
-  
-  # document:
-  #   enabled: true
-  #   priority: 50
-  
-  # fallback_text:
-  #   enabled: true
-  #   priority: 0
+  unified_code:
+    enabled: true
+    priority: 100
+
+  document:
+    enabled: true
+    priority: 50
+
+  fallback_text:
+    enabled: true
+    priority: 0
 
 # Memory system configuration
-memory:
+# memory:
   # Working memory configuration (in-memory session cache)
   # working_memory:
   #   capacity: 20
@@ -275,7 +236,7 @@ memory:
   #   auto_threshold: 150
 
 # Event tracking system configuration
-events:
+# events:
   # Enable event tracking system
   # enabled: true
   
@@ -306,7 +267,7 @@ events:
   # drop_alert_threshold: 100
 
 # Entity resolution configuration
-entity_resolution:
+# entity_resolution:
   # Enable case-insensitive matching
   # case_insensitive: true
   
@@ -320,7 +281,7 @@ entity_resolution:
   # cache_ttl_seconds: 3600
 
 # Progress indicator configuration
-progress:
+# progress:
   # Enable progress event emission during long-running operations
   # enabled: true
   
@@ -331,7 +292,7 @@ progress:
   # min_duration: 5
 
 # Context building configuration
-context:
+# context:
   # Token budget management for context building
   # token_budget:
   #   default_budget: 50000
@@ -385,7 +346,7 @@ context:
 #   date_format: "%Y-%m-%d %H:%M:%S"
 
 # Environment variable overrides:
-# You can also override any setting using environment variables with the AI_ prefix.
+# You can also override any setting using environment variables with the INQUIRY_ prefix.
 # Examples:
 #   INQUIRY_STORAGE_ROOT=./.agentic-inquiry
 #   INQUIRY_STORAGE_DEFAULT_PROJECT_ID=my_project

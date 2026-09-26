@@ -29,7 +29,7 @@ subsystems), start at
 | How will we build it, step by step?       | `docs/specs/<feature>/plan.md`       |
 | How is the code organized today?          | [`docs/architecture/`](docs/architecture/) |
 | User-visible changes by release?          | [`CHANGELOG.md`](CHANGELOG.md)       |
-| How do users use the product?             | [`docs/backends/`](docs/backends/), [`docs/storage/`](docs/storage/), [`docs/mcp/`](docs/mcp/), [`docs/customization/`](docs/customization/) today; new user docs land in [`docs/guides/`](docs/guides/) (Diátaxis) — see [CONVENTIONS § 5c](docs/CONVENTIONS.md#5c-docsguides--for-users) |
+| How do users use the product?             | [`docs/backends/`](docs/backends/), [`docs/mcp/`](docs/mcp/), [`docs/customization/`](docs/customization/) today; new user docs land in [`docs/guides/`](docs/guides/) (Diátaxis) - see [CONVENTIONS § 5c](docs/CONVENTIONS.md#5c-docsguides--for-users) |
 | How do agents do `<repeating task>`?      | `.claude/skills/<task>/SKILL.md`     |
 
 If you can't find the answer in one of these places, **the answer doesn't

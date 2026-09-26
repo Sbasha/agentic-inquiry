@@ -9,8 +9,6 @@ last_updated: 2025-11-30
 
 # Search Architecture
 
-> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
-
 The search system provides multiple search strategies with intelligent ranking. This document explains how search works, the different strategies available, and how results are ranked.
 
 ## Quick Navigation
@@ -241,7 +239,7 @@ Unlike classic RRF which ignores relevance scores, this variant multiplies rank-
 ```python
 # Hybrid search with custom weights
 results = await search.hybrid_search(
-    query_vector=query_embedding,  # Pass embedding vector (or string for AlloyDB)
+    query_vector=query_embedding,
     query_fts="machine learning",   # Original query text
     limit=10,
     rerank_by_graph=True
@@ -249,7 +247,7 @@ results = await search.hybrid_search(
 ```
 
 **API Note:**
-- `query_vector`: Embedding vector (list of floats) for most backends, or raw query string for AlloyDB server-side embedding
+- `query_vector`: Embedding vector (list of floats)
 - `query_fts`: Original query text for FTS and content boosting
 
 **Configuration:**
@@ -744,6 +742,8 @@ async def test_hybrid_search():
 
 ## Search Relevance Enhancements
 
+> Historical record. These scores were measured on the PostgreSQL-family provider, which this distribution no longer ships. File locations under Key Improvements and Evolution Timeline name `storage/providers/postgresql/`, which is not in this repository. Check the LanceDB provider before relying on any FTS behavior described there.
+
 Agentic Inquiry achieved **10.0/10 search relevance** through systematic improvements to the hybrid search pipeline. Starting from a baseline of 3.8/10 with default configuration, four phases of enhancements brought search to perfect relevance across keyword, conceptual, and structural queries.
 
 **What changed:** The hybrid search pipeline now uses score-aware RRF (not rank-only), IDF-weighted content boosting (rare terms weighted 20× more than common terms), two-tier AND+OR FTS queries, pre-filtering of noisy candidates, proportional normalization, CamelCase/snake_case splitting, file path indexing, and wider candidate fetching. These changes address result dilution at scale, embedding drift, and the "import chunk" problem.
@@ -1039,7 +1039,6 @@ Each query specifies expected files and scoring criteria. Results scored 0-10 ba
 - `agentic_inquiry/search/rerankers/rrf.py` - Score-aware RRF with dual-source bonus
 - `agentic_inquiry/search/normalization.py` - Proportional normalization
 - `agentic_inquiry/search/deduplicator.py` - File-level deduplication (max 2 per file)
-- `agentic_inquiry/storage/providers/postgresql/vector.py` - Two-tier AND+OR FTS, file path indexing, stemmer selection
 - `agentic_inquiry/parsers/implementations/unified_code.py` - CamelCase/snake_case splitting
 
 **Configuration options** (`config.yaml`):

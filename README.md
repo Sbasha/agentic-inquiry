@@ -120,7 +120,7 @@ This creates a local LanceDB environment; it works out of the box with zero conf
 /ai:index /path/to/your/project
 ```
 
-This parses all source files (10+ languages via [tree-sitter](https://tree-sitter.github.io/tree-sitter/) AST parsing) and documents (DOCX, PDF, DOC), extracts entities and relationships, generates embeddings, and stores everything in your chosen backend. Indexing speed depends on backend — LanceDB runs locally, AlloyDB can index 16K files in ~17 minutes with server-side embedding.
+This parses all source files (10+ languages via [tree-sitter](https://tree-sitter.github.io/tree-sitter/) AST parsing) and documents (DOCX, PDF, DOC), extracts entities and relationships, generates embeddings, and stores everything locally: LanceDB for chunks, embeddings and the entity graph, SQLite for events and file tracking.
 
 ### 5. Start Searching
 
@@ -525,7 +525,6 @@ Governance and process documents:
 | [docs/backends/](docs/backends/) | Storage backend setup (LanceDB) |
 | [docs/design/](docs/design/) | Normative specs (filter AST, query semantics, schema, embedding strategy) |
 | [docs/development/](docs/development/) | Async best practices, parser guidelines, security, adapters |
-| [docs/storage/](docs/storage/) | Index configuration, maintenance, schema migration |
 | [docs/mcp/](docs/mcp/) | MCP server configuration, deployment, troubleshooting |
 | [docs/guides/](docs/guides/) | User docs (Diátaxis-organized; topic dirs above migrate here as touched) |
 | [docs/product/](docs/product/) | Roadmap / changelog hub (empty — root [CHANGELOG.md](CHANGELOG.md) serves this role today) |
