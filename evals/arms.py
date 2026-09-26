@@ -206,8 +206,17 @@ class _Embedder:
             model = self._load()
             for start in range(0, len(missing), 256):
                 chunk = missing[start : start + 256]
-                vectors = model.encode([t for _, t in chunk], batch_size=32, normalize_embeddings=True,
-                                       show_progress_bar=False, convert_to_numpy=True)
+                try:
+                    vectors = model.encode([t for _, t in chunk], batch_size=32, normalize_embeddings=True,
+                                           show_progress_bar=False, convert_to_numpy=True)
+                except RuntimeError as exc:
+                    # Unified memory runs out when other jobs hold the GPU; the
+                    # same model on CPU gives the same vectors, only slower.
+                    if "MPS" not in str(exc):
+                        raise
+                    model = self._model = model.to("cpu")
+                    vectors = model.encode([t for _, t in chunk], batch_size=32, normalize_embeddings=True,
+                                           show_progress_bar=False, convert_to_numpy=True)
                 rows = [(k, v.astype(np.float16).tobytes()) for (k, _), v in zip(chunk, vectors)]
                 self._db.executemany("INSERT OR REPLACE INTO emb VALUES (?, ?)", rows)
                 self._db.commit()
