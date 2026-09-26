@@ -84,7 +84,7 @@ Units for `bm25`, `dense` and `hybrid` are fixed:
 | --- | --- |
 | Code | 50-line windows, stride 50, no overlap, over text files under 1 MB |
 | LOCOMO | One turn per unit |
-| LongMemEval | One session per unit |
+| LongMemEval | One turn per unit |
 | SciFact | One abstract per unit |
 
 All arms read the same materialized files. For each case and arm, the harness reports the share of gold files present in that arm's index.
@@ -103,7 +103,7 @@ All arms read the same materialized files. For each case and arm, the harness re
 | `swebench` | SWE-bench Verified, seeded (20260926) repo-stratified sample of 150; each indexed at `base_commit` | Pre-image lines of the gold patch, their files, and the innermost enclosing `def`/`class` (for an insertion, the innermost definition containing both neighbouring lines) | task id |
 | `erpnext` | The 6 AFP ERPNext questions at `df8b7f9648c2`; rubrics read in place from the AFP checkout | Evidence path and line spans of each fact | test only |
 | `locomo` | LOCOMO categories 1 to 4 (1,540 questions); category 5 (adversarial) excluded, as in the mem0 and Zep literature | Normalized `evidence` dialog IDs present in the conversation | conversation id |
-| `longmemeval` | LongMemEval-S cleaned, `_abs` questions excluded | `answer_session_ids` | question id |
+| `longmemeval` | LongMemEval-S cleaned, `_abs` questions excluded | Turns marked `has_answer` (one turn per line, `[session#tN]` marker); `answer_session_ids` for session recall | question id |
 | `scifact` | BEIR SciFact test set, 300 queries | Official qrels | query id |
 
 The SWE-bench caps are: django 42, sympy 20, sphinx 15, matplotlib 15, scikit-learn 15, astropy 10, xarray 10, pytest 10, pylint 5, requests 5, seaborn 2, flask 1.
@@ -113,8 +113,10 @@ The SWE-bench caps are: django 42, sympy 20, sphinx 15, matplotlib 15, scikit-le
 | Suite | Primary (within B) | Co-primary | Secondary |
 | --- | --- | --- | --- |
 | Code | **function hit rate**: the share of gold definitions that have at least one rendered line (a code line, or a Graphify NODE location) inside their span | **evidence line recall**: gold lines rendered as text. A NODE line renders its location only, so pointer-only arms score near zero here by construction, and `bm25-paths` shows that floor | file recall; file nDCG@10 and MRR@10 in presentation order; acc@5; latency; index time; returned tokens |
-| Memory | **unit recall**: gold units in the rendered text | none | recall@10 over the first 10 distinct units in rank order (recall_any@10 and recall_all@10 for LongMemEval) |
+| Memory | **unit recall**: gold turns rendered as text | none | recall@10 over the first 10 distinct turns in rank order; LongMemEval session recall@10 |
 | SciFact | nDCG@10 over documents in rank order | none | recall@100 |
+
+**Amendment before any test run (2026-09-26).** The first dev run scored LongMemEval evidence as the session file an arm touched, which a list of pointers wins (`bm25-paths` scored 1.0 at 2,000 tokens). Evidence is now the answer turns rendered as text, and `bm25-paths` runs on code suites only. No test-split run had happened.
 
 ### Level B: sampled answer quality
 

@@ -40,7 +40,7 @@ PREFETCH = {"graphify", "inquiry"}
 # Metrics compared between arms, per suite family (RFC-0003 primary first).
 COMPARED = {
     "code": ["fn_hit@2000", "line_recall@2000", "file_recall@2000", "file_ndcg@10", "file_acc@5"],
-    "memory": ["unit_recall@2000", "unit_recall@10", "unit_all@10"],
+    "memory": ["unit_recall@2000", "unit_recall@10", "unit_all@10", "session_recall@10"],
     "scifact": ["ndcg@10", "recall@100"],
 }
 
@@ -93,6 +93,10 @@ def score_case(case: Case, suite: Suite, hits: list[Hit], indexed: set[str]) -> 
             seen = set(out.units) if pattern else set(out.paths)
             metrics[f"unit_recall@{budget}"] = len(gold & seen) / len(gold)
             metrics[f"tokens@{budget}"] = out.tokens
+        gold_sessions = set(case.meta.get("gold_sessions", []))
+        if gold_sessions:
+            sessions = dedupe(unit.split("#t")[0] for unit in ranked)[:10]
+            metrics["session_recall@10"] = len(gold_sessions & set(sessions)) / len(gold_sessions)
         if not pattern:
             metrics["gold_indexed"] = len(gold & indexed) / len(gold)
     return metrics
@@ -188,7 +192,9 @@ def select_cases(suite: Suite, split: str, limit: int | None = None, corpora_lim
 def applicable_arms(suite: Suite, arm_names: list[str]) -> list[Any]:
     # Graphify builds graphs from code without an LLM; its text path needs a
     # paid extraction model, so it runs live on code suites only (RFC-0003).
-    return [make_arm(name) for name in arm_names if suite.code or name != "graphify"]
+    # bm25-paths is the pointer-output control for code localization only.
+    code_only = {"graphify", "bm25-paths"}
+    return [make_arm(name) for name in arm_names if suite.code or name not in code_only]
 
 
 @dataclass

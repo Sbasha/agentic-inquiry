@@ -1,12 +1,45 @@
 """Fallback parser for text files that have no specialized parser."""
 
+import re
 from pathlib import Path
-from typing import List
+from typing import List, Optional, Tuple
 
 from agentic_inquiry.config import FallbackTextParserConfig
 from agentic_inquiry.exceptions import ParsingError
 from agentic_inquiry.parsers.implementations.utils.chunking import pack_lines
 from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
+
+
+# A NUL byte in the first block marks a binary file (images, archives, PDFs,
+# compiled objects); decoding those as text fills the index with noise.
+_SNIFF_BYTES = 8192
+_MARKDOWN = {".md", ".markdown"}
+_HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
+_FENCE = re.compile(r"^\s*(```|~~~)")
+
+
+def is_binary(path: Path) -> bool:
+    """True when the file's first block contains a NUL byte."""
+    with path.open("rb") as handle:
+        return b"\x00" in handle.read(_SNIFF_BYTES)
+
+
+def markdown_sections(lines: List[str]) -> List[Tuple[str, ...]]:
+    """Heading path in effect at each line (fenced code blocks are skipped)."""
+    stack: List[Tuple[int, str]] = []
+    in_fence = False
+    paths: List[Tuple[str, ...]] = []
+    for line in lines:
+        if _FENCE.match(line):
+            in_fence = not in_fence
+        match = None if in_fence else _HEADING.match(line)
+        if match:
+            level = len(match.group(1))
+            while stack and stack[-1][0] >= level:
+                stack.pop()
+            stack.append((level, match.group(2)))
+        paths.append(tuple(title for _, title in stack))
+    return paths
 
 
 class FallbackTextParser:
@@ -51,8 +84,10 @@ class FallbackTextParser:
         if not file_path.is_file():
             raise ParsingError(f"Not a file: {path}")
 
+        if is_binary(file_path):
+            raise ParsingError(f"Binary file: {path}")
         content = await self._read_with_encoding_detection(file_path)
-        chunks = self._create_line_chunks(content)
+        chunks = self._create_line_chunks(content, markdown=file_path.suffix.lower() in _MARKDOWN)
 
         return ParsedDocument(
             doc_id=str(file_path.absolute()),
@@ -97,21 +132,32 @@ class FallbackTextParser:
         except Exception as e:
             raise ParsingError(f"Failed to read file {path}: {e}") from e
     
-    def _create_line_chunks(self, content: str) -> List[ParserChunk]:
-        """Pack the file's lines into chunks; whitespace-only spans are dropped."""
+    def _create_line_chunks(self, content: str, markdown: bool = False) -> List[ParserChunk]:
+        """Pack the file's lines into chunks; whitespace-only spans are dropped.
+
+        Markdown chunks record the heading path in effect where they start as
+        their scope and their nearest heading as a ``section`` element.
+        """
         lines = content.splitlines()
+        sections = markdown_sections(lines) if markdown else None
         chunks = []
         for start, end in pack_lines(lines, 1, self.max_chunk_size):
             text = "\n".join(lines[start - 1:end])
             if not text.strip():
                 continue
+            scope: Tuple[str, ...] = sections[end - 1] if sections else ()
+            if sections and sections[start - 1]:
+                scope = sections[start - 1]
+            heading: Optional[str] = scope[-1] if scope else None
             chunks.append(ParserChunk(
                 content=text,
                 fts_text=text,
-                content_type="OTHER",
+                content_type="PROSE" if markdown else "OTHER",
                 line_start=start,
                 line_end=end,
-                metadata={'chunk_type': 'lines'},
+                element_type="section" if heading else None,
+                element_name=heading,
+                metadata={'chunk_type': 'lines', 'scope': " > ".join(scope)} if scope else {'chunk_type': 'lines'},
             ))
         if not chunks:
             chunks.append(ParserChunk(
@@ -138,7 +184,7 @@ class FallbackTextParser:
             file_path: Path to check
             
         Returns:
-            True if the file exists and is a file
+            True if the file exists, is a file and is not binary
         """
         path = Path(file_path)
-        return path.exists() and path.is_file()
+        return path.exists() and path.is_file() and not is_binary(path)

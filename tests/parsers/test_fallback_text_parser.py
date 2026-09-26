@@ -247,3 +247,29 @@ async def test_chunks_hold_exactly_their_lines(small_parser, tmp_path):
     assert seen == sorted(set(seen))
     assert set(range(1, 41)) - {11} <= set(seen)
 
+
+
+@pytest.mark.asyncio
+async def test_binary_files_are_refused(parser, tmp_path):
+    """A NUL byte in the first block marks the file as binary."""
+    image = tmp_path / "logo.png"
+    image.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR" + b"\x00" * 64)
+    assert not await parser.can_parse(str(image))
+    with pytest.raises(ParsingError):
+        await parser.parse(str(image))
+
+
+@pytest.mark.asyncio
+async def test_markdown_chunks_carry_heading_scope(tmp_path):
+    """Markdown chunks record the heading path where they start."""
+    doc = tmp_path / "guide.md"
+    doc.write_text(
+        "# Guide\n\nIntro text.\n\n## Install\n\n```\n# not a heading\n```\n\nRun pip.\n\n"
+        "## Usage\n\n" + "Call the client. " * 12 + "\n"
+    )
+    result = await FallbackTextParser(max_chunk_size=120).parse(str(doc))
+    scopes = [c.metadata.get("scope") for c in result.chunks]
+    assert all("not a heading" not in (s or "") for s in scopes)
+    usage = [c for c in result.chunks if (c.metadata.get("scope") or "").endswith("Usage")]
+    assert usage and usage[0].element_type == "section" and usage[0].element_name == "Usage"
+    assert all(c.content_type == "PROSE" for c in result.chunks)

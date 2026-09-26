@@ -476,6 +476,12 @@ def load_locomo() -> Suite:
 
 
 def load_longmemeval() -> Suite:
+    """LongMemEval-S with the turns the dataset marks ``has_answer`` as evidence.
+
+    Each session file holds one turn per line, prefixed ``[<session>#t<n>]``
+    and its date, so evidence is scored on the answer turns an arm renders,
+    not on touching the right session file.
+    """
     source = fetch("longmemeval")
     data = json.loads(source.read_text())
     by_corpus: dict[str, dict[str, str]] = {}
@@ -487,25 +493,31 @@ def load_longmemeval() -> Suite:
             dropped += 1
             continue
         files: dict[str, str] = {}
+        evidence: list[str] = []
         for sid, date, session in zip(item["haystack_session_ids"], item["haystack_dates"], item["haystack_sessions"]):
-            body = "\n".join(f"{turn['role']}: {turn['content']}" for turn in session)
-            files[f"{sid}.txt"] = f"Session {sid} ({date})\n{body}\n"
+            rows = []
+            for number, turn in enumerate(session):
+                marker = f"{sid}#t{number}"
+                rows.append(f"[{marker}] ({date}) {turn['role']}: {' '.join(str(turn['content']).split())}")
+                if turn.get("has_answer"):
+                    evidence.append(marker)
+            files[f"{sid}.txt"] = "\n".join(rows) + "\n"
         by_corpus[qid] = files
-        gold = [sid for sid in item["answer_session_ids"] if f"{sid}.txt" in files]
-        if not gold:
+        if not evidence:
             dropped += 1
             continue
         cases.append(
             Case(id=qid, suite="longmemeval", corpus=qid, query=item["question"],
-                 gold_units={f"{sid}.txt": 1.0 for sid in gold},
-                 meta={"type": item["question_type"], "answer": str(item["answer"])})
+                 gold_units={marker: 1.0 for marker in evidence},
+                 meta={"type": item["question_type"], "answer": str(item["answer"]),
+                       "gold_sessions": sorted(set(item["answer_session_ids"]))})
         )
 
     def materialize(corpus: str) -> Path:
-        return _write_corpus(CACHE / "corpora" / "longmemeval" / corpus, by_corpus[corpus])
+        return _write_corpus(CACHE / "corpora" / "longmemeval-turns" / corpus, by_corpus[corpus])
 
-    return Suite("longmemeval", cases, materialize, window=0,
-                 data_sha256={"longmemeval": _sha256(source)}, dropped={"abstention_or_no_gold": dropped})
+    return Suite("longmemeval", cases, materialize, window=1, unit_pattern=r"\[([^\]\s]+#t\d+)\]",
+                 data_sha256={"longmemeval": _sha256(source)}, dropped={"abstention_or_no_evidence": dropped})
 
 
 def load_scifact() -> Suite:
