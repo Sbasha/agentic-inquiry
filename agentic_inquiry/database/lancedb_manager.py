@@ -1062,6 +1062,48 @@ class LanceDBManager:
         """
         await self._delete_rows(table_name=table_name, ids=ids)
 
+    async def update_by_ids(
+        self,
+        table_name: str,
+        ids: List[str],
+        values: Dict[str, Any],
+    ) -> int:
+        """Set columns on the rows with the given IDs in one commit.
+
+        Only the named columns change and no row is deleted or inserted, so
+        concurrent writers that touch other columns of the same row cannot
+        overwrite each other or leave a duplicate row behind.
+
+        Args:
+            table_name: Name of the table to update
+            ids: IDs of the rows to update
+            values: Column name to new value
+
+        Returns:
+            Number of rows updated (0 when the table or IDs do not exist)
+        """
+        if not ids or not values:
+            return 0
+
+        table = await self._get_table_async(table_name)
+        if table is None:
+            return 0
+
+        clause = format_in_clause("id", ids)
+        if clause is None:
+            return 0
+
+        rows_updated = 0
+
+        async def _do_write() -> None:
+            nonlocal rows_updated
+            result = await self._run_sync(lambda: table.update(where=clause, values=values))
+            rows_updated = result.rows_updated
+
+        async with self._locked(table_name):
+            await _retry_lancedb_write(_do_write)
+        return rows_updated
+
     async def add_rows(
         self,
         table_name: str,

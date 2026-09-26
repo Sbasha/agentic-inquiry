@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import uuid
 from datetime import date, datetime, timezone
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
@@ -18,6 +19,7 @@ import numpy as np
 import pyarrow as pa
 
 from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier, MemoryStatus
+from agentic_inquiry.memory.protocols import UPDATABLE_FIELDS
 
 
 class _MetadataJSONEncoder(json.JSONEncoder):
@@ -46,6 +48,40 @@ if TYPE_CHECKING:
     from agentic_inquiry.database.lancedb_manager import LanceDBManager
 
 logger = logging.getLogger(__name__)
+
+# Optional columns hold these instead of NULL, as _memory_item_to_row writes.
+_EMPTY_WHEN_NONE: Dict[str, Any] = {
+    "content_source": "",
+    "event_type": "",
+    "subject": "",
+    "relationship": "",
+    "object": "",
+    "superseded_by": "",
+    "emotional_valence": 0.0,
+    "emotional_arousal": 0.0,
+    "confidence": 0.0,
+}
+
+
+def _column_value(field: str, value: Any) -> Any:
+    """Convert a MemoryItem field value to the value store() writes for it.
+
+    Raises:
+        ValueError: If the value would leave a row that cannot be read back
+    """
+    if value is None:
+        if field not in _EMPTY_WHEN_NONE:
+            raise ValueError(f"Memory field {field} cannot be None")
+        return _EMPTY_WHEN_NONE[field]
+    if field == "tier":
+        return MemoryTier(value).value
+    if field == "status":
+        return MemoryStatus(value).value
+    if isinstance(value, np.generic):
+        value = value.item()
+    if isinstance(value, float) and not math.isfinite(value):
+        raise ValueError(f"Memory field {field} must be finite, got {value}")
+    return value
 
 
 class LanceDBMemoryAdapter:
@@ -300,83 +336,47 @@ class LanceDBMemoryAdapter:
         item_id: str,
         updates: Dict[str, Any],
     ) -> bool:
-        """Update memory item fields.
+        """Set fields of a stored memory item in place.
 
-        Note: LanceDB doesn't support in-place updates, so this
-        deletes and re-inserts the item with updated fields.
-
-        This method is atomic - if store fails after delete, the
-        original data is restored.
+        Writes only the named columns, in one commit, without deleting or
+        re-inserting the row. A concurrent writer that changes other fields
+        of the same item (for example access statistics) keeps its change.
 
         Args:
             item_id: ID of the item to update
-            updates: Dictionary of field: value pairs to update
+            updates: MemoryItem field name to new value, for fields in
+                ``UPDATABLE_FIELDS``
 
         Returns:
             True if item was updated, False if not found
 
         Raises:
+            ValueError: If updates name a field outside ``UPDATABLE_FIELDS``,
+                or a value the column cannot hold
             RuntimeError: If update fails
         """
+        invalid = sorted(set(updates) - UPDATABLE_FIELDS)
+        if invalid:
+            raise ValueError(
+                f"Cannot update memory fields in place: {', '.join(invalid)}"
+            )
+        values = {
+            field: _column_value(field, value) for field, value in updates.items()
+        }
+
         if not self._initialized:
             await self.initialize()
 
         try:
-            # Get existing item
-            existing = await self.get_by_id(item_id)
-            if not existing:
-                return False
-
-            # Save original state BEFORE any modifications for potential rollback
-            original_item_dict = existing.to_dict()
-            original_vector = (
-                existing.embedding.tolist()
-                if existing.embedding is not None
-                else [0.0] * self._embedding_dims
+            rows_updated = await self._manager.update_by_ids(
+                self._table_name, [item_id], values
             )
-
-            # Apply updates to the item
-            for key, value in updates.items():
-                if hasattr(existing, key):
-                    setattr(existing, key, value)
-
-            # Prepare vector for updated item
-            vector = (
-                existing.embedding.tolist()
-                if existing.embedding is not None
-                else [0.0] * self._embedding_dims
-            )
-
-            # Delete existing item
-            await self.delete(item_id)
-
-            # Try to store updated item, restore on failure
-            try:
-                await self.store(existing, vector)
-            except Exception as store_error:
-                # Restore original data on store failure
-                logger.warning(
-                    "Store failed after delete for item %s, restoring original: %s",
-                    item_id,
-                    store_error,
-                )
-                # Restore from the ORIGINAL values saved before modifications
-                for key, value in original_item_dict.items():
-                    if hasattr(existing, key):
-                        setattr(existing, key, value)
-                await self.store(existing, original_vector)
-                raise RuntimeError(
-                    f"Update failed during store, original data restored: {store_error}"
-                ) from store_error
-
-            logger.debug("Updated memory item: id=%s", item_id)
-            return True
-        except RuntimeError:
-            # Re-raise RuntimeErrors from the store failure handling
-            raise
         except Exception as e:
             logger.error("Failed to update memory item %s: %s", item_id, e)
             raise RuntimeError(f"Failed to update memory item: {e}") from e
+
+        logger.debug("Updated memory item: id=%s, fields=%s", item_id, sorted(values))
+        return rows_updated > 0
 
     async def delete(
         self,

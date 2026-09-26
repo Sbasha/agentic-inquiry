@@ -28,6 +28,33 @@ if TYPE_CHECKING:
     from agentic_inquiry.memory.models import MemoryItem
 
 
+# MemoryItem fields MemoryStorageProtocol.update() may change in place.
+# Identity and context fields, content and summary (the embeddings derive
+# from them), the embeddings, and metadata change only by storing the item.
+UPDATABLE_FIELDS: frozenset[str] = frozenset(
+    {
+        "importance",
+        "tier",
+        "creator_agent_id",
+        "modifier_agent_id",
+        "content_source",
+        "created_at",
+        "accessed_at",
+        "modified_at",
+        "access_count",
+        "event_type",
+        "emotional_valence",
+        "emotional_arousal",
+        "subject",
+        "relationship",
+        "object",
+        "confidence",
+        "status",
+        "superseded_by",
+    }
+)
+
+
 # =============================================================================
 # Core Memory Storage Protocol
 # =============================================================================
@@ -134,17 +161,19 @@ class MemoryStorageProtocol(Protocol):
     ) -> bool:
         """Update memory item fields.
 
-        Only updates the specified fields, preserving other values.
+        Only updates the specified fields, preserving other values, so a
+        concurrent writer of other fields of the same item keeps its change.
 
         Args:
             item_id: ID of the item to update
-            updates: Dictionary of field: value pairs to update
+            updates: MemoryItem field name to new value, for fields in
+                UPDATABLE_FIELDS
 
         Returns:
             True if item was updated, False if not found
 
         Raises:
-            ValueError: If updates contain invalid fields
+            ValueError: If updates name a field outside UPDATABLE_FIELDS
             RuntimeError: If update fails
         """
         ...
