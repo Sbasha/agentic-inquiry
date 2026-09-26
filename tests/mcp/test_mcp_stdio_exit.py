@@ -52,7 +52,10 @@ def test_stdio_server_exits_after_stdin_closes(tmp_path: Path) -> None:
 
             assert server.stdin is not None
             server.stdin.close()
-            returncode = server.wait(timeout=30)
+            try:
+                returncode = server.wait(timeout=30)
+            except subprocess.TimeoutExpired:
+                pytest.fail("server did not exit:\n" + log.read_text(errors="replace"))
         finally:
             if server.poll() is None:
                 server.kill()

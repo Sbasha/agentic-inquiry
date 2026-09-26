@@ -40,6 +40,7 @@ from agentic_inquiry.config import Config
 from agentic_inquiry.mcp.factories import close_mcp_services, create_mcp_services
 from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
 from agentic_inquiry.mcp.utils.cache import MCPCacheManager
+from tests.helpers.assertions import aiosqlite_threads, assert_no_new_aiosqlite_threads
 
 
 @pytest.fixture
@@ -1073,17 +1074,16 @@ class TestCloseMCPServices:
 
         assert calls == ["maintenance_task", "event_system", "storage"]
 
+    async def test_cancelled_service_still_closes_the_rest(self):
+        calls: list[str] = []
+        services = self._services(calls)
+        services["memory_system"].shutdown = AsyncMock(side_effect=asyncio.CancelledError())
+        await asyncio.sleep(0)  # let the maintenance task start
 
-def _aiosqlite_threads() -> set:
-    import threading
+        with pytest.raises(asyncio.CancelledError):
+            await close_mcp_services(services)
 
-    import aiosqlite
-
-    return {
-        t
-        for t in threading.enumerate()
-        if isinstance(t, aiosqlite.Connection) and t.is_alive()
-    }
+        assert calls == ["maintenance_task", "event_system", "storage"]
 
 
 @pytest.fixture
@@ -1105,18 +1105,34 @@ class TestCloseMCPServicesReleasesStores:
     """Real services: no aiosqlite writer thread outlives the services."""
 
     async def test_create_then_close_leaves_no_connection_thread(self, hashing_config):
-        before = _aiosqlite_threads()
+        before = aiosqlite_threads()
 
         services = await create_mcp_services(hashing_config, "test_project")
-        assert _aiosqlite_threads() - before
+        assert aiosqlite_threads() - before
         await close_mcp_services(services)
 
         assert services["maintenance_task"].done()
-        assert _aiosqlite_threads() - before == set()
+        assert_no_new_aiosqlite_threads(before)
+
+    async def test_close_consolidates_active_contexts(self, hashing_config, monkeypatch):
+        from agentic_inquiry.memory.consolidation import ConsolidationEngine
+
+        consolidate = AsyncMock()
+        monkeypatch.setattr(ConsolidationEngine, "consolidate", consolidate)
+        before = aiosqlite_threads()
+        services = await create_mcp_services(hashing_config, "test_project")
+        context = services["memory_system"].create_agent_context(
+            agent_id="agent", session_id="session", conversation_id="conversation"
+        )
+
+        await close_mcp_services(services)
+
+        consolidate.assert_awaited_once_with(context)
+        assert_no_new_aiosqlite_threads(before)
 
     @pytest.mark.parametrize("error", [RuntimeError("initialize failed"), asyncio.CancelledError()])
     async def test_failed_create_leaves_no_connection_thread(self, hashing_config, error):
-        before = _aiosqlite_threads()
+        before = aiosqlite_threads()
         tasks_before = asyncio.all_tasks()
 
         with patch(
@@ -1126,6 +1142,6 @@ class TestCloseMCPServicesReleasesStores:
             with pytest.raises(type(error)):
                 await create_mcp_services(hashing_config, "test_project")
 
-        assert _aiosqlite_threads() - before == set()
+        assert_no_new_aiosqlite_threads(before)
         assert all(task.done() for task in asyncio.all_tasks() - tasks_before)
 

@@ -10,7 +10,6 @@ import argparse
 import os
 import subprocess
 import sys
-import threading
 from pathlib import Path
 from typing import Any
 from unittest.mock import AsyncMock, patch
@@ -22,6 +21,7 @@ from agentic_inquiry.config import Config, StorageConfig
 from agentic_inquiry.embeddings.hashing import HashingEmbedder
 from agentic_inquiry.embeddings.registry import embedding_registry
 from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
+from tests.helpers.assertions import aiosqlite_threads, assert_no_new_aiosqlite_threads
 
 pytestmark = pytest.mark.integration
 
@@ -277,21 +277,11 @@ async def test_adapter_initialize_creates_configured_table(tmp_path: Path) -> No
         await manager.close()
 
 
-def _aiosqlite_threads() -> set[threading.Thread]:
-    import aiosqlite
-
-    return {
-        t
-        for t in threading.enumerate()
-        if isinstance(t, aiosqlite.Connection) and t.is_alive()
-    }
-
-
 @pytest.mark.asyncio
 async def test_create_memory_system_closes_storage_when_setup_fails(
     hashing_embedder: HashingEmbedder, tmp_path: Path
 ) -> None:
-    before = _aiosqlite_threads()
+    before = aiosqlite_threads()
 
     with patch(
         "agentic_inquiry.memory.system.MemorySystem.initialize",
@@ -300,7 +290,7 @@ async def test_create_memory_system_closes_storage_when_setup_fails(
         with pytest.raises(RuntimeError, match="initialize failed"):
             await memory_cli.create_memory_system(_test_config(tmp_path), "demo")
 
-    assert _aiosqlite_threads() - before == set()
+    assert_no_new_aiosqlite_threads(before)
 
 
 def test_memory_commands_exit_after_printing(tmp_path: Path) -> None:
@@ -319,12 +309,16 @@ def test_memory_commands_exit_after_printing(tmp_path: Path) -> None:
         ["list"],
         ["recall", "exit probe fact"],
     ):
-        completed = subprocess.run(
-            [sys.executable, "-m", "agentic_inquiry.cli", "memory", *args],
-            capture_output=True,
-            cwd=project,
-            env=env,
-            timeout=60,
-        )
+        try:
+            completed = subprocess.run(
+                [sys.executable, "-m", "agentic_inquiry.cli", "memory", *args],
+                capture_output=True,
+                cwd=project,
+                env=env,
+                timeout=60,
+            )
+        except subprocess.TimeoutExpired as exc:
+            stderr = (exc.stderr or b"").decode(errors="replace")
+            pytest.fail(f"ai memory {args[0]} did not exit:\n{stderr}")
         assert completed.returncode == 0, completed.stderr.decode(errors="replace")
 

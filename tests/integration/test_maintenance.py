@@ -51,10 +51,11 @@ async def mock_storage_with_lancedb(lancedb_manager):
 
 
 @pytest.fixture
-async def event_system():
+async def event_system(tmp_path):
     """Create a real EventSystem."""
     # Need a config with default_project_id
     config = Config.load()
+    config.storage.root = str(tmp_path)
     config.storage.default_project_id = "test_project"
     system = EventSystem(config=config, project_id="test_project")
     await system.start()
@@ -111,7 +112,7 @@ class TestMaintenanceIntegration:
     ):
         """Test full event-driven maintenance flow."""
         # Create manager with event system and the mock storage
-        manager = MaintenanceManager(
+        _manager = MaintenanceManager(  # subscribes on construction
             event_system=event_system,
             storage=mock_storage_with_lancedb
         )
@@ -179,7 +180,7 @@ class TestMaintenanceConfigIntegration:
         self, event_system, mock_storage_with_lancedb
     ):
         """Test different trigger configs change behavior."""
-        manager = MaintenanceManager(
+        _manager = MaintenanceManager(  # subscribes on construction
             event_system=event_system,
             storage=mock_storage_with_lancedb
         )

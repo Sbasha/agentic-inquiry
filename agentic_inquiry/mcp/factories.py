@@ -525,32 +525,39 @@ async def close_mcp_services(services: Mapping[str, Any]) -> None:
     Cancels the maintenance task, then shuts down the memory system, stops
     the event system and closes storage. The event store and storage each
     hold an aiosqlite connection whose non-daemon thread blocks interpreter
-    exit until closed. Absent services are skipped, so a partial mapping from
-    a failed start is fine. A service that fails to close is logged and the
-    rest are still closed.
+    exit until closed, so each later step runs even when an earlier one
+    fails or is cancelled; a cancellation still reaches the caller. Absent
+    services are skipped, so a partial mapping from a failed start is fine.
+    Failures are logged, not raised.
     """
-    maintenance_task = services.get("maintenance_task")
-    if maintenance_task is not None:
-        maintenance_task.cancel()
+    try:
+        maintenance_task = services.get("maintenance_task")
+        if maintenance_task is not None:
+            maintenance_task.cancel()
+            try:
+                await maintenance_task
+            except asyncio.CancelledError:
+                pass  # Expected: we just cancelled it.
+            except Exception:
+                logger.debug("Maintenance task raised during shutdown", exc_info=True)
+    finally:
         try:
-            await maintenance_task
-        except asyncio.CancelledError:
-            pass  # Expected: we just cancelled it.
-        except Exception:
-            logger.debug("Maintenance task raised during shutdown", exc_info=True)
+            await _close_service(services, "memory_system", "shutdown")
+        finally:
+            try:
+                await _close_service(services, "event_system", "stop")
+            finally:
+                await _close_service(services, "storage", "close")
 
-    for key, method in (
-        ("memory_system", "shutdown"),
-        ("event_system", "stop"),
-        ("storage", "close"),
-    ):
-        service = services.get(key)
-        if service is None:
-            continue
-        try:
-            await getattr(service, method)()
-        except Exception:
-            logger.warning("Error closing MCP %s", key, exc_info=True)
+
+async def _close_service(services: Mapping[str, Any], key: str, method: str) -> None:
+    service = services.get(key)
+    if service is None:
+        return
+    try:
+        await getattr(service, method)()
+    except Exception:
+        logger.warning("Error closing MCP %s", key, exc_info=True)
 
 
 __all__ = ["close_mcp_services", "create_mcp_services"]
