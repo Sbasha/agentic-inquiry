@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock, MagicMock
 import numpy as np
 import pytest
 
-from agentic_inquiry.config import Config, RetrievalConfig
+from agentic_inquiry.config import Config, MemoryConfig, RetrievalConfig
 from agentic_inquiry.database.lancedb_manager import LanceDBManager
 from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 from agentic_inquiry.memory.layers.episodic import EpisodicMemory
@@ -112,20 +112,12 @@ def retrieval_engine(
     retrieval_config: RetrievalConfig,
 ) -> RetrievalEngine:
     """Create a retrieval engine."""
-    # Create a mock Config with proper structure
-    from unittest.mock import MagicMock
-    from agentic_inquiry.config import Config, MemoryConfig
-    
-    config = MagicMock(spec=Config)
-    config.memory = MagicMock(spec=MemoryConfig)
-    config.memory.retrieval = retrieval_config
-    
     return RetrievalEngine(
         working_memory=working_memory,
         episodic_memory=episodic_memory,
         semantic_memory=semantic_memory,
         embedding_service=mock_embedding_service,
-        config=config,
+        config=Config(memory=MemoryConfig(retrieval=retrieval_config)),
     )
 
 
@@ -581,8 +573,6 @@ async def test_retrieve_with_disabled_cache(
 ) -> None:
     """Test retrieval with caching disabled."""
     # Create engine with caching disabled
-    from agentic_inquiry.config import Config, MemoryConfig
-    
     retrieval_config = RetrievalConfig(
         default_strategy="adaptive",
         cache_enabled=False,
@@ -594,17 +584,13 @@ async def test_retrieve_with_disabled_cache(
             "importance": 0.2,
         },
     )
-    
-    config = MagicMock(spec=Config)
-    config.memory = MagicMock(spec=MemoryConfig)
-    config.memory.retrieval = retrieval_config
-    
+
     engine = RetrievalEngine(
         working_memory=working_memory,
         episodic_memory=episodic_memory,
         semantic_memory=semantic_memory,
         embedding_service=mock_embedding_service,
-        config=config,
+        config=Config(memory=MemoryConfig(retrieval=retrieval_config)),
     )
 
     # Add items

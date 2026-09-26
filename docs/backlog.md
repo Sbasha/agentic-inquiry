@@ -125,6 +125,24 @@ a defect found while qualifying and left for its own change.
 - **`tantivy` dependency:** no code imports it after the native FTS
   switch. Remove it from `pyproject.toml` with an ADR.
 
+## memory-test-drift
+
+Open items from [`specs/memory-test-drift/spec.md`](specs/memory-test-drift/spec.md).
+Not a deferred acceptance criterion: a product defect found while qualifying
+and left for its own change.
+
+- **Access-stat write overwrites `update_importance`:** episodic and semantic
+  `retrieve` start `_update_access_stats` as an untracked background task
+  (`memory/layers/episodic.py`, `memory/layers/semantic.py`). The task re-reads
+  the item, then replaces it with a delete + store. When it interleaves with
+  `MemorySystem.update_importance`, which does its own read, delete and store,
+  it can write back the pre-update copy, and the new importance is lost.
+  `test_e2e_workflows.py::TestCompleteMemoryLifecycle::test_store_retrieve_update_delete`
+  fails intermittently on this (`assert 0.8 == 0.95`; reproduces on
+  origin/main `e8b80e5`). Unblocked by making access-stat persistence a
+  partial update of only the access fields, or by serializing per-item
+  writes, and by tracking the background tasks so shutdown awaits them.
+
 <!-- Add one section per spec with open work, e.g.:
 
 ## <spec-name>
