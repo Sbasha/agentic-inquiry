@@ -154,3 +154,18 @@ async def test_upsert_rejects_mixed_field_sets(
         await manager.upsert(_TABLE, records)
 
     assert table.version == before
+
+
+@pytest.mark.asyncio
+async def test_upsert_rejects_forbidden_field_with_value_error(
+    manager: LanceDBManager,
+) -> None:
+    await manager.upsert(_TABLE, [_session("s1", "seed")])
+    table = await manager.get_table(_TABLE)
+    assert table is not None
+    before = table.version
+
+    with pytest.raises(ValueError, match="chunk_id"):
+        await manager.upsert(_TABLE, [_session("s2", "new", chunk_id="c")])
+
+    assert table.version == before

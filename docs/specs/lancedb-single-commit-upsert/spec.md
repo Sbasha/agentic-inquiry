@@ -1,6 +1,6 @@
 # Spec: LanceDB row replacement is one commit
 
-- **Status:** Draft
+- **Status:** Implementing
 - **Owner:** sbasha
 - **Plan:** [`plan.md`](plan.md)
 - **Constrained by:** [`memory-update-atomicity`](../memory-update-atomicity/spec.md), [`index-memory-reliability`](../index-memory-reliability/spec.md)
@@ -23,10 +23,8 @@ has no production caller), and for whole-row replacement of episodic and
 semantic memory items (`EpisodicMemory.update(item)`,
 `SemanticMemory.update(item)`).
 
-Each of these writes is one LanceDB commit: `LanceDBManager.upsert()` and
-`LanceDBMemoryAdapter.store()` both write through
-`merge_insert(key).when_matched_update_all().when_not_matched_insert_all()`.
-There is no window between a delete and an insert in which a second writer can
+Each of these writes is one LanceDB commit that inserts the row or updates it
+in place. There is no window between a delete and an insert in which a second writer can
 find the key absent and insert its own copy. Storing a memory item whose id is
 already stored replaces that row.
 
@@ -60,36 +58,34 @@ sees a half-negated item.
 ## Testing Strategy
 
 All behaviors are TDD, verified by integration tests against an on-disk
-LanceDB in `tmp_path`. The concurrency tests wrap `LanceDBManager._locked`,
-the context manager every write to an existing table runs inside, and run a
-competing write at a chosen point: after the writer under test first leaves
-the lock (T1, T3) or before each time it enters (T4). Tables are seeded before
-the hook is armed, because table creation does not pass through `_locked`.
-Single-commit claims are also checked directly: a lone write raises the
-table's `version` by exactly one.
+LanceDB in `tmp_path`. The concurrency tests run a competing writer at a fixed
+point inside the write under test (the plan's Approach names the mechanism),
+so each race reproduces on every run. Single-commit claims are also checked
+directly: a lone write raises the table's `version` by exactly one.
 
 ## Acceptance Criteria
 
-- [ ] When a second `LanceDBManager.upsert()` of the same key runs to
+- [x] When a second `LanceDBManager.upsert()` of the same key runs to
       completion after the first upsert's first commit, the table holds
       exactly one row for that key, carrying the second writer's values.
       Holds for `key_field="id"` and `key_field="session_id"`.
-- [ ] A lone `LanceDBManager.upsert()` into an existing table raises the
+- [x] A lone `LanceDBManager.upsert()` into an existing table raises the
       table's `version` by exactly one.
-- [ ] `LanceDBManager.upsert()` inserts records whose key is new, updates
+- [x] `LanceDBManager.upsert()` inserts records whose key is new, updates
       records whose key exists, keeps the stored value of any column a record
       omits, and collapses repeated keys within one call to the last record.
-- [ ] `LanceDBManager.upsert()` raises `ValueError`, and writes nothing, when
-      a record's key field is missing, `None`, or `""`, or when the records in
-      one call do not all have the same set of fields.
-- [ ] When a second `EpisodicMemory.update(item)` (and
+- [x] `LanceDBManager.upsert()` raises `ValueError`, and writes nothing, when
+      a record's key field is missing, `None`, or `""`, when the records in
+      one call do not all have the same set of fields, or when a record fails
+      schema validation.
+- [x] When a second `EpisodicMemory.update(item)` (and
       `SemanticMemory.update(item)`) of the same item runs to completion after
       the first update's first commit, the table holds exactly one row for
       that id, carrying the second writer's values.
-- [ ] A lone `EpisodicMemory.update(item)` or `SemanticMemory.update(item)`
+- [x] A lone `EpisodicMemory.update(item)` or `SemanticMemory.update(item)`
       raises the table's `version` by exactly one; when it fails, the stored
       row is unchanged.
-- [ ] `LanceDBMemoryAdapter.store()` of an item whose id is already stored
+- [x] `LanceDBMemoryAdapter.store()` of an item whose id is already stored
       replaces that row; the table still holds one row for the id.
 - [ ] `negate_memory()` sets `importance` to 0.0 and `status` to `NEGATED`
       on an item in any tier. On an episodic or semantic item it does so in
@@ -129,6 +125,17 @@ table's `version` by exactly one.
   `agentic_inquiry/memory/consolidation.py` and
   `MemorySystem.promote_to_semantic` (source: code read, 2026-09-26).
   `InMemoryMemoryAdapter.store()` already replaces by id.
+- Technical: at capacity, `EpisodicMemory.store` / `SemanticMemory.store`
+  evict before storing even when the id is already stored, so re-storing an
+  id deletes an unrelated item and leaves `limit - 1` rows. Out of scope here
+  (source: `agentic_inquiry/memory/layers/episodic.py` `store`;
+  [backlog](../../backlog.md#lancedb-single-commit-upsert)).
+- Technical: `mcp_sessions` has no explicit schema, so a first session with
+  `description` or `log_file` unset creates null-typed columns and a later
+  persist that sets either fails with `StorageError`; the stored row survives
+  the failure. Pre-existing and out of scope (source: reproduced on this
+  branch, 2026-09-26;
+  [backlog](../../backlog.md#lancedb-single-commit-upsert)).
 - Product: `store()` upserts by id although the `merge_insert` adds a flat
   ~8 ms per call over an append (source: user confirmation 2026-09-26).
 - Process: `update_fields()` and `LanceDBManager.update_by_ids()` land on

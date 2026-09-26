@@ -1,7 +1,7 @@
 # Plan: LanceDB row replacement is one commit
 
 - **Spec:** [`spec.md`](spec.md)
-- **Status:** Drafting
+- **Status:** Executing
 
 > **Plan contract:** this is the implementation strategy. Unlike the spec, this
 > document is allowed to change as you learn.
@@ -9,8 +9,10 @@
 ## Approach
 
 Reproduce first, then fix. A test helper in `tests/utils/commit_hook.py` wraps
-`LanceDBManager._locked` and runs a callback on entry or exit of the commit
-lock, skipping the callback's own writes. T1 uses it to show `upsert()` leaving
+`LanceDBManager._locked`, the context manager every write to an existing table
+commits inside, and runs a callback on entry or on normal exit of the commit
+lock, skipping the callback's own writes. Table creation does not pass through
+`_locked`, so tests seed the table before arming the hook. T1 uses it to show `upsert()` leaving
 two rows for one key; T2 rewrites `upsert()` as record checks plus one call to
 the existing `_upsert_rows` merge, and brings the in-memory test manager's
 `upsert` in line. T3 reproduces the duplicate from `EpisodicMemory.update(item)`,
@@ -43,15 +45,19 @@ methods under test.
 ### Design decisions
 
 - `upsert()` delegates to `_upsert_rows(table, data, key_column=key_field)`,
-  which already validates records, collapses repeated keys, creates the table
+  which writes through
+  `merge_insert(key).when_matched_update_all().when_not_matched_insert_all()`
+  and already validates records, collapses repeated keys, creates the table
   on first write, and holds the commit lock with write retry.
   Traces to: AC1-AC3.
 - `upsert()` rejects a record whose key is missing, `None` or `""` (checked
   with `is None` / `== ""`, not falsiness), and rejects a call whose records
   have different field sets. `merge_insert` silently drops null-key rows and
   takes its columns from the first record, so either input would lose data.
-  `VectorStorageProtocol.upsert` (`agentic_inquiry/database/protocols.py`)
-  already lists `ValueError` for invalid records. Traces to: AC4.
+  It also runs schema validation itself before `_upsert_rows`, whose
+  `try` would wrap a validation error as `StorageError`, so every
+  invalid-record error is a `ValueError`, as `VectorStorageProtocol.upsert`
+  (`agentic_inquiry/database/protocols.py`) documents. Traces to: AC4.
 - `LanceDBMemoryAdapter.store()` calls `self._manager.upsert(table, [row])`
   instead of `add_rows`. Storing an existing id replaces it, as
   `InMemoryMemoryAdapter.store()` already does; `MemoryStorageProtocol.store`
@@ -88,6 +94,7 @@ methods under test.
 
 ### T1: The upsert race is reproduced
 
+**Mode:** TDD (integration, on-disk LanceDB)
 **Depends on:** none
 **Touches:** tests/utils/commit_hook.py, tests/database/test_lancedb_upsert_atomicity.py
 **Tests:**
@@ -102,6 +109,7 @@ manager patches `manager._locked` on the instance and restores it on exit.
 
 ### T2: upsert is one commit
 
+**Mode:** TDD (integration, on-disk LanceDB)
 **Depends on:** T1
 **Touches:** agentic_inquiry/database/lancedb_manager.py, tests/utils/in_memory_lancedb_manager.py, tests/database/test_lancedb_upsert_atomicity.py
 **Tests:**
@@ -125,6 +133,7 @@ failures against `main`.
 
 ### T3: Memory whole-row replace is one commit
 
+**Mode:** TDD (integration, on-disk LanceDB)
 **Depends on:** T2
 **Touches:** agentic_inquiry/memory/adapters/lancedb_adapter.py, agentic_inquiry/memory/protocols.py, agentic_inquiry/memory/layers/episodic.py, agentic_inquiry/memory/layers/semantic.py, tests/memory/test_memory_row_replace_atomicity.py
 **Tests:**
@@ -146,6 +155,7 @@ that describe delete + store or append.
 
 ### T4: negate and supersede write only their columns
 
+**Mode:** TDD (integration, on-disk LanceDB)
 **Depends on:** T3, memory-update-atomicity task 3 (layer `update_fields`)
 **Touches:** agentic_inquiry/memory/system.py, docs/backlog.md, tests/memory/test_memory_row_replace_atomicity.py
 **Tests:**

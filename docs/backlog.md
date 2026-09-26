@@ -143,6 +143,25 @@ leaves out.
   itself (`values_sql` `access_count + 1`), which the storage protocol
   cannot express today.
 
+## lancedb-single-commit-upsert
+
+Open items from [`specs/lancedb-single-commit-upsert/spec.md`](specs/lancedb-single-commit-upsert/spec.md).
+None is a deferred acceptance criterion; each is a defect the spec found and
+leaves out.
+
+- **Eviction on re-store:** at capacity, `EpisodicMemory.store` and
+  `SemanticMemory.store` evict the oldest item before storing, even when the
+  item's id is already stored and the store only replaces it. Re-promoting an
+  id (`consolidation.py`, `MemorySystem.promote_to_semantic`) then deletes an
+  unrelated memory and leaves the tier one below its limit. Unblocked by
+  skipping eviction when the id is already stored, at the cost of a lookup
+  per store.
+- **Inferred `mcp_sessions` schema:** the table is created from the first
+  session's record, so a first session with `description` or `log_file`
+  unset makes those columns null-typed, and every later persist that sets
+  either fails with `StorageError`. Unblocked by creating `mcp_sessions` from
+  an explicit schema.
+
 <!-- Add one section per spec with open work, e.g.:
 
 ## <spec-name>

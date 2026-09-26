@@ -21,11 +21,13 @@ async def commit_hook(
 
     Every write to an existing table commits inside ``manager._locked``, so
     ``on_exit`` runs between the commits of a write that takes more than one.
+    ``on_exit`` is skipped when the write inside the lock raises.
     Table creation does not pass through the lock: seed tables before arming.
     Writes a hook makes itself do not re-trigger the hooks. Each hook receives
     the table name.
     """
     original = manager._locked
+    patched_before = "_locked" in vars(manager)
     in_hook = False
 
     async def run(hook: Optional[Hook], table_name: str) -> None:
@@ -49,4 +51,7 @@ async def commit_hook(
     try:
         yield
     finally:
-        del manager._locked
+        if patched_before:
+            manager._locked = original  # type: ignore[method-assign]
+        else:
+            del manager._locked

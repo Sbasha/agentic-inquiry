@@ -102,8 +102,7 @@ class MemoryStorageProtocol(Protocol):
     ) -> str:
         """Store memory item with embedding vector.
 
-        Storing an item whose id is already stored replaces it, leaving one
-        row for the id.
+        Storing an item whose id is already stored replaces the stored row.
 
         Args:
             item: Memory item to store (must have valid id)

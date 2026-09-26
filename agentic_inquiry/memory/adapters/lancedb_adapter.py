@@ -179,8 +179,7 @@ class LanceDBMemoryAdapter:
             ID of the stored item
 
         Raises:
-            ValueError: If item is invalid
-            RuntimeError: If storage fails
+            RuntimeError: If the item cannot be converted or stored
         """
         if not self._initialized:
             await self.initialize()

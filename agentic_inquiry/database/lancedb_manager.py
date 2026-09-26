@@ -960,11 +960,13 @@ class LanceDBManager:
         """Insert or update records in a table in one commit.
 
         Rows whose ``key_field`` matches a record are updated and the other
-        records are inserted, in a single ``merge_insert``. A concurrent
-        upsert of the same key therefore never finds the key briefly absent,
-        so it cannot leave a second row behind. Columns a record omits keep
-        their stored value, and when a key repeats within ``data`` the last
-        record wins.
+        records are inserted, in a single ``merge_insert``. Another upsert of
+        an existing key through this manager therefore never finds the key
+        briefly absent, so the two cannot leave a second row behind. The
+        commit lock is per manager: two managers (for example the CLI and the
+        MCP server) upserting the same new key at once can both insert it.
+        Columns a record omits keep their stored value, and when a key repeats
+        within ``data`` the last record wins.
 
         Args:
             table_name: Name of the table to upsert into
@@ -972,8 +974,9 @@ class LanceDBManager:
             key_field: Field that identifies a row (default: "id")
 
         Raises:
-            ValueError: If a record's key is missing, None or empty, or the
-                records do not all have the same fields. Nothing is written.
+            ValueError: If a record's key is missing, None or empty, the
+                records do not all have the same fields, or a record fails
+                schema validation. Nothing is written.
             StorageError: If the write fails
 
         Examples:
@@ -1004,6 +1007,8 @@ class LanceDBManager:
             raise ValueError(
                 f"Cannot upsert into {table_name}: records must all have the same fields"
             )
+        for record in data:
+            self._validate_record(table_name, record)
 
         await self._upsert_rows(table_name=table_name, items=data, key_column=key_field)
 

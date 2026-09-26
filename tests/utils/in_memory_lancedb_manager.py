@@ -276,10 +276,12 @@ class InMemoryLanceDBManager:
                 f"Cannot upsert into {table_name}: records must all have the same fields"
             )
 
+        for record in data:
+            self._validate_record(table_name, record)
+
         async with self._lock:
             table = self._tables.setdefault(table_name, [])
             for record in data:
-                self._validate_record(table_name, record)
                 matches = [
                     row for row in table if row.get(key_field) == record[key_field]
                 ]
