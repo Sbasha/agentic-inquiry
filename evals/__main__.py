@@ -30,6 +30,14 @@ def main() -> None:
     answer.add_argument("--n", type=int, default=200)
     answer.add_argument("--jobs", type=int, default=3)
 
+    agent = sub.add_parser("agent", help="Level C code-agent runs per arm")
+    agent.add_argument("--arms", default="floor,graphify,inquiry")
+    agent.add_argument("--suites", default="swebench,erpnext")
+    agent.add_argument("--split", default="test", choices=["dev", "test"])
+    agent.add_argument("--n", type=int, default=30, help="SWE-bench tasks (seeded order)")
+    agent.add_argument("--repeats", type=int, default=3)
+    agent.add_argument("--model", default="claude-sonnet-5")
+
     args = parser.parse_args()
     if args.command == "cases":
         suite = LOADERS[args.suite]()
@@ -45,6 +53,11 @@ def main() -> None:
         from evals.answer import run_answers
 
         run_answers([a for a in args.arms.split(",") if a], args.split, args.n, args.jobs)
+    elif args.command == "agent":
+        from evals.agent import run_agents
+
+        run_agents([a for a in args.arms.split(",") if a], [s for s in args.suites.split(",") if s],
+                   args.split, args.n, args.repeats, args.model)
 
 
 if __name__ == "__main__":

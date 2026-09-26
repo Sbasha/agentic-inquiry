@@ -400,6 +400,7 @@ async def create_mcp_services(
             # Server configuration
             "server_config": {
                 "default_project_id": project_id,
+                "project_root": project_root,
                 "server_name": config.mcp.server.name,
                 "server_version": config.mcp.server.version,
                 "server_description": config.mcp.server.description,

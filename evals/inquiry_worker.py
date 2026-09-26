@@ -20,7 +20,7 @@ PROJECT_ID = "eval"
 
 
 def _configure(store: Path) -> None:
-    os.environ["INQUIRY_CONFIG"] = str(REPO_ROOT / "config" / "default.yaml")
+    os.environ.setdefault("INQUIRY_CONFIG", str(REPO_ROOT / "config" / "default.yaml"))
     os.environ["INQUIRY_STORAGE_ROOT"] = str(store)
     os.environ["INQUIRY_STORAGE_DEFAULT_PROJECT_ID"] = PROJECT_ID
     os.environ["INQUIRY_STORAGE_BACKEND"] = "lancedb"

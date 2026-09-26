@@ -29,7 +29,8 @@ from evals.data import CACHE, Suite
 from evals.metrics import Hit
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-GRAPHIFY_SPEC = "graphifyy==0.9.68"
+# The mcp extra is how Graphify is installed for agent use (graphify-mcp).
+GRAPHIFY_SPEC = "graphifyy[mcp]==0.9.68"
 DENSE_MODEL = "BAAI/bge-m3"
 DENSE_MAX_TOKENS = 512
 RRF_K = 60
@@ -318,7 +319,7 @@ class Graphify:
     version = GRAPHIFY_SPEC.split("==")[1]
 
     def __init__(self) -> None:
-        self.venv = CACHE / "venvs" / f"graphifyy-{self.version}"
+        self.venv = CACHE / "venvs" / f"graphifyy-mcp-{self.version}"
 
     def config(self) -> dict[str, Any]:
         return {"package": GRAPHIFY_SPEC, "build": "graphify update <tree> --no-cluster (AST only, no LLM)",
@@ -399,18 +400,26 @@ def _inquiry_code_hash() -> str:
 
 
 class Inquiry:
+    """The checked-out package, run on ``config/default.yaml`` or on the file named by
+    ``EVALS_INQUIRY_CONFIG`` for ablations; that file's bytes are part of the cache key."""
+
     name = "inquiry"
 
     def __init__(self) -> None:
-        self.code_hash = _inquiry_code_hash()
+        override = os.environ.get("EVALS_INQUIRY_CONFIG")
+        self.config_path = Path(override).resolve() if override else REPO_ROOT / "config" / "default.yaml"
+        digest = hashlib.sha256(_inquiry_code_hash().encode() + self.config_path.read_bytes()).hexdigest()
+        self.code_hash = digest[:16]
 
     def config(self) -> dict[str, Any]:
         return {"entry": "IndexingPipeline.index_directory + SearchService.hybrid_search",
-                "config": "config/default.yaml", "code_hash": self.code_hash}
+                "config": str(self.config_path.relative_to(REPO_ROOT)) if self.config_path.is_relative_to(REPO_ROOT)
+                else str(self.config_path), "code_hash": self.code_hash}
 
     def _worker(self, *args: str, timeout: int) -> None:
+        env = dict(os.environ, INQUIRY_CONFIG=str(self.config_path))
         result = subprocess.run([sys.executable, "-m", "evals.inquiry_worker", *args], cwd=REPO_ROOT,
-                                capture_output=True, text=True, timeout=timeout)
+                                capture_output=True, text=True, timeout=timeout, env=env)
         if result.returncode != 0:
             raise RuntimeError(f"inquiry worker {args[0]} failed: {result.stderr.strip()[-600:]}")
 

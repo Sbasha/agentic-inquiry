@@ -2262,3 +2262,38 @@ async def fetch_content(
 
 
 __all__ = ["search_knowledge", "find_similar", "fetch_content", "build_result_quality", "ContentType"]
+
+
+async def search(services: dict, query: str, limit: int = 10, max_chars: int = 10_000) -> str:
+    """Find where something is implemented, configured or described in the indexed project.
+
+    Returns the best-matching code and text, best first, as blocks headed
+    ``path:start-end  scope`` and cut at ``max_chars`` characters on a line
+    boundary. Use it before grepping or opening files; the line numbers are
+    exact, so a follow-up read can target them.
+
+    Args:
+        services: Service dependency dict (bound by the server)
+        query: What to look for, in words or identifiers
+        limit: Results to consider (1 to 50)
+        max_chars: Character budget for the returned text (500 to 50,000)
+    """
+    from agentic_inquiry.mcp.utils.validation import QueryValidationError, validate_query_length
+    from agentic_inquiry.search.context_pack import render_context_pack
+
+    try:
+        query = validate_query_length(query, field_name="query")
+    except QueryValidationError as exc:
+        return f"Invalid query: {exc}"
+    limit = max(1, min(int(limit), 50))
+    max_chars = max(500, min(int(max_chars), 50_000))
+    server = services.get("server_config") or {}
+    vector = await services["embedding_service"].embed_async(query)
+    results = await services["search_service"].hybrid_search(
+        query_vector=vector.tolist(),
+        query_fts=query,
+        project_id=server.get("default_project_id"),
+        limit=limit,
+    )
+    root = server.get("project_root") or os.getcwd()
+    return render_context_pack([r.data for r in results], max_chars=max_chars, root=Path(root))
