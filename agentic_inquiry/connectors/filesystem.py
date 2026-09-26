@@ -7,6 +7,7 @@ Provides a secure connector for local file access with:
 
 See: docs/design/connector-architecture.md
 """
+
 from __future__ import annotations
 
 import asyncio

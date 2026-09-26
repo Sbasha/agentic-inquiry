@@ -46,7 +46,11 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _hook(argv: list[str]) -> int:
-    from agentic_inquiry.integration.contract import empty_context, error_object, new_response
+    from agentic_inquiry.integration.contract import (
+        empty_context,
+        error_object,
+        new_response,
+    )
     from agentic_inquiry.integration.hooks import emit, hook, parse_hook_argv
     from agentic_inquiry.integration.contract import bound_response
 
@@ -104,7 +108,12 @@ def _dispatch(parsed: argparse.Namespace) -> int:
         from agentic_inquiry.integration.reconcile import reconcile
 
         report = asyncio.run(
-            reconcile(root, retry=parsed.retry, lock_timeout=parsed.lock_wait, force=parsed.force)
+            reconcile(
+                root,
+                retry=parsed.retry,
+                lock_timeout=parsed.lock_wait,
+                force=parsed.force,
+            )
         )
         _emit({"schema_version": SCHEMA_VERSION, "ok": True, **report})
         return 1 if report["failed"] else 0

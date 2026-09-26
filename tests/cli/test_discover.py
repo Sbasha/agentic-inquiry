@@ -22,7 +22,7 @@ class TestParseFrontmatter:
     def test_valid_frontmatter(self, tmp_path):
         """Parses valid YAML frontmatter."""
         md_file = tmp_path / "test.md"
-        md_file.write_text('''---
+        md_file.write_text("""---
 description: Test command
 argument-hint: "<query>"
 allowed-tools: ["Read", "Write"]
@@ -31,7 +31,7 @@ allowed-tools: ["Read", "Write"]
 # Test Command
 
 Content here.
-''')
+""")
 
         result = parse_frontmatter(md_file)
         assert result["description"] == "Test command"
@@ -49,11 +49,11 @@ Content here.
     def test_quoted_values(self, tmp_path):
         """Handles quoted values correctly."""
         md_file = tmp_path / "test.md"
-        md_file.write_text('''---
+        md_file.write_text("""---
 description: "A quoted description"
 name: 'single quotes'
 ---
-''')
+""")
 
         result = parse_frontmatter(md_file)
         assert result["description"] == "A quoted description"
@@ -80,6 +80,7 @@ class TestFindCommandsDirectory:
 
         # Patch LOCAL_EXTENSION_PATHS
         from agentic_inquiry.cli import discover
+
         original_paths = discover.LOCAL_EXTENSION_PATHS
         discover.LOCAL_EXTENSION_PATHS = [Path("extensions/claude/ai")]
 
@@ -100,21 +101,22 @@ class TestDiscoverInquiryCommands:
         commands_dir = tmp_path / "extensions" / "claude" / "ai" / "commands"
         commands_dir.mkdir(parents=True)
 
-        (commands_dir / "search.md").write_text('''---
+        (commands_dir / "search.md").write_text("""---
 description: Semantic search
 argument-hint: "<query>"
 ---
-''')
-        (commands_dir / "index.md").write_text('''---
+""")
+        (commands_dir / "index.md").write_text("""---
 description: Index codebase
 argument-hint: "[path]"
 ---
-''')
+""")
         (commands_dir / "_private.md").write_text("---\ndescription: Private\n---")
 
         monkeypatch.chdir(tmp_path)
 
         from agentic_inquiry.cli import discover
+
         original_local_paths = discover.LOCAL_EXTENSION_PATHS
         original_cache_paths = discover.PLUGIN_CACHE_PATHS
         # Clear cache paths so only local paths are checked
@@ -153,14 +155,14 @@ class TestFormatCommandsTable:
                 full_name="ai:search",
                 description="Search code",
                 argument_hint="<query>",
-                file_path=Path("search.md")
+                file_path=Path("search.md"),
             ),
             CommandInfo(
                 name="index",
                 full_name="ai:index",
                 description="Index codebase",
                 argument_hint="",
-                file_path=Path("index.md")
+                file_path=Path("index.md"),
             ),
         ]
 
@@ -188,7 +190,7 @@ class TestFormatCommandsList:
                 full_name="ai:search",
                 description="Search code",
                 argument_hint="<query>",
-                file_path=Path("search.md")
+                file_path=Path("search.md"),
             ),
         ]
 
@@ -205,7 +207,7 @@ class TestFormatCommandsList:
                 full_name="ai:search",
                 description="Search code",
                 argument_hint="<query>",
-                file_path=Path("/path/to/search.md")
+                file_path=Path("/path/to/search.md"),
             ),
         ]
 
@@ -227,6 +229,7 @@ class TestGetCommandInfo:
         monkeypatch.chdir(tmp_path)
 
         from agentic_inquiry.cli import discover
+
         original_local_paths = discover.LOCAL_EXTENSION_PATHS
         original_cache_paths = discover.PLUGIN_CACHE_PATHS
         discover.PLUGIN_CACHE_PATHS = []
@@ -253,6 +256,7 @@ class TestGetCommandInfo:
         monkeypatch.chdir(tmp_path)
 
         from agentic_inquiry.cli import discover
+
         original_local_paths = discover.LOCAL_EXTENSION_PATHS
         original_cache_paths = discover.PLUGIN_CACHE_PATHS
         discover.PLUGIN_CACHE_PATHS = []

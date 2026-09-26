@@ -35,7 +35,7 @@ def session_date_header(content: str) -> str:
 
 class FallbackTextParser:
     """Fallback parser that reads files as plain text with semantic chunking.
-    
+
     This parser:
     - Reads files as UTF-8 text (with fallback to latin-1, cp1252, ASCII)
     - Keeps files at or under whole_file_max_chars as a single chunk
@@ -45,7 +45,7 @@ class FallbackTextParser:
     - Does not extract symbols or relationships
     - Works with any text-based file
     """
-    
+
     def __init__(
         self,
         max_chunk_size: int = 1000,
@@ -53,7 +53,7 @@ class FallbackTextParser:
         whole_file_max_chars: int = WHOLE_FILE_MAX_CHARS,
     ):
         """Initialize the fallback text parser.
-        
+
         Args:
             max_chunk_size: Maximum number of characters per chunk when a file
                 is larger than whole_file_max_chars (default: 1000)
@@ -70,7 +70,7 @@ class FallbackTextParser:
         self.max_chunk_size = config.max_chunk_size
         self.chunk_overlap = config.chunk_overlap
         self.whole_file_max_chars = config.whole_file_max_chars
-    
+
     async def parse(self, path: str, **kwargs) -> ParsedDocument:
         """Parse a file as plain text with semantic chunking.
 
@@ -103,69 +103,81 @@ class FallbackTextParser:
             file_path=str(file_path.absolute()),
             chunks=chunks,
             metadata={
-                'language': file_path.suffix.lstrip('.') if file_path.suffix else 'text',
-                'total_chunks': len(chunks),
-            }
+                "language": file_path.suffix.lstrip(".")
+                if file_path.suffix
+                else "text",
+                "total_chunks": len(chunks),
+            },
         )
-    
+
     async def _read_with_encoding_detection(self, path: Path) -> str:
         """Read file with automatic encoding detection using aiofiles.
-        
+
         Tries encodings in order: UTF-8, Latin-1, cp1252, ASCII.
         Falls back to UTF-8 with error replacement if all fail.
-        
+
         Args:
             path: Path to the file
-            
+
         Returns:
             File content as string
-            
+
         Raises:
             ParsingError: If file cannot be read
         """
         import aiofiles
-        
-        encodings = ['utf-8', 'latin-1', 'cp1252', 'ascii']
-        
+
+        encodings = ["utf-8", "latin-1", "cp1252", "ascii"]
+
         for encoding in encodings:
             try:
-                async with aiofiles.open(path, mode='r', encoding=encoding) as f:
+                async with aiofiles.open(path, mode="r", encoding=encoding) as f:
                     return await f.read()
             except (UnicodeDecodeError, LookupError):
                 continue
-        
+
         # Last resort: UTF-8 with error replacement
         try:
-            async with aiofiles.open(path, mode='r', encoding='utf-8', errors='replace') as f:
+            async with aiofiles.open(
+                path, mode="r", encoding="utf-8", errors="replace"
+            ) as f:
                 return await f.read()
         except Exception as e:
             raise ParsingError(f"Failed to read file {path}: {e}") from e
-    
-    def _create_semantic_chunks(self, content: str, file_path: str) -> List[ParserChunk]:
+
+    def _create_semantic_chunks(
+        self, content: str, file_path: str
+    ) -> List[ParserChunk]:
         """Create semantic chunks from text content.
-        
+
         Chunks are created based on:
         1. Paragraphs (split on double newlines)
         2. Sentences (for long paragraphs)
         3. Character limits (max_chunk_size)
-        
+
         Args:
             content: Text content to chunk
             file_path: Path to the file (for metadata)
-            
+
         Returns:
             List of ParserChunk objects
         """
         if not content.strip():
             # Empty file - return single empty chunk
-            return [ParserChunk(
-                content="",
-                fts_text="",
-                content_type="OTHER",
-                line_start=1,
-                line_end=1,
-                metadata={'chunk_index': 0, 'total_chunks': 1, 'chunk_type': 'empty'}
-            )]
+            return [
+                ParserChunk(
+                    content="",
+                    fts_text="",
+                    content_type="OTHER",
+                    line_start=1,
+                    line_end=1,
+                    metadata={
+                        "chunk_index": 0,
+                        "total_chunks": 1,
+                        "chunk_type": "empty",
+                    },
+                )
+            ]
 
         # Small prose files (sessions, abstracts) stay one retrieval unit.
         if self.whole_file_max_chars > 0 and len(content) <= self.whole_file_max_chars:
@@ -174,29 +186,31 @@ class FallbackTextParser:
             chunk.metadata["chunk_index"] = 0
             chunk.metadata["total_chunks"] = 1
             return [chunk]
-        
+
         # Split into paragraphs (double newlines)
         paragraphs = self._split_into_paragraphs(content)
-        
+
         # Process paragraphs into chunks
         chunks = []
         current_chunk_text = ""
         current_start_line = 1
         current_line = 1
-        
+
         for para_text, para_start_line, para_end_line in paragraphs:
             # If paragraph is too long, split by sentences
             if len(para_text) > self.max_chunk_size:
                 # Flush current chunk if any
                 if current_chunk_text:
-                    chunks.append(self._create_chunk(
-                        current_chunk_text,
-                        current_start_line,
-                        current_line - 1,
-                        'paragraph'
-                    ))
+                    chunks.append(
+                        self._create_chunk(
+                            current_chunk_text,
+                            current_start_line,
+                            current_line - 1,
+                            "paragraph",
+                        )
+                    )
                     current_chunk_text = ""
-                
+
                 # Split long paragraph into sentences
                 sentence_chunks = self._split_long_paragraph(
                     para_text, para_start_line, para_end_line
@@ -206,15 +220,21 @@ class FallbackTextParser:
                 current_line = para_end_line + 1
             else:
                 # Check if adding this paragraph would exceed max size
-                if current_chunk_text and len(current_chunk_text) + len(para_text) + 2 > self.max_chunk_size:
+                if (
+                    current_chunk_text
+                    and len(current_chunk_text) + len(para_text) + 2
+                    > self.max_chunk_size
+                ):
                     # Flush current chunk
-                    chunks.append(self._create_chunk(
-                        current_chunk_text,
-                        current_start_line,
-                        current_line - 1,
-                        'paragraph'
-                    ))
-                    
+                    chunks.append(
+                        self._create_chunk(
+                            current_chunk_text,
+                            current_start_line,
+                            current_line - 1,
+                            "paragraph",
+                        )
+                    )
+
                     # Start new chunk with overlap
                     overlap_text = self._get_overlap_text(current_chunk_text)
                     current_chunk_text = overlap_text + para_text
@@ -226,18 +246,20 @@ class FallbackTextParser:
                     else:
                         current_chunk_text = para_text
                         current_start_line = para_start_line
-                
+
                 current_line = para_end_line + 1
-        
+
         # Flush remaining chunk
         if current_chunk_text:
-            chunks.append(self._create_chunk(
-                current_chunk_text,
-                current_start_line,
-                current_line - 1,
-                'paragraph'
-            ))
-        
+            chunks.append(
+                self._create_chunk(
+                    current_chunk_text,
+                    current_start_line,
+                    current_line - 1,
+                    "paragraph",
+                )
+            )
+
         # Keep Session/Date on every slice so temporal retrieval still sees it.
         header = session_date_header(content)
         if header:
@@ -248,9 +270,9 @@ class FallbackTextParser:
         for idx, chunk in enumerate(chunks):
             if chunk.metadata is None:
                 chunk.metadata = {}
-            chunk.metadata['chunk_index'] = idx
-            chunk.metadata['total_chunks'] = total_chunks
-        
+            chunk.metadata["chunk_index"] = idx
+            chunk.metadata["total_chunks"] = total_chunks
+
         return chunks
 
     def _prefix_header(self, chunk: ParserChunk, header: str) -> ParserChunk:
@@ -262,13 +284,13 @@ class FallbackTextParser:
         chunk.content = prefixed
         chunk.fts_text = prefixed
         return chunk
-    
+
     def _split_into_paragraphs(self, content: str) -> List[Tuple[str, int, int]]:
         """Split content into paragraphs.
-        
+
         Args:
             content: Text content
-            
+
         Returns:
             List of tuples (paragraph_text, start_line, end_line)
         """
@@ -276,7 +298,7 @@ class FallbackTextParser:
         paragraphs = []
         current_para = []
         para_start_line = 1
-        
+
         for line_num, line in enumerate(lines, start=1):
             if line.strip():
                 current_para.append(line)
@@ -288,58 +310,60 @@ class FallbackTextParser:
                     paragraphs.append((para_text, para_start_line, para_end_line))
                     current_para = []
                 para_start_line = line_num + 1
-        
+
         # Add final paragraph
         if current_para:
             para_text = "\n".join(current_para)
             para_end_line = len(lines)
             paragraphs.append((para_text, para_start_line, para_end_line))
-        
+
         return paragraphs
-    
+
     def _split_long_paragraph(
         self, text: str, start_line: int, end_line: int
     ) -> List[ParserChunk]:
         """Split a long paragraph into sentence-based chunks.
-        
+
         Args:
             text: Paragraph text
             start_line: Starting line number
             end_line: Ending line number
-            
+
         Returns:
             List of ParserChunk objects
         """
         # Split into sentences using regex
-        sentence_pattern = r'(?<=[.!?])\s+'
+        sentence_pattern = r"(?<=[.!?])\s+"
         sentences = re.split(sentence_pattern, text)
-        
+
         chunks = []
         current_chunk_text = ""
         chunk_start_line = start_line
-        
+
         # Estimate lines per character for line number calculation
         total_lines = end_line - start_line + 1
         lines_per_char = total_lines / len(text) if text else 0
         current_char_pos = 0
-        
+
         for sentence in sentences:
             if not sentence.strip():
                 continue
-            
+
             # Check if adding this sentence would exceed max size
-            if current_chunk_text and len(current_chunk_text) + len(sentence) + 1 > self.max_chunk_size:
+            if (
+                current_chunk_text
+                and len(current_chunk_text) + len(sentence) + 1 > self.max_chunk_size
+            ):
                 # Calculate end line for current chunk
                 chunk_end_line = start_line + int(current_char_pos * lines_per_char)
-                
+
                 # Flush current chunk
-                chunks.append(self._create_chunk(
-                    current_chunk_text,
-                    chunk_start_line,
-                    chunk_end_line,
-                    'sentence'
-                ))
-                
+                chunks.append(
+                    self._create_chunk(
+                        current_chunk_text, chunk_start_line, chunk_end_line, "sentence"
+                    )
+                )
+
                 # Start new chunk with overlap
                 overlap_text = self._get_overlap_text(current_chunk_text)
                 current_chunk_text = overlap_text + sentence
@@ -350,52 +374,51 @@ class FallbackTextParser:
                     current_chunk_text += " " + sentence
                 else:
                     current_chunk_text = sentence
-            
+
             current_char_pos += len(sentence) + 1
-        
+
         # Flush remaining chunk
         if current_chunk_text:
-            chunks.append(self._create_chunk(
-                current_chunk_text,
-                chunk_start_line,
-                end_line,
-                'sentence'
-            ))
-        
+            chunks.append(
+                self._create_chunk(
+                    current_chunk_text, chunk_start_line, end_line, "sentence"
+                )
+            )
+
         return chunks
-    
+
     def _get_overlap_text(self, text: str) -> str:
         """Get overlap text from the end of a chunk.
-        
+
         Args:
             text: Text to extract overlap from
-            
+
         Returns:
             Overlap text (last chunk_overlap characters)
         """
         if len(text) <= self.chunk_overlap:
             return text
-        
-        overlap = text[-self.chunk_overlap:]
-        
+
+        overlap = text[-self.chunk_overlap :]
+
         # Try to start at a word boundary
-        space_idx = overlap.find(' ')
+        space_idx = overlap.find(" ")
         if space_idx > 0:
-            overlap = overlap[space_idx + 1:]
-        
+            overlap = overlap[space_idx + 1 :]
+
         return overlap + " "
-    
+
     def _create_chunk(
         self, text: str, start_line: int, end_line: int, chunk_type: str
     ) -> ParserChunk:
         """Create a ParserChunk from text.
-        
+
         Args:
             text: Chunk text
             start_line: Starting line number
             end_line: Ending line number
             chunk_type: Type of chunk (paragraph, sentence, empty)
-            
+
         Returns:
             ParserChunk object
         """
@@ -405,18 +428,18 @@ class FallbackTextParser:
             content_type="OTHER",
             line_start=start_line,
             line_end=end_line,
-            metadata={'chunk_type': chunk_type}
+            metadata={"chunk_type": chunk_type},
         )
-    
+
     async def can_parse(self, file_path: str) -> bool:
         """Check if this parser can handle the file.
-        
+
         The fallback parser can handle any text file, so this always returns True
         for files that exist and are readable.
-        
+
         Args:
             file_path: Path to check
-            
+
         Returns:
             True if the file exists and is a file
         """

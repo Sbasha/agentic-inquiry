@@ -1,5 +1,6 @@
 # agentic_inquiry/mcp/services/gatherers/memory_gatherer.py
 """Memory context gatherer implementation."""
+
 import logging
 from typing import Any, Dict, List
 
@@ -19,9 +20,7 @@ class MemoryGatherer(ContextGathererProtocol):
     """
 
     def __init__(
-        self,
-        memory_system: MemorySystem,
-        token_optimizer: TokenOptimizer
+        self, memory_system: MemorySystem, token_optimizer: TokenOptimizer
     ) -> None:
         """Initialize memory gatherer.
 
@@ -56,7 +55,9 @@ class MemoryGatherer(ContextGathererProtocol):
 
         logger.info(
             "Retrieving memories: query=%s, session_id=%s, limit=%s",
-            context.query, context.session_id, limit
+            context.query,
+            context.session_id,
+            limit,
         )
 
         # Check memory system availability
@@ -70,7 +71,7 @@ class MemoryGatherer(ContextGathererProtocol):
                 agent_id="mcp_user",  # Must match agent_id used in save_memory tool
                 session_id=context.session_id,
                 conversation_id=context.session_id,  # Use session_id as conversation_id
-                project_id=context.project_id
+                project_id=context.project_id,
             )
 
             # Retrieve memories using memory system
@@ -78,7 +79,7 @@ class MemoryGatherer(ContextGathererProtocol):
                 query=context.query,
                 context=memory_context,
                 limit=limit,
-                strategy="adaptive"
+                strategy="adaptive",
             )
 
             results_list = []
@@ -93,17 +94,32 @@ class MemoryGatherer(ContextGathererProtocol):
             memories: List[Dict[str, Any]] = []
             for result in results_list:
                 if not isinstance(result, RetrievalResult):
-                    logger.warning("Skipping non-RetrievalResult item in memory gatherer: %s", result)
+                    logger.warning(
+                        "Skipping non-RetrievalResult item in memory gatherer: %s",
+                        result,
+                    )
                     continue
-                
+
                 memory_dict = {
-                    "id": result.item.id if hasattr(result.item, 'id') else "",
-                    "summary": result.item.summary if hasattr(result.item, 'summary') else "",
-                    "content": result.item.content if hasattr(result.item, 'content') else "",
-                    "relevance_score": result.relevance_score if hasattr(result, 'relevance_score') else 0.0,
-                    "importance": result.item.importance if hasattr(result.item, 'importance') else 0.5,
-                    "created_at": result.item.created_at.isoformat() if hasattr(result.item, 'created_at') and result.item.created_at else "",
-                    "tags": result.item.metadata.get('tags', []) if hasattr(result.item, 'metadata') else []
+                    "id": result.item.id if hasattr(result.item, "id") else "",
+                    "summary": result.item.summary
+                    if hasattr(result.item, "summary")
+                    else "",
+                    "content": result.item.content
+                    if hasattr(result.item, "content")
+                    else "",
+                    "relevance_score": result.relevance_score
+                    if hasattr(result, "relevance_score")
+                    else 0.0,
+                    "importance": result.item.importance
+                    if hasattr(result.item, "importance")
+                    else 0.5,
+                    "created_at": result.item.created_at.isoformat()
+                    if hasattr(result.item, "created_at") and result.item.created_at
+                    else "",
+                    "tags": result.item.metadata.get("tags", [])
+                    if hasattr(result.item, "metadata")
+                    else [],
                 }
                 memories.append(memory_dict)
 
@@ -118,7 +134,9 @@ class MemoryGatherer(ContextGathererProtocol):
                     context.budget.add(item_text)
                     memory_items.append(item)
                 else:
-                    logger.debug("Skipping memory item %s - budget exceeded", item['id'])
+                    logger.debug(
+                        "Skipping memory item %s - budget exceeded", item["id"]
+                    )
                     break
 
             logger.info("Converted to %s memory context items", len(memory_items))
@@ -129,9 +147,7 @@ class MemoryGatherer(ContextGathererProtocol):
             return []
 
     def _memory_to_context_item(
-        self,
-        memory: Dict[str, Any],
-        session_id: str
+        self, memory: Dict[str, Any], session_id: str
     ) -> Dict[str, Any]:
         """Convert memory to context item dictionary.
 
@@ -170,7 +186,7 @@ class MemoryGatherer(ContextGathererProtocol):
             "metadata": {
                 "importance": importance_label,
                 "created": memory.get("created_at", ""),
-                "tags": memory.get("tags", [])
+                "tags": memory.get("tags", []),
             },
-            "why_relevant": f"Memory from session with relevance {relevance_score:.2f}"
+            "why_relevant": f"Memory from session with relevance {relevance_score:.2f}",
         }

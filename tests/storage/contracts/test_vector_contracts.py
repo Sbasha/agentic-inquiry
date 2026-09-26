@@ -65,15 +65,11 @@ class TestChunkCRUD:
         self, vector_provider, project_id, chunk_factory
     ):
         """upsert_chunks should update existing chunks."""
-        chunk = chunk_factory(
-            chunk_id="c1", project_id=project_id, content="original"
-        )
+        chunk = chunk_factory(chunk_id="c1", project_id=project_id, content="original")
         await vector_provider.upsert_chunks([chunk], project_id)
 
         # Update with new content
-        updated = chunk_factory(
-            chunk_id="c1", project_id=project_id, content="updated"
-        )
+        updated = chunk_factory(chunk_id="c1", project_id=project_id, content="updated")
         count = await vector_provider.upsert_chunks([updated], project_id)
 
         assert count == 1
@@ -89,9 +85,7 @@ class TestChunkCRUD:
         self, vector_provider, project_id
     ):
         """get_chunks_by_file should return empty list for non-existent file."""
-        result = await vector_provider.get_chunks_by_file(
-            "/nonexistent.py", project_id
-        )
+        result = await vector_provider.get_chunks_by_file("/nonexistent.py", project_id)
 
         assert result == []
 
@@ -159,9 +153,7 @@ class TestChunkCRUD:
         ]
         await vector_provider.upsert_chunks(chunks, project_id)
 
-        deleted = await vector_provider.delete_chunks_by_ids(
-            ["c1", "c2"], project_id
-        )
+        deleted = await vector_provider.delete_chunks_by_ids(["c1", "c2"], project_id)
 
         assert deleted == 2
 
@@ -204,8 +196,7 @@ class TestVectorSearch:
     ):
         """vector_search should respect the limit parameter."""
         chunks = [
-            chunk_factory(chunk_id=f"c{i}", project_id=project_id)
-            for i in range(10)
+            chunk_factory(chunk_id=f"c{i}", project_id=project_id) for i in range(10)
         ]
         await vector_provider.upsert_chunks(chunks, project_id)
 
@@ -315,9 +306,7 @@ class TestQueryOperations:
     """Tests for query operations."""
 
     @pytest.mark.asyncio
-    async def test_query_with_filters(
-        self, vector_provider, project_id, chunk_factory
-    ):
+    async def test_query_with_filters(self, vector_provider, project_id, chunk_factory):
         """query should return chunks matching filters."""
         chunks = [
             chunk_factory(
@@ -347,8 +336,7 @@ class TestQueryOperations:
     ):
         """count should return total number of matching chunks."""
         chunks = [
-            chunk_factory(chunk_id=f"c{i}", project_id=project_id)
-            for i in range(5)
+            chunk_factory(chunk_id=f"c{i}", project_id=project_id) for i in range(5)
         ]
         await vector_provider.upsert_chunks(chunks, project_id)
 
@@ -357,9 +345,7 @@ class TestQueryOperations:
         assert total == 5
 
     @pytest.mark.asyncio
-    async def test_count_with_filters(
-        self, vector_provider, project_id, chunk_factory
-    ):
+    async def test_count_with_filters(self, vector_provider, project_id, chunk_factory):
         """count should respect filters."""
         chunks = [
             chunk_factory(
@@ -434,18 +420,14 @@ class TestMaintenanceOperations:
         assert health["status"] == "healthy"
 
     @pytest.mark.asyncio
-    async def test_run_maintenance_returns_result(
-        self, vector_provider, project_id
-    ):
+    async def test_run_maintenance_returns_result(self, vector_provider, project_id):
         """run_maintenance should return maintenance result."""
         result = await vector_provider.run_maintenance(project_id)
 
         assert isinstance(result, dict)
 
     @pytest.mark.asyncio
-    async def test_validate_integrity_returns_result(
-        self, vector_provider, project_id
-    ):
+    async def test_validate_integrity_returns_result(self, vector_provider, project_id):
         """validate_integrity should return validation result."""
         result = await vector_provider.validate_integrity(project_id)
 
@@ -456,9 +438,7 @@ class TestProjectIsolation:
     """Tests for project-based data isolation."""
 
     @pytest.mark.asyncio
-    async def test_chunks_isolated_by_project(
-        self, vector_provider, chunk_factory
-    ):
+    async def test_chunks_isolated_by_project(self, vector_provider, chunk_factory):
         """Chunks from different projects should be isolated."""
         project_a = "project_a_test"
         project_b = "project_b_test"
@@ -476,9 +456,7 @@ class TestProjectIsolation:
         assert count_b == 1
 
     @pytest.mark.asyncio
-    async def test_vector_search_respects_project(
-        self, vector_provider, chunk_factory
-    ):
+    async def test_vector_search_respects_project(self, vector_provider, chunk_factory):
         """vector_search should only return results from specified project."""
         project_a = "project_a_search"
         project_b = "project_b_search"

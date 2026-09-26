@@ -27,7 +27,6 @@ class TestSimilarityTranslations:
     def test_lancedb_metric(self, metric: str, expected: str) -> None:
         assert lancedb_metric(metric) == expected
 
-
     @pytest.mark.parametrize(
         "metric,expected",
         [("cosine", "cosinesimil"), ("l2", "l2"), ("dot", "innerproduct")],
@@ -54,7 +53,6 @@ class TestBackendConfigSimilarityMetric:
             similarity_metric="l2",
         )
         assert cfg.similarity_metric == "l2"
-
 
     def test_unknown_metric_is_rejected(self) -> None:
         # pydantic's Literal type enforcement catches this before the
@@ -130,5 +128,3 @@ class TestDistanceToSimilarity:
     def test_rejects_unknown_metric(self) -> None:
         with pytest.raises(ValueError, match="unsupported similarity_metric"):
             distance_to_similarity(0.0, "hamming")
-
-

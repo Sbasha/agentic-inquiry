@@ -13,7 +13,10 @@ import pytest_asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from agentic_inquiry.models.graph_entity import EntityType, GraphEntity
-from agentic_inquiry.models.graph_relationship import GraphRelationship, RelationshipType
+from agentic_inquiry.models.graph_relationship import (
+    GraphRelationship,
+    RelationshipType,
+)
 
 pytestmark = [pytest.mark.unit, pytest.mark.contracts]
 
@@ -360,9 +363,11 @@ class TestImpactTraversalWithRelationships:
 
         # Relationship only in project A
         await memory_provider.upsert_relationships(
-            [relationship_factory(
-                rel_id="r1", project_id=project_a, source_id="e1", target_id="e2"
-            )],
+            [
+                relationship_factory(
+                    rel_id="r1", project_id=project_a, source_id="e1", target_id="e2"
+                )
+            ],
             project_a,
         )
 

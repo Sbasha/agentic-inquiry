@@ -57,7 +57,9 @@ class ContextManager:
 
         self._running = True
         self._cleanup_task = asyncio.create_task(self._cleanup_loop())
-        logger.info("ContextManager started with cleanup interval %ds", self.cleanup_interval)
+        logger.info(
+            "ContextManager started with cleanup interval %ds", self.cleanup_interval
+        )
 
     async def stop(self) -> None:
         """Stop background cleanup task."""
@@ -231,7 +233,9 @@ class ContextManager:
             profile: Updated AgentProfile
         """
         if profile.agent_id != agent_id:
-            raise ValueError(f"Profile agent_id {profile.agent_id} does not match {agent_id}")
+            raise ValueError(
+                f"Profile agent_id {profile.agent_id} does not match {agent_id}"
+            )
 
         profile.updated_at = datetime.now(timezone.utc)
         self._agent_profiles[agent_id] = profile
@@ -297,4 +301,3 @@ class ContextManager:
         for context in self._active_contexts.values():
             counts[context.agent_id] = counts.get(context.agent_id, 0) + 1
         return counts
-

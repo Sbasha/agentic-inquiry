@@ -21,7 +21,7 @@ async def _index_directory_async(
     directory_path: Path,
     timeout: int = 300,
     timeout_per_file: int = 5,
-    base_timeout: int = 60
+    base_timeout: int = 60,
 ) -> Dict[str, Any]:
     """Index directory with progress tracking and dynamic timeout.
 
@@ -53,21 +53,43 @@ async def _index_directory_async(
         "files_processed": 0,
         "chunks_created": 0,
         "entities_created": 0,
-        "errors": []
+        "errors": [],
     }
 
     # Discover all files (parsers will skip unsupported types via can_parse)
     # Exclude obvious binary files that no parser can handle
     binary_extensions = {
-                         '.mp3', '.mp4', '.wav', '.avi', '.mov', '.mkv',
-                         '.zip', '.tar', '.gz', '.rar', '.7z',
-                         '.exe', '.dll', '.so', '.dylib', '.bin',
-                         '.pyc', '.pyo', '.class', '.o', '.obj',
-                         '.woff', '.woff2', '.ttf', '.otf', '.eot'
-                        }
+        ".mp3",
+        ".mp4",
+        ".wav",
+        ".avi",
+        ".mov",
+        ".mkv",
+        ".zip",
+        ".tar",
+        ".gz",
+        ".rar",
+        ".7z",
+        ".exe",
+        ".dll",
+        ".so",
+        ".dylib",
+        ".bin",
+        ".pyc",
+        ".pyo",
+        ".class",
+        ".o",
+        ".obj",
+        ".woff",
+        ".woff2",
+        ".ttf",
+        ".otf",
+        ".eot",
+    }
     ignore_handler = get_ignore_handler(str(directory_path))
     files = [
-        f for f in directory_path.rglob("*")
+        f
+        for f in directory_path.rglob("*")
         if f.is_file()
         and not ignore_handler.is_ignored(str(f))
         and f.suffix.lower() not in binary_extensions
@@ -86,7 +108,7 @@ async def _index_directory_async(
         operation_id,
         directory_path,
         len(files),
-        effective_timeout
+        effective_timeout,
     )
 
     try:
@@ -98,7 +120,9 @@ async def _index_directory_async(
             session_manager=session_manager,
         ):
             # Get session to extract project_id
-            session = await session_manager.get_session(session_id, include_history=False)
+            session = await session_manager.get_session(
+                session_id, include_history=False
+            )
             project_id = session.project_id
 
             # Create IndexingPipeline with session's project_id
@@ -109,7 +133,7 @@ async def _index_directory_async(
                 "db_manager": db_manager,
                 "config": config,
                 "project_id": project_id,
-                "event_system": event_system  # Pass the event system from services
+                "event_system": event_system,  # Pass the event system from services
             }
             if hasattr(db_manager, "embedding_registry"):
                 pipeline_kwargs["registry"] = db_manager.embedding_registry
@@ -127,23 +151,23 @@ async def _index_directory_async(
                         "items_processed": 0,
                         "chunks_created": 0,
                         "files": [],
-                        "message": f"No files found in {directory_path}"
-                    }
+                        "message": f"No files found in {directory_path}",
+                    },
                 )
                 logger.info(
                     "Directory indexing completed with no files: operation_id=%s",
-                    operation_id
+                    operation_id,
                 )
                 return {
                     "status": "completed",
                     "items_processed": 0,
-                    "chunks_created": 0
+                    "chunks_created": 0,
                 }
-            
+
             # Index each file with progress tracking
             chain = create_parser_chain()
             indexed_files = []
-            
+
             for file_path in files:
                 try:
                     # Pass db_manager, embedding_service, and project_id to parser for granular entity extraction
@@ -151,18 +175,22 @@ async def _index_directory_async(
                         str(file_path),
                         db_manager=db_manager,
                         embedding_service=indexing_pipeline.embedding_service,
-                        project_id=project_id
+                        project_id=project_id,
                     )
                     # Process document but defer relationship flush until all files are indexed
                     # This ensures cross-file symbols are registered before resolution
-                    await indexing_pipeline.process_document(parsed_doc, flush_relationships=False)
-                    
+                    await indexing_pipeline.process_document(
+                        parsed_doc, flush_relationships=False
+                    )
+
                     # Update progress
                     progress["files_processed"] += 1
                     progress["chunks_created"] += len(parsed_doc.chunks)
-                    progress["entities_created"] += sum(len(chunk.symbols or []) for chunk in parsed_doc.chunks)
+                    progress["entities_created"] += sum(
+                        len(chunk.symbols or []) for chunk in parsed_doc.chunks
+                    )
                     indexed_files.append(str(file_path.relative_to(directory_path)))
-                    
+
                     # Emit progress event
                     await event_system.emit(
                         "indexing_progress",
@@ -170,68 +198,74 @@ async def _index_directory_async(
                         operation_id=operation_id,
                         files_processed=progress["files_processed"],
                         chunks_created=progress["chunks_created"],
-                        total_files=len(files)
+                        total_files=len(files),
                     )
-                    
+
                 except Exception as e:
                     from agentic_inquiry.indexing.models import IndexingError
-                    from agentic_inquiry.exceptions import ParsingError, SchemaValidationError
-                    
-                    logger.error(
-                        "Failed to index file %s in async operation: %s",
-                        file_path,
-                        e
+                    from agentic_inquiry.exceptions import (
+                        ParsingError,
+                        SchemaValidationError,
                     )
-                    
+
+                    logger.error(
+                        "Failed to index file %s in async operation: %s", file_path, e
+                    )
+
                     # Create IndexingError with helpful suggestion based on error type
                     error_type = type(e).__name__
                     suggestion = "Check file format and content"
-                    
+
                     if isinstance(e, ParsingError):
                         suggestion = "Verify file is valid and supported format (.py, .js, .ts, .md, etc.)"
                     elif isinstance(e, SchemaValidationError):
                         suggestion = "File structure may not match expected schema. Check parser output."
                     elif "permission" in str(e).lower():
-                        suggestion = "Check file permissions and ensure file is accessible"
+                        suggestion = (
+                            "Check file permissions and ensure file is accessible"
+                        )
                     elif "encoding" in str(e).lower():
                         suggestion = "File may have encoding issues. Ensure file is UTF-8 encoded"
-                    
+
                     indexing_error = IndexingError(
                         file_path=str(file_path),
                         error_type=error_type,
                         error_message=str(e),
-                        suggestion=suggestion
+                        suggestion=suggestion,
                     )
                     progress["errors"].append(indexing_error.to_dict())
                     # Continue with other files
 
             # Flush pending relationships after all files are indexed
             # This is critical for graph-based features (impact analysis, pattern detection)
-            pending_count = indexing_pipeline.graph_builder.get_pending_relationship_count()
+            pending_count = (
+                indexing_pipeline.graph_builder.get_pending_relationship_count()
+            )
             logger.info(
                 "Pre-flush diagnostic: %d pending relationships queued from %d files",
                 pending_count,
                 progress["files_processed"],
             )
-            relationships_created = await indexing_pipeline.flush_pending_relationships()
+            relationships_created = (
+                await indexing_pipeline.flush_pending_relationships()
+            )
 
             # Rebuild FTS indexes after all data has been added
             # LanceDB FTS indexes don't auto-update when new data is added
             fts_rebuilt = 0
             try:
-                if hasattr(db_manager, 'rebuild_fts_indexes'):
-                    fts_rebuilt = await db_manager.rebuild_fts_indexes("document_chunks")
+                if hasattr(db_manager, "rebuild_fts_indexes"):
+                    fts_rebuilt = await db_manager.rebuild_fts_indexes(
+                        "document_chunks"
+                    )
                     if fts_rebuilt > 0:
                         logger.info(
                             "Rebuilt %d FTS indexes for document_chunks: operation_id=%s",
                             fts_rebuilt,
-                            operation_id
+                            operation_id,
                         )
             except Exception as e:
-                logger.warning(
-                    "Failed to rebuild FTS indexes after indexing: %s",
-                    e
-                )
+                logger.warning("Failed to rebuild FTS indexes after indexing: %s", e)
 
             # Get resolution statistics for debugging/visibility
             resolution_stats = indexing_pipeline.get_resolution_stats() or {}
@@ -239,7 +273,7 @@ async def _index_directory_async(
             logger.info(
                 "Flushed %d relationships for directory indexing: operation_id=%s",
                 relationships_created,
-                operation_id
+                operation_id,
             )
 
             logger.info(
@@ -247,15 +281,17 @@ async def _index_directory_async(
                 operation_id,
                 progress["files_processed"],
                 progress["chunks_created"],
-                relationships_created
+                relationships_created,
             )
 
             # Emit indexing.stored — chunks + relationships are written to storage
             if event_system:
                 from agentic_inquiry.events.types import EventTypes
+
                 capabilities = services.get("capabilities")
                 embedding_strategy = (
-                    "server_side" if capabilities and capabilities.needs_embedding_polling
+                    "server_side"
+                    if capabilities and capabilities.needs_embedding_polling
                     else "local"
                 )
                 await event_system.emit(
@@ -282,8 +318,8 @@ async def _index_directory_async(
                     "relationships_created": relationships_created,
                     "files": indexed_files,
                     "errors": progress["errors"],
-                    "message": f"Chunking complete: {progress['files_processed']} files, {relationships_created} relationships. Embeddings generating..."
-                }
+                    "message": f"Chunking complete: {progress['files_processed']} files, {relationships_created} relationships. Embeddings generating...",
+                },
             )
 
             # Generate server-side embeddings (can take minutes for large codebases)
@@ -291,27 +327,36 @@ async def _index_directory_async(
             if capabilities and capabilities.needs_embedding_polling:
                 try:
                     # Generate chunk + entity embeddings via StorageFacade
-                    logger.info("Generating server-side embeddings for operation %s...", operation_id)
+                    logger.info(
+                        "Generating server-side embeddings for operation %s...",
+                        operation_id,
+                    )
                     embed_results = await db_manager.generate_embeddings()
                     logger.info(
                         "Server-side embedding generation complete for operation %s: %s",
-                        operation_id, embed_results,
+                        operation_id,
+                        embed_results,
                     )
 
                     # Poll until all embeddings are populated (no NULL embeddings remain)
                     # Uses pipeline's polling with exponential backoff (5s initial, 900s timeout)
-                    logger.info("Polling for embedding completion (operation %s)...", operation_id)
+                    logger.info(
+                        "Polling for embedding completion (operation %s)...",
+                        operation_id,
+                    )
                     await indexing_pipeline._poll_embedding_completion()
                     logger.info("All embeddings ready for operation %s", operation_id)
                 except TimeoutError as timeout_err:
                     logger.warning(
                         "Embedding generation timed out for operation %s: %s",
-                        operation_id, timeout_err,
+                        operation_id,
+                        timeout_err,
                     )
                 except Exception as poll_err:
                     logger.error(
                         "Embedding generation/poll failed for operation %s: %s",
-                        operation_id, poll_err,
+                        operation_id,
+                        poll_err,
                         exc_info=True,
                     )
 
@@ -329,8 +374,8 @@ async def _index_directory_async(
                     "relationships_created": relationships_created,
                     "files": indexed_files,
                     "errors": progress["errors"],
-                    "message": f"Indexing complete: {progress['files_processed']} files, {relationships_created} relationships, embeddings ready"
-                }
+                    "message": f"Indexing complete: {progress['files_processed']} files, {relationships_created} relationships, embeddings ready",
+                },
             )
 
             if event_system:
@@ -350,11 +395,17 @@ async def _index_directory_async(
             if resolution_stats:
                 relationship_summary = {
                     "total_pending": resolution_stats.get("total", 0),
-                    "resolved_cross_file": resolution_stats.get("resolved_cross_file", 0),
-                    "unresolved_external": resolution_stats.get("unresolved_external", 0),
+                    "resolved_cross_file": resolution_stats.get(
+                        "resolved_cross_file", 0
+                    ),
+                    "unresolved_external": resolution_stats.get(
+                        "unresolved_external", 0
+                    ),
                     "same_file_fallback": resolution_stats.get("same_file_fallback", 0),
                     "by_strategy": resolution_stats.get("by_strategy", {}),
-                    "average_confidence": resolution_stats.get("average_confidence", 0.0),
+                    "average_confidence": resolution_stats.get(
+                        "average_confidence", 0.0
+                    ),
                 }
 
             return {
@@ -364,20 +415,20 @@ async def _index_directory_async(
                 "chunks_created": progress["chunks_created"],
                 "relationships_created": relationships_created,
                 "relationship_stats": relationship_summary,
-                "errors": progress["errors"]
+                "errors": progress["errors"],
             }
-        
+
         # Execute with dynamic timeout
         result = await asyncio.wait_for(_do_indexing(), timeout=effective_timeout)
         return result
-        
+
     except asyncio.TimeoutError:
         # Handle timeout
         logger.warning(
             "Directory indexing timed out: operation_id=%s, timeout=%d, processed=%d",
             operation_id,
             effective_timeout,
-            progress["files_processed"]
+            progress["files_processed"],
         )
 
         # Note: We cannot flush pending relationships on timeout because
@@ -401,8 +452,8 @@ async def _index_directory_async(
                 "chunks_created": progress["chunks_created"],
                 "relationships_created": relationships_created,
                 "timeout_seconds": effective_timeout,
-                "message": f"Indexing timed out after {effective_timeout}s. Processed {progress['files_processed']} files. Relationships may be incomplete."
-            }
+                "message": f"Indexing timed out after {effective_timeout}s. Processed {progress['files_processed']} files. Relationships may be incomplete.",
+            },
         )
 
         return {
@@ -412,9 +463,9 @@ async def _index_directory_async(
             "files_processed": progress["files_processed"],  # Alias for clarity
             "chunks_created": progress["chunks_created"],
             "relationships_created": relationships_created,
-            "warning": "Pending relationships may not have been flushed due to timeout"
+            "warning": "Pending relationships may not have been flushed due to timeout",
         }
-        
+
     except Exception as e:
         # Distinguish async generator cleanup errors from genuine failures.
         # Python 3.13 raises "generator didn't stop after athrow()" during
@@ -425,7 +476,8 @@ async def _index_directory_async(
         if is_cleanup_error and data_was_created:
             logger.warning(
                 "Async cleanup error during indexing (non-fatal, %d chunks created): %s",
-                progress["chunks_created"], e,
+                progress["chunks_created"],
+                e,
             )
             return {
                 "status": "completed",
@@ -441,7 +493,7 @@ async def _index_directory_async(
             "Directory indexing failed: operation_id=%s, error=%s",
             operation_id,
             e,
-            exc_info=True
+            exc_info=True,
         )
 
         await session_manager.add_event(
@@ -453,8 +505,8 @@ async def _index_directory_async(
                 "error": str(e),
                 "items_processed": progress["files_processed"],
                 "chunks_created": progress["chunks_created"],
-                "message": f"Directory indexing failed: {str(e)}"
-            }
+                "message": f"Directory indexing failed: {str(e)}",
+            },
         )
 
         return {
@@ -462,7 +514,7 @@ async def _index_directory_async(
             "error": str(e),
             "items_processed": progress["files_processed"],
             "files_processed": progress["files_processed"],
-            "chunks_created": progress["chunks_created"]
+            "chunks_created": progress["chunks_created"],
         }
 
 
@@ -524,11 +576,11 @@ async def add_knowledge(
     from agentic_inquiry.mcp.utils.errors import MCPErrorHandler
     from agentic_inquiry.mcp.utils.validation import (
         validate_content_type,
-        create_validation_error_response
+        create_validation_error_response,
     )
     from agentic_inquiry.exceptions import SchemaValidationError
     from agentic_inquiry.correlation import get_correlation_id
-    
+
     session_manager = services["session_manager"]
     event_system = services["event_system"]
     config = services["config"]
@@ -540,7 +592,7 @@ async def add_knowledge(
     except Exception as e:
         # Import ValidationError to check exception type
         from agentic_inquiry.exceptions import ValidationError as InquiryValidationError
-        
+
         # If it's our ValidationError, return detailed response
         if isinstance(e, InquiryValidationError):
             return {
@@ -554,8 +606,8 @@ async def add_knowledge(
                 "context": {
                     "session_id": session_id,
                     "content_type": content_type,
-                    "source": source
-                }
+                    "source": source,
+                },
             }
         # Fall back to generic validation error response for other exceptions
         return create_validation_error_response(
@@ -564,12 +616,12 @@ async def add_knowledge(
             context={
                 "session_id": session_id,
                 "content_type": content_type,
-                "source": source
+                "source": source,
             },
             provided_value=content_type,
             expected_type="string",
             expected_values=["file", "directory", "text"],
-            example="content_type='file'"
+            example="content_type='file'",
         )
 
     # Validate session
@@ -577,26 +629,26 @@ async def add_knowledge(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
     session = await session_manager.get_session(session_id, include_history=False)
     project_id = session.project_id
-    
+
     # Create IndexingPipeline with session's project_id
     from agentic_inquiry.indexing.pipeline import IndexingPipeline
-    
+
     # Use embedding registry from db_manager if available (for testing)
     pipeline_kwargs = {
         "db_manager": db_manager,
         "config": config,
         "project_id": project_id,
-        "event_system": event_system  # Pass the event system from services
+        "event_system": event_system,  # Pass the event system from services
     }
     if hasattr(db_manager, "embedding_registry"):
         pipeline_kwargs["registry"] = db_manager.embedding_registry
-    
+
     indexing_pipeline = IndexingPipeline(**pipeline_kwargs)
 
     # Track start
@@ -606,12 +658,13 @@ async def add_knowledge(
         tool_name="add_knowledge",
         session_id=session_id,
         content_type=content_type,
-        file_source=source
+        file_source=source,
     )
 
     try:
         # Get project root (current working directory)
         import os
+
         project_root = Path(os.getcwd())
 
         # Handle different content types
@@ -621,8 +674,9 @@ async def add_knowledge(
                 file_path = validate_file_path(source, project_root, must_exist=False)
             except PathValidationError as e:
                 from agentic_inquiry.correlation import get_correlation_id
+
                 correlation_id = get_correlation_id()
-                
+
                 return {
                     "status": "failed",
                     "error": str(e),
@@ -632,21 +686,22 @@ async def add_knowledge(
                         "possible_causes": [
                             "Attempting to access files outside project directory",
                             "Using directory traversal sequences (..)",
-                            "Absolute path outside project"
+                            "Absolute path outside project",
                         ],
                         "next_steps": [
                             "Use relative paths from project root",
                             "Ensure path is within project directory",
-                            "Check for typos in path"
-                        ]
-                    }
+                            "Check for typos in path",
+                        ],
+                    },
                 }
 
             if not file_path.exists():
                 # Enhanced error with troubleshooting
                 from agentic_inquiry.correlation import get_correlation_id
+
                 correlation_id = get_correlation_id()
-                
+
                 return {
                     "status": "failed",
                     "error": f"File not found: {source}",
@@ -657,21 +712,21 @@ async def add_knowledge(
                             "File path is incorrect or contains typos",
                             "File was moved or deleted",
                             "Using absolute path instead of relative path",
-                            "File is in a different directory than expected"
+                            "File is in a different directory than expected",
                         ],
                         "next_steps": [
                             f"Verify the file exists at: {file_path}",
                             "Check for typos in the file path",
                             "Use a relative path from the project root",
                             "List directory contents to find the correct path",
-                            "Ensure the file hasn't been moved or deleted"
-                        ]
+                            "Ensure the file hasn't been moved or deleted",
+                        ],
                     },
                     "suggestions": [
                         "Try: Using a relative path from project root (e.g., 'src/main.py')",
                         "Try: Listing directory contents to verify file location",
-                        "Try: Checking for typos in the file name or path"
-                    ]
+                        "Try: Checking for typos in the file name or path",
+                    ],
                 }
 
             # Parse and index
@@ -681,22 +736,22 @@ async def add_knowledge(
                 str(file_path),
                 db_manager=db_manager,
                 embedding_service=indexing_pipeline.embedding_service,
-                project_id=project_id
+                project_id=project_id,
             )
-            
+
             try:
                 await indexing_pipeline.process_document(parsed_doc)
             except SchemaValidationError as e:
                 # Handle schema validation errors with detailed information
                 correlation_id = get_correlation_id()
-                
+
                 error_details: Dict[str, Any] = {
                     "error": "Schema validation failed",
                     "file": source,
                     "table": e.table_name,
                     "correlation_id": correlation_id,
                 }
-                
+
                 # Add field mapping hints
                 if e.missing_fields:
                     error_details["missing_fields"] = e.missing_fields
@@ -704,7 +759,7 @@ async def add_knowledge(
                         "The parser output is missing required database fields. "
                         "This may indicate a schema mismatch between ParserChunk and the database."
                     )
-                
+
                 if e.type_mismatches:
                     error_details["type_mismatches"] = [
                         {"field": field, "expected": expected, "actual": actual}
@@ -714,36 +769,35 @@ async def add_knowledge(
                         "Field types don't match database schema. "
                         "Check that field values are compatible with database types."
                     )
-                
+
                 logger.error(
                     "Schema validation failed for file %s: %s (correlation_id: %s)",
                     source,
                     str(e),
                     correlation_id,
-                    extra=error_details
+                    extra=error_details,
                 )
-                
+
                 return {
                     "status": "failed",
                     "error": str(e),
                     "error_type": "schema_validation",
-                    "details": error_details
+                    "details": error_details,
                 }
 
             # Flush pending relationships for single file indexing
             # This enables graph-based features for the indexed file
-            relationships_created = await indexing_pipeline.flush_pending_relationships()
+            relationships_created = (
+                await indexing_pipeline.flush_pending_relationships()
+            )
 
             # Rebuild FTS indexes after data has been added
             # LanceDB FTS indexes don't auto-update when new data is added
             try:
-                if hasattr(db_manager, 'rebuild_fts_indexes'):
+                if hasattr(db_manager, "rebuild_fts_indexes"):
                     await db_manager.rebuild_fts_indexes("document_chunks")
             except Exception as e:
-                logger.warning(
-                    "Failed to rebuild FTS indexes after indexing: %s",
-                    e
-                )
+                logger.warning("Failed to rebuild FTS indexes after indexing: %s", e)
 
             # Get resolution statistics for debugging/visibility
             resolution_stats = indexing_pipeline.get_resolution_stats() or {}
@@ -751,18 +805,22 @@ async def add_knowledge(
             logger.info(
                 "Flushed %d relationships for single file: %s",
                 relationships_created,
-                source
+                source,
             )
 
             # Emit indexing.stored and indexing.ready for single-file indexing
             from agentic_inquiry.events.types import EventTypes
+
             capabilities = services.get("capabilities")
             embedding_strategy = (
-                "server_side" if capabilities and capabilities.needs_embedding_polling
+                "server_side"
+                if capabilities and capabilities.needs_embedding_polling
                 else "local"
             )
             chunks_created = len(parsed_doc.chunks)
-            entities_created = sum(len(chunk.symbols or []) for chunk in parsed_doc.chunks)
+            entities_created = sum(
+                len(chunk.symbols or []) for chunk in parsed_doc.chunks
+            )
 
             await event_system.emit(
                 EventTypes.Indexing.STORED,
@@ -778,7 +836,7 @@ async def add_knowledge(
             # Generate server-side embeddings if needed
             if capabilities and capabilities.needs_embedding_polling:
                 try:
-                    if hasattr(db_manager, 'generate_embeddings'):
+                    if hasattr(db_manager, "generate_embeddings"):
                         await db_manager.generate_embeddings()
                     await indexing_pipeline._poll_embedding_completion(
                         f"file_{project_id}"
@@ -805,7 +863,7 @@ async def add_knowledge(
                 source="mcp_tool",
                 tool_name="add_knowledge",
                 session_id=session_id,
-                items_processed=1
+                items_processed=1,
             )
 
             # Build summary stats for response
@@ -813,34 +871,43 @@ async def add_knowledge(
             if resolution_stats:
                 relationship_summary = {
                     "total_pending": resolution_stats.get("total", 0),
-                    "resolved_cross_file": resolution_stats.get("resolved_cross_file", 0),
-                    "unresolved_external": resolution_stats.get("unresolved_external", 0),
+                    "resolved_cross_file": resolution_stats.get(
+                        "resolved_cross_file", 0
+                    ),
+                    "unresolved_external": resolution_stats.get(
+                        "unresolved_external", 0
+                    ),
                     "same_file_fallback": resolution_stats.get("same_file_fallback", 0),
                     "by_strategy": resolution_stats.get("by_strategy", {}),
-                    "average_confidence": resolution_stats.get("average_confidence", 0.0),
+                    "average_confidence": resolution_stats.get(
+                        "average_confidence", 0.0
+                    ),
                 }
 
             return {
                 "status": "completed",
                 "items_processed": 1,
                 "chunks_created": len(parsed_doc.chunks),
-                "entities_created": sum(len(chunk.symbols or []) for chunk in parsed_doc.chunks),
+                "entities_created": sum(
+                    len(chunk.symbols or []) for chunk in parsed_doc.chunks
+                ),
                 "relationships_created": relationships_created,
-                "relationship_stats": relationship_summary
+                "relationship_stats": relationship_summary,
             }
 
         elif content_type == "directory":
             # Index all files in directory asynchronously
             import uuid
             import asyncio
-            
+
             # Validate directory path for security
             try:
                 dir_path = validate_file_path(source, project_root, must_exist=False)
             except PathValidationError as e:
                 from agentic_inquiry.correlation import get_correlation_id
+
                 correlation_id = get_correlation_id()
-                
+
                 return {
                     "status": "failed",
                     "error": str(e),
@@ -850,21 +917,22 @@ async def add_knowledge(
                         "possible_causes": [
                             "Attempting to access directories outside project directory",
                             "Using directory traversal sequences (..)",
-                            "Absolute path outside project"
+                            "Absolute path outside project",
                         ],
                         "next_steps": [
                             "Use relative paths from project root",
                             "Ensure path is within project directory",
-                            "Check for typos in path"
-                        ]
-                    }
+                            "Check for typos in path",
+                        ],
+                    },
                 }
 
             if not dir_path.exists():
                 # Enhanced error with troubleshooting
                 from agentic_inquiry.correlation import get_correlation_id
+
                 correlation_id = get_correlation_id()
-                
+
                 return {
                     "status": "failed",
                     "error": f"Directory not found: {source}",
@@ -875,26 +943,26 @@ async def add_knowledge(
                             "Directory path is incorrect or contains typos",
                             "Directory was moved or deleted",
                             "Using absolute path instead of relative path",
-                            "Directory is in a different location than expected"
+                            "Directory is in a different location than expected",
                         ],
                         "next_steps": [
                             f"Verify the directory exists at: {dir_path}",
                             "Check for typos in the directory path",
                             "Use a relative path from the project root",
                             "List parent directory contents to find the correct path",
-                            "Ensure the directory hasn't been moved or deleted"
-                        ]
+                            "Ensure the directory hasn't been moved or deleted",
+                        ],
                     },
                     "suggestions": [
                         "Try: Using a relative path from project root (e.g., 'src/')",
                         "Try: Using '.' to index the entire project directory",
-                        "Try: Checking for typos in the directory name or path"
-                    ]
+                        "Try: Checking for typos in the directory name or path",
+                    ],
                 }
 
             # Generate operation ID for tracking
             operation_id = str(uuid.uuid4())
-            
+
             # Emit indexing_started event
             await session_manager.add_event(
                 session_id=session_id,
@@ -902,10 +970,10 @@ async def add_knowledge(
                 data={
                     "operation_id": operation_id,
                     "source": str(dir_path),
-                    "content_type": "directory"
-                }
+                    "content_type": "directory",
+                },
             )
-            
+
             # Start directory indexing
             # Dynamic timeout: base_timeout + (file_count * timeout_per_file)
             # Default 300 triggers dynamic calculation; explicit timeout overrides
@@ -916,7 +984,7 @@ async def add_knowledge(
                 directory_path=dir_path,
                 timeout=filters.get("timeout", 300) if filters else 300,
                 timeout_per_file=filters.get("timeout_per_file", 5) if filters else 5,
-                base_timeout=filters.get("base_timeout", 60) if filters else 60
+                base_timeout=filters.get("base_timeout", 60) if filters else 60,
             )
 
             if wait_for_completion:
@@ -947,7 +1015,7 @@ async def add_knowledge(
                     "message": f"Directory indexing started for {dir_path}.",
                     "important": "Directory indexing runs in the background. Wait for completion before using search, find_similar, analyze_impact, or other analysis tools. Entities and relationships are only available after indexing completes.",
                     "how_to_check": "Use get_events(session_id, event_types=['indexing_completed', 'indexing_failed']) to check if indexing finished. Look for an event with operation_id matching this response.",
-                    "estimated_time": "Depends on directory size. Small directories: seconds. Large codebases: minutes."
+                    "estimated_time": "Depends on directory size. Small directories: seconds. Large codebases: minutes.",
                 }
 
         elif content_type == "text":
@@ -965,9 +1033,9 @@ async def add_knowledge(
                         line_end=source.count("\n") + 1,
                         symbols=[],
                         relationships=[],
-                        metadata={}
+                        metadata={},
                     )
-                ]
+                ],
             )
 
             try:
@@ -1001,14 +1069,14 @@ async def add_knowledge(
                     "Schema validation failed for text input: %s (correlation_id: %s)",
                     str(e),
                     correlation_id,
-                    extra=text_error_details
+                    extra=text_error_details,
                 )
 
                 return {
                     "status": "failed",
                     "error": str(e),
                     "error_type": "schema_validation",
-                    "details": text_error_details
+                    "details": text_error_details,
                 }
 
             # Track success
@@ -1017,14 +1085,14 @@ async def add_knowledge(
                 source="mcp_tool",
                 tool_name="add_knowledge",
                 session_id=session_id,
-                items_processed=1
+                items_processed=1,
             )
 
             return {
                 "status": "completed",
                 "items_processed": 1,
                 "chunks_created": 1,
-                "content_type": "text"
+                "content_type": "text",
             }
 
         else:
@@ -1033,9 +1101,9 @@ async def add_knowledge(
                 context={
                     "session_id": session_id,
                     "content_type": content_type,
-                    "source": source
+                    "source": source,
                 },
-                services=services
+                services=services,
             )
 
     except Exception as e:
@@ -1044,17 +1112,17 @@ async def add_knowledge(
             "mcp.tool.failed",
             source="mcp_tool",
             tool_name="add_knowledge",
-            error=str(e)
+            error=str(e),
         )
         logger.error("Failed to add knowledge: %s", e, exc_info=True)
-        
+
         # Enhanced error response with troubleshooting
         from agentic_inquiry.correlation import get_correlation_id
         from agentic_inquiry.exceptions import ParsingError
-        
+
         correlation_id = get_correlation_id()
         error_type = type(e).__name__
-        
+
         # Build detailed error response
         error_response: Dict[str, Any] = {
             "status": "failed",
@@ -1064,10 +1132,10 @@ async def add_knowledge(
             "context": {
                 "session_id": session_id,
                 "content_type": content_type,
-                "source": source
-            }
+                "source": source,
+            },
         }
-        
+
         # Add specific troubleshooting based on error type
         if isinstance(e, ParsingError):
             error_response["troubleshooting"] = {
@@ -1075,34 +1143,34 @@ async def add_knowledge(
                     "File format is not supported by available parsers",
                     "File contains syntax errors or invalid structure",
                     "File encoding is not UTF-8 or is corrupted",
-                    "Parser failed to handle specific language constructs"
+                    "Parser failed to handle specific language constructs",
                 ],
                 "next_steps": [
                     "Check if the file extension is supported (.py, .js, .ts, .md, etc.)",
                     "Verify the file is valid and can be opened in an editor",
                     "Check file encoding (should be UTF-8)",
                     "Try indexing a simpler file to isolate the issue",
-                    f"Review logs with correlation_id: {correlation_id}"
+                    f"Review logs with correlation_id: {correlation_id}",
                 ],
                 "supported_formats": [
                     "Code: .py, .js, .ts, .jsx, .tsx, .java, .cpp, .c, .h, .cs, .go, .rs, .rb, .php",
                     "Documentation: .md, .rst, .txt",
-                    "Documents: .pdf, .docx, .html"
-                ]
+                    "Documents: .pdf, .docx, .html",
+                ],
             }
         elif "permission" in str(e).lower():
             error_response["troubleshooting"] = {
                 "possible_causes": [
                     "Insufficient file system permissions",
                     "File is locked by another process",
-                    "Directory permissions prevent access"
+                    "Directory permissions prevent access",
                 ],
                 "next_steps": [
                     "Check file permissions with 'ls -la' (Unix) or file properties (Windows)",
                     "Ensure the file is not open in another application",
                     "Verify you have read access to the file and parent directories",
-                    "Try running with appropriate permissions"
-                ]
+                    "Try running with appropriate permissions",
+                ],
             }
         else:
             error_response["troubleshooting"] = {
@@ -1110,24 +1178,24 @@ async def add_knowledge(
                     "Unexpected error during indexing",
                     "Database connection issue",
                     "Memory or resource constraint",
-                    "Internal processing error"
+                    "Internal processing error",
                 ],
                 "next_steps": [
                     "Check system resources (memory, disk space)",
                     "Review detailed logs for more information",
                     "Try indexing a smaller file or directory",
                     "Restart the service if the issue persists",
-                    f"Report issue with correlation_id: {correlation_id}"
-                ]
+                    f"Report issue with correlation_id: {correlation_id}",
+                ],
             }
-        
+
         error_response["suggestions"] = [
             "Try: Verifying the file or directory exists and is accessible",
             "Try: Checking file format is supported",
             "Try: Reviewing logs for detailed error information",
-            f"Try: Using correlation_id {correlation_id} when reporting issues"
+            f"Try: Using correlation_id {correlation_id} when reporting issues",
         ]
-        
+
         return error_response
 
 

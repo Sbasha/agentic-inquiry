@@ -6,6 +6,7 @@ Defines canonical types for content discovery and retrieval:
 
 See: docs/design/connector-architecture.md
 """
+
 from __future__ import annotations
 
 import hashlib

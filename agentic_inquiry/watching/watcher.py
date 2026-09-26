@@ -25,11 +25,11 @@ logger = logging.getLogger(__name__)
 
 class FileWatcherHandler(FileSystemEventHandler):
     """Handle file system events with debouncing and hash-based change detection.
-    
+
     This handler filters events through ignore patterns, debounces rapid changes,
     and uses hash-based detection to avoid false positives from metadata changes.
     """
-    
+
     def __init__(
         self,
         callbacks: List[Callable[[str, str], None]],
@@ -40,7 +40,7 @@ class FileWatcherHandler(FileSystemEventHandler):
         get_relative_path: Optional[Callable[[str], str]] = None,
     ):
         """Initialize the event handler.
-        
+
         Args:
             callbacks: List of callback functions to invoke on file changes
             file_tracker: FileTracker instance for hash-based change detection
@@ -56,26 +56,26 @@ class FileWatcherHandler(FileSystemEventHandler):
         self.debounce_seconds = debounce_seconds
         self.event_system = event_system
         self.get_relative_path = get_relative_path or (lambda p: p)
-        
+
         # Track last event time for each file to implement debouncing
         self._last_event_time: Dict[str, float] = {}
-        
+
         # Track files being processed to avoid duplicate events
         self._processing: Set[str] = set()
 
     def _emit_event_sync(self, event_type: str, **metadata) -> None:
         """Emit event from synchronous context.
-        
+
         This method safely emits events from watchdog's thread by creating
         a new event loop if needed.
-        
+
         Args:
             event_type: Event type to emit
             **metadata: Event metadata
         """
         if self.event_system is None:
             return
-        
+
         try:
             # Try to get the running event loop (Python 3.10+ preferred approach)
             asyncio.get_running_loop()  # Check if loop is running
@@ -87,58 +87,62 @@ class FileWatcherHandler(FileSystemEventHandler):
             # No running loop - run synchronously using asyncio.run()
             try:
                 asyncio.run(
-                    self.event_system.emit(event_type, source="file_watcher", **metadata)
+                    self.event_system.emit(
+                        event_type, source="file_watcher", **metadata
+                    )
                 )
             except Exception as e:
                 logger.debug("Failed to emit event %s: %s", event_type, e)
-    
+
     def _should_ignore(self, file_path: str) -> bool:
         """Check if file should be ignored based on patterns.
-        
+
         Args:
             file_path: Path to check
-            
+
         Returns:
             True if file should be ignored, False otherwise
         """
         path = Path(file_path)
-        
+
         # Ignore directories
         if path.is_dir():
             return True
-        
+
         # Ignore common temporary files
-        if path.name.endswith(('.swp', '.tmp', '~', '-journal', '-wal', '-shm')):
+        if path.name.endswith((".swp", ".tmp", "~", "-journal", "-wal", "-shm")):
             return True
-        
+
         # Check against ignore patterns
         for pattern in self.ignore_patterns:
-            if fnmatch.fnmatch(str(path), pattern) or fnmatch.fnmatch(path.name, pattern):
+            if fnmatch.fnmatch(str(path), pattern) or fnmatch.fnmatch(
+                path.name, pattern
+            ):
                 return True
-        
+
         return False
-    
+
     def _should_debounce(self, file_path: str) -> bool:
         """Check if event should be debounced.
-        
+
         Args:
             file_path: Path to check
-            
+
         Returns:
             True if event should be debounced, False otherwise
         """
         current_time = time.time()
         last_time = self._last_event_time.get(file_path, 0)
-        
+
         if current_time - last_time < self.debounce_seconds:
             return True
-        
+
         self._last_event_time[file_path] = current_time
         return False
-    
+
     def _trigger_callbacks(self, file_path: str, event_type: str) -> None:
         """Trigger all registered callbacks for a file event.
-        
+
         Args:
             file_path: Path to the file
             event_type: Type of event ("created", "modified", "deleted")
@@ -147,112 +151,128 @@ class FileWatcherHandler(FileSystemEventHandler):
             try:
                 callback(file_path, event_type)
             except Exception as e:
-                logger.error("Callback failed for %s (%s): %s", file_path, event_type, e)
-    
+                logger.error(
+                    "Callback failed for %s (%s): %s", file_path, event_type, e
+                )
+
     def on_created(self, event: FileSystemEvent) -> None:
         """Handle file creation events.
-        
+
         Args:
             event: File system event
         """
         if event.is_directory:
             return
 
-        file_path = event.src_path if isinstance(event.src_path, str) else event.src_path.decode()
+        file_path = (
+            event.src_path
+            if isinstance(event.src_path, str)
+            else event.src_path.decode()
+        )
 
         if self._should_ignore(file_path):
             return
-        
+
         if self._should_debounce(file_path):
             return
-        
+
         try:
             # Check if file still exists (may be temporary)
             if not Path(file_path).exists():
                 logger.debug("File no longer exists (temporary): %s", file_path)
                 return
-            
+
             # Update tracker with new file hash
             self.file_tracker.update_hash_sync(file_path)
             logger.debug("File created: %s", file_path)
-            
+
             # Emit event
             self._emit_event_sync(
                 EventTypes.Watching.FILE_CREATED,
                 file_path=self.get_relative_path(file_path),
             )
-            
+
             self._trigger_callbacks(file_path, "created")
         except FileNotFoundError:
             # File was deleted before we could process it
             logger.debug("File deleted before processing: %s", file_path)
         except Exception as e:
             logger.error("Error handling created event for %s: %s", file_path, e)
-    
+
     def on_modified(self, event: FileSystemEvent) -> None:
         """Handle file modification events.
-        
+
         Args:
             event: File system event
         """
         if event.is_directory:
             return
 
-        file_path = event.src_path if isinstance(event.src_path, str) else event.src_path.decode()
+        file_path = (
+            event.src_path
+            if isinstance(event.src_path, str)
+            else event.src_path.decode()
+        )
 
         if self._should_ignore(file_path):
             return
-        
+
         if self._should_debounce(file_path):
             return
-        
+
         try:
             # Check if file still exists (may be temporary or deleted)
             if not Path(file_path).exists():
                 logger.debug("File no longer exists: %s", file_path)
                 return
-            
+
             # Check if file actually changed using hash
             if self.file_tracker.has_changed_sync(file_path):
                 self.file_tracker.update_hash_sync(file_path)
                 logger.debug("File modified: %s", file_path)
-                
+
                 # Emit event
                 self._emit_event_sync(
                     EventTypes.Watching.FILE_CHANGED,
                     file_path=self.get_relative_path(file_path),
                 )
-                
+
                 self._trigger_callbacks(file_path, "modified")
             else:
-                logger.debug("File metadata changed but content unchanged: %s", file_path)
+                logger.debug(
+                    "File metadata changed but content unchanged: %s", file_path
+                )
         except FileNotFoundError:
             # File was deleted before we could process it
             logger.debug("File deleted before processing: %s", file_path)
         except Exception as e:
             logger.error("Error handling modified event for %s: %s", file_path, e)
-    
+
     def on_deleted(self, event: FileSystemEvent) -> None:
         """Handle file deletion events.
-        
+
         Args:
             event: File system event
         """
         if event.is_directory:
             return
 
-        file_path = event.src_path if isinstance(event.src_path, str) else event.src_path.decode()
+        file_path = (
+            event.src_path
+            if isinstance(event.src_path, str)
+            else event.src_path.decode()
+        )
 
         if self._should_ignore(file_path):
             return
-        
+
         try:
             # Emit event before removing from tracker
             self._emit_event_sync(
                 EventTypes.Watching.FILE_DELETED,
                 file_path=self.get_relative_path(file_path),
             )
-            
+
             # Remove from tracker
             self.file_tracker.remove_file_sync(file_path)
             logger.debug("File deleted: %s", file_path)
@@ -263,15 +283,15 @@ class FileWatcherHandler(FileSystemEventHandler):
 
 class FileWatcher:
     """File watcher implementation using watchdog library.
-    
+
     This watcher monitors directories for file changes and triggers callbacks.
     It uses hash-based change detection to avoid false positives from metadata
     changes and supports debouncing, ignore patterns, and pause/resume.
-    
+
     Attributes:
         file_tracker: FileTracker instance for hash-based change detection
     """
-    
+
     def __init__(
         self,
         event_system: Optional["EventSystem"] = None,
@@ -361,16 +381,16 @@ class FileWatcher:
 
     def _get_relative_path(self, file_path: str) -> str:
         """Convert absolute path to relative path from project root.
-        
+
         Args:
             file_path: Absolute file path
-            
+
         Returns:
             Relative path string
         """
         if self._project_root is None:
             return file_path
-        
+
         try:
             path = Path(file_path)
             return str(path.relative_to(self._project_root))
@@ -399,59 +419,61 @@ class FileWatcher:
             # No running loop - run synchronously using asyncio.run()
             try:
                 asyncio.run(
-                    self.event_system.emit(event_type, source="file_watcher", **metadata)
+                    self.event_system.emit(
+                        event_type, source="file_watcher", **metadata
+                    )
                 )
             except Exception as e:
                 logger.debug("Failed to emit event %s: %s", event_type, e)
-    
+
     def register_callback(self, callback: Callable[[str, str], None]) -> None:
         """Register a callback for file events.
-        
+
         Args:
             callback: Function with signature callback(file_path: str, event_type: str)
         """
         if callback not in self._callbacks:
             self._callbacks.append(callback)
             logger.debug("Registered callback: %s", callback.__name__)
-    
+
     def unregister_callback(self, callback: Callable[[str, str], None]) -> None:
         """Unregister a previously registered callback.
-        
+
         Args:
             callback: The callback function to remove
         """
         if callback in self._callbacks:
             self._callbacks.remove(callback)
             logger.debug("Unregistered callback: %s", callback.__name__)
-    
+
     def watch_directory(
         self,
         path: str,
         recursive: bool = True,
-        ignore_patterns: Optional[List[str]] = None
+        ignore_patterns: Optional[List[str]] = None,
     ) -> None:
         """Start watching a directory for changes.
-        
+
         Args:
             path: Directory path to watch
             recursive: Whether to watch subdirectories
             ignore_patterns: Optional list of glob patterns to ignore
-            
+
         Raises:
             ValueError: If directory doesn't exist
         """
         dir_path = Path(path)
-        
+
         if not dir_path.exists():
             raise ValueError(f"Directory does not exist: {path}")
-        
+
         if not dir_path.is_dir():
             raise ValueError(f"Path is not a directory: {path}")
-        
+
         # Set project root if not already set (use first watched directory)
         if self._project_root is None:
             self._project_root = dir_path.resolve()
-        
+
         # Create handler for this directory
         handler = FileWatcherHandler(
             callbacks=self._callbacks,
@@ -461,28 +483,28 @@ class FileWatcher:
             event_system=self.event_system,
             get_relative_path=self._get_relative_path,
         )
-        
+
         # Schedule with observer
         self._observer.schedule(handler, str(dir_path), recursive=recursive)
         self._handlers[str(dir_path)] = handler
-        
+
         logger.info("Watching directory: %s (recursive=%s)", path, recursive)
-    
+
     def start(self) -> None:
         """Start the file watcher."""
         if not self._running:
             self._observer.start()
             self._running = True
             self._paused = False
-            
+
             # Emit watching.started event
             self._emit_event_sync(
                 EventTypes.Watching.STARTED,
                 watched_directories=[str(path) for path in self._handlers.keys()],
             )
-            
+
             logger.info("File watcher started")
-    
+
     def stop(self) -> None:
         """Stop the file watcher and clean up resources."""
         if self._running:
@@ -490,41 +512,41 @@ class FileWatcher:
             self._observer.join(timeout=30.0)  # Increased from 5s for reliable cleanup
             self._running = False
             self._paused = False
-            
+
             # Emit watching.stopped event
             self._emit_event_sync(EventTypes.Watching.STOPPED)
-            
+
             logger.info("File watcher stopped")
-    
+
     def pause(self) -> None:
         """Pause the file watcher without stopping it.
-        
+
         Note: This is implemented by temporarily clearing callbacks.
         Events are still received but not processed.
         """
         if self._running and not self._paused:
             self._paused = True
             logger.info("File watcher paused")
-    
+
     def resume(self) -> None:
         """Resume a paused file watcher."""
         if self._running and self._paused:
             self._paused = False
             logger.info("File watcher resumed")
-    
+
     def is_running(self) -> bool:
         """Check if the watcher is currently running.
-        
+
         Returns:
             True if watcher is running, False otherwise
         """
         return self._running and not self._paused
-    
+
     def __enter__(self):
         """Context manager entry."""
         self.start()
         return self
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit."""
         self.stop()

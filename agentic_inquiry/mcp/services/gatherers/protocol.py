@@ -1,5 +1,6 @@
 # agentic_inquiry/mcp/services/gatherers/protocol.py
 """Protocol definition for context gatherers."""
+
 from abc import abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
@@ -14,6 +15,7 @@ class GatherContext:
     Encapsulates all parameters that different gatherer implementations
     might need, providing a unified interface.
     """
+
     query: str
     budget: TokenBudget
     depth: str  # "focused", "broad", "comprehensive"

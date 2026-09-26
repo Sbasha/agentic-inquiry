@@ -43,7 +43,9 @@ async def semantic_adapter(db_manager: LanceDBManager) -> LanceDBMemoryAdapter:
 
 
 @pytest.fixture
-async def temp_semantic_memory(semantic_adapter: LanceDBMemoryAdapter) -> SemanticMemory:
+async def temp_semantic_memory(
+    semantic_adapter: LanceDBMemoryAdapter,
+) -> SemanticMemory:
     """Create a temporary semantic memory instance."""
     memory = SemanticMemory(storage=semantic_adapter, limit=100)
     await memory.initialize()
@@ -85,7 +87,9 @@ def sample_fact_item(sample_context: MemoryContext) -> MemoryItem:
 
 
 @pytest.mark.asyncio
-async def test_semantic_memory_initialization(temp_semantic_memory: SemanticMemory) -> None:
+async def test_semantic_memory_initialization(
+    temp_semantic_memory: SemanticMemory,
+) -> None:
     """Test semantic memory initialization."""
     assert temp_semantic_memory._initialized
     assert temp_semantic_memory.limit == 100
@@ -172,7 +176,9 @@ async def test_update_fact(
     await temp_semantic_memory.update(sample_fact_item)
 
     # Retrieve and verify (without updating access)
-    retrieved = await temp_semantic_memory.get_by_id(sample_fact_item.id, update_access=False)
+    retrieved = await temp_semantic_memory.get_by_id(
+        sample_fact_item.id, update_access=False
+    )
 
     assert retrieved is not None
     assert retrieved.confidence == 0.99
@@ -189,7 +195,9 @@ async def test_delete_fact(
     await temp_semantic_memory.store(sample_fact_item)
 
     # Verify it exists (without updating access)
-    retrieved = await temp_semantic_memory.get_by_id(sample_fact_item.id, update_access=False)
+    retrieved = await temp_semantic_memory.get_by_id(
+        sample_fact_item.id, update_access=False
+    )
     assert retrieved is not None
 
     # Delete fact
@@ -197,7 +205,9 @@ async def test_delete_fact(
     assert deleted is True
 
     # Verify it's gone (without updating access)
-    retrieved = await temp_semantic_memory.get_by_id(sample_fact_item.id, update_access=False)
+    retrieved = await temp_semantic_memory.get_by_id(
+        sample_fact_item.id, update_access=False
+    )
     assert retrieved is None
 
     # Try deleting again
@@ -213,7 +223,7 @@ async def test_retrieve_with_vector_search(
     """Test retrieving facts using vector similarity search."""
     # Create facts with similar embeddings
     base_embedding = np.random.rand(384).astype(np.float32)
-    
+
     facts = [
         ("Python", "is_a", "programming_language"),
         ("Java", "is_a", "programming_language"),
@@ -497,7 +507,7 @@ async def test_confidence_scoring(
     """Test that facts are ranked by confidence."""
     # Create facts with different confidence scores
     confidences = [0.95, 0.85, 0.75]
-    
+
     for i, confidence in enumerate(confidences):
         item = MemoryItem(
             id=str(uuid.uuid4()),
@@ -537,7 +547,9 @@ async def test_capacity_limits(
 ) -> None:
     """Test that capacity limits are enforced."""
     # Create a semantic memory with small capacity using adapter
-    small_adapter = LanceDBMemoryAdapter(db_manager, table_name="memory_semantic_capacity_test")
+    small_adapter = LanceDBMemoryAdapter(
+        db_manager, table_name="memory_semantic_capacity_test"
+    )
     small_memory = SemanticMemory(storage=small_adapter, limit=5)
     await small_memory.initialize()
 

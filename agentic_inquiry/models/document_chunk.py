@@ -1,4 +1,5 @@
 """Data model representing an indexed document chunk."""
+
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
@@ -18,7 +19,9 @@ _ALLOWED_CONTENT_TYPES = {
 }
 
 # Fields added for branch-scoped indexing that must be stripped before LanceDB schema validation.
-BRANCH_INDEXING_FIELDS: frozenset[str] = frozenset({"branch", "is_active", "expired_at"})
+BRANCH_INDEXING_FIELDS: frozenset[str] = frozenset(
+    {"branch", "is_active", "expired_at"}
+)
 
 
 @dataclass(slots=True)
@@ -56,12 +59,14 @@ class DocumentChunk:
 
     parent_id: str = ""  # Empty string as sentinel instead of None
     child_ids: List[str] = field(default_factory=list)
-    
+
     # Symbols extracted from this chunk (functions, classes, headings, entities, etc.)
     symbols: List[str] = field(default_factory=list)
 
     indexed_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    source_modified_at: datetime = datetime.fromtimestamp(0, tz=timezone.utc)  # Epoch as sentinel
+    source_modified_at: datetime = datetime.fromtimestamp(
+        0, tz=timezone.utc
+    )  # Epoch as sentinel
 
     # Branch indexing (WS4)
     branch: str = "main"
@@ -82,7 +87,9 @@ class DocumentChunk:
         if not isinstance(self.fts_text, str):
             raise ValueError("fts_text must be a string")
 
-        if not isinstance(self.vector, list) or not all(isinstance(v, (int, float)) for v in self.vector):
+        if not isinstance(self.vector, list) or not all(
+            isinstance(v, (int, float)) for v in self.vector
+        ):
             raise ValueError("vector must be a list of numbers")
 
         if self.content_type not in _ALLOWED_CONTENT_TYPES:
@@ -102,12 +109,16 @@ class DocumentChunk:
 
         if self.child_ids is None:
             self.child_ids = []
-        elif not isinstance(self.child_ids, list) or not all(isinstance(child, str) for child in self.child_ids):
+        elif not isinstance(self.child_ids, list) or not all(
+            isinstance(child, str) for child in self.child_ids
+        ):
             raise ValueError("child_ids must be a list of strings")
-        
+
         if self.symbols is None:
             self.symbols = []
-        elif not isinstance(self.symbols, list) or not all(isinstance(sym, str) for sym in self.symbols):
+        elif not isinstance(self.symbols, list) or not all(
+            isinstance(sym, str) for sym in self.symbols
+        ):
             raise ValueError("symbols must be a list of strings")
 
         for attr_name in ("indexed_at", "source_modified_at"):

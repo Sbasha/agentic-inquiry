@@ -33,9 +33,7 @@ def mock_services_with_search(mock_session):
 
     # Mock embedding service
     embedding_service = AsyncMock()
-    embedding_service.embed_async = AsyncMock(
-        return_value=np.array([0.1] * 384)
-    )
+    embedding_service.embed_async = AsyncMock(return_value=np.array([0.1] * 384))
 
     # Mock event system
     event_system = AsyncMock()
@@ -55,7 +53,9 @@ def mock_services_with_search(mock_session):
     mock_table.search = MagicMock(return_value=mock_search_builder)
     db_manager.get_table = MagicMock(return_value=mock_table)
     db_manager.advanced_filter = AsyncMock(return_value=[])
-    db_manager.count_records = AsyncMock(return_value=100)  # Sufficient for sparse threshold
+    db_manager.count_records = AsyncMock(
+        return_value=100
+    )  # Sufficient for sparse threshold
 
     # Mock search service with hybrid search returning semantic results
     search_service = AsyncMock()
@@ -64,7 +64,9 @@ def mock_services_with_search(mock_session):
     config = MagicMock()
     config.search.sparse_index.threshold = 50
     # The timeouts object has methods that return integers, not just attributes
-    config.search.graph_search.timeouts.get_find_similar_timeout = MagicMock(return_value=5000)
+    config.search.graph_search.timeouts.get_find_similar_timeout = MagicMock(
+        return_value=5000
+    )
     config.search.graph_search.timeouts.find_similar_ms = 5000
 
     return {
@@ -89,12 +91,14 @@ class TestFindSimilarDefaultThreshold:
         """
         # Import to check the function signature
         import inspect
+
         sig = inspect.signature(find_similar)
         params = sig.parameters
 
         # Check the default value
-        assert params["similarity_threshold"].default == 0.3, \
+        assert params["similarity_threshold"].default == 0.3, (
             "Default similarity_threshold should be 0.3 for better conceptual query support"
+        )
 
     @pytest.mark.asyncio
     async def test_threshold_respected_in_results(self, mock_services_with_search):
@@ -105,7 +109,7 @@ class TestFindSimilarDefaultThreshold:
             session_id="test_session",
             query="authentication",
             search_scope="entities",
-            similarity_threshold=0.3
+            similarity_threshold=0.3,
         )
 
         # Should return a valid response structure
@@ -118,7 +122,9 @@ class TestFindSimilarConceptualQueries:
     """Tests for conceptual query handling in find_similar."""
 
     @pytest.mark.asyncio
-    async def test_conceptual_query_uses_semantic_bridge(self, mock_services_with_search):
+    async def test_conceptual_query_uses_semantic_bridge(
+        self, mock_services_with_search
+    ):
         """Test that conceptual queries trigger semantic bridge search.
 
         When searching for "authentication", the semantic bridge should:
@@ -157,7 +163,7 @@ class TestFindSimilarConceptualQueries:
             session_id="test_session",
             query="authentication",  # Conceptual query
             search_scope="entities",
-            similarity_threshold=0.2  # Low threshold for testing
+            similarity_threshold=0.2,  # Low threshold for testing
         )
 
         # Should find entities via semantic bridge
@@ -166,7 +172,9 @@ class TestFindSimilarConceptualQueries:
         mock_services_with_search["search_service"].hybrid_search.assert_called()
 
     @pytest.mark.asyncio
-    async def test_search_scope_all_for_comprehensive_results(self, mock_services_with_search):
+    async def test_search_scope_all_for_comprehensive_results(
+        self, mock_services_with_search
+    ):
         """Test that search_scope='all' provides both entities and content.
 
         For conceptual queries, using search_scope='all' is recommended
@@ -192,7 +200,7 @@ class TestFindSimilarConceptualQueries:
             session_id="test_session",
             query="authentication",
             search_scope="all",  # Search both entities and content
-            similarity_threshold=0.2
+            similarity_threshold=0.2,
         )
 
         assert isinstance(result, dict)
@@ -217,7 +225,7 @@ class TestFindSimilarThresholdBehavior:
             session_id="test_session",
             query="database",
             search_scope="entities",
-            similarity_threshold=0.2  # Very low threshold
+            similarity_threshold=0.2,  # Very low threshold
         )
 
         assert isinstance(result, dict)
@@ -231,7 +239,7 @@ class TestFindSimilarThresholdBehavior:
             session_id="test_session",
             query="Config",
             search_scope="entities",
-            similarity_threshold=0.8  # High threshold for exact matching
+            similarity_threshold=0.8,  # High threshold for exact matching
         )
 
         assert isinstance(result, dict)
@@ -246,19 +254,24 @@ class TestFindSimilarDocumentation:
         docstring = find_similar.__doc__
 
         # Check that the docstring mentions key concepts
-        assert "conceptual" in docstring.lower(), \
+        assert "conceptual" in docstring.lower(), (
             "Docstring should mention conceptual queries"
-        assert "semantic bridge" in docstring.lower(), \
+        )
+        assert "semantic bridge" in docstring.lower(), (
             "Docstring should mention semantic bridge strategy"
-        assert "0.3" in docstring, \
+        )
+        assert "0.3" in docstring, (
             "Docstring should mention the default threshold of 0.3"
+        )
 
     def test_docstring_has_threshold_guidance(self):
         """Verify docstring provides guidance on threshold values."""
         docstring = find_similar.__doc__
 
         # Check for guidance on threshold values
-        assert "0.2" in docstring or "0.4" in docstring, \
+        assert "0.2" in docstring or "0.4" in docstring, (
             "Docstring should provide guidance on threshold values"
-        assert "0.5" in docstring or "0.8" in docstring, \
+        )
+        assert "0.5" in docstring or "0.8" in docstring, (
             "Docstring should mention higher threshold values for exact matching"
+        )

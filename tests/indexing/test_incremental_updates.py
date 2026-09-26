@@ -10,7 +10,11 @@ from unittest.mock import AsyncMock, MagicMock
 from agentic_inquiry.embeddings.base import Embedder
 from agentic_inquiry.embeddings.registry import EmbeddingRegistry
 from agentic_inquiry.indexing.pipeline import IndexingPipeline
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -23,10 +27,10 @@ def _create_mock_event_system():
 
 class _DummyEmbedder(Embedder):
     """Dummy embedder for testing."""
-    
+
     def generate(self, texts: list[str]) -> list[list[float]]:
         return [[0.1] * 128 for _ in texts]
-    
+
     def ndims(self) -> int:
         return 128
 
@@ -76,26 +80,24 @@ def test_remove_file_data():
                             source_name="TestClass",
                             target_type="class",
                             target_name="BaseClass",
-                            type="imports"
+                            type="imports",
                         )
-                    ]
+                    ],
                 ),
             ],
         )
-        
+
         await pipeline.process_document(doc)
         await pipeline.flush_pending_relationships()
-        
+
         # Verify data exists
         chunks = await mock_db_manager.advanced_filter(
-            "document_chunks",
-            filters={"file_path": test_file}
+            "document_chunks", filters={"file_path": test_file}
         )
         assert len(chunks) == 1
 
         entities = await mock_db_manager.advanced_filter(
-            "graph_entities",
-            filters={"file_path": test_file}
+            "graph_entities", filters={"file_path": test_file}
         )
         # Expect: 1 file entity + 1 code entity
         assert len(entities) >= 1
@@ -109,25 +111,23 @@ def test_remove_file_data():
 
         # Verify data is removed
         chunks = await mock_db_manager.advanced_filter(
-            "document_chunks",
-            filters={"file_path": test_file}
+            "document_chunks", filters={"file_path": test_file}
         )
         assert len(chunks) == 0
 
         entities = await mock_db_manager.advanced_filter(
-            "graph_entities",
-            filters={"file_path": test_file}
+            "graph_entities", filters={"file_path": test_file}
         )
         assert len(entities) == 0
-        
+
         # Verify symbol is removed from registry
         symbols = pipeline.symbol_registry.lookup_by_name("TestClass")
         assert len(symbols) == 0
-        
+
         # Verify cache was cleared
         cache_info = pipeline.symbol_registry.get_cache_info()
         assert cache_info["size"] == 0
-    
+
     asyncio.run(run())
 
 
@@ -169,17 +169,17 @@ def test_reindex_document():
                     fts_text="class OldClass:\n    pass",
                     language="python",
                     symbols=["OldClass"],
-                    symbol_metadata={"OldClass": {"type": "class"}}
+                    symbol_metadata={"OldClass": {"type": "class"}},
                 ),
             ],
         )
-        
+
         await pipeline.process_document(doc_v1)
-        
+
         # Verify old data exists
         symbols = pipeline.symbol_registry.lookup_by_name("OldClass")
         assert len(symbols) == 1
-        
+
         # Re-index with new version
         doc_v2 = ParsedDocument(
             doc_id="test_doc",
@@ -190,7 +190,7 @@ def test_reindex_document():
                     fts_text="class NewClass:\n    pass",
                     language="python",
                     symbols=["NewClass"],
-                    symbol_metadata={"NewClass": {"type": "class"}}
+                    symbol_metadata={"NewClass": {"type": "class"}},
                 ),
             ],
         )
@@ -209,8 +209,7 @@ def test_reindex_document():
 
         # Verify new chunks exist
         chunks = await mock_db_manager.advanced_filter(
-            "document_chunks",
-            filters={"file_path": test_file}
+            "document_chunks", filters={"file_path": test_file}
         )
         assert len(chunks) == 1
         assert "NewClass" in chunks[0]["symbols"]
@@ -258,13 +257,13 @@ def test_incremental_update_with_relationships():
                     fts_text="class BaseClass:\n    pass",
                     language="python",
                     symbols=["BaseClass"],
-                    symbol_metadata={"BaseClass": {"type": "class"}}
+                    symbol_metadata={"BaseClass": {"type": "class"}},
                 ),
             ],
         )
-        
+
         await pipeline.process_document(base_doc)
-        
+
         # Index file that imports from base (version 1)
         doc_v1 = ParsedDocument(
             doc_id="test_doc",
@@ -282,28 +281,29 @@ def test_incremental_update_with_relationships():
                             source_name="TestClass",
                             target_type="class",
                             target_name="BaseClass",
-                            type="imports"
+                            type="imports",
                         )
-                    ]
+                    ],
                 ),
             ],
         )
-        
+
         await pipeline.process_document(doc_v1)
         await pipeline.flush_pending_relationships()
-        
+
         # Verify relationship exists
         relationships = await mock_db_manager.advanced_filter("graph_relationships")
         initial_rel_count = len(relationships)
         assert initial_rel_count > 0
-        
+
         # Find relationship from TestClass to BaseClass
         test_to_base = [
-            rel for rel in relationships
+            rel
+            for rel in relationships
             if "TestClass" in rel["source_id"] and "BaseClass" in rel["target_id"]
         ]
         assert len(test_to_base) == 1
-        
+
         # Re-index with new version that imports something different
         doc_v2 = ParsedDocument(
             doc_id="test_doc",
@@ -315,26 +315,27 @@ def test_incremental_update_with_relationships():
                     language="python",
                     symbols=["TestClass"],
                     symbol_metadata={"TestClass": {"type": "class"}},
-                    relationships=[]  # No relationships in new version
+                    relationships=[],  # No relationships in new version
                 ),
             ],
         )
-        
+
         await pipeline.reindex_document(doc_v2)
         await pipeline.flush_pending_relationships()
-        
+
         # Verify old relationship is removed
         relationships = await mock_db_manager.advanced_filter("graph_relationships")
         test_to_base = [
-            rel for rel in relationships
+            rel
+            for rel in relationships
             if "TestClass" in rel["source_id"] and "BaseClass" in rel["target_id"]
         ]
         assert len(test_to_base) == 0
-        
+
         # Verify TestClass symbol still exists
         symbols = pipeline.symbol_registry.lookup_by_name("TestClass")
         assert len(symbols) == 1
-    
+
     asyncio.run(run())
 
 
@@ -383,9 +384,9 @@ def test_remove_pending_relationships():
                             source_name="TestClass",
                             target_type="class",
                             target_name="BaseClass",
-                            type="imports"
+                            type="imports",
                         )
-                    ]
+                    ],
                 ),
             ],
         )

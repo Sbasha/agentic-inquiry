@@ -8,6 +8,7 @@ Tests cover:
 - Empty list behavior (IN([]) → FALSE, NOT_IN([]) → TRUE)
 - Edge cases
 """
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -39,61 +40,61 @@ class TestComparisonOperators:
         """EQ with string value."""
         f = eq("status", "active")
         result = translate_filter(f)
-        assert result == 'status = \'active\''
+        assert result == "status = 'active'"
 
     def test_eq_integer(self) -> None:
         """EQ with integer value."""
         f = eq("count", 42)
         result = translate_filter(f)
-        assert result == 'count = 42'
+        assert result == "count = 42"
 
     def test_eq_float(self) -> None:
         """EQ with float value."""
         f = eq("score", 0.95)
         result = translate_filter(f)
-        assert result == 'score = 0.95'
+        assert result == "score = 0.95"
 
     def test_eq_boolean_true(self) -> None:
         """EQ with boolean True."""
         f = eq("is_active", True)
         result = translate_filter(f)
-        assert result == 'is_active = TRUE'
+        assert result == "is_active = TRUE"
 
     def test_eq_boolean_false(self) -> None:
         """EQ with boolean False."""
         f = eq("is_deleted", False)
         result = translate_filter(f)
-        assert result == 'is_deleted = FALSE'
+        assert result == "is_deleted = FALSE"
 
     def test_ne_string(self) -> None:
         """NE with string value."""
         f = ne("status", "deleted")
         result = translate_filter(f)
-        assert result == 'status != \'deleted\''
+        assert result == "status != 'deleted'"
 
     def test_gt_integer(self) -> None:
         """GT with integer value."""
         f = gt("count", 10)
         result = translate_filter(f)
-        assert result == 'count > 10'
+        assert result == "count > 10"
 
     def test_gte_float(self) -> None:
         """GTE with float value."""
         f = gte("score", 0.5)
         result = translate_filter(f)
-        assert result == 'score >= 0.5'
+        assert result == "score >= 0.5"
 
     def test_lt_integer(self) -> None:
         """LT with integer value."""
         f = lt("age", 100)
         result = translate_filter(f)
-        assert result == 'age < 100'
+        assert result == "age < 100"
 
     def test_lte_float(self) -> None:
         """LTE with float value."""
         f = lte("confidence", 1.0)
         result = translate_filter(f)
-        assert result == 'confidence <= 1.0'
+        assert result == "confidence <= 1.0"
 
 
 class TestNullOperators:
@@ -103,13 +104,13 @@ class TestNullOperators:
         """IS_NULL operator."""
         f = is_null("deleted_at")
         result = translate_filter(f)
-        assert result == 'deleted_at IS NULL'
+        assert result == "deleted_at IS NULL"
 
     def test_is_not_null(self) -> None:
         """IS_NOT_NULL operator."""
         f = is_not_null("name")
         result = translate_filter(f)
-        assert result == 'name IS NOT NULL'
+        assert result == "name IS NOT NULL"
 
 
 class TestSetMembershipOperators:
@@ -125,7 +126,7 @@ class TestSetMembershipOperators:
         """IN with integer values."""
         f = is_in("priority", [1, 2, 3])
         result = translate_filter(f)
-        assert result == 'priority IN (1, 2, 3)'
+        assert result == "priority IN (1, 2, 3)"
 
     def test_in_single_value(self) -> None:
         """IN with single value."""
@@ -183,7 +184,9 @@ class TestCompoundOperators:
         )
         result = translate_filter(f)
         # and_() chains left-to-right: ((a AND b) AND c)
-        assert result == "((status = 'active') AND (score > 0.5)) AND (name IS NOT NULL)"
+        assert (
+            result == "((status = 'active') AND (score > 0.5)) AND (name IS NOT NULL)"
+        )
 
     def test_multiple_or(self) -> None:
         """Chain of OR filters."""
@@ -193,7 +196,7 @@ class TestCompoundOperators:
             eq("priority", 3),
         )
         result = translate_filter(f)
-        assert result == '((priority = 1) OR (priority = 2)) OR (priority = 3)'
+        assert result == "((priority = 1) OR (priority = 2)) OR (priority = 3)"
 
 
 class TestStringEscaping:
@@ -258,7 +261,7 @@ class TestTranslateFilterFunction:
     def test_translate_simple_filter(self) -> None:
         """translate_filter works with simple filter."""
         f = eq("x", 1)
-        assert translate_filter(f) == 'x = 1'
+        assert translate_filter(f) == "x = 1"
 
 
 class TestTranslatorClass:
@@ -271,8 +274,8 @@ class TestTranslatorClass:
         f1 = eq("a", 1)
         f2 = eq("b", 2)
 
-        assert translator.translate(f1) == 'a = 1'
-        assert translator.translate(f2) == 'b = 2'
+        assert translator.translate(f1) == "a = 1"
+        assert translator.translate(f2) == "b = 2"
 
 
 class TestEdgeCases:
@@ -282,19 +285,19 @@ class TestEdgeCases:
         """Zero is a valid value."""
         f = eq("count", 0)
         result = translate_filter(f)
-        assert result == 'count = 0'
+        assert result == "count = 0"
 
     def test_negative_value(self) -> None:
         """Negative numbers are valid."""
         f = lt("temperature", -10)
         result = translate_filter(f)
-        assert result == 'temperature < -10'
+        assert result == "temperature < -10"
 
     def test_float_precision(self) -> None:
         """Float precision is preserved."""
         f = eq("value", 3.14159265359)
         result = translate_filter(f)
-        assert result == 'value = 3.14159265359'
+        assert result == "value = 3.14159265359"
 
     def test_empty_string_value(self) -> None:
         """Empty string is a valid value."""
@@ -371,4 +374,4 @@ class TestComplexQueries:
         result = translate_filter(f)
         assert result is not None
         # The double quotes protect against reserved keyword collisions
-        assert result == 'order = 5'
+        assert result == "order = 5"

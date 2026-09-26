@@ -157,6 +157,7 @@ class SchemaValidator:
             table_path = db_path / f"{table_name}.lance"
             if table_path.exists():
                 import shutil
+
                 shutil.rmtree(table_path)
                 logger.info("Dropped table '%s'", table_name)
                 return True

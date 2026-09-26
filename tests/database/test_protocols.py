@@ -5,6 +5,7 @@ Tests cover:
 - Capability detection helpers
 - Protocol compliance verification
 """
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -229,6 +230,7 @@ class TestVectorStorageProtocol:
         class IncompleteAdapter:
             async def initialize(self) -> None:
                 pass
+
             # Missing other required methods
 
         assert not isinstance(IncompleteAdapter(), VectorStorageProtocol)
@@ -522,6 +524,7 @@ class TestAsyncMethodSignatures:
         # Batch operations
         await adapter.add_batch("test", [])
         from agentic_inquiry.database.filters import eq
+
         await adapter.delete_batch("test", eq("id", "1"))
 
         # Transactions

@@ -203,7 +203,7 @@ class LanguageRegistry:
     @classmethod
     def get_language(cls, file_path: Path) -> Optional[str]:
         """Get language for a file path.
-        
+
         Checks both the file extension and the full filename for special cases
         like Makefile, CMakeLists.txt, BUILD, etc.
         """
@@ -211,7 +211,7 @@ class LanguageRegistry:
         filename = file_path.name
         if filename in cls.LANGUAGE_MAP:
             return cls.LANGUAGE_MAP[filename]
-        
+
         # Then check extension
         suffix = file_path.suffix.lower()
         return cls.LANGUAGE_MAP.get(suffix)
@@ -222,7 +222,9 @@ class LanguageRegistry:
         return [ext for ext, lang in cls.LANGUAGE_MAP.items() if lang == language]
 
     @classmethod
-    def get_tree_sitter_languages(cls, queries_path: Optional[Path] = None) -> Dict[str, str]:
+    def get_tree_sitter_languages(
+        cls, queries_path: Optional[Path] = None
+    ) -> Dict[str, str]:
         """Build language map from available tree-sitter query files.
 
         Note: Only counts actual .scm query files, not -tags.scm files.
@@ -244,7 +246,11 @@ class LanguageRegistry:
                 lang = filename.replace(".scm", "")
                 supported_languages.add(lang)
 
-        return {ext: lang for ext, lang in cls.LANGUAGE_MAP.items() if lang in supported_languages}
+        return {
+            ext: lang
+            for ext, lang in cls.LANGUAGE_MAP.items()
+            if lang in supported_languages
+        }
 
     @classmethod
     def all_languages(cls) -> set[str]:
@@ -258,7 +264,7 @@ _language_registry = LanguageRegistry()
 
 def get_language_registry() -> LanguageRegistry:
     """Get the global language registry instance.
-    
+
     Returns:
         Global LanguageRegistry instance
     """
@@ -267,10 +273,10 @@ def get_language_registry() -> LanguageRegistry:
 
 def detect_language(file_path: Path) -> Optional[str]:
     """Convenience function to detect language from a file path.
-    
+
     Args:
         file_path: Path to the file
-    
+
     Returns:
         Language name or None if not detected
     """

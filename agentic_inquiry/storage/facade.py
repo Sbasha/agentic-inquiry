@@ -14,13 +14,24 @@ The facade:
 
 Phase 6: GCP Connectors implementation - Updated to support pluggable backends.
 """
+
 from __future__ import annotations
 
 import dataclasses
 import logging
 import warnings
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Sequence, Union, cast, Literal
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+    Literal,
+)
 
 # Import capability checks
 from agentic_inquiry.storage.protocols.vector import (
@@ -548,7 +559,9 @@ class StorageFacade:
         Returns:
             List of SearchResult objects sorted by similarity
         """
-        effective_project_id = project_id if project_id is not None else self._project_id
+        effective_project_id = (
+            project_id if project_id is not None else self._project_id
+        )
         return await self._vector_provider.vector_search(
             query_vector=query_vector,
             limit=limit,
@@ -600,7 +613,9 @@ class StorageFacade:
         Returns:
             List of SearchResult objects sorted by relevance
         """
-        effective_project_id = project_id if project_id is not None else self._project_id
+        effective_project_id = (
+            project_id if project_id is not None else self._project_id
+        )
         return await self._vector_provider.fts_search(
             query=query,
             limit=limit,
@@ -626,7 +641,9 @@ class StorageFacade:
         # Use the chunk's project_id for storage - this ensures chunks are
         # stored under their intended project rather than the facade's default.
         # All chunks in a batch should have the same project_id.
-        chunk_project_id = chunks[0].project_id if chunks[0].project_id else self._project_id
+        chunk_project_id = (
+            chunks[0].project_id if chunks[0].project_id else self._project_id
+        )
 
         return await self._vector_provider.upsert_chunks(
             chunks=chunks,
@@ -750,7 +767,9 @@ class StorageFacade:
         # Use the entity's project_id for storage - this ensures entities are
         # stored under their intended project rather than the facade's default.
         # All entities in a batch should have the same project_id.
-        entity_project_id = entities[0].project_id if entities[0].project_id else self._project_id
+        entity_project_id = (
+            entities[0].project_id if entities[0].project_id else self._project_id
+        )
 
         # Use configured batch_size for bulk operations
         # Note: batch_size logic is handled within the provider if applicable
@@ -928,7 +947,11 @@ class StorageFacade:
         # Use the relationship's project_id for storage - this ensures relationships are
         # stored under their intended project rather than the facade's default.
         # All relationships in a batch should have the same project_id.
-        rel_project_id = relationships[0].project_id if relationships[0].project_id else self._project_id
+        rel_project_id = (
+            relationships[0].project_id
+            if relationships[0].project_id
+            else self._project_id
+        )
 
         return await self._graph_provider.upsert_relationships(
             relationships=relationships,
@@ -1489,6 +1512,7 @@ class StorageFacade:
                     return e.model_dump()
                 # Fallback for dataclasses with slots
                 from dataclasses import fields, is_dataclass
+
                 if is_dataclass(e):
                     return {f.name: getattr(e, f.name) for f in fields(e)}
                 return vars(e)
@@ -1526,6 +1550,7 @@ class StorageFacade:
                     return r.model_dump()
                 # Fallback for dataclasses with slots
                 from dataclasses import fields, is_dataclass
+
                 if is_dataclass(r):
                     return {f.name: getattr(r, f.name) for f in fields(r)}
                 return vars(r)
@@ -1536,7 +1561,7 @@ class StorageFacade:
             # Fall back to advanced_filter for unknown tables
             logger.warning(
                 "query_raw called for unknown table '%s', using advanced_filter",
-                table_name
+                table_name,
             )
             return await self.advanced_filter(
                 table_name=table_name,
@@ -1906,9 +1931,13 @@ class StorageFacade:
         if hasattr(self._vector_provider, "_manager"):
             return await self._vector_provider._manager.list_tables()
         if hasattr(self._vector_provider, "_connection_manager"):
-            return await self._vector_provider._connection_manager.db_manager.list_tables()
+            return (
+                await self._vector_provider._connection_manager.db_manager.list_tables()
+            )
         # Fallback: return standard table set
-        logger.warning("list_tables not supported by provider, returning default table list")
+        logger.warning(
+            "list_tables not supported by provider, returning default table list"
+        )
         return ["document_chunks", "graph_entities", "graph_relationships"]
 
     async def vector_search_raw(
@@ -1947,8 +1976,7 @@ class StorageFacade:
                 project_id=effective_project_id,
             )
             return [
-                r.model_dump() if hasattr(r, "model_dump") else vars(r)
-                for r in results
+                r.model_dump() if hasattr(r, "model_dump") else vars(r) for r in results
             ]
 
         # For other tables, try provider methods
@@ -1972,7 +2000,9 @@ class StorageFacade:
                     project_id=effective_project_id,
                 )
                 return [
-                    r.model_dump() if hasattr(r, "model_dump") else (r if isinstance(r, dict) else vars(r))
+                    r.model_dump()
+                    if hasattr(r, "model_dump")
+                    else (r if isinstance(r, dict) else vars(r))
                     for r in results
                 ]
         if hasattr(self._vector_provider, "_connection_manager"):
@@ -1986,7 +2016,9 @@ class StorageFacade:
                     project_id=effective_project_id,
                 )
                 return [
-                    r.model_dump() if hasattr(r, "model_dump") else (r if isinstance(r, dict) else vars(r))
+                    r.model_dump()
+                    if hasattr(r, "model_dump")
+                    else (r if isinstance(r, dict) else vars(r))
                     for r in results
                 ]
 

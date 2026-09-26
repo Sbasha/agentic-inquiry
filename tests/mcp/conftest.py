@@ -10,15 +10,15 @@ from unittest.mock import AsyncMock, MagicMock
 
 class _DummyEmbedder:
     """Dummy embedder for testing."""
-    
+
     def generate(self, texts):
         """Generate dummy embeddings."""
         return [[0.1] * 384 for _ in texts]
-    
+
     async def generate_async(self, texts):
         """Generate dummy embeddings asynchronously."""
         return self.generate(texts)
-    
+
     def ndims(self):
         """Return embedding dimensions."""
         return 384
@@ -43,20 +43,30 @@ async def mcp_services(tmp_path):
             - test_session_id: Pre-created session ID for tests
     """
     from agentic_inquiry.config import (
-        Config, StorageConfig, CacheConfig, DocumentCacheConfig,
-        SearchConfig, HybridSearchConfig, GraphSearchConfig,
-        EmbeddingsConfig, SentenceTransformerConfig,
-        ParsersConfig, ParserConfig, ProgressConfig
+        Config,
+        StorageConfig,
+        CacheConfig,
+        DocumentCacheConfig,
+        SearchConfig,
+        HybridSearchConfig,
+        GraphSearchConfig,
+        EmbeddingsConfig,
+        SentenceTransformerConfig,
+        ParsersConfig,
+        ParserConfig,
+        ProgressConfig,
     )
     from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
     from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
     from agentic_inquiry.mcp.services.session_manager import SessionManager
     from agentic_inquiry.search.service import SearchService
     from agentic_inquiry.embeddings.registry import EmbeddingRegistry
-    
+
     # Create config
     config = Config()
-    config.storage = StorageConfig(root=str(tmp_path), default_project_id="test_default")
+    config.storage = StorageConfig(
+        root=str(tmp_path), default_project_id="test_default"
+    )
     config.cache = CacheConfig(
         document_cache=DocumentCacheConfig(
             max_size=100,
@@ -91,21 +101,18 @@ async def mcp_services(tmp_path):
         document=ParserConfig(enabled=True, priority=50),
         fallback_text=ParserConfig(enabled=True, priority=0),
     )
-    config.progress = ProgressConfig(
-        enabled=False,
-        emit_interval=10,
-        min_duration=1.0
-    )
-    
+    config.progress = ProgressConfig(enabled=False, emit_interval=10, min_duration=1.0)
+
     # Create real database manager with embedder
     db_manager = InMemoryLanceDBManager(uri="memory://test_integration")
     await db_manager.create_tables_and_indexes()
     await db_manager.connect()
-    
+
     # Configure embedder for the database manager
     from agentic_inquiry.embeddings.registry import embedding_registry
+
     embedder = _DummyEmbedder()
-    
+
     # Configure default embedder if not already configured
     if not embedding_registry._default_configured:
         embedding_registry.configure_default_embedder(embedder, ndims=384)
@@ -121,11 +128,17 @@ async def mcp_services(tmp_path):
 
     # Create embedding service with the registry
     from agentic_inquiry.indexing.embedding_service import EmbeddingService
+
     embedding_service = EmbeddingService(registry=embedding_registry)
 
     # Create protocol-compliant vector and graph providers
-    from agentic_inquiry.storage.providers.lancedb import LanceDBVectorProvider, LanceDBGraphProvider
-    from agentic_inquiry.storage.providers.lancedb.connection import LanceDBConnectionManager
+    from agentic_inquiry.storage.providers.lancedb import (
+        LanceDBVectorProvider,
+        LanceDBGraphProvider,
+    )
+    from agentic_inquiry.storage.providers.lancedb.connection import (
+        LanceDBConnectionManager,
+    )
 
     # Create connection manager with the already-initialized db_manager
     connection_manager = LanceDBConnectionManager(
@@ -144,6 +157,7 @@ async def mcp_services(tmp_path):
 
     # Create StorageFacade for SearchService and SessionManager
     from agentic_inquiry.storage.facade import StorageFacade
+
     storage_facade = StorageFacade(
         config=config,
         project_id="test_integration_project",
@@ -153,15 +167,11 @@ async def mcp_services(tmp_path):
 
     # Create real session manager for proper event handling
     # Pass storage_facade which provides get_db_manager() method
-    session_manager = SessionManager(
-        db_manager=storage_facade,
-        config=config
-    )
+    session_manager = SessionManager(db_manager=storage_facade, config=config)
 
     # Create a test session
     session_result = await session_manager.create_session(
-        project_id="test_integration_project",
-        description="Integration test session"
+        project_id="test_integration_project", description="Integration test session"
     )
     test_session_id = session_result["session_id"]
 
@@ -171,21 +181,22 @@ async def mcp_services(tmp_path):
         config=config,
         event_system=event_system,
     )
-    
+
     # Create mock memory system
     memory_system = AsyncMock()
     memory_system.retrieve = AsyncMock(return_value=[])
     memory_system.store = AsyncMock()
-    
+
     # Create real indexing pipeline (not mock) for integration tests
     from agentic_inquiry.indexing.pipeline import IndexingPipeline
+
     indexing_pipeline = IndexingPipeline(
         db_manager=db_manager,
         config=config,
         project_id="test_integration_project",
-        event_system=event_system
+        event_system=event_system,
     )
-    
+
     # Return services dictionary with correct keys matching create_mcp_services()
     return {
         "config": config,
@@ -206,36 +217,38 @@ async def mcp_services(tmp_path):
 @pytest.fixture
 def mock_services_minimal():
     """Create minimal mock services for unit tests that don't need real components.
-    
+
     This fixture is useful for testing error handling and validation logic
     where you don't need actual database or search functionality.
     """
     session_manager = AsyncMock()
     session_manager.validate_session = AsyncMock(return_value=True)
-    session_manager.get_session = AsyncMock(return_value={
-        "session_id": "test_session",
-        "project_id": "test_project",
-        "status": "active"
-    })
-    
+    session_manager.get_session = AsyncMock(
+        return_value={
+            "session_id": "test_session",
+            "project_id": "test_project",
+            "status": "active",
+        }
+    )
+
     db_manager = AsyncMock()
     db_manager.vector_search = AsyncMock(return_value=[])
     db_manager.fts_search = AsyncMock(return_value=[])
-    
+
     search_service = AsyncMock()
     search_service.search = AsyncMock(return_value=[])
     search_service.hybrid_search = AsyncMock(return_value=[])
-    
+
     event_system = AsyncMock()
     event_system.emit = AsyncMock()
-    
+
     memory_system = AsyncMock()
     memory_system.retrieve = AsyncMock(return_value=[])
-    
+
     config = MagicMock()
     config.search.default_limit = 10
     config.search.max_limit = 100
-    
+
     return {
         "config": config,
         "storage": db_manager,

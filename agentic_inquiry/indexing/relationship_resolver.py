@@ -43,19 +43,76 @@ def _get_entity_attr(entity: Any, attr: str, default: Any = "") -> Any:
 
 # Common stdlib/builtin modules for cache optimization
 COMMON_STDLIB_MODULES: Set[str] = {
-    "builtins", "sys", "os", "io", "re", "json", "math", "time",
-    "datetime", "collections", "itertools", "functools", "operator",
-    "typing", "abc", "copy", "pickle", "pathlib", "shutil",
-    "tempfile", "glob", "fnmatch", "stat", "os.path",
-    "dataclasses", "enum", "array", "queue", "heapq", "bisect",
-    "string", "textwrap", "unicodedata", "codecs",
-    "decimal", "fractions", "random", "statistics",
-    "asyncio", "concurrent", "threading", "multiprocessing",
-    "logging", "warnings", "traceback", "pdb", "unittest",
-    "urllib", "http", "email", "html", "xml", "socket", "ssl",
-    "csv", "configparser", "zipfile", "tarfile", "gzip", "bz2",
-    "hashlib", "secrets", "uuid", "contextlib", "inspect",
-    "importlib", "pkgutil", "types", "weakref", "gc",
+    "builtins",
+    "sys",
+    "os",
+    "io",
+    "re",
+    "json",
+    "math",
+    "time",
+    "datetime",
+    "collections",
+    "itertools",
+    "functools",
+    "operator",
+    "typing",
+    "abc",
+    "copy",
+    "pickle",
+    "pathlib",
+    "shutil",
+    "tempfile",
+    "glob",
+    "fnmatch",
+    "stat",
+    "os.path",
+    "dataclasses",
+    "enum",
+    "array",
+    "queue",
+    "heapq",
+    "bisect",
+    "string",
+    "textwrap",
+    "unicodedata",
+    "codecs",
+    "decimal",
+    "fractions",
+    "random",
+    "statistics",
+    "asyncio",
+    "concurrent",
+    "threading",
+    "multiprocessing",
+    "logging",
+    "warnings",
+    "traceback",
+    "pdb",
+    "unittest",
+    "urllib",
+    "http",
+    "email",
+    "html",
+    "xml",
+    "socket",
+    "ssl",
+    "csv",
+    "configparser",
+    "zipfile",
+    "tarfile",
+    "gzip",
+    "bz2",
+    "hashlib",
+    "secrets",
+    "uuid",
+    "contextlib",
+    "inspect",
+    "importlib",
+    "pkgutil",
+    "types",
+    "weakref",
+    "gc",
 }
 
 
@@ -71,7 +128,7 @@ class SimpleCache:
         self._max_size = max_size
         self._cache: OrderedDict[
             Tuple[str, str, str],  # (target_name, target_type, source_file)
-            Optional[Tuple[str, str, float]]  # (file_path, type, confidence)
+            Optional[Tuple[str, str, float]],  # (file_path, type, confidence)
         ] = OrderedDict()
         self._hits = 0
         self._misses = 0
@@ -130,25 +187,25 @@ class SimpleCache:
 
 class RelationshipResolver:
     """Resolves import targets and other relationships using symbol registry.
-    
+
     This service extracts the complex resolution logic from IndexingPipeline,
     implementing multiple strategies for resolving import targets with
     confidence scoring. It can also query the database for existing
     relationships to handle re-indexing scenarios.
-    
+
     Resolution Strategies (in order):
     1. Database lookup - Check existing relationships from previous indexing
     2. Direct import path resolution - Use explicit import paths
     3. Exact type match - Match by name and type
     4. Module path resolution - Resolve via module paths
     5. Proximity-based resolution - Score by file proximity
-    
+
     Attributes:
         symbol_registry: Symbol registry for lookups
         project_root: Root directory of the project
         db_manager: Optional database manager for querying existing relationships
     """
-    
+
     def __init__(
         self,
         symbol_registry: SymbolRegistry,
@@ -196,7 +253,7 @@ class RelationshipResolver:
                 "exact_match": 0,
                 "module_path": 0,
                 "proximity": 0,
-            }
+            },
         }
 
     async def resolve_import(
@@ -218,10 +275,10 @@ class RelationshipResolver:
             source_file: File containing the import
             source_language: Programming language of source file
             import_path: Optional explicit import path
-        
+
         Returns:
             Tuple of (target_file_path, target_type, confidence) or None if unresolved
-            
+
         Example:
             >>> await resolver.resolve_import(
             ...     target_name="IndexingPipeline",
@@ -234,11 +291,13 @@ class RelationshipResolver:
         """
         with self._metrics.track_latency("resolver.resolve_import"):
             self._stats["total_attempts"] += 1
-            
+
             # Check cache first (uses EnhancedCache with two-tier lookup)
             target_type_str = target_type or ""
-            found, cached_result = self._cache.get(target_name, target_type_str, source_file)
-            
+            found, cached_result = self._cache.get(
+                target_name, target_type_str, source_file
+            )
+
             if found:
                 self._stats["cache_hits"] += 1
                 if cached_result:
@@ -246,9 +305,9 @@ class RelationshipResolver:
                 else:
                     self._stats["unresolved"] += 1
                 return cached_result
-            
+
             self._stats["cache_misses"] += 1
-            
+
             # Perform actual resolution
             result = await self._resolve_impl(
                 target_name=target_name,
@@ -257,19 +316,28 @@ class RelationshipResolver:
                 source_language=source_language,
                 import_path=import_path,
             )
-            
+
             # Cache the result (EnhancedCache will determine if it's a common import)
             self._cache.put(target_name, target_type_str, source_file, result)
-            
+
             # Update statistics
             if result:
                 self._stats["resolved"] += 1
-                logger.debug("Resolved %s from %s to %s "
-                    "(confidence: %.2f)", target_name, source_file, result[0], result[2])
+                logger.debug(
+                    "Resolved %s from %s to %s (confidence: %.2f)",
+                    target_name,
+                    source_file,
+                    result[0],
+                    result[2],
+                )
             else:
                 self._stats["unresolved"] += 1
-                logger.info("Unresolved relationship target: %s from %s", target_name, source_file)
-            
+                logger.info(
+                    "Unresolved relationship target: %s from %s",
+                    target_name,
+                    source_file,
+                )
+
             return result
 
     async def _resolve_impl(
@@ -315,12 +383,14 @@ class RelationshipResolver:
             target_name,
             source_file,
             import_path,
-            target_type
+            target_type,
         )
 
         # Try each strategy in order until one succeeds
         for strategy_fn, strategy_name in strategies:
-            logger.debug("Trying resolution strategy: %s for '%s'", strategy_name, target_name)
+            logger.debug(
+                "Trying resolution strategy: %s for '%s'", strategy_name, target_name
+            )
             result = await strategy_fn(
                 target_name,
                 target_type,
@@ -335,11 +405,13 @@ class RelationshipResolver:
                     target_name,
                     strategy_name,
                     result[0],
-                    result[2]
+                    result[2],
                 )
                 return result
             else:
-                logger.debug("Strategy '%s' failed to resolve '%s'", strategy_name, target_name)
+                logger.debug(
+                    "Strategy '%s' failed to resolve '%s'", strategy_name, target_name
+                )
 
         # Log failure with detailed diagnostics - use warning for visibility
         logger.warning(
@@ -349,7 +421,7 @@ class RelationshipResolver:
             source_file,
             import_path,
             target_type,
-            source_language
+            source_language,
         )
 
         return None
@@ -363,41 +435,35 @@ class RelationshipResolver:
         import_path: Optional[str],
     ) -> Optional[Tuple[str, str, float]]:
         """Try to resolve using database lookup for existing relationships.
-        
+
         Queries the database for relationships from the source file to find
         existing resolutions. This is important during re-indexing to maintain
         consistency with previously resolved relationships.
-        
+
         Args:
             target_name: Name of the imported symbol
             target_type: Optional type hint
             source_file: File containing the import
             source_language: Programming language
             import_path: Optional explicit import path
-        
+
         Returns:
             Tuple of (file_path, type, confidence) or None if unresolved
         """
         if not self.db_manager or self._skip_database_lookups:
             return None
-        
+
         try:
             result = await self._resolve_from_database(target_name, source_file)
             if result:
                 logger.debug(
-                    "Resolved %s via database lookup: %s",
-                    target_name,
-                    result[0]
+                    "Resolved %s via database lookup: %s", target_name, result[0]
                 )
             return result
         except Exception as e:
-            logger.debug(
-                "Database lookup failed for %s: %s",
-                target_name,
-                e
-            )
+            logger.debug("Database lookup failed for %s: %s", target_name, e)
             return None
-    
+
     async def _try_symbol_resolution(
         self,
         target_name: str,
@@ -407,43 +473,44 @@ class RelationshipResolver:
         import_path: Optional[str],
     ) -> Optional[Tuple[str, str, float]]:
         """Try to resolve using improved symbol resolution.
-        
+
         Uses the database to query entities by name and import path,
         with project-aware matching for better accuracy.
-        
+
         Args:
             target_name: Name of the imported symbol
             target_type: Optional type hint
             source_file: File containing the import
             source_language: Programming language
             import_path: Optional explicit import path
-        
+
         Returns:
             Tuple of (file_path, type, confidence) or None if unresolved
         """
         if not self.db_manager or self._skip_database_lookups:
             return None
-        
+
         try:
             entity_id = await self._resolve_import_symbol(
                 symbol_name=target_name,
                 import_path=import_path,
                 source_file=source_file,
-                project_id=None  # Will use default from db_manager
+                project_id=None,  # Will use default from db_manager
             )
             if entity_id:
                 # Get entity details to return file_path and type
                 try:
                     entities = await self.db_manager.query_entities(
-                        filters={"id": entity_id},
-                        limit=1
+                        filters={"id": entity_id}, limit=1
                     )
                     # Validate that entities is a proper list
                     if entities and isinstance(entities, list) and len(entities) > 0:
                         entity = entities[0]
                         # Handle both dict and GraphEntity dataclass
                         file_path = _get_entity_attr(entity, "file_path", "")
-                        entity_type = _get_entity_attr(entity, "type", target_type or "unknown")
+                        entity_type = _get_entity_attr(
+                            entity, "type", target_type or "unknown"
+                        )
                         # High confidence for improved resolution
                         confidence = 0.9
                         logger.debug(
@@ -451,24 +518,18 @@ class RelationshipResolver:
                             target_name,
                             file_path,
                             entity_type,
-                            confidence
+                            confidence,
                         )
                         return (file_path, entity_type, confidence)
                 except Exception as e:
                     logger.debug(
-                        "Error fetching entity details for %s: %s",
-                        entity_id,
-                        e
+                        "Error fetching entity details for %s: %s", entity_id, e
                     )
         except Exception as e:
-            logger.debug(
-                "Improved symbol resolution failed for %s: %s",
-                target_name,
-                e
-            )
-        
+            logger.debug("Improved symbol resolution failed for %s: %s", target_name, e)
+
         return None
-    
+
     async def _try_import_path(
         self,
         target_name: str,
@@ -478,32 +539,28 @@ class RelationshipResolver:
         import_path: Optional[str],
     ) -> Optional[Tuple[str, str, float]]:
         """Try to resolve using explicit import path.
-        
+
         Converts import path to file path and looks up the symbol.
         For example: "agentic_inquiry.indexing.pipeline" -> "agentic_inquiry/indexing/pipeline.py"
-        
+
         Args:
             target_name: Name of the imported symbol
             target_type: Optional type hint
             source_file: File containing the import
             source_language: Programming language
             import_path: Optional explicit import path
-        
+
         Returns:
             Tuple of (file_path, type, confidence) or None if unresolved
         """
         if not import_path:
             return None
-        
+
         result = self._resolve_by_import_path(import_path, target_name)
         if result:
-            logger.debug(
-                "Resolved %s via import path: %s",
-                target_name,
-                result[0]
-            )
+            logger.debug("Resolved %s via import path: %s", target_name, result[0])
         return result
-    
+
     async def _try_exact_match(
         self,
         target_name: str,
@@ -513,32 +570,28 @@ class RelationshipResolver:
         import_path: Optional[str],
     ) -> Optional[Tuple[str, str, float]]:
         """Try to resolve by exact name and type match.
-        
+
         Looks up symbols by name and type. Returns single match with
         confidence 1.0, or filters by type if multiple matches exist.
-        
+
         Args:
             target_name: Name of the imported symbol
             target_type: Optional type hint
             source_file: File containing the import
             source_language: Programming language
             import_path: Optional explicit import path
-        
+
         Returns:
             Tuple of (file_path, type, confidence) or None if unresolved
         """
         if not target_type:
             return None
-        
+
         result = self._resolve_by_exact_match(target_name, target_type)
         if result:
-            logger.debug(
-                "Resolved %s via exact match: %s",
-                target_name,
-                result[0]
-            )
+            logger.debug("Resolved %s via exact match: %s", target_name, result[0])
         return result
-    
+
     async def _try_module_path(
         self,
         target_name: str,
@@ -548,31 +601,27 @@ class RelationshipResolver:
         import_path: Optional[str],
     ) -> Optional[Tuple[str, str, float]]:
         """Try to resolve using module path (Python-specific).
-        
+
         Uses the symbol registry's module path index for fast lookup.
-        
+
         Args:
             target_name: Name of the imported symbol
             target_type: Optional type hint
             source_file: File containing the import
             source_language: Programming language
             import_path: Optional explicit import path
-        
+
         Returns:
             Tuple of (file_path, type, confidence) or None if unresolved
         """
         if source_language != "python" or not import_path:
             return None
-        
+
         result = self._resolve_by_module_path(import_path, target_name)
         if result:
-            logger.debug(
-                "Resolved %s via module path: %s",
-                target_name,
-                result[0]
-            )
+            logger.debug("Resolved %s via module path: %s", target_name, result[0])
         return result
-    
+
     async def _try_proximity(
         self,
         target_name: str,
@@ -582,29 +631,25 @@ class RelationshipResolver:
         import_path: Optional[str],
     ) -> Optional[Tuple[str, str, float]]:
         """Try to resolve by proximity scoring.
-        
+
         Looks up symbols by name and scores candidates by file proximity.
         Returns best match if confidence >= 0.5.
-        
+
         Args:
             target_name: Name of the imported symbol
             target_type: Optional type hint
             source_file: File containing the import
             source_language: Programming language
             import_path: Optional explicit import path
-        
+
         Returns:
             Tuple of (file_path, type, confidence) or None if unresolved
         """
         result = self._resolve_by_proximity(target_name, source_file)
         if result:
-            logger.debug(
-                "Resolved %s via proximity: %s",
-                target_name,
-                result[0]
-            )
+            logger.debug("Resolved %s via proximity: %s", target_name, result[0])
         return result
-    
+
     async def _resolve_from_database(
         self,
         target_name: str,
@@ -667,34 +712,43 @@ class RelationshipResolver:
 
                             logger.debug(
                                 "Found existing relationship: %s from %s to %s (type: %s)",
-                                target_name, source_file, target_file, target_type,
+                                target_name,
+                                source_file,
+                                target_file,
+                                target_type,
                             )
                             return (target_file, target_type, 1.0)
                     except (IndexError, ValueError) as e:
-                        logger.warning("Failed to parse target_id '%s': %s", target_id, e)
+                        logger.warning(
+                            "Failed to parse target_id '%s': %s", target_id, e
+                        )
                         continue
 
-            logger.debug("No matching relationship found for %s from %s", target_name, source_file)
+            logger.debug(
+                "No matching relationship found for %s from %s",
+                target_name,
+                source_file,
+            )
             return None
 
         except Exception as e:
             logger.debug("Failed to resolve from database: %s", e)
             return None
-    
+
     def _resolve_by_import_path(
         self,
         import_path: str,
         target_name: str,
     ) -> Optional[Tuple[str, str, float]]:
         """Resolve using explicit import path.
-        
+
         Converts import path to file path and looks up the symbol.
         For example: "agentic_inquiry.indexing.pipeline" -> "agentic_inquiry/indexing/pipeline.py"
-        
+
         Args:
             import_path: Import path (e.g., "package.module")
             target_name: Symbol name to resolve
-        
+
         Returns:
             Tuple of (file_path, type, confidence) or None
         """
@@ -728,7 +782,7 @@ class RelationshipResolver:
                             if Path(candidate.file_path) == resolved:
                                 return (candidate.file_path, candidate.entity_type, 1.0)
 
-                init_path = (self.project_root / rel_path / "__init__.py")
+                init_path = self.project_root / rel_path / "__init__.py"
                 if init_path.exists():
                     resolved = init_path.resolve()
                     for candidate in symbol_candidates:
@@ -743,20 +797,20 @@ class RelationshipResolver:
         except Exception as e:
             logger.debug("Failed to resolve by import path %s: %s", import_path, e)
             return None
-    
+
     def _resolve_by_module_path(
         self,
         module_path: str,
         target_name: str,
     ) -> Optional[Tuple[str, str, float]]:
         """Resolve using module path lookup in symbol registry.
-        
+
         Uses the symbol registry's module path index for fast lookup.
-        
+
         Args:
             module_path: Module path (e.g., "agentic_inquiry.indexing.pipeline")
             target_name: Symbol name to resolve
-        
+
         Returns:
             Tuple of (file_path, type, confidence) or None
         """
@@ -795,20 +849,22 @@ class RelationshipResolver:
             logger.debug("Failed to resolve by module path %s: %s", module_path, e)
             return None
 
-    def _module_path_variations(self, raw_path: Optional[str], target_name: str) -> List[str]:
+    def _module_path_variations(
+        self, raw_path: Optional[str], target_name: str
+    ) -> List[str]:
         """Generate possible module path variations for a given import path.
-        
+
         Creates variations by:
         1. Removing target_name from end if present
         2. Generating all suffixes of the path
-        
+
         Args:
             raw_path: Import path (e.g., "agentic_inquiry.search.service")
             target_name: Name of the imported symbol
-            
+
         Returns:
             List of module path variations to try
-            
+
         Example:
             >>> _module_path_variations("agentic_inquiry.search.service", "SearchService")
             ["agentic_inquiry.search.service", "search.service", "service"]
@@ -845,14 +901,14 @@ class RelationshipResolver:
         target_type: str,
     ) -> Optional[Tuple[str, str, float]]:
         """Resolve by exact name and type match.
-        
+
         Looks up symbols by name and type. Returns single match with
         confidence 1.0, or filters by type if multiple matches exist.
-        
+
         Args:
             target_name: Symbol name to look up
             target_type: Entity type (class, function, module, etc.)
-        
+
         Returns:
             Tuple of (file_path, type, confidence) or None
         """
@@ -860,12 +916,12 @@ class RelationshipResolver:
         candidates = self.symbol_registry.lookup_by_name_and_type(
             target_name, target_type
         )
-        
+
         if len(candidates) == 1:
             # Single match - high confidence
             candidate = candidates[0]
             return (candidate.file_path, candidate.entity_type, 1.0)
-        
+
         if len(candidates) > 1:
             # Multiple matches - use additional heuristics
             # Prefer exported symbols
@@ -873,17 +929,17 @@ class RelationshipResolver:
             if len(exported) == 1:
                 candidate = exported[0]
                 return (candidate.file_path, candidate.entity_type, 0.9)
-            
+
             # Use import frequency if available
             if exported:
                 candidates = exported
-            
+
             # Score by import frequency
             scored = []
             for candidate in candidates:
                 frequency = self.symbol_registry.get_import_frequency(candidate.name)
                 scored.append((candidate, frequency))
-            
+
             scored.sort(key=lambda x: x[1], reverse=True)
             if scored and scored[0][1] > 0:
                 candidate = scored[0][0]
@@ -891,7 +947,7 @@ class RelationshipResolver:
                 total_freq = sum(s[1] for s in scored)
                 confidence = 0.7 + (scored[0][1] / max(total_freq, 1)) * 0.2
                 return (candidate.file_path, candidate.entity_type, confidence)
-        
+
         return None
 
     def _resolve_by_proximity(
@@ -900,22 +956,22 @@ class RelationshipResolver:
         source_file: str,
     ) -> Optional[Tuple[str, str, float]]:
         """Resolve by proximity scoring.
-        
+
         Looks up symbols by name and scores candidates by file proximity.
         Returns best match if confidence >= 0.5.
-        
+
         Args:
             target_name: Symbol name to look up
             source_file: File containing the import
-        
+
         Returns:
             Tuple of (file_path, type, confidence) or None
         """
         candidates = self.symbol_registry.lookup_by_name(target_name)
-        
+
         if not candidates:
             return None
-        
+
         # Score candidates by multiple factors
         scored = []
         for candidate in candidates:
@@ -923,53 +979,53 @@ class RelationshipResolver:
             proximity_score = self._calculate_proximity_score(
                 source_file, candidate.file_path
             )
-            
+
             # Calculate file naming pattern score
             naming_score = self.symbol_registry.score_file_naming_pattern(
                 target_name, candidate.file_path
             )
-            
+
             # Calculate directory structure score
             directory_score = self.symbol_registry.score_directory_structure(
                 target_name, candidate.file_path
             )
-            
+
             # Get co-occurrence score
             co_occurrence = self.symbol_registry.get_co_occurrence_score(
                 source_file, candidate.file_path
             )
-            
+
             # Get import frequency
             frequency = self.symbol_registry.get_import_frequency(target_name)
-            
+
             # Combine scores with weights
             # Proximity is most important for proximity-based resolution
             combined_score = (
-                proximity_score * 0.4 +
-                (naming_score / 100.0) * 0.25 +
-                (directory_score / 100.0) * 0.15 +
-                min(co_occurrence / 10.0, 1.0) * 0.15 +
-                min(frequency / 50.0, 1.0) * 0.05
+                proximity_score * 0.4
+                + (naming_score / 100.0) * 0.25
+                + (directory_score / 100.0) * 0.15
+                + min(co_occurrence / 10.0, 1.0) * 0.15
+                + min(frequency / 50.0, 1.0) * 0.05
             )
-            
+
             # Boost for exported symbols
             if candidate.is_exported:
                 combined_score *= 1.1
-            
+
             scored.append((candidate, combined_score))
-        
+
         # Guard against empty scored list
         if not scored:
             return None
-        
+
         # Sort by score
         scored.sort(key=lambda x: x[1], reverse=True)
         best_candidate, best_score = scored[0]
-        
+
         # Only return if confidence is reasonable
         if best_score < 0.5:
             return None
-        
+
         return (best_candidate.file_path, best_candidate.entity_type, best_score)
 
     def _calculate_proximity_score(
@@ -978,38 +1034,38 @@ class RelationshipResolver:
         target_file: str,
     ) -> float:
         """Calculate proximity score between two files.
-        
+
         Scores based on directory proximity:
         - Same directory: 0.8 score
         - Calculate common path depth for other cases
         - Closer files get higher scores
-        
+
         Args:
             source_file: Source file path
             target_file: Target file path
-        
+
         Returns:
             Proximity score (0.0 to 1.0)
         """
         try:
             source_path = Path(source_file)
             target_path = Path(target_file)
-            
+
             # Same file - shouldn't happen but handle it
             if source_path.resolve() == target_path.resolve():
                 return 1.0
-            
+
             # Same directory: high score
             if source_path.parent == target_path.parent:
                 return 0.8
-            
+
             # Calculate common path depth
             try:
                 common = Path(os.path.commonpath([source_file, target_file]))
                 source_depth = len(source_path.relative_to(common).parts)
                 target_depth = len(target_path.relative_to(common).parts)
                 total_depth = source_depth + target_depth
-                
+
                 # Closer files get higher scores
                 # Depth 2 (one level apart) = 0.7
                 # Depth 3 = 0.6, Depth 4 = 0.5, etc.
@@ -1019,22 +1075,28 @@ class RelationshipResolver:
                 # No common path (different drives on Windows, etc.)
                 return 0.3
         except Exception as e:
-            logger.debug("Failed to calculate proximity score between "
-                "%s and %s: %s", source_file, target_file, e)
+            logger.debug(
+                "Failed to calculate proximity score between %s and %s: %s",
+                source_file,
+                target_file,
+                e,
+            )
             return 0.3
 
-    def _import_path_to_file_path(self, import_path: str, target_name: str) -> List[str]:
+    def _import_path_to_file_path(
+        self, import_path: str, target_name: str
+    ) -> List[str]:
         """Convert Python import path to possible file paths.
-        
+
         Handles various import patterns and returns multiple candidates.
-        
+
         Args:
             import_path: Python import path (e.g., "agentic_inquiry.search.service")
             target_name: Name of the imported symbol
-        
+
         Returns:
             List of possible file paths to check
-        
+
         Examples:
             "agentic_inquiry.search.service" -> [
                 "agentic_inquiry/search/service.py",
@@ -1042,34 +1104,34 @@ class RelationshipResolver:
             ]
         """
         candidates = []
-        
+
         # Convert dots to path separators
         parts = import_path.split(".")
         base_path = "/".join(parts)
-        
+
         # Try as module file
         candidates.append(f"{base_path}.py")
-        
+
         # Try as package __init__
         candidates.append(f"{base_path}/__init__.py")
-        
+
         # Try with target name appended (for "from X import Y" style)
         if target_name and target_name not in parts:
             candidates.append(f"{base_path}/{target_name}.py")
-        
+
         # Try relative to project root
         for candidate in list(candidates):
             if not candidate.startswith(str(self.project_root)):
                 candidates.append(str(self.project_root / candidate))
-        
+
         return candidates
 
     def _extract_project_from_path(self, file_path: str) -> str:
         """Extract project/package name from file path.
-        
+
         Args:
             file_path: File path to extract from
-        
+
         Returns:
             Project name (first directory component)
         """
@@ -1086,41 +1148,38 @@ class RelationshipResolver:
         project_id: Optional[str] = None,
     ) -> Optional[str]:
         """Resolve imported symbol to entity ID using multiple strategies.
-        
+
         This is the improved resolution method that tries multiple strategies:
         1. Exact match by name and file path (using import path)
         2. Fuzzy match by name only
         3. Project-aware match (prefer same project)
-        
+
         Args:
             symbol_name: Name of the symbol to resolve
             import_path: Optional import path (e.g., "agentic_inquiry.search.service")
             source_file: Optional source file containing the import
             project_id: Optional project ID for filtering
-        
+
         Returns:
             Entity ID if resolved, None otherwise
         """
         # Strategy 1: Exact match with import path
         if import_path and self.db_manager:
             # Convert import path to file paths
-            file_path_candidates = self._import_path_to_file_path(import_path, symbol_name)
-            
+            file_path_candidates = self._import_path_to_file_path(
+                import_path, symbol_name
+            )
+
             for file_path in file_path_candidates:
                 try:
                     entities = await self.db_manager.query_entities(
-                        filters={
-                            "name": symbol_name,
-                            "file_path": file_path
-                        },
+                        filters={"name": symbol_name, "file_path": file_path},
                         limit=1,
-                        project_id=project_id
+                        project_id=project_id,
                     )
                     if entities:
                         logger.debug(
-                            "Resolved %s via exact match in %s",
-                            symbol_name,
-                            file_path
+                            "Resolved %s via exact match in %s", symbol_name, file_path
                         )
                         self._stats["by_strategy"]["exact_match"] += 1
                         return _get_entity_attr(entities[0], "id")
@@ -1129,16 +1188,14 @@ class RelationshipResolver:
                         "Error querying entities for %s in %s: %s",
                         symbol_name,
                         file_path,
-                        e
+                        e,
                     )
 
         # Strategy 2: Fuzzy match by name
         if self.db_manager:
             try:
                 entities = await self.db_manager.query_entities(
-                    filters={"name": symbol_name},
-                    limit=10,
-                    project_id=project_id
+                    filters={"name": symbol_name}, limit=10, project_id=project_id
                 )
 
                 if not entities:
@@ -1157,7 +1214,7 @@ class RelationshipResolver:
                             logger.debug(
                                 "Resolved %s via project match: %s",
                                 symbol_name,
-                                entity_id
+                                entity_id,
                             )
                             self._stats["by_strategy"]["proximity"] += 1
                             return entity_id
@@ -1165,25 +1222,19 @@ class RelationshipResolver:
                 # Return first match
                 first_entity_id = _get_entity_attr(entities[0], "id")
                 logger.debug(
-                    "Resolved %s via fuzzy match: %s",
-                    symbol_name,
-                    first_entity_id
+                    "Resolved %s via fuzzy match: %s", symbol_name, first_entity_id
                 )
                 self._stats["by_strategy"]["proximity"] += 1
                 return first_entity_id
             except Exception as e:
-                logger.error(
-                    "Error during fuzzy match for %s: %s",
-                    symbol_name,
-                    e
-                )
-        
+                logger.error("Error during fuzzy match for %s: %s", symbol_name, e)
+
         return None
 
     @property
     def cache_hit_rate(self) -> float:
         """Calculate cache hit rate as a percentage.
-        
+
         Returns:
             Cache hit rate (0.0 to 100.0)
         """
@@ -1191,7 +1242,7 @@ class RelationshipResolver:
         if total_cache_accesses == 0:
             return 0.0
         return (self._stats["cache_hits"] / total_cache_accesses) * 100.0
-    
+
     def get_resolution_stats(self) -> Dict[str, Any]:
         """Get resolution statistics.
 
@@ -1224,7 +1275,7 @@ class RelationshipResolver:
             "resolution_rate": resolution_rate,
             "by_strategy": self._stats["by_strategy"].copy(),
         }
-    
+
     def clear_cache(self) -> None:
         """Clear the resolution cache."""
         self._cache.clear()

@@ -5,6 +5,7 @@ Used by ContentMaterializer for bounded content caching.
 
 See: docs/design/connector-architecture.md (S5-005)
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -27,6 +28,7 @@ class CacheEntry(Generic[V]):
         value: The cached value.
         size: Size of the entry in bytes.
     """
+
     value: V
     size: int
 
@@ -43,6 +45,7 @@ class CacheStats:
         current_count: Current number of items.
         max_size: Maximum size limit in bytes.
     """
+
     hits: int = 0
     misses: int = 0
     evictions: int = 0
@@ -163,7 +166,9 @@ class LRUCache(Generic[K, V]):
             if self._max_size > 0 and size > self._max_size:
                 logger.warning(
                     "Cache entry size %d exceeds max_size %d, not caching key %s",
-                    size, self._max_size, key
+                    size,
+                    self._max_size,
+                    key,
                 )
                 return
 
@@ -242,17 +247,16 @@ class LRUCache(Generic[K, V]):
         Args:
             new_entry_size: Size of entry being added.
         """
-        while (
-            self._cache
-            and self._current_size + new_entry_size > self._max_size
-        ):
+        while self._cache and self._current_size + new_entry_size > self._max_size:
             # Pop from front (least recently used)
             key, entry = self._cache.popitem(last=False)
             self._current_size -= entry.size
             self._evictions += 1
             logger.debug(
                 "Evicted cache entry %s (size=%d), current_size=%d",
-                key, entry.size, self._current_size
+                key,
+                entry.size,
+                self._current_size,
             )
 
 
@@ -343,16 +347,15 @@ class FileCacheTracker:
             if self._max_size > 0 and size > self._max_size:
                 logger.warning(
                     "File size %d exceeds max_size %d, not tracking %s",
-                    size, self._max_size, cache_path
+                    size,
+                    self._max_size,
+                    cache_path,
                 )
                 return evicted
 
             # Evict entries if needed
             if self._max_size > 0:
-                while (
-                    self._entries
-                    and self._current_size + size > self._max_size
-                ):
+                while self._entries and self._current_size + size > self._max_size:
                     # Pop from front (least recently used)
                     old_path, old_size = self._entries.popitem(last=False)
                     self._current_size -= old_size
@@ -360,7 +363,9 @@ class FileCacheTracker:
                     evicted.append(old_path)
                     logger.debug(
                         "Evicted cache file %s (size=%d), current_size=%d",
-                        old_path, old_size, self._current_size
+                        old_path,
+                        old_size,
+                        self._current_size,
                     )
 
             # Add new entry

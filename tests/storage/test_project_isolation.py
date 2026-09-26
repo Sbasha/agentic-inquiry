@@ -209,7 +209,7 @@ class TestCrossProjectDataLeakage:
     ):
         """Relationships from project A should not be visible in project B."""
         # Skip if provider doesn't support relationships
-        if not hasattr(graph_provider, 'upsert_relationships'):
+        if not hasattr(graph_provider, "upsert_relationships"):
             pytest.skip("Provider does not support relationships")
 
         project_a = "project-alpha"
@@ -446,12 +446,10 @@ class TestProjectScopedQueries:
 
         # Add different numbers of chunks to each project
         chunks_a = [
-            chunk_factory(chunk_id=f"a{i}", project_id=project_a)
-            for i in range(5)
+            chunk_factory(chunk_id=f"a{i}", project_id=project_a) for i in range(5)
         ]
         chunks_b = [
-            chunk_factory(chunk_id=f"b{i}", project_id=project_b)
-            for i in range(3)
+            chunk_factory(chunk_id=f"b{i}", project_id=project_b) for i in range(3)
         ]
 
         await vector_provider.upsert_chunks(chunks_a, project_a)
@@ -565,9 +563,7 @@ class TestProjectDeletionCleanup:
     """Tests for cleanup when deleting all data for a project."""
 
     @pytest.mark.asyncio
-    async def test_delete_all_chunks_for_project(
-        self, vector_provider, chunk_factory
-    ):
+    async def test_delete_all_chunks_for_project(self, vector_provider, chunk_factory):
         """Should be able to delete all chunks for a specific project."""
         project_a = "project-alpha"
         project_b = "project-beta"
@@ -660,7 +656,7 @@ class TestProjectDeletionCleanup:
     ):
         """Deleting entities should only cascade delete relationships in same project."""
         # Skip if provider doesn't support relationships
-        if not hasattr(graph_provider, 'upsert_relationships'):
+        if not hasattr(graph_provider, "upsert_relationships"):
             pytest.skip("Provider does not support relationships")
 
         project_a = "project-alpha"
@@ -897,9 +893,7 @@ class TestEdgeCases:
         assert len(normal_results) == 1
 
     @pytest.mark.asyncio
-    async def test_many_projects_isolation_scales(
-        self, vector_provider, chunk_factory
-    ):
+    async def test_many_projects_isolation_scales(self, vector_provider, chunk_factory):
         """Isolation should work correctly with many concurrent projects."""
         num_projects = 10
         projects = [f"project-{i}" for i in range(num_projects)]

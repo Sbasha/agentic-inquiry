@@ -7,6 +7,7 @@ Tests cover:
 - Eviction behavior with max_size
 - Thread safety with asyncio.Lock
 """
+
 from __future__ import annotations
 
 import asyncio

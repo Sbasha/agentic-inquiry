@@ -134,9 +134,7 @@ class ContextManager:
         entities = set()
         entities.update(CAMEL_CASE.findall(clean))
         entities.update(CONSTANT_CASE.findall(clean))
-        entities.update(
-            s for s in SNAKE_CASE.findall(clean) if len(s) > 4
-        )
+        entities.update(s for s in SNAKE_CASE.findall(clean) if len(s) > 4)
         entities.update(QUOTED_STRING.findall(clean))
 
         # Extract file paths
@@ -262,9 +260,7 @@ class ContextManager:
         deduped = []
         for part in context_parts:
             content = part.get("content", "")
-            if not self._cache_manager.is_duplicate_content(
-                session_id, content, turn
-            ):
+            if not self._cache_manager.is_duplicate_content(session_id, content, turn):
                 deduped.append(part)
 
         # Format within token budget
@@ -288,9 +284,7 @@ class ContextManager:
 
         return result
 
-    async def _gather_memories(
-        self, prompt: str, signals: dict
-    ) -> list[dict]:
+    async def _gather_memories(self, prompt: str, signals: dict) -> list[dict]:
         """Gather relevant memories."""
         try:
             memories = await self._memory_manager.recall(
@@ -313,9 +307,7 @@ class ContextManager:
             logger.debug("Memory gather failed", exc_info=True)
             return []
 
-    async def _gather_search(
-        self, prompt: str, signals: dict
-    ) -> list[dict]:
+    async def _gather_search(self, prompt: str, signals: dict) -> list[dict]:
         """Gather code/docs search results."""
         if not self._ai_search:
             return []
@@ -368,9 +360,7 @@ class ContextManager:
             logger.debug("Search gather failed", exc_info=True)
             return []
 
-    async def _gather_search_links(
-        self, prompt: str, signals: dict
-    ) -> list[dict]:
+    async def _gather_search_links(self, prompt: str, signals: dict) -> list[dict]:
         """Gather search result links (no full content)."""
         if not self._ai_search:
             return []
@@ -440,17 +430,94 @@ class ContextManager:
     def _extract_keywords(text: str) -> set[str]:
         """Extract meaningful keywords from text."""
         stop_words = {
-            "the", "a", "an", "is", "are", "was", "were", "be", "been",
-            "being", "have", "has", "had", "do", "does", "did", "will",
-            "would", "could", "should", "may", "might", "shall", "can",
-            "to", "of", "in", "for", "on", "with", "at", "by", "from",
-            "as", "into", "through", "during", "before", "after", "above",
-            "below", "between", "and", "but", "or", "not", "no", "so",
-            "if", "then", "than", "too", "very", "just", "about", "up",
-            "out", "all", "also", "how", "what", "when", "where", "why",
-            "which", "who", "this", "that", "these", "those", "it", "its",
-            "i", "me", "my", "we", "our", "you", "your", "he", "she",
-            "they", "them", "their", "some", "any", "each", "every",
+            "the",
+            "a",
+            "an",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "been",
+            "being",
+            "have",
+            "has",
+            "had",
+            "do",
+            "does",
+            "did",
+            "will",
+            "would",
+            "could",
+            "should",
+            "may",
+            "might",
+            "shall",
+            "can",
+            "to",
+            "of",
+            "in",
+            "for",
+            "on",
+            "with",
+            "at",
+            "by",
+            "from",
+            "as",
+            "into",
+            "through",
+            "during",
+            "before",
+            "after",
+            "above",
+            "below",
+            "between",
+            "and",
+            "but",
+            "or",
+            "not",
+            "no",
+            "so",
+            "if",
+            "then",
+            "than",
+            "too",
+            "very",
+            "just",
+            "about",
+            "up",
+            "out",
+            "all",
+            "also",
+            "how",
+            "what",
+            "when",
+            "where",
+            "why",
+            "which",
+            "who",
+            "this",
+            "that",
+            "these",
+            "those",
+            "it",
+            "its",
+            "i",
+            "me",
+            "my",
+            "we",
+            "our",
+            "you",
+            "your",
+            "he",
+            "she",
+            "they",
+            "them",
+            "their",
+            "some",
+            "any",
+            "each",
+            "every",
         }
         words = re.findall(r"\b[a-zA-Z]{3,}\b", text.lower())
         return set(list(w for w in words if w not in stop_words)[:20])

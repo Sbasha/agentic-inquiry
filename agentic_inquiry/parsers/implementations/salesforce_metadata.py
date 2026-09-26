@@ -19,7 +19,11 @@ from typing import Iterable, List, Sequence, Tuple
 
 import aiofiles
 
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 
 logger = logging.getLogger(__name__)
 

@@ -3,6 +3,7 @@
 Combines vector and FTS scores using weighted linear combination:
 final_score = vector_weight * vector_score + fts_weight * fts_score
 """
+
 from __future__ import annotations
 
 import logging
@@ -98,4 +99,6 @@ class LinearCombinationReranker(RerankerProtocol):
 
         # Normalize to 0.0-1.0 using shared utility
         raw_scores = [combined_scores[id_] for id_ in ranked_ids]
-        return normalize_scores(raw_scores, ranked_ids, result_map, source="hybrid_linear")
+        return normalize_scores(
+            raw_scores, ranked_ids, result_map, source="hybrid_linear"
+        )

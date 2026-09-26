@@ -1,4 +1,5 @@
 """Runner for TEST_04 Bug Investigation."""
+
 import asyncio
 import json
 import logging
@@ -31,6 +32,7 @@ async def main():
 
     # Import correctly
     import importlib.util
+
     spec = importlib.util.spec_from_file_location(
         "test_04_bug",
         PROJECT_ROOT / "tests" / "01-agents" / "protocols" / "test_04_bug.py",
@@ -55,9 +57,9 @@ async def main():
         output_dir=OUTPUT_DIR,
     )
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print("TEST_04 SUMMARY")
-    print("="*60)
+    print("=" * 60)
     print(json.dumps(summary, indent=2, default=str))
     return summary
 

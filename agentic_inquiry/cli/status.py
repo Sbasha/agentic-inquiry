@@ -74,7 +74,11 @@ def _index(root: Path) -> dict[str, int] | None:
 
         config = load_config_for_environment(str(resolved.config_path), root)
         raw_project_id = config.storage.default_project_id
-        project_id = raw_project_id if isinstance(raw_project_id, str) and raw_project_id else "default"
+        project_id = (
+            raw_project_id
+            if isinstance(raw_project_id, str) and raw_project_id
+            else "default"
+        )
         facade = await StorageFacade.from_config(config, project_id)
         try:
             return {

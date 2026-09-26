@@ -59,18 +59,21 @@ VECTOR_DIMENSION = 128
 @dataclass
 class LanceDBConfig:
     """LanceDB-specific storage configuration."""
+
     path: str = "lancedb"
 
 
 @dataclass
 class FileTrackerConfig:
     """FileTracker-specific storage configuration."""
+
     path: str = "file_tracker.db"
 
 
 @dataclass
 class DocumentCacheStorageConfig:
     """DocumentCache disk persistence configuration."""
+
     enabled: bool = False
     path: str = "document_cache"
 
@@ -78,6 +81,7 @@ class DocumentCacheStorageConfig:
 @dataclass
 class EventStoreConfig:
     """Event store storage configuration."""
+
     path: str = "events.db"
 
 
@@ -96,6 +100,7 @@ class BackendTimeoutsConfig:
             schema migrations. Used by SchemaTracker.acquire_migration_lock()
             (default: 30 seconds).
     """
+
     transaction_timeout: float = 30.0
     migration_lock_timeout: int = 30
 
@@ -113,6 +118,7 @@ class EventsConfig:
     drops events with only a warning log. Size the queue (or migrate
     events to Postgres) if you need retention under load.
     """
+
     enabled: bool = True
     queue_max_size: int = 1000
     batch_size: int = 100
@@ -148,7 +154,9 @@ class StorageConfig:
     """
 
     root: str = "./.agentic-inquiry"
-    default_project_id: Optional[str] = None  # Optional default for backward compatibility
+    default_project_id: Optional[str] = (
+        None  # Optional default for backward compatibility
+    )
     # DEPRECATED: legacy single-backend selector. No longer honoured by
     # ``StorageFacade.from_config`` — use ``backends`` + ``vector_backend`` /
     # ``graph_backend`` instead. Still read by ``registry._resolve_legacy_backend``
@@ -159,7 +167,9 @@ class StorageConfig:
     file_tracker_backend: str = "sqlite"  # File tracker backend selection
     lancedb: LanceDBConfig = field(default_factory=LanceDBConfig)
     file_tracker: FileTrackerConfig = field(default_factory=FileTrackerConfig)
-    document_cache: DocumentCacheStorageConfig = field(default_factory=DocumentCacheStorageConfig)
+    document_cache: DocumentCacheStorageConfig = field(
+        default_factory=DocumentCacheStorageConfig
+    )
     event_store: EventStoreConfig = field(default_factory=EventStoreConfig)
 
     # Named backends configuration (optional - for new multi-backend setup)
@@ -183,7 +193,9 @@ class StorageConfig:
     table_prefix: str = "ai_"
 
     # Backend operation timeouts
-    backend_timeouts: BackendTimeoutsConfig = field(default_factory=BackendTimeoutsConfig)
+    backend_timeouts: BackendTimeoutsConfig = field(
+        default_factory=BackendTimeoutsConfig
+    )
 
     # Bulk operation batch size (for entity/relationship upserts)
     batch_size: int = 1000
@@ -220,7 +232,7 @@ class StorageConfig:
             Absolute path to LanceDB storage directory, or remote URI as Path
         """
         return self._resolve_path(self.lancedb.path)
-    
+
     def get_file_tracker_path(self) -> Path:
         """Get resolved FileTracker database path.
 
@@ -231,7 +243,7 @@ class StorageConfig:
             Absolute path to FileTracker database file, or remote URI as Path
         """
         return self._resolve_path(self.file_tracker.path)
-    
+
     def get_document_cache_path(self) -> Path:
         """Get resolved DocumentCache path.
 
@@ -239,7 +251,7 @@ class StorageConfig:
             Absolute path to DocumentCache directory
         """
         return self._resolve_path(self.document_cache.path)
-    
+
     def get_event_store_path(self) -> Path:
         """Get resolved event store path.
 
@@ -250,7 +262,7 @@ class StorageConfig:
             Absolute path to event store database file, or remote URI as Path
         """
         return self._resolve_path(self.event_store.path)
-    
+
     def ensure_storage_directories(self) -> None:
         """Create storage directories if they don't exist.
 
@@ -276,26 +288,26 @@ class StorageConfig:
         if "://" in self.root:
             logger.debug("Skipping directory creation for remote root: %s", self.root)
             return
-        
+
         try:
             # Create root
             root = Path(self.root).expanduser().resolve()
             root.mkdir(parents=True, exist_ok=True)
-            
+
             # Create LanceDB directory
             lancedb_path = self.get_lancedb_path()
             lancedb_path.mkdir(parents=True, exist_ok=True)
-            
+
             # Create FileTracker parent directory
             file_tracker_path = self.get_file_tracker_path()
             file_tracker_path.parent.mkdir(parents=True, exist_ok=True)
-            
+
             # Create DocumentCache directory if enabled
             if self.document_cache.enabled:
                 cache_path = self.get_document_cache_path()
                 cache_path.mkdir(parents=True, exist_ok=True)
                 (cache_path / "entries").mkdir(exist_ok=True)
-                
+
         except PermissionError as e:
             raise StoragePathError(
                 f"Cannot create storage directories: Permission denied for {self.root}"
@@ -309,7 +321,7 @@ class StorageConfig:
 @dataclass
 class DocumentCacheConfig:
     """Document cache configuration."""
-    
+
     max_size: int = 1000
     ttl_seconds: int = 3600
     eviction_policy: str = "lru"
@@ -318,7 +330,7 @@ class DocumentCacheConfig:
 @dataclass
 class CacheConfig:
     """Cache configuration."""
-    
+
     document_cache: DocumentCacheConfig = field(default_factory=DocumentCacheConfig)
 
 
@@ -369,9 +381,9 @@ class GraphTimeoutsConfig:
 
     # find_similar timeouts (tiered by limit)
     # AlloyDB network latency is ~600-2200ms, so defaults must accommodate remote backends
-    find_similar_small_ms: int = 3000   # limit <= 10
+    find_similar_small_ms: int = 3000  # limit <= 10
     find_similar_medium_ms: int = 5000  # limit <= 50
-    find_similar_large_ms: int = 8000   # limit > 50
+    find_similar_large_ms: int = 8000  # limit > 50
 
     # understand_entity timeout
     understand_entity_ms: int = 5000
@@ -400,16 +412,16 @@ class GraphSearchConfig:
     """Graph search configuration."""
 
     max_depth: int = 3
-    relationship_types: List[str] = field(default_factory=lambda: [
-        "calls", "imports", "contains", "references"
-    ])
+    relationship_types: List[str] = field(
+        default_factory=lambda: ["calls", "imports", "contains", "references"]
+    )
     timeouts: GraphTimeoutsConfig = field(default_factory=GraphTimeoutsConfig)
 
 
 @dataclass
 class DeduplicationConfig:
     """Search result deduplication configuration."""
-    
+
     enabled: bool = True
     max_results_per_file: int = 1
     min_diversity_ratio: float = 0.7
@@ -450,14 +462,16 @@ class SearchConfig:
     deduplication: DeduplicationConfig = field(default_factory=DeduplicationConfig)
     hybrid_search: HybridSearchConfig = field(default_factory=HybridSearchConfig)
     graph_search: GraphSearchConfig = field(default_factory=GraphSearchConfig)
-    query_sanitization: QuerySanitizationConfig = field(default_factory=QuerySanitizationConfig)
+    query_sanitization: QuerySanitizationConfig = field(
+        default_factory=QuerySanitizationConfig
+    )
     sparse_index: SparseIndexConfig = field(default_factory=SparseIndexConfig)
 
 
 @dataclass
 class SentenceTransformerConfig:
     """Sentence transformer embedding configuration."""
-    
+
     model_name: str = "all-MiniLM-L6-v2"
     ndims: int = 384
 
@@ -465,14 +479,14 @@ class SentenceTransformerConfig:
 @dataclass
 class HashingConfig:
     """Hashing-based embedding configuration."""
-    
+
     ndims: int = 128
 
 
 @dataclass
 class LocalModelConfig:
     """Local model embedding configuration."""
-    
+
     model_path: str = "models/default-embedding-model"
     normalize: bool = True
     batch_size: int = 32
@@ -546,7 +560,9 @@ class EmbeddingsConfig:
     default_dimensions: int = 384
 
     # Provider-specific configurations
-    sentence_transformer: SentenceTransformerConfig = field(default_factory=SentenceTransformerConfig)
+    sentence_transformer: SentenceTransformerConfig = field(
+        default_factory=SentenceTransformerConfig
+    )
     hashing: HashingConfig = field(default_factory=HashingConfig)
     local_model: LocalModelConfig = field(default_factory=LocalModelConfig)
     fastembed: FastEmbedConfig = field(default_factory=FastEmbedConfig)
@@ -556,7 +572,7 @@ class EmbeddingsConfig:
 @dataclass
 class SchemaMappingConfig:
     """Schema mapping configuration for indexing."""
-    
+
     enabled: bool = True
     field_mappings: Dict[str, str] = field(default_factory=dict)
 
@@ -564,7 +580,7 @@ class SchemaMappingConfig:
 @dataclass
 class SchemaValidationConfig:
     """Schema validation configuration for indexing."""
-    
+
     enabled: bool = True
     strict_mode: bool = False
     cache_schemas: bool = True
@@ -586,7 +602,9 @@ class IndexingConfig:
 
     timeouts: IndexingTimeoutsConfig = field(default_factory=IndexingTimeoutsConfig)
     schema_mapping: SchemaMappingConfig = field(default_factory=SchemaMappingConfig)
-    schema_validation: SchemaValidationConfig = field(default_factory=SchemaValidationConfig)
+    schema_validation: SchemaValidationConfig = field(
+        default_factory=SchemaValidationConfig
+    )
 
     # Impact analysis settings (flattened from ImpactAnalysisConfig)
     impact_default_depth: int = 2
@@ -681,18 +699,24 @@ class FallbackTextParserConfig(ParserConfig):
 class ParsersConfig:
     """Parsers configuration."""
 
-    unified_code: UnifiedCodeParserConfig = field(default_factory=UnifiedCodeParserConfig)
+    unified_code: UnifiedCodeParserConfig = field(
+        default_factory=UnifiedCodeParserConfig
+    )
     salesforce_metadata: ParserConfig = field(
         default_factory=lambda: ParserConfig(enabled=True, priority=75)
     )
-    document: ParserConfig = field(default_factory=lambda: ParserConfig(enabled=True, priority=50))
-    fallback_text: FallbackTextParserConfig = field(default_factory=FallbackTextParserConfig)
+    document: ParserConfig = field(
+        default_factory=lambda: ParserConfig(enabled=True, priority=50)
+    )
+    fallback_text: FallbackTextParserConfig = field(
+        default_factory=FallbackTextParserConfig
+    )
 
 
 @dataclass
 class WorkingMemoryConfig:
     """Working memory configuration."""
-    
+
     capacity: int = 20
     eviction_policy: str = "lru"
 
@@ -700,7 +724,7 @@ class WorkingMemoryConfig:
 @dataclass
 class EpisodicMemoryConfig:
     """Episodic memory configuration."""
-    
+
     capacity: int = 1000
     table_name: str = "memory_episodic_medium"
 
@@ -708,7 +732,7 @@ class EpisodicMemoryConfig:
 @dataclass
 class SemanticMemoryConfig:
     """Semantic memory configuration."""
-    
+
     capacity: int = 500
     table_name: str = "memory_semantic_high"
 
@@ -716,7 +740,7 @@ class SemanticMemoryConfig:
 @dataclass
 class ConsolidationConfig:
     """Consolidation configuration."""
-    
+
     enabled: bool = True
     interval_seconds: int = 300
     episodic_threshold: float = 0.8
@@ -726,49 +750,47 @@ class ConsolidationConfig:
 @dataclass
 class RetrievalConfig:
     """Retrieval configuration."""
-    
+
     default_strategy: str = "adaptive"
     cache_enabled: bool = True
     cache_ttl_seconds: int = 300
     cache_size: int = 1000
-    ranking_weights: Dict[str, float] = field(default_factory=lambda: {
-        "relevance": 0.5,
-        "recency": 0.3,
-        "importance": 0.2
-    })
+    ranking_weights: Dict[str, float] = field(
+        default_factory=lambda: {"relevance": 0.5, "recency": 0.3, "importance": 0.2}
+    )
 
 
 @dataclass
 class SummaryConfig:
     """Summary configuration."""
-    
+
     auto_threshold: int = 150
 
 
 @dataclass
 class MemoryConfig:
     """Memory system configuration."""
-    
+
     working_memory: WorkingMemoryConfig = field(default_factory=WorkingMemoryConfig)
     episodic_memory: EpisodicMemoryConfig = field(default_factory=EpisodicMemoryConfig)
     semantic_memory: SemanticMemoryConfig = field(default_factory=SemanticMemoryConfig)
     consolidation: ConsolidationConfig = field(default_factory=ConsolidationConfig)
     retrieval: RetrievalConfig = field(default_factory=RetrievalConfig)
     summary: SummaryConfig = field(default_factory=SummaryConfig)
-    
+
     def get_tier_density(self, tier: str) -> str:
         """Get density tier for a memory tier (working/episodic/semantic).
-        
+
         Args:
             tier: Memory tier name ('working', 'episodic', 'semantic')
-            
+
         Returns:
             Component density key for use with EmbeddingsConfig
         """
         tier_map = {
             "working": "working_memory",
             "episodic": "episodic_memory",
-            "semantic": "semantic_memory"
+            "semantic": "semantic_memory",
         }
         return tier_map.get(tier, "medium")
 
@@ -776,7 +798,7 @@ class MemoryConfig:
 @dataclass
 class FuzzyMatchingConfig:
     """Fuzzy matching configuration for entity resolution."""
-    
+
     enabled: bool = True
     threshold: float = 0.8
 
@@ -784,26 +806,23 @@ class FuzzyMatchingConfig:
 @dataclass
 class EntityResolutionConfig:
     """Entity resolution configuration."""
-    
+
     case_insensitive: bool = True
     fuzzy_matching: FuzzyMatchingConfig = field(default_factory=FuzzyMatchingConfig)
     cache_enabled: bool = True
     cache_ttl_seconds: int = 3600
 
 
-
-
-
 @dataclass
 class ProgressConfig:
     """Configuration for progress indicators during long-running operations."""
-    
+
     # Enable progress event emission
     enabled: bool = True
-    
+
     # Emit progress events every N files during indexing
     emit_interval: int = 10
-    
+
     # Minimum operation duration (seconds) to emit progress events
     min_duration: float = 5.0
 
@@ -811,28 +830,28 @@ class ProgressConfig:
 @dataclass
 class LoggingConfig:
     """Configuration for file-based logging."""
-    
+
     # Directory for log files (workspace-relative or absolute)
     directory: str = "logs"
-    
+
     # Main log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
     level: str = "INFO"
-    
+
     # Maximum size per log file in bytes (default: 10MB)
     max_bytes: int = 10 * 1024 * 1024
-    
+
     # Number of backup files to keep
     backup_count: int = 5
-    
+
     # Retention period in hours (default: 24 hours)
     retention_hours: int = 24
-    
+
     # Per-service log levels (overrides main level)
     service_levels: Dict[str, str] = field(default_factory=dict)
-    
+
     # Log format string
     format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    
+
     # Date format string
     date_format: str = "%Y-%m-%d %H:%M:%S"
 
@@ -840,28 +859,30 @@ class LoggingConfig:
 @dataclass
 class TokenBudgetConfig:
     """Token budget configuration for context building."""
-    
+
     default_budget: int = 50000
     min_budget: int = 10000
     max_budget: int = 100000
-    focus_allocations: Dict[str, Dict[str, float]] = field(default_factory=lambda: {
-        "code": {"code_weight": 0.7, "docs_weight": 0.3},
-        "docs": {"code_weight": 0.3, "docs_weight": 0.7},
-        "balanced": {"code_weight": 0.5, "docs_weight": 0.5},
-    })
+    focus_allocations: Dict[str, Dict[str, float]] = field(
+        default_factory=lambda: {
+            "code": {"code_weight": 0.7, "docs_weight": 0.3},
+            "docs": {"code_weight": 0.3, "docs_weight": 0.7},
+            "balanced": {"code_weight": 0.5, "docs_weight": 0.5},
+        }
+    )
 
 
 @dataclass
 class ContextConfig:
     """Context building configuration."""
-    
+
     token_budget: TokenBudgetConfig = field(default_factory=TokenBudgetConfig)
 
 
 @dataclass
 class MCPToolsConfig:
     """MCP tools configuration."""
-    
+
     cognitive: Dict[str, bool] = field(default_factory=lambda: {"enabled": True})
     direct_access: Dict[str, bool] = field(default_factory=lambda: {"enabled": True})
 
@@ -869,7 +890,7 @@ class MCPToolsConfig:
 @dataclass
 class MCPServerConfig:
     """MCP server configuration."""
-    
+
     name: str = "Agentic Inquiry"
     version: str = "1.0.0"
     description: str = "AI-powered code and knowledge search"
@@ -878,24 +899,22 @@ class MCPServerConfig:
 @dataclass
 class MCPAPIConfig:
     """MCP API configuration."""
-    
+
     enabled: bool = True
     host: str = "localhost"
     port: int = 8765
-    cors: Dict[str, Any] = field(default_factory=lambda: {
-        "enabled": True,
-        "origins": ["*"]
-    })
-    auth: Dict[str, Any] = field(default_factory=lambda: {
-        "enabled": False,
-        "api_key": None
-    })
+    cors: Dict[str, Any] = field(
+        default_factory=lambda: {"enabled": True, "origins": ["*"]}
+    )
+    auth: Dict[str, Any] = field(
+        default_factory=lambda: {"enabled": False, "api_key": None}
+    )
 
 
 @dataclass
 class MCPSessionConfig:
     """MCP session configuration."""
-    
+
     ttl_hours: int = 48
     cleanup_interval_hours: int = 24
 
@@ -908,7 +927,9 @@ class MCPQueryConfig:
     max_limit: int = 10000
     # Categorized limits for different operation types
     batch_limit: int = 10000  # Large batch operations (temporal analysis, etc.)
-    traversal_limit: int = 500  # Relationship traversal, entity queries (range: 100-2000)
+    traversal_limit: int = (
+        500  # Relationship traversal, entity queries (range: 100-2000)
+    )
     tree_limit: int = 50  # Tree building, clustering, analysis results
     batch_size: int = 100  # Batch size for query operations (range: 10-500)
 
@@ -931,7 +952,7 @@ class MCPQueryConfig:
 @dataclass
 class MCPRelationshipsConfig:
     """MCP relationships configuration."""
-    
+
     max_depth: int = 3
     max_per_node: int = 10000
 
@@ -939,7 +960,7 @@ class MCPRelationshipsConfig:
 @dataclass
 class MCPTokensConfig:
     """MCP tokens configuration."""
-    
+
     estimation_model: str = "cl100k_base"
     default_budget: int = 4000
 
@@ -947,43 +968,43 @@ class MCPTokensConfig:
 @dataclass
 class MCPDefaultsConfig:
     """MCP default behavior configuration."""
-    
-    search: Dict[str, Any] = field(default_factory=lambda: {
-        "limit": 20,
-        "hybrid_weight": 0.7,
-        "min_relevance": 0.3
-    })
-    context: Dict[str, Any] = field(default_factory=lambda: {
-        "max_tokens": 4000,
-        "depth": "broad",
-        "include_relationships": True
-    })
-    impact: Dict[str, Any] = field(default_factory=lambda: {
-        "max_depth": 2,
-        "include_tests": True
-    })
-    memory: Dict[str, Any] = field(default_factory=lambda: {
-        "default_importance": "medium",
-        "auto_tag": True
-    })
-    events: Dict[str, Any] = field(default_factory=lambda: {
-        "retention_days": 7,
-        "max_per_query": 50
-    })
-    patterns: Dict[str, Any] = field(default_factory=lambda: {
-        "max_clusters": 5,
-        "examples_per_cluster": 3
-    })
-    temporal: Dict[str, Any] = field(default_factory=lambda: {
-        "default_time_range_days": 7
-    })
+
+    search: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "limit": 20,
+            "hybrid_weight": 0.7,
+            "min_relevance": 0.3,
+        }
+    )
+    context: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "max_tokens": 4000,
+            "depth": "broad",
+            "include_relationships": True,
+        }
+    )
+    impact: Dict[str, Any] = field(
+        default_factory=lambda: {"max_depth": 2, "include_tests": True}
+    )
+    memory: Dict[str, Any] = field(
+        default_factory=lambda: {"default_importance": "medium", "auto_tag": True}
+    )
+    events: Dict[str, Any] = field(
+        default_factory=lambda: {"retention_days": 7, "max_per_query": 50}
+    )
+    patterns: Dict[str, Any] = field(
+        default_factory=lambda: {"max_clusters": 5, "examples_per_cluster": 3}
+    )
+    temporal: Dict[str, Any] = field(
+        default_factory=lambda: {"default_time_range_days": 7}
+    )
     session_ttl_hours: int = 48  # Deprecated: use session.ttl_hours instead
 
 
 @dataclass
 class MCPBehaviorConfig:
     """MCP behavior flags configuration."""
-    
+
     suggest_on_empty: bool = True
     include_alternatives: bool = True
     log_all_requests: bool = True
@@ -995,24 +1016,28 @@ class MCPBehaviorConfig:
 @dataclass
 class MCPConfig:
     """MCP (Model Context Protocol) server configuration."""
-    
+
     enabled: bool = True
     server: MCPServerConfig = field(default_factory=MCPServerConfig)
     tools: MCPToolsConfig = field(default_factory=MCPToolsConfig)
     api: MCPAPIConfig = field(default_factory=MCPAPIConfig)
     session: MCPSessionConfig = field(default_factory=MCPSessionConfig)
     query: MCPQueryConfig = field(default_factory=MCPQueryConfig)
-    relationships: MCPRelationshipsConfig = field(default_factory=MCPRelationshipsConfig)
+    relationships: MCPRelationshipsConfig = field(
+        default_factory=MCPRelationshipsConfig
+    )
     tokens: MCPTokensConfig = field(default_factory=MCPTokensConfig)
     defaults: MCPDefaultsConfig = field(default_factory=MCPDefaultsConfig)
     behavior: MCPBehaviorConfig = field(default_factory=MCPBehaviorConfig)
-    logging: Dict[str, Any] = field(default_factory=lambda: {
-        "level": "INFO",
-        "format": "json",
-        "log_dir": "${HOME}/.agentic-inquiry/logs",
-        "max_size_mb": 100,
-        "retention_days": 30
-    })
+    logging: Dict[str, Any] = field(
+        default_factory=lambda: {
+            "level": "INFO",
+            "format": "json",
+            "log_dir": "${HOME}/.agentic-inquiry/logs",
+            "max_size_mb": 100,
+            "retention_days": 30,
+        }
+    )
 
 
 # DEFAULT_IGNORE_PATTERNS and DEFAULT_BINARY_EXTENSIONS are imported from
@@ -1026,8 +1051,12 @@ class FileSystemConnectorConfig:
 
     enabled: bool = True
     root: Optional[str] = None  # Default to cwd if None
-    ignore_patterns: List[str] = field(default_factory=lambda: list(DEFAULT_IGNORE_PATTERNS))
-    binary_extensions: Set[str] = field(default_factory=lambda: set(DEFAULT_BINARY_EXTENSIONS))
+    ignore_patterns: List[str] = field(
+        default_factory=lambda: list(DEFAULT_IGNORE_PATTERNS)
+    )
+    binary_extensions: Set[str] = field(
+        default_factory=lambda: set(DEFAULT_BINARY_EXTENSIONS)
+    )
     change_detection_enabled: bool = True  # Enable FileTracker integration
     watch_enabled: bool = False  # Real-time file monitoring
 
@@ -1050,8 +1079,12 @@ class ConnectorsConfig:
     """
 
     default_connector: str = "filesystem"  # Default connector type
-    filesystem: FileSystemConnectorConfig = field(default_factory=FileSystemConnectorConfig)
-    remote_cache: RemoteConnectorCacheConfig = field(default_factory=RemoteConnectorCacheConfig)
+    filesystem: FileSystemConnectorConfig = field(
+        default_factory=FileSystemConnectorConfig
+    )
+    remote_cache: RemoteConnectorCacheConfig = field(
+        default_factory=RemoteConnectorCacheConfig
+    )
     # Future: s3, gcs, github, etc.
 
 
@@ -1071,7 +1104,9 @@ class MaintenanceConfig:
     Range: 5-1440 minutes (5 minutes to 24 hours)
     """
 
-    trigger: str = "project.closed"  # Options: "project.closed", "indexing.completed", "disabled"
+    trigger: str = (
+        "project.closed"  # Options: "project.closed", "indexing.completed", "disabled"
+    )
     cleanup_retention_minutes: int = 60  # Range: 5-1440
     enabled: bool = True
 
@@ -1093,7 +1128,6 @@ class MaintenanceConfig:
                 f"Lower values reduce disk usage but may impact concurrent operations, "
                 f"higher values provide more safety for rollback but use more disk space."
             )
-
 
 
 @dataclass
@@ -1178,7 +1212,9 @@ class Config:
     parsers: ParsersConfig = field(default_factory=ParsersConfig)
     memory: MemoryConfig = field(default_factory=MemoryConfig)
     events: EventsConfig = field(default_factory=EventsConfig)
-    entity_resolution: EntityResolutionConfig = field(default_factory=EntityResolutionConfig)
+    entity_resolution: EntityResolutionConfig = field(
+        default_factory=EntityResolutionConfig
+    )
     progress: ProgressConfig = field(default_factory=ProgressConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     context: ContextConfig = field(default_factory=ContextConfig)
@@ -1190,9 +1226,7 @@ class Config:
 
     @classmethod
     def load(
-        cls,
-        config_path: Optional[str] = None,
-        skip_schema_validation: bool = False
+        cls, config_path: Optional[str] = None, skip_schema_validation: bool = False
     ) -> "Config":
         """Load configuration from file with environment variable overrides.
 
@@ -1220,18 +1254,20 @@ class Config:
                     "PyYAML is required for configuration loading. "
                     "Install it with: pip install pyyaml"
                 )
-            
+
             # Determine configuration file to load
             config_file = cls._find_config_file(config_path)
             logger.debug("Loading configuration from: %s", config_file)
-            
+
             # Load configuration data
             try:
-                with open(config_file, 'r') as f:
+                with open(config_file, "r") as f:
                     config_data = yaml.safe_load(f) or {}
             except Exception as e:
-                raise ConfigurationError(f"Failed to load configuration from {config_file}: {e}")
-            
+                raise ConfigurationError(
+                    f"Failed to load configuration from {config_file}: {e}"
+                )
+
             # Validate against schema if jsonschema is available
             if skip_schema_validation:
                 logger.debug("Skipping schema validation (overlay config)")
@@ -1242,20 +1278,20 @@ class Config:
                     "jsonschema not installed, skipping configuration validation. "
                     "Install it with: pip install jsonschema"
                 )
-            
+
             # Expand environment variables in configuration data
             config_data = cls._expand_env_vars(config_data)
-            
+
             # Apply environment variable overrides
             config_data = cls._apply_env_overrides(config_data)
-            
+
             # Build Config instance from data
             try:
                 config = cls._from_dict(config_data)
-                
+
                 # Validate configuration consistency
                 config.validate()
-                
+
                 logger.info("Configuration loaded successfully from %s", config_file)
                 return config
             except Exception as e:
@@ -1301,7 +1337,7 @@ class Config:
             logger.debug("Loading base configuration from: %s", base_file)
 
             try:
-                with open(base_file, 'r') as f:
+                with open(base_file, "r") as f:
                     base_data = yaml.safe_load(f) or {}
             except Exception as e:
                 raise ConfigurationError(f"Failed to load base configuration: {e}")
@@ -1309,12 +1345,14 @@ class Config:
             # Load overlay configuration
             overlay_file = Path(overlay_path)
             if not overlay_file.exists():
-                raise ConfigurationError(f"Overlay configuration not found: {overlay_path}")
+                raise ConfigurationError(
+                    f"Overlay configuration not found: {overlay_path}"
+                )
 
             logger.debug("Loading overlay configuration from: %s", overlay_file)
 
             try:
-                with open(overlay_file, 'r') as f:
+                with open(overlay_file, "r") as f:
                     overlay_data = yaml.safe_load(f) or {}
             except Exception as e:
                 raise ConfigurationError(f"Failed to load overlay configuration: {e}")
@@ -1339,7 +1377,7 @@ class Config:
                 logger.info(
                     "Configuration loaded with overlay: base=%s, overlay=%s",
                     base_file,
-                    overlay_file
+                    overlay_file,
                 )
                 return config
             except Exception as e:
@@ -1366,7 +1404,11 @@ class Config:
         result = base.copy()
 
         for key, overlay_value in overlay.items():
-            if key in result and isinstance(result[key], dict) and isinstance(overlay_value, dict):
+            if (
+                key in result
+                and isinstance(result[key], dict)
+                and isinstance(overlay_value, dict)
+            ):
                 # Recursively merge nested dictionaries
                 result[key] = Config._deep_merge(result[key], overlay_value)
             else:
@@ -1438,20 +1480,21 @@ class Config:
                 f"Update {provider_field} or default_dimensions so they "
                 f"agree."
             )
-        
+
         # Check database dimensions if database exists
         db_path = Path(self.storage.root) / self.storage.lancedb.path
         if db_path.exists():
             try:
                 import lancedb
+
                 db = lancedb.connect(str(db_path))
-                
+
                 # Check document_chunks table if it exists
                 table_name = "document_chunks"  # Standard table name
                 if table_name in db.table_names():
                     table = db.open_table(table_name)
                     schema = table.schema
-                    
+
                     # Check if embedding field exists and get its dimension
                     if "embedding" in schema.names:
                         embedding_field = schema.field("embedding")
@@ -1474,49 +1517,52 @@ class Config:
 
     def validate(self) -> None:
         """Validate configuration consistency and settings.
-        
+
         Performs comprehensive validation including:
         - Embedding dimension consistency
         - Storage path validity
         - Cache configuration
-        
+
         Raises:
             ConfigurationError: If any validation check fails
         """
         self.validate_embedding_consistency()
         self.validate_storage_paths()
         self.validate_cache_settings()
-    
+
     def validate_storage_paths(self) -> None:
         """Validate storage paths are valid and accessible.
-        
+
         Raises:
             ConfigurationError: If storage paths are invalid
         """
         from pathlib import Path
-        
+
         # Validate storage root
         storage_root = Path(self.storage.root)
-        
+
         # Skip validation for remote URIs
         if "://" in self.storage.root:
-            logger.debug("Skipping path validation for remote storage root: %s", self.storage.root)
+            logger.debug(
+                "Skipping path validation for remote storage root: %s",
+                self.storage.root,
+            )
             return
-        
+
         if not storage_root.is_absolute():
             # Make it absolute relative to current directory
             storage_root = Path.cwd() / storage_root
-        
+
         # Check if parent directory exists (storage root will be created if needed)
         if not storage_root.parent.exists():
             raise ConfigurationError(
                 f"Storage root parent directory does not exist: {storage_root.parent}. "
                 f"Please create the parent directory or update storage.root in configuration."
             )
-    
+
     def validate_cache_settings(self) -> None:
         """Validate cache configuration settings.
-        
+
         Raises:
             ConfigurationError: If cache settings are invalid
         """
@@ -1526,14 +1572,14 @@ class Config:
                 f"Invalid document cache max_size: {self.cache.document_cache.max_size}. "
                 f"Must be greater than 0."
             )
-        
+
         # Validate document cache ttl_seconds
         if self.cache.document_cache.ttl_seconds < 0:
             raise ConfigurationError(
                 f"Invalid document cache TTL: {self.cache.document_cache.ttl_seconds}. "
                 f"Must be greater than or equal to 0 (0 = no expiration)."
             )
-        
+
         # Validate event store batch_size if events are enabled
         if self.events.enabled and self.events.batch_size <= 0:
             raise ConfigurationError(
@@ -1541,9 +1587,6 @@ class Config:
                 f"Must be greater than 0."
             )
 
-    
-
-    
     @staticmethod
     def _packaged_config_file(filename: str) -> Optional[Path]:
         """Resolve a runtime config data file that ships with the package.
@@ -1599,20 +1642,22 @@ class Config:
                 logger.debug("Using configuration from INQUIRY_CONFIG: %s", path)
                 return path
             else:
-                logger.warning("INQUIRY_CONFIG points to non-existent file: %s", ai_config)
+                logger.warning(
+                    "INQUIRY_CONFIG points to non-existent file: %s", ai_config
+                )
 
         # Try project root agentic-inquiry.yaml
         project_config = Path.cwd() / "agentic-inquiry.yaml"
         if project_config.exists():
             logger.debug("Found project configuration: %s", project_config)
             return project_config
-        
+
         # Try global configuration (~/.agentic-inquiry/config.yaml)
         global_config = Path.home() / ".agentic-inquiry" / "config.yaml"
         if global_config.exists():
             logger.debug("Found global configuration: %s", global_config)
             return global_config
-        
+
         # Fall back to the package default config. In an installed wheel this
         # ships inside the package (agentic_inquiry/config_defaults/) and is found
         # via importlib.resources; in a source checkout it lives in the
@@ -1630,16 +1675,18 @@ class Config:
 
         logger.debug("Using default configuration: %s", default_config)
         return default_config
-    
+
     @classmethod
     def _validate_config(cls, config_data: Dict[str, Any]) -> None:
         """Validate configuration against JSON schema and business rules."""
         # Field-level validation for hybrid search weights (done first, before schema validation)
-        search_config = config_data.get('search', {})
-        hybrid_config = search_config.get('hybrid_search', {})
-        vector_weight = hybrid_config.get('vector_weight', HybridSearchConfig().vector_weight)
-        fts_weight = hybrid_config.get('fts_weight', HybridSearchConfig().fts_weight)
-        
+        search_config = config_data.get("search", {})
+        hybrid_config = search_config.get("hybrid_search", {})
+        vector_weight = hybrid_config.get(
+            "vector_weight", HybridSearchConfig().vector_weight
+        )
+        fts_weight = hybrid_config.get("fts_weight", HybridSearchConfig().fts_weight)
+
         # Validate that weights sum to 1.0 (within tolerance)
         weight_sum = vector_weight + fts_weight
         if abs(weight_sum - 1.0) > 0.001:
@@ -1647,17 +1694,17 @@ class Config:
                 f"Hybrid search weights must sum to 1.0 (within 0.001 tolerance), "
                 f"got vector_weight={vector_weight} + fts_weight={fts_weight} = {weight_sum}"
             )
-        
+
         # Storage configuration validation
-        storage_config = config_data.get('storage', {})
-        
+        storage_config = config_data.get("storage", {})
+
         # Validate that paths don't contain null bytes
-        root_path = storage_config.get('root', './.agentic-inquiry')
-        if '\x00' in root_path:
+        root_path = storage_config.get("root", "./.agentic-inquiry")
+        if "\x00" in root_path:
             raise ConfigurationError(
                 "storage.root contains null bytes, which are not allowed in file paths"
             )
-        
+
         # Schema validation (if jsonschema is available). Resolved the same way
         # as the default config: packaged copy first, source checkout as fallback.
         schema_path = cls._packaged_config_file("config.schema.json")
@@ -1669,16 +1716,21 @@ class Config:
         try:
             import jsonschema
         except ImportError:
-            logger.warning("jsonschema package not installed, skipping schema validation")
+            logger.warning(
+                "jsonschema package not installed, skipping schema validation"
+            )
             return
 
         try:
-            with open(schema_path, 'r') as f:
+            with open(schema_path, "r") as f:
                 base_schema = json.load(f)
 
             # Merge backend schemas into the base schema for extensible validation
             try:
-                from agentic_inquiry.storage.schema_registry import get_merged_storage_schema
+                from agentic_inquiry.storage.schema_registry import (
+                    get_merged_storage_schema,
+                )
+
                 schema = get_merged_storage_schema(base_schema)
                 logger.debug("Using merged schema with backend extensions")
             except ImportError:
@@ -1687,31 +1739,34 @@ class Config:
                 schema = base_schema
             except Exception as e:
                 # Log warning but continue with base schema
-                logger.warning("Failed to merge backend schemas, using base schema: %s", e)
+                logger.warning(
+                    "Failed to merge backend schemas, using base schema: %s", e
+                )
                 schema = base_schema
 
             jsonschema.validate(config_data, schema)
             logger.debug("Configuration validated successfully against schema")
         except jsonschema.ValidationError as e:
-            raise ConfigurationError(f"Configuration validation failed: {e.message}") from e
+            raise ConfigurationError(
+                f"Configuration validation failed: {e.message}"
+            ) from e
         except Exception as e:
             # For other exceptions (e.g., file read errors), raise ConfigurationError
             raise ConfigurationError(f"Failed to validate configuration: {e}") from e
-    
+
     @classmethod
     def _build_valid_config_paths(cls) -> Dict[str, List[str]]:
         """Build a comprehensive map of valid configuration paths.
-        
+
         This method is deprecated and kept for backward compatibility.
         The new convention-based approach in _apply_env_overrides handles
         environment variables automatically without requiring explicit mapping.
-        
+
         Returns:
             Empty dictionary (no longer used)
         """
         # Convention-based approach no longer requires explicit mapping
         return {}
-
 
     @classmethod
     def _expand_env_vars(cls, config_data: Dict[str, Any]) -> Dict[str, Any]:
@@ -1722,14 +1777,19 @@ class Config:
         import re
 
         # Regex for ${VAR_NAME} or ${VAR_NAME:-default}
-        env_pattern = re.compile(r"\$\{(?P<var>[A-Za-z_][A-Za-z0-9_]*)(?::-(?P<default>[^}]*))?\}")
+        env_pattern = re.compile(
+            r"\$\{(?P<var>[A-Za-z_][A-Za-z0-9_]*)(?::-(?P<default>[^}]*))?\}"
+        )
 
         def _expand_value(value: Any) -> Any:
             if isinstance(value, str):
+
                 def _replace(match):
                     var_name = match.group("var")
                     default = match.group("default")
-                    return os.environ.get(var_name, default if default is not None else match.group(0))
+                    return os.environ.get(
+                        var_name, default if default is not None else match.group(0)
+                    )
 
                 return env_pattern.sub(_replace, value)
             elif isinstance(value, dict):
@@ -1773,40 +1833,56 @@ class Config:
 
         # Special mappings for env vars that don't follow the standard convention
         special_mappings = {
-            'INQUIRY_MAINTENANCE_RETENTION_MINUTES': ['maintenance', 'cleanup_retention_minutes'],
-            'INQUIRY_TRAVERSAL_LIMIT': ['mcp', 'query', 'traversal_limit'],
-            'INQUIRY_BATCH_SIZE': ['mcp', 'query', 'batch_size'],
+            "INQUIRY_MAINTENANCE_RETENTION_MINUTES": [
+                "maintenance",
+                "cleanup_retention_minutes",
+            ],
+            "INQUIRY_TRAVERSAL_LIMIT": ["mcp", "query", "traversal_limit"],
+            "INQUIRY_BATCH_SIZE": ["mcp", "query", "batch_size"],
         }
 
         applied_count = 0
         ignored_count = 0
-        
+
         # Define valid sections
         valid_sections = {
-            'storage', 'cache', 'search', 'embeddings', 'parsers', 'memory',
-            'events', 'logging', 'indexing', 'mcp', 'context', 'entity_resolution',
-            'progress', 'connectors', 'maintenance', 'onboard'
+            "storage",
+            "cache",
+            "search",
+            "embeddings",
+            "parsers",
+            "memory",
+            "events",
+            "logging",
+            "indexing",
+            "mcp",
+            "context",
+            "entity_resolution",
+            "progress",
+            "connectors",
+            "maintenance",
+            "onboard",
         }
-        
+
         # Handle service_levels separately (INQUIRY_LOGGING_SERVICE_LEVELS_<SERVICE>=<LEVEL>)
         service_levels_prefix = "INQUIRY_LOGGING_SERVICE_LEVELS_"
-        
+
         for env_key, env_value in os.environ.items():
             if not env_key.startswith(env_prefix):
                 continue
 
             # Handle service levels special case
             if env_key.startswith(service_levels_prefix):
-                service_name = env_key[len(service_levels_prefix):].lower()
+                service_name = env_key[len(service_levels_prefix) :].lower()
 
                 # Ensure logging section exists
-                if 'logging' not in config_data:
-                    config_data['logging'] = {}
-                if 'service_levels' not in config_data['logging']:
-                    config_data['logging']['service_levels'] = {}
+                if "logging" not in config_data:
+                    config_data["logging"] = {}
+                if "service_levels" not in config_data["logging"]:
+                    config_data["logging"]["service_levels"] = {}
 
                 # Set the service level
-                config_data['logging']['service_levels'][service_name] = env_value
+                config_data["logging"]["service_levels"][service_name] = env_value
                 applied_count += 1
                 logger.debug("Applied environment override: %s=%s", env_key, env_value)
                 continue
@@ -1815,11 +1891,19 @@ class Config:
             if env_key in special_mappings:
                 try:
                     converted_value = cls._convert_env_value(env_value)
-                    cls._set_nested(config_data, special_mappings[env_key], converted_value)
+                    cls._set_nested(
+                        config_data, special_mappings[env_key], converted_value
+                    )
                     applied_count += 1
-                    logger.debug("Applied environment override (special mapping): %s=%s", env_key, env_value)
+                    logger.debug(
+                        "Applied environment override (special mapping): %s=%s",
+                        env_key,
+                        env_value,
+                    )
                 except Exception as e:
-                    logger.warning("Failed to apply environment variable %s: %s", env_key, e)
+                    logger.warning(
+                        "Failed to apply environment variable %s: %s", env_key, e
+                    )
                     ignored_count += 1
                 continue
 
@@ -1829,34 +1913,36 @@ class Config:
 
             # Convention-based lookup: INQUIRY_SECTION_SUBSECTION_KEY → ["section", "subsection", "key"]
             # Get the key without prefix and convert to lowercase
-            key_without_prefix = env_key[len(env_prefix):].lower()
-            
+            key_without_prefix = env_key[len(env_prefix) :].lower()
+
             # Split on underscore to get path components
-            key_parts = key_without_prefix.split('_')
-            
+            key_parts = key_without_prefix.split("_")
+
             # Validate that we have at least a section and key
             if len(key_parts) < 2:
                 logger.warning(
                     "Ignoring invalid environment variable %s: "
                     "must have at least section and key (e.g., INQUIRY_STORAGE_ROOT)",
-                    env_key
+                    env_key,
                 )
                 ignored_count += 1
                 continue
-            
+
             # Check if section is valid
             section = key_parts[0]
-            
+
             if section not in valid_sections:
                 logger.warning(
                     "Ignoring unknown environment variable %s: "
                     "'%s' is not a valid config section. "
                     "Valid sections: %s",
-                    env_key, section, sorted(valid_sections)
+                    env_key,
+                    section,
+                    sorted(valid_sections),
                 )
                 ignored_count += 1
                 continue
-            
+
             # Convert the value (handle booleans, numbers, strings)
             try:
                 converted_value = cls._convert_env_value(env_value)
@@ -1864,83 +1950,87 @@ class Config:
                 logger.warning("Failed to convert value for %s: %s", env_key, e)
                 ignored_count += 1
                 continue
-            
+
             # Use _set_nested to intelligently navigate the config structure
             try:
                 cls._set_nested(config_data, key_parts, converted_value)
                 applied_count += 1
                 logger.debug("Applied environment override: %s=%s", env_key, env_value)
             except Exception as e:
-                logger.warning("Failed to apply environment variable %s: %s", env_key, e)
+                logger.warning(
+                    "Failed to apply environment variable %s: %s", env_key, e
+                )
                 ignored_count += 1
-        
+
         if applied_count > 0:
             logger.info("Applied %s environment variable override(s)", applied_count)
         if ignored_count > 0:
             logger.warning("Ignored %s invalid environment variable(s)", ignored_count)
-        
+
         return config_data
-    
+
     @staticmethod
     def _convert_env_value(value: str) -> Any:
         """Convert environment variable string to appropriate type."""
         # Try boolean
-        if value.lower() in ('true', 'yes', '1'):
+        if value.lower() in ("true", "yes", "1"):
             return True
-        if value.lower() in ('false', 'no', '0'):
+        if value.lower() in ("false", "no", "0"):
             return False
-        
+
         # Try integer
         try:
             return int(value)
         except ValueError:
             pass
-        
+
         # Try float
         try:
             return float(value)
         except ValueError:
             pass
-        
+
         # Return as string
         return value
 
     @staticmethod
     def _set_nested(config_dict: dict, path: list[str], value: Any) -> None:
         """Set a value in a nested dictionary using a path, handling underscore ambiguity.
-        
+
         This method intelligently handles cases where underscores in environment variable
         names could represent either:
         1. Part of a field name (e.g., 'default_project_id')
         2. Nesting levels (e.g., 'file_tracker' -> 'path')
-        
+
         Args:
             config_dict: The configuration dictionary
             path: List of keys from splitting on underscores (e.g., ["storage", "file", "tracker", "path"])
             value: The value to set
-        
+
         Examples:
             _set_nested(config, ["storage", "default", "project", "id"], "val")
             # Tries: storage.default_project_id (success)
-            
+
             _set_nested(config, ["storage", "file", "tracker", "path"], "val")
             # Tries: storage.file_tracker.path (success)
         """
         if not path:
             raise ValueError("Path cannot be empty")
-        
+
         # Try to find the best way to navigate the path by trying different combinations
         # of joining underscore-separated parts
-        def try_set_value(current: dict, remaining_path: list[str], depth: int = 0) -> bool:
+        def try_set_value(
+            current: dict, remaining_path: list[str], depth: int = 0
+        ) -> bool:
             """Recursively try to set the value by testing different underscore combinations."""
             if not remaining_path:
                 return False
-            
+
             # Base case: if we're at the last part, try to set it
             if len(remaining_path) == 1:
                 current[remaining_path[0]] = value
                 return True
-            
+
             # Try progressively longer combinations of parts joined with underscores
             for i in range(1, len(remaining_path) + 1):
                 # Join the first i parts with underscores
@@ -1963,7 +2053,9 @@ class Config:
                 current[remaining_path[0]] = {}
 
             if isinstance(current[remaining_path[0]], dict):
-                if try_set_value(current[remaining_path[0]], remaining_path[1:], depth + 1):
+                if try_set_value(
+                    current[remaining_path[0]], remaining_path[1:], depth + 1
+                ):
                     return True
 
             # If we're at depth > 0 (inside a section), try setting as joined key as fallback
@@ -1973,9 +2065,9 @@ class Config:
                 joined_key = "_".join(remaining_path)
                 current[joined_key] = value
                 return True
-            
+
             return False
-        
+
         # Start the recursive search
         if not try_set_value(config_dict, path):
             # Fallback: just set it using the full path with underscores
@@ -1985,7 +2077,7 @@ class Config:
                     current[part] = {}
                 current = current[part]
             current[path[-1]] = value
-    
+
     @classmethod
     def _from_dict(cls, data: Dict[str, Any]) -> "Config":
         """Build Config instance from dictionary using dacite for automatic dataclass conversion.
@@ -2049,21 +2141,26 @@ class Config:
             Preprocessed configuration dictionary
         """
         import copy
+
         data = copy.deepcopy(data)
 
         # Handle impact_analysis backward compatibility migration
         # Support both old structure (impact_analysis section) and new structure (indexing.impact_* fields)
-        if 'impact_analysis' in data:
-            impact_data = data.pop('impact_analysis')
-            indexing_data = data.setdefault('indexing', {})
+        if "impact_analysis" in data:
+            impact_data = data.pop("impact_analysis")
+            indexing_data = data.setdefault("indexing", {})
 
             # Only migrate if new fields don't already exist
-            if 'impact_default_depth' not in indexing_data:
-                indexing_data['impact_default_depth'] = impact_data.get('default_depth', 2)
-            if 'impact_max_depth' not in indexing_data:
-                indexing_data['impact_max_depth'] = impact_data.get('max_depth', 5)
-            if 'impact_include_indirect' not in indexing_data:
-                indexing_data['impact_include_indirect'] = impact_data.get('include_indirect', True)
+            if "impact_default_depth" not in indexing_data:
+                indexing_data["impact_default_depth"] = impact_data.get(
+                    "default_depth", 2
+                )
+            if "impact_max_depth" not in indexing_data:
+                indexing_data["impact_max_depth"] = impact_data.get("max_depth", 5)
+            if "impact_include_indirect" not in indexing_data:
+                indexing_data["impact_include_indirect"] = impact_data.get(
+                    "include_indirect", True
+                )
 
         return data
 
@@ -2110,235 +2207,237 @@ class Config:
     def to_dict(self) -> Dict[str, Any]:
         """Convert configuration to dictionary."""
         storage_dict = {
-            'root': self.storage.root,
-            'default_project_id': self.storage.default_project_id,
-            'backend': self.storage.backend,
-            'event_store_backend': self.storage.event_store_backend,
-            'file_tracker_backend': self.storage.file_tracker_backend,
-            'lancedb': {
-                'path': self.storage.lancedb.path,
+            "root": self.storage.root,
+            "default_project_id": self.storage.default_project_id,
+            "backend": self.storage.backend,
+            "event_store_backend": self.storage.event_store_backend,
+            "file_tracker_backend": self.storage.file_tracker_backend,
+            "lancedb": {
+                "path": self.storage.lancedb.path,
             },
-            'file_tracker': {
-                'path': self.storage.file_tracker.path,
+            "file_tracker": {
+                "path": self.storage.file_tracker.path,
             },
-            'document_cache': {
-                'enabled': self.storage.document_cache.enabled,
-                'path': self.storage.document_cache.path,
+            "document_cache": {
+                "enabled": self.storage.document_cache.enabled,
+                "path": self.storage.document_cache.path,
             },
-            'event_store': {
-                'path': self.storage.event_store.path,
+            "event_store": {
+                "path": self.storage.event_store.path,
             },
         }
-        
+
         return {
-            'storage': storage_dict,
-            'cache': {
-                'document_cache': {
-                    'max_size': self.cache.document_cache.max_size,
-                    'ttl_seconds': self.cache.document_cache.ttl_seconds,
-                    'eviction_policy': self.cache.document_cache.eviction_policy,
+            "storage": storage_dict,
+            "cache": {
+                "document_cache": {
+                    "max_size": self.cache.document_cache.max_size,
+                    "ttl_seconds": self.cache.document_cache.ttl_seconds,
+                    "eviction_policy": self.cache.document_cache.eviction_policy,
                 },
             },
-            'search': {
-                'default_limit': self.search.default_limit,
-                'max_limit': self.search.max_limit,
-                'hybrid_search': {
-                    'vector_weight': self.search.hybrid_search.vector_weight,
-                    'fts_weight': self.search.hybrid_search.fts_weight,
-                    'rerank_by_graph': self.search.hybrid_search.rerank_by_graph,
+            "search": {
+                "default_limit": self.search.default_limit,
+                "max_limit": self.search.max_limit,
+                "hybrid_search": {
+                    "vector_weight": self.search.hybrid_search.vector_weight,
+                    "fts_weight": self.search.hybrid_search.fts_weight,
+                    "rerank_by_graph": self.search.hybrid_search.rerank_by_graph,
                 },
-                'graph_search': {
-                    'max_depth': self.search.graph_search.max_depth,
-                    'relationship_types': self.search.graph_search.relationship_types,
-                },
-            },
-            'embeddings': {
-                'default_provider': self.embeddings.default_provider,
-                'sentence_transformer': {
-                    'model_name': self.embeddings.sentence_transformer.model_name,
-                    'ndims': self.embeddings.sentence_transformer.ndims,
-                },
-                'hashing': {
-                    'ndims': self.embeddings.hashing.ndims,
-                },
-                'local_model': {
-                    'model_path': self.embeddings.local_model.model_path,
-                    'normalize': self.embeddings.local_model.normalize,
-                    'batch_size': self.embeddings.local_model.batch_size,
-                    'ndims': self.embeddings.local_model.ndims,
+                "graph_search": {
+                    "max_depth": self.search.graph_search.max_depth,
+                    "relationship_types": self.search.graph_search.relationship_types,
                 },
             },
-            'parsers': {
-                'unified_code': {
-                    'enabled': self.parsers.unified_code.enabled,
-                    'priority': self.parsers.unified_code.priority,
+            "embeddings": {
+                "default_provider": self.embeddings.default_provider,
+                "sentence_transformer": {
+                    "model_name": self.embeddings.sentence_transformer.model_name,
+                    "ndims": self.embeddings.sentence_transformer.ndims,
                 },
-                'salesforce_metadata': {
-                    'enabled': self.parsers.salesforce_metadata.enabled,
-                    'priority': self.parsers.salesforce_metadata.priority,
+                "hashing": {
+                    "ndims": self.embeddings.hashing.ndims,
                 },
-                'document': {
-                    'enabled': self.parsers.document.enabled,
-                    'priority': self.parsers.document.priority,
-                },
-                'fallback_text': {
-                    'enabled': self.parsers.fallback_text.enabled,
-                    'priority': self.parsers.fallback_text.priority,
-                    'max_chunk_size': self.parsers.fallback_text.max_chunk_size,
-                    'chunk_overlap': self.parsers.fallback_text.chunk_overlap,
-                    'whole_file_max_chars': self.parsers.fallback_text.whole_file_max_chars,
+                "local_model": {
+                    "model_path": self.embeddings.local_model.model_path,
+                    "normalize": self.embeddings.local_model.normalize,
+                    "batch_size": self.embeddings.local_model.batch_size,
+                    "ndims": self.embeddings.local_model.ndims,
                 },
             },
-            'memory': {
-                'working_memory': {
-                    'capacity': self.memory.working_memory.capacity,
-                    'eviction_policy': self.memory.working_memory.eviction_policy,
+            "parsers": {
+                "unified_code": {
+                    "enabled": self.parsers.unified_code.enabled,
+                    "priority": self.parsers.unified_code.priority,
                 },
-                'episodic_memory': {
-                    'capacity': self.memory.episodic_memory.capacity,
-                    'table_name': self.memory.episodic_memory.table_name,
+                "salesforce_metadata": {
+                    "enabled": self.parsers.salesforce_metadata.enabled,
+                    "priority": self.parsers.salesforce_metadata.priority,
                 },
-                'semantic_memory': {
-                    'capacity': self.memory.semantic_memory.capacity,
-                    'table_name': self.memory.semantic_memory.table_name,
+                "document": {
+                    "enabled": self.parsers.document.enabled,
+                    "priority": self.parsers.document.priority,
                 },
-                'consolidation': {
-                    'enabled': self.memory.consolidation.enabled,
-                    'interval_seconds': self.memory.consolidation.interval_seconds,
-                    'episodic_threshold': self.memory.consolidation.episodic_threshold,
-                    'semantic_threshold': self.memory.consolidation.semantic_threshold,
-                },
-                'retrieval': {
-                    'default_strategy': self.memory.retrieval.default_strategy,
-                    'cache_enabled': self.memory.retrieval.cache_enabled,
-                    'cache_ttl_seconds': self.memory.retrieval.cache_ttl_seconds,
-                    'cache_size': self.memory.retrieval.cache_size,
-                    'ranking_weights': self.memory.retrieval.ranking_weights,
-                },
-                'summary': {
-                    'auto_threshold': self.memory.summary.auto_threshold,
+                "fallback_text": {
+                    "enabled": self.parsers.fallback_text.enabled,
+                    "priority": self.parsers.fallback_text.priority,
+                    "max_chunk_size": self.parsers.fallback_text.max_chunk_size,
+                    "chunk_overlap": self.parsers.fallback_text.chunk_overlap,
+                    "whole_file_max_chars": self.parsers.fallback_text.whole_file_max_chars,
                 },
             },
-            'events': {
-                'enabled': self.events.enabled,
-                'queue_max_size': self.events.queue_max_size,
-                'batch_size': self.events.batch_size,
-                'flush_interval_seconds': self.events.flush_interval_seconds,
-                'retention_days': self.events.retention_days,
-                'sampling_enabled': self.events.sampling_enabled,
-                'sampling_ratio': self.events.sampling_ratio,
-            },
-            'entity_resolution': {
-                'case_insensitive': self.entity_resolution.case_insensitive,
-                'fuzzy_matching': {
-                    'enabled': self.entity_resolution.fuzzy_matching.enabled,
-                    'threshold': self.entity_resolution.fuzzy_matching.threshold,
+            "memory": {
+                "working_memory": {
+                    "capacity": self.memory.working_memory.capacity,
+                    "eviction_policy": self.memory.working_memory.eviction_policy,
                 },
-                'cache_enabled': self.entity_resolution.cache_enabled,
-                'cache_ttl_seconds': self.entity_resolution.cache_ttl_seconds,
-            },
-            'impact_analysis': {
-                'default_depth': self.indexing.impact_default_depth,
-                'max_depth': self.indexing.impact_max_depth,
-                'include_indirect': self.indexing.impact_include_indirect,
-            },
-            'progress': {
-                'enabled': self.progress.enabled,
-                'emit_interval': self.progress.emit_interval,
-                'min_duration': self.progress.min_duration,
-            },
-            'logging': {
-                'directory': self.logging.directory,
-                'level': self.logging.level,
-                'max_bytes': self.logging.max_bytes,
-                'backup_count': self.logging.backup_count,
-                'retention_hours': self.logging.retention_hours,
-                'service_levels': self.logging.service_levels,
-                'format': self.logging.format,
-                'date_format': self.logging.date_format,
-            },
-            'context': {
-                'token_budget': {
-                    'default_budget': self.context.token_budget.default_budget,
-                    'min_budget': self.context.token_budget.min_budget,
-                    'max_budget': self.context.token_budget.max_budget,
-                    'focus_allocations': self.context.token_budget.focus_allocations,
+                "episodic_memory": {
+                    "capacity": self.memory.episodic_memory.capacity,
+                    "table_name": self.memory.episodic_memory.table_name,
+                },
+                "semantic_memory": {
+                    "capacity": self.memory.semantic_memory.capacity,
+                    "table_name": self.memory.semantic_memory.table_name,
+                },
+                "consolidation": {
+                    "enabled": self.memory.consolidation.enabled,
+                    "interval_seconds": self.memory.consolidation.interval_seconds,
+                    "episodic_threshold": self.memory.consolidation.episodic_threshold,
+                    "semantic_threshold": self.memory.consolidation.semantic_threshold,
+                },
+                "retrieval": {
+                    "default_strategy": self.memory.retrieval.default_strategy,
+                    "cache_enabled": self.memory.retrieval.cache_enabled,
+                    "cache_ttl_seconds": self.memory.retrieval.cache_ttl_seconds,
+                    "cache_size": self.memory.retrieval.cache_size,
+                    "ranking_weights": self.memory.retrieval.ranking_weights,
+                },
+                "summary": {
+                    "auto_threshold": self.memory.summary.auto_threshold,
                 },
             },
-            'mcp': {
-                'enabled': self.mcp.enabled,
-                'server': {
-                    'name': self.mcp.server.name,
-                    'version': self.mcp.server.version,
-                    'description': self.mcp.server.description,
-                },
-                'tools': {
-                    'cognitive': self.mcp.tools.cognitive,
-                    'direct_access': self.mcp.tools.direct_access,
-                },
-                'api': {
-                    'enabled': self.mcp.api.enabled,
-                    'host': self.mcp.api.host,
-                    'port': self.mcp.api.port,
-                    'cors': self.mcp.api.cors,
-                    'auth': self.mcp.api.auth,
-                },
-                'session': {
-                    'ttl_hours': self.mcp.session.ttl_hours,
-                    'cleanup_interval_hours': self.mcp.session.cleanup_interval_hours,
-                },
-                'query': {
-                    'default_limit': self.mcp.query.default_limit,
-                    'max_limit': self.mcp.query.max_limit,
-                },
-                'relationships': {
-                    'max_depth': self.mcp.relationships.max_depth,
-                    'max_per_node': self.mcp.relationships.max_per_node,
-                },
-                'tokens': {
-                    'estimation_model': self.mcp.tokens.estimation_model,
-                    'default_budget': self.mcp.tokens.default_budget,
-                },
-                'defaults': {
-                    'search': self.mcp.defaults.search,
-                    'context': self.mcp.defaults.context,
-                    'impact': self.mcp.defaults.impact,
-                    'memory': self.mcp.defaults.memory,
-                    'events': self.mcp.defaults.events,
-                    'patterns': self.mcp.defaults.patterns,
-                    'temporal': self.mcp.defaults.temporal,
-                    'session_ttl_hours': self.mcp.defaults.session_ttl_hours,
-                },
-                'behavior': {
-                    'suggest_on_empty': self.mcp.behavior.suggest_on_empty,
-                    'include_alternatives': self.mcp.behavior.include_alternatives,
-                    'log_all_requests': self.mcp.behavior.log_all_requests,
-                    'track_performance': self.mcp.behavior.track_performance,
-                    'cache_responses': self.mcp.behavior.cache_responses,
-                    'cache_ttl_seconds': self.mcp.behavior.cache_ttl_seconds,
-                },
-                'logging': self.mcp.logging,
+            "events": {
+                "enabled": self.events.enabled,
+                "queue_max_size": self.events.queue_max_size,
+                "batch_size": self.events.batch_size,
+                "flush_interval_seconds": self.events.flush_interval_seconds,
+                "retention_days": self.events.retention_days,
+                "sampling_enabled": self.events.sampling_enabled,
+                "sampling_ratio": self.events.sampling_ratio,
             },
-            'connectors': {
-                'default_connector': self.connectors.default_connector,
-                'filesystem': {
-                    'enabled': self.connectors.filesystem.enabled,
-                    'root': self.connectors.filesystem.root,
-                    'ignore_patterns': self.connectors.filesystem.ignore_patterns,
-                    'binary_extensions': list(self.connectors.filesystem.binary_extensions),
-                    'change_detection_enabled': self.connectors.filesystem.change_detection_enabled,
-                    'watch_enabled': self.connectors.filesystem.watch_enabled,
+            "entity_resolution": {
+                "case_insensitive": self.entity_resolution.case_insensitive,
+                "fuzzy_matching": {
+                    "enabled": self.entity_resolution.fuzzy_matching.enabled,
+                    "threshold": self.entity_resolution.fuzzy_matching.threshold,
                 },
-                'remote_cache': {
-                    'enabled': self.connectors.remote_cache.enabled,
-                    'path': self.connectors.remote_cache.path,
-                    'max_size': self.connectors.remote_cache.max_size,
+                "cache_enabled": self.entity_resolution.cache_enabled,
+                "cache_ttl_seconds": self.entity_resolution.cache_ttl_seconds,
+            },
+            "impact_analysis": {
+                "default_depth": self.indexing.impact_default_depth,
+                "max_depth": self.indexing.impact_max_depth,
+                "include_indirect": self.indexing.impact_include_indirect,
+            },
+            "progress": {
+                "enabled": self.progress.enabled,
+                "emit_interval": self.progress.emit_interval,
+                "min_duration": self.progress.min_duration,
+            },
+            "logging": {
+                "directory": self.logging.directory,
+                "level": self.logging.level,
+                "max_bytes": self.logging.max_bytes,
+                "backup_count": self.logging.backup_count,
+                "retention_hours": self.logging.retention_hours,
+                "service_levels": self.logging.service_levels,
+                "format": self.logging.format,
+                "date_format": self.logging.date_format,
+            },
+            "context": {
+                "token_budget": {
+                    "default_budget": self.context.token_budget.default_budget,
+                    "min_budget": self.context.token_budget.min_budget,
+                    "max_budget": self.context.token_budget.max_budget,
+                    "focus_allocations": self.context.token_budget.focus_allocations,
                 },
             },
-            'maintenance': {
-                'trigger': self.maintenance.trigger,
-                'cleanup_retention_minutes': self.maintenance.cleanup_retention_minutes,
-                'enabled': self.maintenance.enabled,
+            "mcp": {
+                "enabled": self.mcp.enabled,
+                "server": {
+                    "name": self.mcp.server.name,
+                    "version": self.mcp.server.version,
+                    "description": self.mcp.server.description,
+                },
+                "tools": {
+                    "cognitive": self.mcp.tools.cognitive,
+                    "direct_access": self.mcp.tools.direct_access,
+                },
+                "api": {
+                    "enabled": self.mcp.api.enabled,
+                    "host": self.mcp.api.host,
+                    "port": self.mcp.api.port,
+                    "cors": self.mcp.api.cors,
+                    "auth": self.mcp.api.auth,
+                },
+                "session": {
+                    "ttl_hours": self.mcp.session.ttl_hours,
+                    "cleanup_interval_hours": self.mcp.session.cleanup_interval_hours,
+                },
+                "query": {
+                    "default_limit": self.mcp.query.default_limit,
+                    "max_limit": self.mcp.query.max_limit,
+                },
+                "relationships": {
+                    "max_depth": self.mcp.relationships.max_depth,
+                    "max_per_node": self.mcp.relationships.max_per_node,
+                },
+                "tokens": {
+                    "estimation_model": self.mcp.tokens.estimation_model,
+                    "default_budget": self.mcp.tokens.default_budget,
+                },
+                "defaults": {
+                    "search": self.mcp.defaults.search,
+                    "context": self.mcp.defaults.context,
+                    "impact": self.mcp.defaults.impact,
+                    "memory": self.mcp.defaults.memory,
+                    "events": self.mcp.defaults.events,
+                    "patterns": self.mcp.defaults.patterns,
+                    "temporal": self.mcp.defaults.temporal,
+                    "session_ttl_hours": self.mcp.defaults.session_ttl_hours,
+                },
+                "behavior": {
+                    "suggest_on_empty": self.mcp.behavior.suggest_on_empty,
+                    "include_alternatives": self.mcp.behavior.include_alternatives,
+                    "log_all_requests": self.mcp.behavior.log_all_requests,
+                    "track_performance": self.mcp.behavior.track_performance,
+                    "cache_responses": self.mcp.behavior.cache_responses,
+                    "cache_ttl_seconds": self.mcp.behavior.cache_ttl_seconds,
+                },
+                "logging": self.mcp.logging,
+            },
+            "connectors": {
+                "default_connector": self.connectors.default_connector,
+                "filesystem": {
+                    "enabled": self.connectors.filesystem.enabled,
+                    "root": self.connectors.filesystem.root,
+                    "ignore_patterns": self.connectors.filesystem.ignore_patterns,
+                    "binary_extensions": list(
+                        self.connectors.filesystem.binary_extensions
+                    ),
+                    "change_detection_enabled": self.connectors.filesystem.change_detection_enabled,
+                    "watch_enabled": self.connectors.filesystem.watch_enabled,
+                },
+                "remote_cache": {
+                    "enabled": self.connectors.remote_cache.enabled,
+                    "path": self.connectors.remote_cache.path,
+                    "max_size": self.connectors.remote_cache.max_size,
+                },
+            },
+            "maintenance": {
+                "trigger": self.maintenance.trigger,
+                "cleanup_retention_minutes": self.maintenance.cleanup_retention_minutes,
+                "enabled": self.maintenance.enabled,
             },
         }
 

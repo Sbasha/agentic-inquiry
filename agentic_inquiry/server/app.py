@@ -38,6 +38,7 @@ async def create_app(
     """
     if config is None:
         from agentic_inquiry.config import Config
+
         config = Config.load()
 
     if workspace is None:
@@ -48,6 +49,7 @@ async def create_app(
 
     # Create MCP server (initializes all core services)
     from agentic_inquiry.mcp.server import MCPServer
+
     mcp_server = MCPServer(config, project_id)
     await mcp_server.initialize()
 
@@ -86,8 +88,9 @@ async def create_app(
 
     # Register auth middleware (ADR-001 Phase 1)
     from agentic_inquiry.server.middleware.auth import APIKeyAuthMiddleware
-    auth_config = getattr(getattr(config, 'mcp', None), 'api', None)
-    if auth_config and hasattr(auth_config, 'auth'):
+
+    auth_config = getattr(getattr(config, "mcp", None), "api", None)
+    if auth_config and hasattr(auth_config, "auth"):
         raw_auth = auth_config.auth
         app.add_middleware(APIKeyAuthMiddleware, auth_config=raw_auth)
         # auth field may be a dict or an object; use .get() with dict fallback
@@ -99,7 +102,16 @@ async def create_app(
         logger.info("Auth middleware registered: enabled=%s", auth_enabled)
 
     # Register REST routes
-    from agentic_inquiry.server.routes import health, search, memory, context, session, hooks, index
+    from agentic_inquiry.server.routes import (
+        health,
+        search,
+        memory,
+        context,
+        session,
+        hooks,
+        index,
+    )
+
     app.include_router(health.router, prefix="/api/v1", tags=["health"])
     app.include_router(search.router, prefix="/api/v1", tags=["search"])
     app.include_router(memory.router, prefix="/api/v1", tags=["memory"])
@@ -119,9 +131,7 @@ async def create_app(
         _req: object, exc: RequestValidationError
     ) -> JSONResponse:
         errors = exc.errors()
-        is_local_diff_error = any(
-            "local_diff" in str(e.get("loc", "")) for e in errors
-        )
+        is_local_diff_error = any("local_diff" in str(e.get("loc", "")) for e in errors)
         if is_local_diff_error:
             return JSONResponse(
                 status_code=422,
@@ -145,6 +155,7 @@ async def create_app(
         )
 
     from fastapi.responses import RedirectResponse
+
     @app.get("/ui")
     async def ui_redirect():
         return RedirectResponse(url="/ui/")

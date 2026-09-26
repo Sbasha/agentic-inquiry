@@ -8,6 +8,7 @@ budget defined in ``bench.py``.
 Marked ``slow`` because it indexes a non-trivial corpus and downloads the
 embedding model on a cold cache. Skip with ``-m 'not slow'``.
 """
+
 from __future__ import annotations
 
 import pytest

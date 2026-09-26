@@ -36,9 +36,7 @@ def _make_config(
     so the test config is just a ``SimpleNamespace`` with those two
     attributes.
     """
-    storage = SimpleNamespace(
-        backends=backends, vector_backend=vector_backend
-    )
+    storage = SimpleNamespace(backends=backends, vector_backend=vector_backend)
     return SimpleNamespace(storage=storage)
 
 
@@ -102,9 +100,7 @@ class TestResolveEmbeddingStrategy:
 
     def test_unknown_string_falls_back(self):
         config = _make_config(
-            backends={
-                "x": {"type": "rds", "embedding_strategy": "garbage"}
-            },
+            backends={"x": {"type": "rds", "embedding_strategy": "garbage"}},
             vector_backend="x",
         )
         assert (
@@ -138,9 +134,7 @@ class TestResolveEmbeddingDimensions:
 
     def test_digit_string_with_whitespace(self):
         config = _make_config(
-            backends={
-                "azure_db": {"type": "azure", "embedding_dim": "  3072  "}
-            },
+            backends={"azure_db": {"type": "azure", "embedding_dim": "  3072  "}},
             vector_backend="azure_db",
         )
         assert resolve_embedding_dimensions(config, 1536) == 3072
@@ -176,9 +170,7 @@ class TestResolveEmbeddingDimensions:
         assert resolve_embedding_dimensions(config, 384) == 384
 
     def test_none_falls_back(self):
-        config = _make_config(
-            backends={"x": {"type": "rds"}}, vector_backend="x"
-        )
+        config = _make_config(backends={"x": {"type": "rds"}}, vector_backend="x")
         assert resolve_embedding_dimensions(config, 384) == 384
 
     def test_no_backends_falls_back(self):
@@ -207,9 +199,7 @@ class TestResolveEmbeddingModel:
 
     def test_empty_string_falls_back(self):
         config = _make_config(
-            backends={
-                "azure_db": {"type": "azure", "embedding_model": ""}
-            },
+            backends={"azure_db": {"type": "azure", "embedding_model": ""}},
             vector_backend="azure_db",
         )
         assert (
@@ -228,7 +218,5 @@ class TestResolveEmbeddingModel:
         )
 
     def test_capability_default_can_be_none(self):
-        config = _make_config(
-            backends={"x": {"type": "rds"}}, vector_backend="x"
-        )
+        config = _make_config(backends={"x": {"type": "rds"}}, vector_backend="x")
         assert resolve_embedding_model(config, None) is None

@@ -1,4 +1,5 @@
 """Runner for TEST_02 Onboarding."""
+
 import asyncio
 import json
 import logging
@@ -13,8 +14,15 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)],
 )
 # Suppress noisy loggers
-for noisy in ["httpx", "httpcore", "asyncio", "urllib3", "sentence_transformers",
-              "filelock", "transformers"]:
+for noisy in [
+    "httpx",
+    "httpcore",
+    "asyncio",
+    "urllib3",
+    "sentence_transformers",
+    "filelock",
+    "transformers",
+]:
     logging.getLogger(noisy).setLevel(logging.WARNING)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -31,6 +39,7 @@ PROJECT_ID = f"ai_test02_onboard_{RUN_ID}"
 async def main():
     from agentic_inquiry.config import Config
     from agentic_inquiry.mcp.factories import create_mcp_services
+
     # Import via package to support relative imports in protocol module
     from protocols import test_02_onboarding as mod
 

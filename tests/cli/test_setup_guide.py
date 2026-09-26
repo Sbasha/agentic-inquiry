@@ -44,7 +44,9 @@ def test_setup_client_enables_hooks(tmp_path: Path, monkeypatch) -> None:
     assert response["status"] in {"ok", "partial"}
 
 
-def test_setup_cursor_client_enables_the_same_binding(tmp_path: Path, monkeypatch) -> None:
+def test_setup_cursor_client_enables_the_same_binding(
+    tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.setenv("INQUIRY_HOME", str(tmp_path / "inquiry-home"))
     project = tmp_path / "project"
     project.mkdir()

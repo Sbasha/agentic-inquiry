@@ -101,10 +101,7 @@ class TemporalAnalyzer:
                             recent_chunks.append(chunk)
                     except (ValueError, AttributeError) as e:
                         # S5-002: Log invalid timestamps for debugging
-                        logger.debug(
-                            "Skipping chunk with invalid timestamp: %s",
-                            e
-                        )
+                        logger.debug("Skipping chunk with invalid timestamp: %s", e)
                         continue
 
             return recent_chunks
@@ -141,7 +138,10 @@ class TemporalAnalyzer:
 
             # Collect affected entities
             entity_name = chunk.get("entity_name")
-            if entity_name and entity_name not in file_activity[file_path]["affected_entities"]:
+            if (
+                entity_name
+                and entity_name not in file_activity[file_path]["affected_entities"]
+            ):
                 file_activity[file_path]["affected_entities"].append(entity_name)
 
         return file_activity
@@ -202,8 +202,14 @@ class TemporalAnalyzer:
                         )
 
                         if created_dt >= cutoff_date:
-                            if file_path not in new_files or created_dt < datetime.fromisoformat(
-                                new_files[file_path]["created"].replace("Z", "+00:00")
+                            if (
+                                file_path not in new_files
+                                or created_dt
+                                < datetime.fromisoformat(
+                                    new_files[file_path]["created"].replace(
+                                        "Z", "+00:00"
+                                    )
+                                )
                             ):
                                 new_files[file_path] = {
                                     "path": file_path,
@@ -213,8 +219,7 @@ class TemporalAnalyzer:
                     except (ValueError, AttributeError) as e:
                         # S5-002: Log parsing failures for debugging
                         logger.debug(
-                            "Skipping file with invalid created_at timestamp: %s",
-                            e
+                            "Skipping file with invalid created_at timestamp: %s", e
                         )
                         continue
 
@@ -277,8 +282,7 @@ class TemporalAnalyzer:
                     except (ValueError, AttributeError) as e:
                         # S5-002: Log staleness calculation failures
                         logger.debug(
-                            "Skipping area with invalid last_change timestamp: %s",
-                            e
+                            "Skipping area with invalid last_change timestamp: %s", e
                         )
                         continue
 

@@ -6,6 +6,7 @@ indexing operations.
 
 See: docs/design/connector-architecture.md (S5-011)
 """
+
 from __future__ import annotations
 
 import logging
@@ -31,6 +32,7 @@ class HashCacheStats:
         max_size: Maximum number of entries allowed.
         has_tracker: Whether a fallback tracker is configured.
     """
+
     cache_hits: int = 0
     cache_misses: int = 0
     tracker_hits: int = 0

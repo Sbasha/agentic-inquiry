@@ -1,5 +1,6 @@
 # agentic_inquiry/mcp/services/gatherers/docs_gatherer.py
 """Documentation context gatherer implementation."""
+
 import logging
 from typing import Any, Dict, List
 
@@ -11,10 +12,21 @@ from .protocol import ContextGathererProtocol, GatherContext
 logger = logging.getLogger(__name__)
 
 # Documentation file extensions
-DOC_EXTENSIONS = frozenset({
-    '.md', '.txt', '.rst', '.adoc', '.asciidoc', '.org', '.tex',
-    '.pdf', '.docx', '.html', '.htm'
-})
+DOC_EXTENSIONS = frozenset(
+    {
+        ".md",
+        ".txt",
+        ".rst",
+        ".adoc",
+        ".asciidoc",
+        ".org",
+        ".tex",
+        ".pdf",
+        ".docx",
+        ".html",
+        ".htm",
+    }
+)
 
 
 class DocsGatherer(ContextGathererProtocol):
@@ -25,9 +37,7 @@ class DocsGatherer(ContextGathererProtocol):
     """
 
     def __init__(
-        self,
-        search_service: SearchService,
-        token_optimizer: TokenOptimizer
+        self, search_service: SearchService, token_optimizer: TokenOptimizer
     ) -> None:
         """Initialize docs gatherer.
 
@@ -62,14 +72,19 @@ class DocsGatherer(ContextGathererProtocol):
 
         logger.info(
             "Searching for documentation: query=%s, limit=%s, project_id=%s, include_overview=%s",
-            context.query, limit, context.project_id, context.include_overview
+            context.query,
+            limit,
+            context.project_id,
+            context.include_overview,
         )
 
         try:
             # Use pre-computed query vector if provided, otherwise compute it
             query_vector = context.query_vector
             if query_vector is None:
-                query_vector_array = await self.search.embedding_service.embed_async(context.query)
+                query_vector_array = await self.search.embedding_service.embed_async(
+                    context.query
+                )
                 query_vector = query_vector_array.tolist()
 
             # Search for documentation - increase limit to allow for filtering
@@ -79,7 +94,7 @@ class DocsGatherer(ContextGathererProtocol):
                 query_fts=context.query,
                 limit=search_limit,
                 project_id=context.project_id,
-                boost_overview=context.include_overview
+                boost_overview=context.include_overview,
             )
 
             logger.info("Search returned %s results", len(results))
@@ -88,11 +103,15 @@ class DocsGatherer(ContextGathererProtocol):
             doc_results = []
             for r in results:
                 if not isinstance(r, SearchResult):
-                    logger.warning("Skipping non-SearchResult item in docs gatherer: %s", r)
+                    logger.warning(
+                        "Skipping non-SearchResult item in docs gatherer: %s", r
+                    )
                     continue
                 file_path = r.data.get("file_path", "")
                 matches = any(file_path.endswith(ext) for ext in DOC_EXTENSIONS)
-                logger.debug("Checking file_path=%s, matches_doc=%s", file_path, matches)
+                logger.debug(
+                    "Checking file_path=%s, matches_doc=%s", file_path, matches
+                )
                 if matches:
                     doc_results.append(r)
 
@@ -109,7 +128,7 @@ class DocsGatherer(ContextGathererProtocol):
                     context.budget.add(item_text)
                     doc_items.append(item)
                 else:
-                    logger.debug("Skipping doc item %s - budget exceeded", item['id'])
+                    logger.debug("Skipping doc item %s - budget exceeded", item["id"])
                     break
 
             logger.info("Converted to %s documentation context items", len(doc_items))
@@ -120,9 +139,7 @@ class DocsGatherer(ContextGathererProtocol):
             return []
 
     def _result_to_context_item(
-        self,
-        result: Dict[str, Any],
-        query: str
+        self, result: Dict[str, Any], query: str
     ) -> Dict[str, Any]:
         """Convert search result to context item dictionary.
 
@@ -147,8 +164,7 @@ class DocsGatherer(ContextGathererProtocol):
         # Extract metadata for documentation
         metadata: Dict[str, Any] = {}
         metadata["section"] = result.get(
-            "section",
-            result.get("metadata", {}).get("section", "")
+            "section", result.get("metadata", {}).get("section", "")
         )
 
         return {
@@ -160,14 +176,10 @@ class DocsGatherer(ContextGathererProtocol):
             "location": result.get("file_path", result.get("location", "")),
             "snippet": snippet,
             "metadata": metadata,
-            "why_relevant": why_relevant
+            "why_relevant": why_relevant,
         }
 
-    def _explain_relevance(
-        self,
-        result: Dict[str, Any],
-        relevance_score: float
-    ) -> str:
+    def _explain_relevance(self, result: Dict[str, Any], relevance_score: float) -> str:
         """Generate explanation of why item is relevant.
 
         Args:

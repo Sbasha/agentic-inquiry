@@ -6,6 +6,7 @@ Implements LRU eviction when max_size is set.
 
 See: docs/design/connector-architecture.md
 """
+
 from __future__ import annotations
 
 import asyncio

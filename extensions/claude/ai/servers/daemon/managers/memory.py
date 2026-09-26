@@ -65,9 +65,7 @@ class MemoryManager:
             self._initialized = True
             logger.info("Memory manager initialized")
         except Exception:
-            logger.warning(
-                "ai memory system not available - using basic storage"
-            )
+            logger.warning("ai memory system not available - using basic storage")
             self._initialized = True
 
     async def shutdown(self) -> None:
@@ -116,7 +114,9 @@ class MemoryManager:
                     metadata=combined_metadata,
                 )
                 memory_id = str(getattr(result, "id", memory_id))
-                logger.debug("Memory stored: %s (importance=%.1f)", memory_id, importance)
+                logger.debug(
+                    "Memory stored: %s (importance=%.1f)", memory_id, importance
+                )
             except Exception:
                 logger.warning("ai memory store failed, using basic storage")
                 # Fall through to basic storage
@@ -169,9 +169,7 @@ class MemoryManager:
         memories = self._version_manager.check_staleness(memories)
 
         # Filter by confidence gate
-        confidence_gate = self.config.get("context", {}).get(
-            "confidence_gate", 0.7
-        )
+        confidence_gate = self.config.get("context", {}).get("confidence_gate", 0.7)
         # Include stale but flag them (don't filter out)
         for m in memories:
             if m.get("confidence", 1.0) < confidence_gate:
@@ -218,9 +216,7 @@ class MemoryManager:
                 importance=0.5,
                 file_paths=files[:20],
             )
-            prompt_parts.append(
-                f"[ai] Auto-saved {len(files)} file changes."
-            )
+            prompt_parts.append(f"[ai] Auto-saved {len(files)} file changes.")
 
         # Build the mandatory prompt
         prompt = (
@@ -278,23 +274,15 @@ class MemoryManager:
                 mem = item.memory
                 return {
                     "content": getattr(mem, "content", str(mem)),
-                    "created": str(
-                        getattr(mem, "created_at", "unknown")
-                    ),
+                    "created": str(getattr(mem, "created_at", "unknown")),
                     "importance": getattr(mem, "importance", 0.5),
-                    "confidence": getattr(
-                        mem, "metadata", {}
-                    ).get("confidence", 1.0)
+                    "confidence": getattr(mem, "metadata", {}).get("confidence", 1.0)
                     if hasattr(mem, "metadata")
                     else 1.0,
-                    "file_paths": getattr(
-                        mem, "metadata", {}
-                    ).get("file_paths", [])
+                    "file_paths": getattr(mem, "metadata", {}).get("file_paths", [])
                     if hasattr(mem, "metadata")
                     else [],
-                    "category": getattr(
-                        mem, "metadata", {}
-                    ).get("category", "unknown")
+                    "category": getattr(mem, "metadata", {}).get("category", "unknown")
                     if hasattr(mem, "metadata")
                     else "unknown",
                 }

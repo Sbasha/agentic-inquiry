@@ -25,6 +25,7 @@ Example Usage:
     ...         except Exception:
     ...             await ctx.handle_failure()
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -98,7 +99,7 @@ class RetryPolicy:
             Delay in seconds before the next retry
         """
         # Calculate exponential backoff
-        delay = self.base_delay * (self.exponential_base ** attempt)
+        delay = self.base_delay * (self.exponential_base**attempt)
 
         # Apply max delay cap
         if self.max_delay is not None:

@@ -10,7 +10,9 @@ import re
 from typing import List
 
 
-def chunk_text_by_tokens(text: str, max_tokens: int = 500, overlap: int = 50) -> List[str]:
+def chunk_text_by_tokens(
+    text: str, max_tokens: int = 500, overlap: int = 50
+) -> List[str]:
     """Chunk text by approximate token count.
 
     Args:

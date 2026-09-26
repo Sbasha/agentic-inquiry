@@ -350,7 +350,9 @@ class TestWorkingMemoryRetrieval:
         items = []
         for i in range(3):
             # Create embedding with varying similarity to query
-            embedding = query_embedding + np.random.rand(128).astype(np.float32) * (i + 1) * 0.1
+            embedding = (
+                query_embedding + np.random.rand(128).astype(np.float32) * (i + 1) * 0.1
+            )
             embedding = embedding / np.linalg.norm(embedding)  # Normalize
 
             item = MemoryItem(
@@ -368,7 +370,9 @@ class TestWorkingMemoryRetrieval:
             await working_memory.store(item)
 
         # Retrieve with query
-        results = await working_memory.retrieve(query_embedding, memory_context, limit=10)
+        results = await working_memory.retrieve(
+            query_embedding, memory_context, limit=10
+        )
 
         # Verify results
         assert len(results) == 3
@@ -420,7 +424,9 @@ class TestWorkingMemoryRetrieval:
             await working_memory.store(item)
 
         # Retrieve with test context
-        results = await working_memory.retrieve(query_embedding, memory_context, limit=10)
+        results = await working_memory.retrieve(
+            query_embedding, memory_context, limit=10
+        )
 
         # Verify only test context items are returned
         assert len(results) == 2
@@ -448,7 +454,9 @@ class TestWorkingMemoryRetrieval:
             await working_memory.store(item)
 
         # Retrieve with limit=3
-        results = await working_memory.retrieve(query_embedding, memory_context, limit=3)
+        results = await working_memory.retrieve(
+            query_embedding, memory_context, limit=3
+        )
 
         # Verify limit is respected
         assert len(results) == 3
@@ -488,7 +496,9 @@ class TestWorkingMemoryRetrieval:
         await working_memory.store(item_without_embedding)
 
         # Retrieve
-        results = await working_memory.retrieve(query_embedding, memory_context, limit=10)
+        results = await working_memory.retrieve(
+            query_embedding, memory_context, limit=10
+        )
 
         # Verify only item with embedding is returned
         assert len(results) == 1

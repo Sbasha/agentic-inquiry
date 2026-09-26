@@ -5,6 +5,7 @@ Usage:
     ai lineage impact <entity> [--depth N]
     ai lineage gaps <entity>
 """
+
 from __future__ import annotations
 
 import argparse
@@ -53,7 +54,9 @@ def format_path(path: LineagePath, verbose: bool = False) -> str:
             location = ""
 
         rel_info = f" --{step.relationship_type}-->" if step.relationship_type else ""
-        lines.append(f"    {arrow} {step.entity_name} {layer_badge}{rel_info}{location}")
+        lines.append(
+            f"    {arrow} {step.entity_name} {layer_badge}{rel_info}{location}"
+        )
 
     return "\n".join(lines)
 
@@ -74,7 +77,10 @@ async def trace_command(args: argparse.Namespace) -> int:
     # Determine project_id from args or config
     project_id = args.project or config.storage.default_project_id
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     print(f"Tracing lineage for '{args.entity}' (project: {project_id})...")
@@ -96,7 +102,10 @@ async def trace_command(args: argparse.Namespace) -> int:
                 target_layers = [ArchitecturalLayer(args.target_layer)]
             except ValueError:
                 print(f"Error: Invalid layer '{args.target_layer}'", file=sys.stderr)
-                print(f"Valid layers: {[l.value for l in ArchitecturalLayer]}", file=sys.stderr)
+                print(
+                    f"Valid layers: {[l.value for l in ArchitecturalLayer]}",
+                    file=sys.stderr,
+                )
                 return 1
 
         # Execute trace
@@ -180,7 +189,10 @@ async def impact_command(args: argparse.Namespace) -> int:
     project_id = args.project or config.storage.default_project_id
 
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     print(f"Analyzing impact for '{args.entity}' (project: {project_id})...")
@@ -214,17 +226,17 @@ async def impact_command(args: argparse.Namespace) -> int:
         else:
             # Risk level coloring
             risk_colors = {
-                "LOW": "\033[32m",      # Green
-                "MEDIUM": "\033[33m",   # Yellow
-                "HIGH": "\033[91m",     # Light red
-                "CRITICAL": "\033[31m", # Red
+                "LOW": "\033[32m",  # Green
+                "MEDIUM": "\033[33m",  # Yellow
+                "HIGH": "\033[91m",  # Light red
+                "CRITICAL": "\033[31m",  # Red
             }
             reset = "\033[0m"
             color = risk_colors.get(impact.risk_level, "")
 
-            print(f"\n{'='*50}")
+            print(f"\n{'=' * 50}")
             print(f"Impact Analysis: {impact.entity_name}")
-            print(f"{'='*50}")
+            print(f"{'=' * 50}")
             print(f"Risk Level: {color}{impact.risk_level}{reset}")
             print(f"PII Field: {'Yes ⚠️' if impact.is_pii else 'No'}")
             print(f"Affected Entities: {impact.affected_count}")
@@ -260,7 +272,10 @@ async def gaps_command(args: argparse.Namespace) -> int:
     project_id = args.project or config.storage.default_project_id
 
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     print(f"Finding gaps for '{args.entity}' (project: {project_id})...")
@@ -349,7 +364,8 @@ def create_parser() -> argparse.ArgumentParser:
     )
     trace_parser.add_argument("entity", help="Entity name or ID to trace from")
     trace_parser.add_argument(
-        "--direction", "-d",
+        "--direction",
+        "-d",
         choices=["downstream", "upstream"],
         default="downstream",
         help="Trace direction (default: downstream)",
@@ -361,20 +377,24 @@ def create_parser() -> argparse.ArgumentParser:
         help="Maximum traversal depth (default: 10)",
     )
     trace_parser.add_argument(
-        "--target-layer", "-t",
+        "--target-layer",
+        "-t",
         help="Stop at specific layer (ui, controller, service, repository, entity, database)",
     )
     trace_parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID (uses config default if not specified)",
     )
     trace_parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )
     trace_parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Include file paths and line numbers",
     )
@@ -394,11 +414,13 @@ def create_parser() -> argparse.ArgumentParser:
         help="Maximum traversal depth (default: 5)",
     )
     impact_parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID",
     )
     impact_parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )
@@ -412,11 +434,13 @@ def create_parser() -> argparse.ArgumentParser:
     )
     gaps_parser.add_argument("entity", help="Entity name or ID to check")
     gaps_parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID",
     )
     gaps_parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )

@@ -8,7 +8,12 @@ from unittest.mock import AsyncMock, MagicMock
 
 from agentic_inquiry.mcp.tools.memory import recall_memories
 from agentic_inquiry.mcp.services.session_manager import SessionManager
-from agentic_inquiry.memory.models import MemoryItem, MemoryContext, MemoryTier, RetrievalResult
+from agentic_inquiry.memory.models import (
+    MemoryItem,
+    MemoryContext,
+    MemoryTier,
+    RetrievalResult,
+)
 from agentic_inquiry.config import Config
 
 
@@ -32,15 +37,15 @@ def mock_config():
 async def session_manager(mock_db_manager, mock_config):
     """Create a SessionManager instance for testing."""
     manager = MagicMock(spec=SessionManager)
-    
+
     # Mock validate_session to return True
     manager.validate_session = AsyncMock(return_value=True)
-    
+
     # Mock get_session to return a test session
     test_session = MagicMock()
     test_session.project_id = "test_project"
     manager.get_session = AsyncMock(return_value=test_session)
-    
+
     return manager
 
 
@@ -48,7 +53,7 @@ async def session_manager(mock_db_manager, mock_config):
 def mock_memory_system():
     """Create a mock MemorySystem with memories that have summaries."""
     memory_system = MagicMock()
-    
+
     # Create mock memories with summaries as top-level fields
     mock_memories = []
     for i in range(3):
@@ -75,7 +80,7 @@ def mock_memory_system():
             access_count=0,
         )
         mock_memories.append(memory)
-    
+
     # Mock retrieve to return these memories
     async def mock_retrieve(query, context, limit, strategy="adaptive"):
         return [
@@ -86,9 +91,9 @@ def mock_memory_system():
             )
             for i, memory in enumerate(mock_memories)
         ]
-    
+
     memory_system.retrieve = AsyncMock(side_effect=mock_retrieve)
-    
+
     return memory_system
 
 
@@ -101,7 +106,9 @@ def mock_event_system():
 
 
 @pytest.fixture
-def mcp_services(session_manager, mock_db_manager, mock_memory_system, mock_event_system):
+def mcp_services(
+    session_manager, mock_db_manager, mock_memory_system, mock_event_system
+):
     """Create mock services dictionary for tools."""
     return {
         "session_manager": session_manager,
@@ -115,7 +122,7 @@ def mcp_services(session_manager, mock_db_manager, mock_memory_system, mock_even
 @pytest.mark.asyncio
 async def test_recall_memories_returns_summaries_from_top_level_field(mcp_services):
     """Test that recall_memories correctly returns summaries from MemoryItem.summary field.
-    
+
     This test verifies the fix for the bug where recall_memories was looking for
     summaries in metadata instead of using the top-level summary field.
     """
@@ -126,27 +133,28 @@ async def test_recall_memories_returns_summaries_from_top_level_field(mcp_servic
         query="test query",
         limit=10,
     )
-    
+
     # Verify response structure
     assert "memories" in result
     assert "total" in result
     assert "query" in result
-    
+
     # Verify we got all 3 memories
     assert len(result["memories"]) == 3
-    
+
     # Verify each memory has a summary from the top-level field
     for i, memory_result in enumerate(result["memories"]):
         # Verify summary is present
         assert "summary" in memory_result, f"Memory {i} missing summary field"
-        
+
         # Verify summary is correct (from top-level field, not metadata)
-        assert memory_result["summary"] == f"Summary {i}", \
+        assert memory_result["summary"] == f"Summary {i}", (
             f"Memory {i} has incorrect summary: {memory_result['summary']}"
-        
+        )
+
         # Verify summary is not empty
         assert memory_result["summary"] != "", f"Memory {i} has empty summary"
-        
+
         # Verify other fields are also present
         assert "memory_id" in memory_result
         assert "content" in memory_result
@@ -156,14 +164,14 @@ async def test_recall_memories_returns_summaries_from_top_level_field(mcp_servic
         assert "created_at" in memory_result
         assert "access_count" in memory_result
         assert "relevance_score" in memory_result
-    
+
     # Verify 100% of memories have non-empty summaries
     memories_with_summaries = sum(
-        1 for m in result["memories"] 
-        if m.get("summary") and m["summary"] != ""
+        1 for m in result["memories"] if m.get("summary") and m["summary"] != ""
     )
-    assert memories_with_summaries == len(result["memories"]), \
+    assert memories_with_summaries == len(result["memories"]), (
         f"Only {memories_with_summaries}/{len(result['memories'])} memories have summaries"
+    )
 
 
 @pytest.mark.asyncio
@@ -192,7 +200,7 @@ async def test_recall_memories_handles_missing_summary_gracefully(mcp_services):
         accessed_at=datetime.now(timezone.utc),
         access_count=0,
     )
-    
+
     # Mock retrieve to return this memory
     async def mock_retrieve_with_none(query, context, limit, strategy="adaptive"):
         return [
@@ -202,9 +210,11 @@ async def test_recall_memories_handles_missing_summary_gracefully(mcp_services):
                 retrieval_tier=MemoryTier.EPISODIC,
             )
         ]
-    
-    mcp_services["memory_system"].retrieve = AsyncMock(side_effect=mock_retrieve_with_none)
-    
+
+    mcp_services["memory_system"].retrieve = AsyncMock(
+        side_effect=mock_retrieve_with_none
+    )
+
     # Call recall_memories
     result = await recall_memories(
         services=mcp_services,
@@ -212,7 +222,7 @@ async def test_recall_memories_handles_missing_summary_gracefully(mcp_services):
         query="test query",
         limit=10,
     )
-    
+
     # Verify it returns empty string instead of None
     assert len(result["memories"]) == 1
     assert result["memories"][0]["summary"] == ""

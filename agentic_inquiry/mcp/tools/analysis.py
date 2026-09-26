@@ -25,7 +25,7 @@ async def understand_entity(
     include_dependencies: bool = True,
     include_usage: bool = True,
     trace_depth: int = 0,
-    timeout_ms: Optional[int] = None
+    timeout_ms: Optional[int] = None,
 ) -> dict:
     """Deep dive into a code entity (class, function, module).
 
@@ -88,7 +88,7 @@ async def understand_entity(
         return await MCPErrorHandler.handle(
             error=e,
             context={"session_id": session_id, "entity": original_entity},
-            services=services
+            services=services,
         )
 
     # Use original entity for resolution if it was a full ID, otherwise use validated name
@@ -99,7 +99,7 @@ async def understand_entity(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -116,7 +116,7 @@ async def understand_entity(
         source="mcp_tool",
         tool_name="understand_entity",
         session_id=session_id,
-        entity=entity
+        entity=entity,
     )
 
     try:
@@ -140,18 +140,22 @@ async def understand_entity(
                     entity_name=entity,
                     project_id=project_id,
                     entity_type=entity_type,
-                    include_relationships=True
+                    include_relationships=True,
                 ),
-                timeout=timeout_seconds
+                timeout=timeout_seconds,
             )
         except asyncio.TimeoutError:
-            logger.warning("Entity resolution timed out after %.1fms", effective_timeout_ms)
+            logger.warning(
+                "Entity resolution timed out after %.1fms", effective_timeout_ms
+            )
             return {
                 "error": "timeout",
                 "message": f"Entity resolution timed out after {effective_timeout_ms}ms",
-                "suggestion": "Try with a higher timeout_ms value"
+                "suggestion": "Try with a higher timeout_ms value",
             }
-        entity_resolution_time_ms = (time.perf_counter() - entity_resolution_start) * 1000
+        entity_resolution_time_ms = (
+            time.perf_counter() - entity_resolution_start
+        ) * 1000
 
         # Calculate remaining time for subsequent operations
         remaining_ms = effective_timeout_ms - entity_resolution_time_ms
@@ -165,18 +169,16 @@ async def understand_entity(
             try:
                 dep_refs = await asyncio.wait_for(
                     entity_resolver.get_entity_dependencies(
-                        entity_id=entity_def.entity_id,
-                        project_id=project_id,
-                        depth=1
+                        entity_id=entity_def.entity_id, project_id=project_id, depth=1
                     ),
-                    timeout=remaining_ms / 1000.0
+                    timeout=remaining_ms / 1000.0,
                 )
                 dependencies = [
                     {
                         "name": dep.name,
                         "entity_type": dep.entity_type,
                         "file_path": dep.file_path,
-                        "relationship_type": dep.relationship_type
+                        "relationship_type": dep.relationship_type,
                     }
                     for dep in dep_refs
                 ]
@@ -184,7 +186,9 @@ async def understand_entity(
                 logger.debug("Dependencies lookup timed out, skipping")
 
         # Update remaining time
-        remaining_ms = remaining_ms - (time.perf_counter() - graph_traversal_start) * 1000
+        remaining_ms = (
+            remaining_ms - (time.perf_counter() - graph_traversal_start) * 1000
+        )
         if remaining_ms <= 0:
             remaining_ms = 100
 
@@ -194,18 +198,16 @@ async def understand_entity(
             try:
                 usage_refs = await asyncio.wait_for(
                     entity_resolver.get_entity_usages(
-                        entity_id=entity_def.entity_id,
-                        project_id=project_id,
-                        limit=10
+                        entity_id=entity_def.entity_id, project_id=project_id, limit=10
                     ),
-                    timeout=remaining_ms / 1000.0
+                    timeout=remaining_ms / 1000.0,
                 )
                 usage_examples = [
                     {
                         "file_path": usage.file_path,
                         "line_number": usage.line_number,
                         "context": usage.context,
-                        "usage_type": usage.usage_type
+                        "usage_type": usage.usage_type,
                     }
                     for usage in usage_refs
                 ]
@@ -221,14 +223,21 @@ async def understand_entity(
             try:
                 # Follow each import/call dependency up to trace_depth hops
                 for dep in dependencies[:3]:  # Top 3 deps only
-                    if dep.get("relationship_type") not in ("imports", "calls", "inherits", "defines"):
+                    if dep.get("relationship_type") not in (
+                        "imports",
+                        "calls",
+                        "inherits",
+                        "defines",
+                    ):
                         continue
                     chain = [{"name": entity_def.name, "type": entity_def.entity_type}]
-                    chain.append({
-                        "name": dep["name"],
-                        "type": dep.get("entity_type", ""),
-                        "via": dep["relationship_type"],
-                    })
+                    chain.append(
+                        {
+                            "name": dep["name"],
+                            "type": dep.get("entity_type", ""),
+                            "via": dep["relationship_type"],
+                        }
+                    )
                     # Follow one more hop if trace_depth >= 2
                     if trace_depth >= 2:
                         try:
@@ -240,7 +249,9 @@ async def understand_entity(
                                 ),
                                 timeout=1.0,
                             )
-                            dep_id = dep_resolved.entity_id if dep_resolved else dep["name"]
+                            dep_id = (
+                                dep_resolved.entity_id if dep_resolved else dep["name"]
+                            )
                             sub_deps = await asyncio.wait_for(
                                 entity_resolver.get_entity_dependencies(
                                     entity_id=dep_id,
@@ -250,26 +261,35 @@ async def understand_entity(
                                 timeout=1.0,
                             )
                             for sd in sub_deps[:2]:
-                                if sd.relationship_type in ("imports", "calls", "inherits", "defines"):
-                                    chain.append({
-                                        "name": sd.name,
-                                        "type": sd.entity_type,
-                                        "via": sd.relationship_type,
-                                    })
+                                if sd.relationship_type in (
+                                    "imports",
+                                    "calls",
+                                    "inherits",
+                                    "defines",
+                                ):
+                                    chain.append(
+                                        {
+                                            "name": sd.name,
+                                            "type": sd.entity_type,
+                                            "via": sd.relationship_type,
+                                        }
+                                    )
                                     break  # One sub-dep per chain
                         except Exception:
                             pass
                     if len(chain) >= 2:
                         # Format as narrative
                         narrative = " → ".join(
-                            f"{c['via']} → {c['name']}" if 'via' in c else c['name']
+                            f"{c['via']} → {c['name']}" if "via" in c else c["name"]
                             for c in chain
                         )
-                        dependency_chains.append({
-                            "chain": chain,
-                            "narrative": narrative,
-                            "depth": len(chain) - 1,
-                        })
+                        dependency_chains.append(
+                            {
+                                "chain": chain,
+                                "narrative": narrative,
+                                "depth": len(chain) - 1,
+                            }
+                        )
             except Exception as e:
                 logger.debug("Trace chain failed: %s", e)
 
@@ -279,7 +299,7 @@ async def understand_entity(
             source="mcp_tool",
             tool_name="understand_entity",
             session_id=session_id,
-            entity=entity
+            entity=entity,
         )
 
         # Calculate total results for meta
@@ -306,8 +326,8 @@ async def understand_entity(
                 "execution_time_ms": round(execution_time_ms, 2),
                 "entity_resolution_time_ms": round(entity_resolution_time_ms, 2),
                 "graph_traversal_time_ms": round(graph_traversal_time_ms, 2),
-                "result_count": result_count
-            }
+                "result_count": result_count,
+            },
         }
 
     except EntityNotFoundError as e:
@@ -316,14 +336,16 @@ async def understand_entity(
             "mcp.tool.failed",
             source="mcp_tool",
             tool_name="understand_entity",
-            error=str(e)
+            error=str(e),
         )
         logger.warning("Entity not found: %s", e)
 
         # P1-3: Enhance error with stale index guidance
         suggestions = list(e.suggestions) if e.suggestions else []
         if project_state.get("is_empty") or project_state.get("is_incomplete"):
-            suggestions.insert(0, "Project index may be stale. Run add_knowledge() to refresh.")
+            suggestions.insert(
+                0, "Project index may be stale. Run add_knowledge() to refresh."
+            )
         if project_state.get("warnings"):
             suggestions = project_state["warnings"] + suggestions
 
@@ -332,9 +354,9 @@ async def understand_entity(
             context={
                 "session_id": session_id,
                 "entity": entity,
-                "suggestions": suggestions
+                "suggestions": suggestions,
             },
-            services=services
+            services=services,
         )
     except Exception as e:
         # Track failure
@@ -342,16 +364,13 @@ async def understand_entity(
             "mcp.tool.failed",
             source="mcp_tool",
             tool_name="understand_entity",
-            error=str(e)
+            error=str(e),
         )
         logger.error("Failed to understand entity: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
             error=e,
-            context={
-                "session_id": session_id,
-                "entity": entity
-            },
-            services=services
+            context={"session_id": session_id, "entity": entity},
+            services=services,
         )
 
 
@@ -363,7 +382,7 @@ async def analyze_impact(
     timeout_ms: Optional[int] = None,
     page: int = 0,
     page_size: int = 10,
-    summary_only: bool = False
+    summary_only: bool = False,
 ) -> dict:
     """Analyze the impact of changing a code entity.
 
@@ -442,7 +461,7 @@ async def analyze_impact(
         return await MCPErrorHandler.handle(
             error=e,
             context={"session_id": session_id, "entity": original_entity},
-            services=services
+            services=services,
         )
 
     # Use original entity for resolution if it was a full ID, otherwise use validated name
@@ -453,7 +472,7 @@ async def analyze_impact(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -470,7 +489,7 @@ async def analyze_impact(
         source="mcp_tool",
         tool_name="analyze_impact",
         session_id=session_id,
-        entity=entity
+        entity=entity,
     )
 
     try:
@@ -487,15 +506,17 @@ async def analyze_impact(
                     project_id=project_id,
                     depth=max_depth,
                     include_indirect=True,
-                    deadline=deadline
+                    deadline=deadline,
                 ),
-                timeout=remaining_seconds
+                timeout=remaining_seconds,
             )
         except PartialResultsException as e:
             # Return partial results with "partial": true flag
             logger.warning(
                 "analyze_impact returned partial results after %.1fms for entity=%s (completed depth: %d)",
-                e.elapsed_ms, entity, e.partial_results.get("completed_depth", 0)
+                e.elapsed_ms,
+                entity,
+                e.partial_results.get("completed_depth", 0),
             )
             await event_system.emit(
                 "mcp.tool.completed",
@@ -503,7 +524,7 @@ async def analyze_impact(
                 tool_name="analyze_impact",
                 session_id=session_id,
                 partial=True,
-                completed_depth=e.partial_results.get("completed_depth", 0)
+                completed_depth=e.partial_results.get("completed_depth", 0),
             )
 
             # Format partial affected_entities with pagination
@@ -513,11 +534,13 @@ async def analyze_impact(
                     "name": ref.name,
                     "entity_type": ref.entity_type,
                     "file_path": ref.file_path,
-                    "relationship_type": ref.relationship_type
+                    "relationship_type": ref.relationship_type,
                 }
                 for ref in partial_entities
-                if not (ref.file_path.startswith("builtin://") or
-                        ref.file_path.startswith("external://"))
+                if not (
+                    ref.file_path.startswith("builtin://")
+                    or ref.file_path.startswith("external://")
+                )
             ]
 
             # Apply pagination to partial results
@@ -525,7 +548,9 @@ async def analyze_impact(
             total_partial = len(all_partial_entities)
             start_idx = page * page_size_clamped
             end_idx = start_idx + page_size_clamped
-            paginated_entities = all_partial_entities[start_idx:end_idx] if not summary_only else []
+            paginated_entities = (
+                all_partial_entities[start_idx:end_idx] if not summary_only else []
+            )
 
             # Format partial relationship_types
             relationship_types_dict = e.partial_results.get("relationship_types", {})
@@ -538,17 +563,21 @@ async def analyze_impact(
                 "relationship_types": relationship_types_dict,
                 "completed_depth": e.partial_results.get("completed_depth", 0),
                 "requested_depth": max_depth,
-                "incoming_completed": e.partial_results.get("incoming_completed", False),
-                "outgoing_completed": e.partial_results.get("outgoing_completed", False),
+                "incoming_completed": e.partial_results.get(
+                    "incoming_completed", False
+                ),
+                "outgoing_completed": e.partial_results.get(
+                    "outgoing_completed", False
+                ),
                 "pagination": {
                     "page": page,
                     "page_size": page_size_clamped,
                     "total_entities": total_partial,
                     "has_more": end_idx < total_partial,
-                    "summary_only": summary_only
+                    "summary_only": summary_only,
                 },
                 "message": f"Analysis timed out after {e.elapsed_ms}ms. Returning partial results.",
-                "suggestion": "Try summary_only=True for faster results, or reduce max_depth"
+                "suggestion": "Try summary_only=True for faster results, or reduce max_depth",
             }
 
             if not summary_only:
@@ -559,19 +588,20 @@ async def analyze_impact(
             # Fallback for hard timeout (shouldn't happen if deadline is respected)
             logger.warning(
                 "analyze_impact timed out after %.1fms for entity=%s (hard timeout)",
-                effective_timeout_ms, entity
+                effective_timeout_ms,
+                entity,
             )
             await event_system.emit(
                 "mcp.tool.failed",
                 source="mcp_tool",
                 tool_name="analyze_impact",
-                error="timeout"
+                error="timeout",
             )
             return {
                 "error": "timeout",
                 "message": f"Impact analysis timed out after {effective_timeout_ms}ms",
                 "entity": entity,
-                "suggestion": "Try reducing max_depth or increasing timeout_ms"
+                "suggestion": "Try reducing max_depth or increasing timeout_ms",
             }
 
         # Enforce page_size limits
@@ -583,8 +613,10 @@ async def analyze_impact(
         affected_files_dict = {
             file_path: count
             for file_path, count in impact.affected_files.items()
-            if not (file_path.startswith("builtin://") or
-                    file_path.startswith("external://"))
+            if not (
+                file_path.startswith("builtin://")
+                or file_path.startswith("external://")
+            )
         }
 
         # Format affected_entities list (full list for counting)
@@ -594,24 +626,27 @@ async def analyze_impact(
                 "name": ref.name,
                 "entity_type": ref.entity_type,
                 "file_path": ref.file_path,
-                "relationship_type": ref.relationship_type
+                "relationship_type": ref.relationship_type,
             }
             for ref in impact.affected_entities
-            if not (ref.file_path.startswith("builtin://") or
-                    ref.file_path.startswith("external://"))
+            if not (
+                ref.file_path.startswith("builtin://")
+                or ref.file_path.startswith("external://")
+            )
         ]
 
         # Apply pagination
         total_entities = len(all_affected_entities)
         start_idx = page * page_size
         end_idx = start_idx + page_size
-        affected_entities_list = all_affected_entities[start_idx:end_idx] if not summary_only else []
+        affected_entities_list = (
+            all_affected_entities[start_idx:end_idx] if not summary_only else []
+        )
         has_more = end_idx < total_entities
 
         # Format relationship_types
         relationship_types_dict = {
-            rel_type: count
-            for rel_type, count in impact.relationship_types.items()
+            rel_type: count for rel_type, count in impact.relationship_types.items()
         }
 
         # Track success
@@ -621,19 +656,17 @@ async def analyze_impact(
             tool_name="analyze_impact",
             session_id=session_id,
             entity=entity,
-            impact_radius=impact.impact_radius
+            impact_radius=impact.impact_radius,
         )
 
         # Get indexed content statistics for scope context
         # Note: db_manager already retrieved for project state check (P1-3)
         try:
             indexed_entities_count = await db_manager.count_records(
-                table_name="graph_entities",
-                project_id=project_id
+                table_name="graph_entities", project_id=project_id
             )
             indexed_chunks_count = await db_manager.count_records(
-                table_name="document_chunks",
-                project_id=project_id
+                table_name="document_chunks", project_id=project_id
             )
         except Exception:
             indexed_entities_count = 0
@@ -647,9 +680,13 @@ async def analyze_impact(
             "relationship_types": relationship_types_dict,
             "traversal_depth": impact.traversal_depth,
             "guidance": {
-                "risk_level": "high" if impact.impact_radius > 10 else "medium" if impact.impact_radius > 5 else "low",
-                "recommendation": f"Changing this entity would affect {impact.impact_radius} entities across {len(affected_files_dict)} files"
-            }
+                "risk_level": "high"
+                if impact.impact_radius > 10
+                else "medium"
+                if impact.impact_radius > 5
+                else "low",
+                "recommendation": f"Changing this entity would affect {impact.impact_radius} entities across {len(affected_files_dict)} files",
+            },
         }
 
         # Add pagination metadata
@@ -658,7 +695,7 @@ async def analyze_impact(
             "page_size": page_size,
             "total_entities": total_entities,
             "has_more": has_more,
-            "summary_only": summary_only
+            "summary_only": summary_only,
         }
 
         # Only include detailed lists if not summary_only
@@ -666,14 +703,16 @@ async def analyze_impact(
             response["affected_entities"] = affected_entities_list
             response["affected_files"] = affected_files_dict
             if has_more:
-                response["hint"] = f"Use page={page + 1} to see next {min(page_size, total_entities - end_idx)} entities"
+                response["hint"] = (
+                    f"Use page={page + 1} to see next {min(page_size, total_entities - end_idx)} entities"
+                )
         else:
             response["hint"] = "Use summary_only=False to see affected entity details"
 
         # Add scope info (compact)
         response["scope"] = {
             "indexed_entities": indexed_entities_count,
-            "indexed_chunks": indexed_chunks_count
+            "indexed_chunks": indexed_chunks_count,
         }
 
         # Add warning when no affected entities found
@@ -683,13 +722,15 @@ async def analyze_impact(
                 "possible_causes": [
                     "Entity may be referenced in files not yet indexed",
                     "Relationships may not be extracted from all file types",
-                    "Only a subset of the codebase may be indexed"
+                    "Only a subset of the codebase may be indexed",
                 ],
                 "suggestions": [
                     "Index the full codebase: add_knowledge(source='.', content_type='directory')",
                     "Check what's indexed: get_project_info()",
-                    "Search for usages: search_knowledge(query='imports " + entity + "')"
-                ]
+                    "Search for usages: search_knowledge(query='imports "
+                    + entity
+                    + "')",
+                ],
             }
 
         # Add dependency trees only if not summary_only (they're large)
@@ -709,14 +750,16 @@ async def analyze_impact(
             "mcp.tool.failed",
             source="mcp_tool",
             tool_name="analyze_impact",
-            error=str(e)
+            error=str(e),
         )
         logger.warning("Entity not found: %s", e)
 
         # P1-3: Enhance error with stale index guidance
         suggestions = list(e.suggestions) if e.suggestions else []
         if project_state.get("is_empty") or project_state.get("is_incomplete"):
-            suggestions.insert(0, "Project index may be stale. Run add_knowledge() to refresh.")
+            suggestions.insert(
+                0, "Project index may be stale. Run add_knowledge() to refresh."
+            )
         if project_state.get("warnings"):
             suggestions = project_state["warnings"] + suggestions
 
@@ -725,9 +768,9 @@ async def analyze_impact(
             context={
                 "session_id": session_id,
                 "entity": entity,
-                "suggestions": suggestions
+                "suggestions": suggestions,
             },
-            services=services
+            services=services,
         )
     except Exception as e:
         # Track failure
@@ -735,7 +778,7 @@ async def analyze_impact(
             "mcp.tool.failed",
             source="mcp_tool",
             tool_name="analyze_impact",
-            error=str(e)
+            error=str(e),
         )
         logger.error("Failed to analyze impact: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
@@ -743,9 +786,9 @@ async def analyze_impact(
             context={
                 "session_id": session_id,
                 "entity": entity,
-                "max_depth": max_depth
+                "max_depth": max_depth,
             },
-            services=services
+            services=services,
         )
 
 
@@ -754,7 +797,7 @@ async def find_patterns(
     session_id: str,
     pattern_type: str = "auto",
     limit: int = 10,
-    timeout_ms: Optional[int] = None
+    timeout_ms: Optional[int] = None,
 ) -> dict:
     """Find recurring patterns in the codebase.
 
@@ -783,7 +826,7 @@ async def find_patterns(
         ...     print(f"{pattern['name']}: {pattern['count']} occurrences")
     """
     from agentic_inquiry.mcp.utils.errors import MCPErrorHandler
-    
+
     session_manager = services["session_manager"]
     pattern_analyzer = services["pattern_analyzer"]
     event_system = services["event_system"]
@@ -802,7 +845,7 @@ async def find_patterns(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -815,12 +858,13 @@ async def find_patterns(
         source="mcp_tool",
         tool_name="find_patterns",
         session_id=session_id,
-        pattern_type=pattern_type
+        pattern_type=pattern_type,
     )
 
     try:
         # P1-2 Fix: Check project state and provide feedback if insufficient data
         from agentic_inquiry.mcp.utils.project_state import check_project_state
+
         db_manager = services["storage"]
         project_state = await check_project_state(db_manager, project_id)
 
@@ -834,26 +878,27 @@ async def find_patterns(
                 pattern_analyzer.find_patterns(
                     project_id=project_id,
                     pattern_type=pattern_type if pattern_type != "auto" else None,
-                    limit=limit
+                    limit=limit,
                 ),
-                timeout=remaining_seconds
+                timeout=remaining_seconds,
             )
         except asyncio.TimeoutError:
             logger.warning(
                 "find_patterns timed out after %.1fms for pattern_type=%s",
-                effective_timeout_ms, pattern_type
+                effective_timeout_ms,
+                pattern_type,
             )
             await event_system.emit(
                 "mcp.tool.failed",
                 source="mcp_tool",
                 tool_name="find_patterns",
-                error="timeout"
+                error="timeout",
             )
             return {
                 "error": "timeout",
                 "message": f"Pattern analysis timed out after {effective_timeout_ms}ms",
                 "pattern_type": pattern_type,
-                "suggestion": "Try reducing limit or increasing timeout_ms"
+                "suggestion": "Try reducing limit or increasing timeout_ms",
             }
 
         # Track success
@@ -862,14 +907,14 @@ async def find_patterns(
             source="mcp_tool",
             tool_name="find_patterns",
             session_id=session_id,
-            count=len(patterns)
+            count=len(patterns),
         )
 
         # Build response with recommendations if empty
         response = {
             "patterns": patterns,
             "total": len(patterns),
-            "pattern_type": pattern_type
+            "pattern_type": pattern_type,
         }
 
         # P1-2 Fix: Add helpful feedback when no patterns found
@@ -897,10 +942,10 @@ async def find_patterns(
     except Exception as e:
         # Track failure
         await event_system.emit(
-        "mcp.tool.failed",
-        source="mcp_tool",
+            "mcp.tool.failed",
+            source="mcp_tool",
             tool_name="find_patterns",
-            error=str(e)
+            error=str(e),
         )
         logger.error("Failed to find patterns: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
@@ -908,9 +953,9 @@ async def find_patterns(
             context={
                 "session_id": session_id,
                 "pattern_type": pattern_type,
-                "limit": limit
+                "limit": limit,
             },
-            services=services
+            services=services,
         )
 
 
@@ -948,10 +993,11 @@ async def compare_patterns(
 
     if not await session_manager.validate_session(session_id):
         from agentic_inquiry.mcp.utils.errors import MCPErrorHandler
+
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     session = await session_manager.get_session(session_id, include_history=False)
@@ -962,15 +1008,15 @@ async def compare_patterns(
         target_deps = await entity_resolver.get_entity_dependencies(
             entity_id=target, project_id=project_id, depth=1
         )
-        target_sig = {
-            (d.relationship_type, d.name) for d in target_deps
-        }
+        target_sig = {(d.relationship_type, d.name) for d in target_deps}
         target_types = {d.relationship_type for d in target_deps}
 
         # Find reference entities matching pattern
         from agentic_inquiry.mcp.tools.info import list_entities
+
         refs_result = await list_entities(
-            services, session_id,
+            services,
+            session_id,
             entity_type=reference_type,
             pattern=reference_pattern,
             limit=10,
@@ -1026,7 +1072,11 @@ async def compare_patterns(
         # Format results
         def parse_key(k):
             parts = k.split(":", 1)
-            return {"relationship": parts[0], "entity": parts[1]} if len(parts) == 2 else {"raw": k}
+            return (
+                {"relationship": parts[0], "entity": parts[1]}
+                if len(parts) == 2
+                else {"raw": k}
+            )
 
         compliance_pct = round(len(present) / max(len(expected), 1) * 100)
 
@@ -1050,9 +1100,4 @@ async def compare_patterns(
         return {"error": str(e), "target": target}
 
 
-__all__ = [
-    "understand_entity",
-    "analyze_impact",
-    "find_patterns",
-    "compare_patterns"
-]
+__all__ = ["understand_entity", "analyze_impact", "find_patterns", "compare_patterns"]

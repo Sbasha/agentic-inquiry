@@ -129,9 +129,7 @@ class TestEventStoreProtocolCompliance:
 
         # Should not raise
 
-    async def test_store_and_retrieve_events(
-        self, temp_event_store, sample_events
-    ):
+    async def test_store_and_retrieve_events(self, temp_event_store, sample_events):
         """Should store events and retrieve them by operation."""
         # Store events
         await temp_event_store.store_events(sample_events)
@@ -151,16 +149,12 @@ class TestEventStoreProtocolCompliance:
         await temp_event_store.store_events(sample_events)
 
         # Get specific event type
-        events = await temp_event_store.get_events_by_type(
-            "indexing.file_processed"
-        )
+        events = await temp_event_store.get_events_by_type("indexing.file_processed")
 
         assert len(events) == 1
         assert events[0].event_type == "indexing.file_processed"
 
-    async def test_get_events_by_time_range(
-        self, temp_event_store, sample_events
-    ):
+    async def test_get_events_by_time_range(self, temp_event_store, sample_events):
         """Should filter events by time range."""
         await temp_event_store.store_events(sample_events)
 
@@ -168,9 +162,7 @@ class TestEventStoreProtocolCompliance:
         start_time = base_time + 0.5
         end_time = base_time + 1.5
 
-        events = await temp_event_store.get_events_by_time_range(
-            start_time, end_time
-        )
+        events = await temp_event_store.get_events_by_time_range(start_time, end_time)
 
         # Should only get events within range
         assert len(events) == 1
@@ -187,9 +179,7 @@ class TestEventStoreProtocolCompliance:
         assert events[0].event_id == "evt_3"  # Most recent
         assert events[1].event_id == "evt_2"
 
-    async def test_get_operation_status(
-        self, temp_event_store, sample_events
-    ):
+    async def test_get_operation_status(self, temp_event_store, sample_events):
         """Should provide operation summary statistics."""
         await temp_event_store.store_events(sample_events)
 
@@ -212,15 +202,11 @@ class TestEventStoreProtocolCompliance:
         assert total == 3
 
         # Count by type
-        count = await temp_event_store.count_events(
-            event_type="indexing.started"
-        )
+        count = await temp_event_store.count_events(event_type="indexing.started")
         assert count == 1
 
         # Count by status
-        count = await temp_event_store.count_events(
-            status=EventStatus.COMPLETED
-        )
+        count = await temp_event_store.count_events(status=EventStatus.COMPLETED)
         assert count == 2
 
     async def test_cleanup_old_events(self, temp_event_store):
@@ -366,9 +352,7 @@ class TestFileTrackerProtocolCompliance:
         changed = await temp_file_tracker.has_changed(str(test_file))
         assert changed is True
 
-    async def test_has_changed_unchanged_file(
-        self, temp_file_tracker, tmp_path
-    ):
+    async def test_has_changed_unchanged_file(self, temp_file_tracker, tmp_path):
         """Unchanged files should not be considered changed."""
         test_file = tmp_path / "unchanged.txt"
         test_file.write_text("Same content")
@@ -380,9 +364,7 @@ class TestFileTrackerProtocolCompliance:
         changed = await temp_file_tracker.has_changed(str(test_file))
         assert changed is False
 
-    async def test_has_changed_modified_file(
-        self, temp_file_tracker, tmp_path
-    ):
+    async def test_has_changed_modified_file(self, temp_file_tracker, tmp_path):
         """Modified files should be detected."""
         test_file = tmp_path / "modified.txt"
         test_file.write_text("Original content")

@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ContextItem:
     """Represents a single context item.
-    
+
     Attributes:
         id: Unique identifier
         type: Type of item (code, documentation, memory)
@@ -49,6 +49,7 @@ class ContextItem:
         metadata: Additional metadata
         why_relevant: Explanation of relevance
     """
+
     id: str
     type: str
     name: str
@@ -59,7 +60,7 @@ class ContextItem:
     content: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = field(default=None)
     why_relevant: str = ""
-    
+
     def __post_init__(self):
         if self.metadata is None:
             self.metadata = {}
@@ -80,7 +81,7 @@ class ContextBuilder:
         db_manager: StorageFacade,
         session_manager: SessionManager,
         config: Config,
-        event_system: Optional["EventSystem"] = None
+        event_system: Optional["EventSystem"] = None,
     ):
         """Initialize context builder.
 
@@ -115,7 +116,7 @@ class ContextBuilder:
             memory_system, self.token_optimizer
         )
         self._graph_gatherer: ContextGathererProtocol = GraphGatherer(search_service)
-    
+
     async def build_context(
         self,
         query: str,
@@ -124,10 +125,10 @@ class ContextBuilder:
         depth: Literal["focused", "broad", "comprehensive"] = "broad",
         max_tokens: int = 4000,
         progressive: bool = False,
-        include_overview: bool = False
+        include_overview: bool = False,
     ) -> Dict[str, Any]:
         """Build comprehensive context for a query.
-        
+
         Args:
             query: Query to build context for
             session_id: Session identifier
@@ -136,7 +137,7 @@ class ContextBuilder:
             max_tokens: Maximum tokens for context
             progressive: Whether to support progressive discovery
             include_overview: If True, prioritize overview content (README, docs, architecture)
-            
+
         Returns:
             Dictionary containing:
                 - context: Dict with code, documentation, memories, relationships
@@ -148,7 +149,7 @@ class ContextBuilder:
         session = await self.session_manager.get_session(session_id)
         if not session:
             raise ValueError(f"Session {session_id} not found")
-        
+
         project_id = session.project_id
 
         # Check project state for staleness warnings (P0-1 fix)
@@ -157,9 +158,14 @@ class ContextBuilder:
         # Diagnostic logging with all parameters
         logger.info(
             "Building context: query=%s, focus=%s, depth=%s, max_tokens=%s, project_id=%s, include_overview=%s",
-            query, focus, depth, max_tokens, project_id, include_overview
+            query,
+            focus,
+            depth,
+            max_tokens,
+            project_id,
+            include_overview,
         )
-        
+
         # Emit context.building_started event
         if self.event_system:
             await self.event_system.emit(
@@ -171,15 +177,15 @@ class ContextBuilder:
                 query=query[:100],  # Truncate long queries
                 focus=focus,
                 depth=depth,
-                max_tokens=max_tokens
+                max_tokens=max_tokens,
             )
-        
+
         budget = TokenBudget(max_tokens=max_tokens)
         context: Dict[str, List[Any]] = {
             "code": [],
             "documentation": [],
             "memories": [],
-            "relationships": []
+            "relationships": [],
         }
 
         # Pre-compute query vector once for all searches (ISS-W2-013 optimization)
@@ -187,13 +193,22 @@ class ContextBuilder:
         # so the database generates embeddings in the correct dimensions.
         query_vector: Optional[Union[List[float], str]] = None
         if focus in ["code", "docs", "all"]:
-            from agentic_inquiry.storage.capabilities import get_capabilities_for_backend
-            _backend = self.db.get_backend_type() if hasattr(self.db, 'get_backend_type') else "lancedb"
+            from agentic_inquiry.storage.capabilities import (
+                get_capabilities_for_backend,
+            )
+
+            _backend = (
+                self.db.get_backend_type()
+                if hasattr(self.db, "get_backend_type")
+                else "lancedb"
+            )
             capabilities = get_capabilities_for_backend(_backend)
             if capabilities.uses_server_side_embedding:
                 query_vector = query  # Pass raw text for server-side embedding
             else:
-                query_vector_array = await self.search.embedding_service.embed_async(query)
+                query_vector_array = await self.search.embedding_service.embed_async(
+                    query
+                )
                 query_vector = query_vector_array.tolist()
 
         # Gather context in parallel using gatherers (ISS-W2-013 optimization)
@@ -209,7 +224,7 @@ class ContextBuilder:
             project_id=project_id,
             session_id=session_id,
             include_overview=include_overview,
-            query_vector=query_vector
+            query_vector=query_vector,
         )
 
         if focus in ["code", "all"]:
@@ -251,10 +266,10 @@ class ContextBuilder:
                 depth=depth,
                 project_id=project_id,
                 session_id=session_id,
-                initial_context=context
+                initial_context=context,
             )
             context["relationships"] = await self._graph_gatherer.gather(graph_context)
-        
+
         # Generate summary and suggestions
         summary = self._generate_summary(context, query)
         suggestions = self._generate_suggestions(context, query, budget)
@@ -262,20 +277,20 @@ class ContextBuilder:
         # Prepend project state warnings to suggestions (P0-1 fix)
         if project_state.get("warnings"):
             suggestions = project_state["warnings"] + suggestions
-        
+
         # Count items
         items_included = self._count_items(context)
         items_available = items_included
-        
+
         token_usage = {
             "estimated_tokens": budget.used_tokens,
             "max_tokens": budget.max_tokens,
             "remaining_tokens": budget.remaining(),
             "usage_percentage": budget.usage_percentage(),
             "items_included": items_included,
-            "items_available": items_available
+            "items_available": items_available,
         }
-        
+
         # Emit context.building_completed event
         if self.event_system:
             await self.event_system.emit(
@@ -290,32 +305,29 @@ class ContextBuilder:
                 items_included=items_included,
                 estimated_tokens=budget.used_tokens,
                 max_tokens=budget.max_tokens,
-                usage_percentage=budget.usage_percentage()
+                usage_percentage=budget.usage_percentage(),
             )
-        
+
         return {
             "context": context,
             "summary": summary,
             "suggestions": suggestions,
-            "token_usage": token_usage
+            "token_usage": token_usage,
         }
 
     async def build_context_overview(
-        self,
-        query: str,
-        session_id: str,
-        max_tokens: int = 2000
+        self, query: str, session_id: str, max_tokens: int = 2000
     ) -> Dict[str, Any]:
         """Build high-level context overview for progressive discovery.
-        
+
         Returns summaries and counts by category without full content,
         allowing agents to decide what to explore in detail.
-        
+
         Args:
             query: Query to build overview for
             session_id: Session identifier
             max_tokens: Maximum tokens for overview
-            
+
         Returns:
             Dictionary containing:
                 - categories: Dict with counts and top items per category
@@ -324,43 +336,43 @@ class ContextBuilder:
                 - token_usage: Token usage statistics
         """
         logger.info("Building context overview for query='%s'", query)
-        
+
         budget = TokenBudget(max_tokens=max_tokens)
-        
+
         # Get session for project_id
         session = await self.session_manager.get_session(session_id)
         if not session:
             raise ValueError(f"Session {session_id} not found")
-        
+
         project_id = session.project_id
-        
+
         # Get counts and top items for each category
         categories = {}
-        
+
         # Code overview
         code_overview = await self._get_category_overview(
             query, project_id, "code", budget, top_n=3
         )
         categories["code"] = code_overview
-        
+
         # Documentation overview
         doc_overview = await self._get_category_overview(
             query, project_id, "documentation", budget, top_n=3
         )
         categories["documentation"] = doc_overview
-        
+
         # Memory overview
         memory_overview = await self._get_memory_overview(
             query, session_id, budget, top_n=3
         )
         categories["memories"] = memory_overview
-        
+
         # Generate summary
         summary = self._generate_overview_summary(categories, query)
-        
+
         # Generate drill-down suggestions
         suggestions = self._generate_drilldown_suggestions(categories)
-        
+
         return {
             "categories": categories,
             "summary": summary,
@@ -368,30 +380,30 @@ class ContextBuilder:
             "token_usage": {
                 "estimated_tokens": budget.used_tokens,
                 "max_tokens": budget.max_tokens,
-                "remaining_tokens": budget.remaining()
-            }
+                "remaining_tokens": budget.remaining(),
+            },
         }
-    
+
     async def expand_category(
         self,
         query: str,
         session_id: str,
         category: Literal["code", "documentation", "memories"],
         max_tokens: int = 3000,
-        filters: Optional[Dict[str, Any]] = None
+        filters: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """Expand a specific category with full details.
-        
+
         Used for progressive discovery - agent first gets overview,
         then expands specific categories of interest.
-        
+
         Args:
             query: Original query
             session_id: Session identifier
             category: Category to expand
             max_tokens: Maximum tokens for expansion
             filters: Optional filters (e.g., language, file_path)
-            
+
         Returns:
             Dictionary containing:
                 - items: Full items for the category
@@ -399,25 +411,23 @@ class ContextBuilder:
                 - token_usage: Token usage statistics
         """
         logger.info("Expanding category '%s' for query='%s'", category, query)
-        
+
         budget = TokenBudget(max_tokens=max_tokens)
-        
+
         # Get session for project_id
         session = await self.session_manager.get_session(session_id)
         if not session:
             raise ValueError(f"Session {session_id} not found")
-        
+
         project_id = session.project_id
-        
+
         # Update session state to track exploration
         if "exploration_path" not in session.context_state:
             session.context_state["exploration_path"] = []
-        session.context_state["exploration_path"].append({
-            "query": query,
-            "category": category,
-            "filters": filters
-        })
-        
+        session.context_state["exploration_path"].append(
+            {"query": query, "category": category, "filters": filters}
+        )
+
         # Create gather context for comprehensive expansion
         gather_context = GatherContext(
             query=query,
@@ -425,9 +435,9 @@ class ContextBuilder:
             depth="comprehensive",  # Always use comprehensive for expansion
             project_id=project_id,
             session_id=session_id,
-            include_overview=False
+            include_overview=False,
         )
-        
+
         # Gather items using appropriate gatherer
         items: List[Dict[str, Any]] = []
         if category == "code":
@@ -436,13 +446,13 @@ class ContextBuilder:
             items = await self._docs_gatherer.gather(gather_context)
         elif category == "memories":
             items = await self._memory_gatherer.gather(gather_context)
-        
+
         # Apply additional filters if provided
         if filters:
             items = self._apply_filters(items, filters)
-        
+
         summary = f"Found {len(items)} {category} items for '{query}'"
-        
+
         return {
             "items": items,
             "category": category,
@@ -450,26 +460,23 @@ class ContextBuilder:
             "token_usage": {
                 "estimated_tokens": budget.used_tokens,
                 "max_tokens": budget.max_tokens,
-                "items_included": len(items)
-            }
+                "items_included": len(items),
+            },
         }
-    
+
     async def get_relationship_preview(
-        self,
-        entity_id: str,
-        session_id: str,
-        max_depth: int = 1
+        self, entity_id: str, session_id: str, max_depth: int = 1
     ) -> Dict[str, Any]:
         """Get relationship preview without full entity details.
-        
+
         Returns relationship types and counts, allowing agent to decide
         which relationships to explore in detail.
-        
+
         Args:
             entity_id: Entity to get relationships for
             session_id: Session identifier
             max_depth: Maximum depth to preview
-            
+
         Returns:
             Dictionary containing:
                 - entity: Basic entity info
@@ -477,14 +484,14 @@ class ContextBuilder:
                 - suggestions: Suggestions for exploration
         """
         logger.info("Getting relationship preview for entity=%s", entity_id)
-        
+
         # Get session for project_id
         session = await self.session_manager.get_session(session_id)
         if not session:
             raise ValueError(f"Session {session_id} not found")
-        
+
         project_id = session.project_id
-        
+
         try:
             # Traverse relationships
             result = await self.search.traverse_relationships(
@@ -492,39 +499,39 @@ class ContextBuilder:
                 direction="both",
                 max_depth=max_depth,
                 project_id=project_id,
-                include_metadata=False
+                include_metadata=False,
             )
-            
+
             if not result.get("entity"):
                 return {
                     "entity": None,
                     "relationship_summary": {},
-                    "error": f"Entity {entity_id} not found"
+                    "error": f"Entity {entity_id} not found",
                 }
-            
+
             # Summarize relationships by type and direction
             relationship_summary = {}
             for rel in result.get("relationships", []):
                 rel_type = rel.get("type", "unknown")
                 direction = rel.get("direction", "unknown")
                 key = f"{rel_type}_{direction}"
-                
+
                 if key not in relationship_summary:
                     relationship_summary[key] = {
                         "type": rel_type,
                         "direction": direction,
                         "count": 0,
-                        "example_targets": []
+                        "example_targets": [],
                     }
-                
+
                 relationship_summary[key]["count"] += 1
-                
+
                 # Add example target (up to 3)
                 if len(relationship_summary[key]["example_targets"]) < 3:
                     target_name = rel.get("target_name", rel.get("source_name", ""))
                     if target_name:
                         relationship_summary[key]["example_targets"].append(target_name)
-            
+
             # Generate suggestions
             suggestions = []
             for key, info in relationship_summary.items():
@@ -533,59 +540,55 @@ class ContextBuilder:
                         f"Explore {info['count']} {info['type']} "
                         f"({info['direction']}) relationships"
                     )
-            
+
             return {
                 "entity": {
                     "id": result["entity"]["id"],
                     "name": result["entity"]["name"],
-                    "type": result["entity"]["type"]
+                    "type": result["entity"]["type"],
                 },
                 "relationship_summary": list(relationship_summary.values()),
                 "total_relationships": len(result.get("relationships", [])),
-                "suggestions": suggestions
+                "suggestions": suggestions,
             }
-            
+
         except Exception as e:
             logger.error("Error getting relationship preview: %s", e)
-            return {
-                "entity": None,
-                "relationship_summary": {},
-                "error": str(e)
-            }
-    
+            return {"entity": None, "relationship_summary": {}, "error": str(e)}
+
     async def _get_category_overview(
         self,
         query: str,
         project_id: str,
         category: str,
         budget: TokenBudget,
-        top_n: int = 3
+        top_n: int = 3,
     ) -> Dict[str, Any]:
         """Get overview for a category (code or documentation).
-        
+
         Args:
             query: Search query
             project_id: Project identifier
             category: Category type (code or documentation)
             budget: Token budget
             top_n: Number of top items to include
-            
+
         Returns:
             Dictionary with count and top items
         """
         try:
             # Get query vector
             query_vector = await self.search.embedding_service.embed_async(query)
-            
+
             # Search with higher limit to get accurate count
             results = await self.search.hybrid_search(
                 query_vector=query_vector,
                 query_fts=query,
                 limit=self.config.mcp.query.traversal_limit,
                 filters={"type": category},
-                project_id=project_id
+                project_id=project_id,
             )
-            
+
             total_count = len(results) if isinstance(results, list) else 0
 
             # Get top N items with minimal info
@@ -594,9 +597,15 @@ class ContextBuilder:
                 for result in results[:top_n]:
                     item = {
                         "id": result.id,
-                        "name": result.data.get("name", result.data.get("title", "Unknown")),
-                        "relevance_score": max(0.0, 1.0 - (result.distance if result.distance is not None else 1.0)),
-                        "location": result.data.get("file_path", "")
+                        "name": result.data.get(
+                            "name", result.data.get("title", "Unknown")
+                        ),
+                        "relevance_score": max(
+                            0.0,
+                            1.0
+                            - (result.distance if result.distance is not None else 1.0),
+                        ),
+                        "location": result.data.get("file_path", ""),
                     }
 
                     # Add to budget
@@ -604,56 +613,51 @@ class ContextBuilder:
                     if budget.can_add(item_text):
                         budget.add(item_text)
                         top_items.append(item)
-            
+
             return {
                 "total_count": total_count,
                 "top_items": top_items,
-                "has_more": total_count > top_n
+                "has_more": total_count > top_n,
             }
-            
+
         except Exception as e:
             logger.error("Error getting %s overview: %s", category, e)
-            return {
-                "total_count": 0,
-                "top_items": [],
-                "has_more": False
-            }
-    
+            return {"total_count": 0, "top_items": [], "has_more": False}
+
     async def _get_memory_overview(
-        self,
-        query: str,
-        session_id: str,
-        budget: TokenBudget,
-        top_n: int = 3
+        self, query: str, session_id: str, budget: TokenBudget, top_n: int = 3
     ) -> Dict[str, Any]:
         """Get overview for memories.
-        
+
         Args:
             query: Search query
             session_id: Session identifier
             budget: Token budget
             top_n: Number of top items to include
-            
+
         Returns:
             Dictionary with count and top items
         """
         try:
             # Retrieve memories - create a context for the query
             from agentic_inquiry.memory.models import MemoryContext
+
             mem_context = MemoryContext(
                 agent_id="context_builder",
                 session_id=session_id,
                 conversation_id=session_id,
-                project_id=None  # Not available in this method scope
+                project_id=None,  # Not available in this method scope
             )
             memories = await self.memory.retrieve(
                 query=query,
                 context=mem_context,
                 limit=self.config.mcp.query.tree_limit,
-                strategy="adaptive"
+                strategy="adaptive",
             )
 
-            results_list = memories.get("results", []) if isinstance(memories, dict) else memories
+            results_list = (
+                memories.get("results", []) if isinstance(memories, dict) else memories
+            )
             total_count = len(results_list)
 
             # Get top N items with minimal info
@@ -663,94 +667,81 @@ class ContextBuilder:
                     "id": result.item.id,
                     "summary": result.item.summary[:100] if result.item.summary else "",
                     "relevance_score": result.relevance_score,
-                    "importance": result.item.importance
+                    "importance": result.item.importance,
                 }
-                
+
                 # Add to budget
                 item_text = str(item["summary"])
                 if budget.can_add(item_text):
                     budget.add(item_text)
                     top_items.append(item)
-            
+
             return {
                 "total_count": total_count,
                 "top_items": top_items,
-                "has_more": total_count > top_n
+                "has_more": total_count > top_n,
             }
-            
+
         except Exception as e:
             logger.error("Error getting memory overview: %s", e)
-            return {
-                "total_count": 0,
-                "top_items": [],
-                "has_more": False
-            }
-    
-    def _generate_overview_summary(
-        self,
-        categories: Dict[str, Any],
-        query: str
-    ) -> str:
+            return {"total_count": 0, "top_items": [], "has_more": False}
+
+    def _generate_overview_summary(self, categories: Dict[str, Any], query: str) -> str:
         """Generate summary for context overview.
-        
+
         Args:
             categories: Category overviews
             query: Original query
-            
+
         Returns:
             Summary string
         """
         parts = []
-        
+
         for cat_name, cat_data in categories.items():
             count = cat_data.get("total_count", 0)
             if count > 0:
                 parts.append(f"{count} {cat_name}")
-        
+
         if not parts:
             return f"No results found for '{query}'"
-        
+
         return f"Found {', '.join(parts)} matching '{query}'. Use expand_category to see details."
-    
-    def _generate_drilldown_suggestions(
-        self,
-        categories: Dict[str, Any]
-    ) -> List[str]:
+
+    def _generate_drilldown_suggestions(self, categories: Dict[str, Any]) -> List[str]:
         """Generate suggestions for drilling down into categories.
-        
+
         Args:
             categories: Category overviews
-            
+
         Returns:
             List of suggestion strings
         """
         suggestions = []
-        
+
         for cat_name, cat_data in categories.items():
             count = cat_data.get("total_count", 0)
             if count > 0:
                 suggestions.append(
                     f"Use expand_category(category='{cat_name}') to see all {count} {cat_name} items"
                 )
-        
+
         return suggestions
-    
+
     def _apply_filters(
-        self,
-        items: List[Dict[str, Any]],
-        filters: Dict[str, Any]
+        self, items: List[Dict[str, Any]], filters: Dict[str, Any]
     ) -> List[Dict[str, Any]]:
         """Apply additional filters to items.
-        
+
         Args:
             items: Items to filter
             filters: Filter criteria
-            
+
         Returns:
             Filtered items
         """
         filtered = []
-        
+
         for item in items:
             # Check each filter
             matches = True
@@ -759,23 +750,19 @@ class ContextBuilder:
                 if item_value != value:
                     matches = False
                     break
-            
+
             if matches:
                 filtered.append(item)
-        
+
         return filtered
-    
-    def _generate_summary(
-        self,
-        context: Dict[str, Any],
-        query: str
-    ) -> str:
+
+    def _generate_summary(self, context: Dict[str, Any], query: str) -> str:
         """Generate overall context summary.
-        
+
         Args:
             context: Assembled context
             query: Original query
-            
+
         Returns:
             Summary string
         """
@@ -783,82 +770,81 @@ class ContextBuilder:
         doc_count = len(context.get("documentation", []))
         memory_count = len(context.get("memories", []))
         relationship_count = len(context.get("relationships", []))
-        
+
         parts = []
         if code_count > 0:
             parts.append(f"{code_count} code item{'s' if code_count != 1 else ''}")
         if doc_count > 0:
-            parts.append(f"{doc_count} documentation item{'s' if doc_count != 1 else ''}")
+            parts.append(
+                f"{doc_count} documentation item{'s' if doc_count != 1 else ''}"
+            )
         if memory_count > 0:
             parts.append(f"{memory_count} memor{'ies' if memory_count != 1 else 'y'}")
         if relationship_count > 0:
-            parts.append(f"{relationship_count} relationship{'s' if relationship_count != 1 else ''}")
-        
+            parts.append(
+                f"{relationship_count} relationship{'s' if relationship_count != 1 else ''}"
+            )
+
         if not parts:
             return f"No relevant context found for '{query}'"
-        
+
         return f"Found {', '.join(parts)} relevant to '{query}'"
-    
+
     def _generate_suggestions(
-        self,
-        context: Dict[str, Any],
-        query: str,
-        budget: TokenBudget
+        self, context: Dict[str, Any], query: str, budget: TokenBudget
     ) -> List[str]:
         """Generate suggestions for refinement.
-        
+
         Args:
             context: Assembled context
             query: Original query
             budget: Token budget
-            
+
         Returns:
             List of suggestion strings
         """
         suggestions = []
-        
+
         # Check if budget was exceeded
         if budget.usage_percentage() > 90:
             suggestions.append(
                 "Context is near token limit. Consider using more focused query "
                 "or increasing max_tokens."
             )
-        
+
         # Check if any category is empty
         code_count = len(context.get("code", []))
         doc_count = len(context.get("documentation", []))
         memory_count = len(context.get("memories", []))
-        
+
         if code_count == 0 and doc_count > 0:
-            suggestions.append(
-                "No code found. Try focus='code' to search only code."
-            )
-        
+            suggestions.append("No code found. Try focus='code' to search only code.")
+
         if doc_count == 0 and code_count > 0:
             suggestions.append(
                 "No documentation found. Try focus='docs' to search only documentation."
             )
-        
+
         if memory_count == 0:
             suggestions.append(
                 "No memories found. Save insights with 'save_memory' for future recall."
             )
-        
+
         # Suggest deeper search if results are limited
         total_items = code_count + doc_count + memory_count
         if total_items < 5:
             suggestions.append(
                 "Few results found. Try depth='comprehensive' for broader search."
             )
-        
+
         return suggestions
-    
+
     def _count_items(self, context: Dict[str, Any]) -> int:
         """Count total items in context.
-        
+
         Args:
             context: Context dictionary
-            
+
         Returns:
             Total number of items
         """

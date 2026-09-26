@@ -12,6 +12,7 @@ NOTE: These tests are currently skipped because they use outdated APIs:
 
 TODO: Update to use current SearchService API with proper dependencies.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -22,7 +23,9 @@ import pytest
 pytestmark = [
     pytest.mark.stress,
     pytest.mark.slow,
-    pytest.mark.skip(reason="Stress tests use outdated APIs - need rewrite for current SearchService")
+    pytest.mark.skip(
+        reason="Stress tests use outdated APIs - need rewrite for current SearchService"
+    ),
 ]
 
 
@@ -207,6 +210,7 @@ class TestResourceContention:
 
         async def timed_search(idx: int) -> tuple[int, float, bool]:
             import time
+
             start = time.monotonic()
             try:
                 await search_service.search(query=f"extreme {idx}", limit=3)
@@ -219,7 +223,7 @@ class TestResourceContention:
 
         # Analyze results
         successful = [r for r in results if r[2]]
-        
+
         # At least 50% should succeed
         success_rate = len(successful) / len(results)
         assert success_rate >= 0.5, f"Success rate too low: {success_rate:.1%}"

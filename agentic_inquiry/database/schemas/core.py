@@ -7,6 +7,7 @@ This module defines the canonical schemas for the primary tables:
 
 See: docs/design/logical-schema-reference.md
 """
+
 from __future__ import annotations
 
 from .base import FieldType, LogicalSchema, SchemaField
@@ -383,7 +384,6 @@ def get_core_schema(name: str) -> LogicalSchema:
     """
     if name not in CORE_SCHEMAS:
         raise KeyError(
-            f"Unknown core schema: {name}. "
-            f"Available: {list(CORE_SCHEMAS.keys())}"
+            f"Unknown core schema: {name}. Available: {list(CORE_SCHEMAS.keys())}"
         )
     return CORE_SCHEMAS[name]

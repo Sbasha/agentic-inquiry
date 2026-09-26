@@ -3,6 +3,7 @@
 These tests verify search quality doesn't regress by testing
 against a fixed dataset with expected results.
 """
+
 from __future__ import annotations
 
 import json
@@ -39,7 +40,9 @@ def golden_queries(golden_queries_path: Path) -> list[dict[str, Any]]:
 
 
 @pytest_asyncio.fixture
-async def golden_indexed_storage(mock_db_manager, mock_temp_config, mock_embedding_registry, golden_dataset_path):
+async def golden_indexed_storage(
+    mock_db_manager, mock_temp_config, mock_embedding_registry, golden_dataset_path
+):
     """Create a storage instance with the golden dataset indexed.
 
     This fixture indexes the golden dataset and returns a storage
@@ -58,7 +61,7 @@ async def golden_indexed_storage(mock_db_manager, mock_temp_config, mock_embeddi
         db_manager=mock_db_manager,
         config=mock_temp_config,
         project_id="golden_test",
-        registry=mock_embedding_registry
+        registry=mock_embedding_registry,
     )
 
     # Index the golden dataset
@@ -86,7 +89,9 @@ def golden_deduplicator():
 
 
 @pytest_asyncio.fixture
-async def golden_search_service(golden_indexed_storage, mock_temp_config, golden_deduplicator):
+async def golden_search_service(
+    golden_indexed_storage, mock_temp_config, golden_deduplicator
+):
     """Create a HybridSearchService for golden tests."""
     from agentic_inquiry.search.hybrid_search import HybridSearchService
 

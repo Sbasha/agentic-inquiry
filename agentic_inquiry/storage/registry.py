@@ -32,7 +32,9 @@ logger = logging.getLogger(__name__)
 
 
 # Storage roles supported by the system
-STORAGE_ROLES = frozenset({"vector", "graph", "events", "file_tracker", "onboard_metadata"})
+STORAGE_ROLES = frozenset(
+    {"vector", "graph", "events", "file_tracker", "onboard_metadata"}
+)
 
 
 # Registry: backend_type -> role -> (module_path, class_name)
@@ -54,7 +56,10 @@ PROVIDER_REGISTRY: Dict[str, Dict[StorageRole, Tuple[str, str]]] = {
         ),
     },
     "memory": {
-        "vector": ("agentic_inquiry.storage.providers.memory", "InMemoryVectorProvider"),
+        "vector": (
+            "agentic_inquiry.storage.providers.memory",
+            "InMemoryVectorProvider",
+        ),
         "graph": ("agentic_inquiry.storage.providers.memory", "InMemoryGraphProvider"),
         # Note: events and file_tracker not supported by InMemoryProvider
         # Use sqlite backend for events/file_tracker testing
@@ -79,8 +84,7 @@ class UnknownBackendError(RegistryError):
         self.backend_type = backend_type
         available = list(PROVIDER_REGISTRY.keys())
         super().__init__(
-            f"Unknown backend type: '{backend_type}'. "
-            f"Available backends: {available}"
+            f"Unknown backend type: '{backend_type}'. Available backends: {available}"
         )
 
 
@@ -104,9 +108,7 @@ class ProviderLoadError(RegistryError):
         self.backend_type = backend_type
         self.role = role
         self.cause = cause
-        super().__init__(
-            f"Failed to load provider for {backend_type}/{role}: {cause}"
-        )
+        super().__init__(f"Failed to load provider for {backend_type}/{role}: {cause}")
 
 
 def get_supported_backends() -> Set[str]:
@@ -232,9 +234,7 @@ def register_provider(
         ... )
     """
     if role not in STORAGE_ROLES:
-        raise ValueError(
-            f"Invalid role: '{role}'. Must be one of: {STORAGE_ROLES}"
-        )
+        raise ValueError(f"Invalid role: '{role}'. Must be one of: {STORAGE_ROLES}")
 
     if backend_type not in PROVIDER_REGISTRY:
         PROVIDER_REGISTRY[backend_type] = {}
@@ -454,10 +454,9 @@ def create_provider(
 
     import asyncio
 
-    has_sync_from_config = (
-        hasattr(provider_class, "from_config")
-        and not asyncio.iscoroutinefunction(provider_class.from_config)
-    )
+    has_sync_from_config = hasattr(
+        provider_class, "from_config"
+    ) and not asyncio.iscoroutinefunction(provider_class.from_config)
 
     if has_sync_from_config:
         # Sync ``from_config`` path (PostgresVectorProvider et al.): signature

@@ -1,4 +1,5 @@
 """Embedder registry utilities."""
+
 from __future__ import annotations
 
 from typing import Dict, Optional, Tuple
@@ -23,7 +24,7 @@ class EmbeddingRegistry:
         self._default_embedder: Optional[Embedder] = None
         self._default_ndims: Optional[int] = None
         self._default_configured = False
-        
+
         if config is None:
             config = Config.load()
         self.config = config
@@ -31,14 +32,16 @@ class EmbeddingRegistry:
         if default_embedder is not None:
             self.configure_default_embedder(default_embedder, ndims=default_ndims)
 
-    def configure_default_embedder(self, embedder: Embedder, *, ndims: Optional[int] = None) -> None:
+    def configure_default_embedder(
+        self, embedder: Embedder, *, ndims: Optional[int] = None
+    ) -> None:
         """Configure the global default embedder once during application startup.
-        
+
         If called multiple times, replaces the existing embedder with a warning.
         This is useful in test environments where fixtures may configure embedders.
         """
         import logging
-        
+
         logger = logging.getLogger(__name__)
 
         if self._default_configured:
@@ -102,7 +105,9 @@ class EmbeddingRegistry:
         embedder, _ = self.get_configuration(table_name, column_name)
         return embedder
 
-    def get_configuration(self, table_name: str, column_name: str) -> Tuple[Embedder, int]:
+    def get_configuration(
+        self, table_name: str, column_name: str
+    ) -> Tuple[Embedder, int]:
         """Return the embedder and expected dimensionality for ``table_name.column_name``."""
 
         key = (table_name, column_name)
@@ -114,7 +119,8 @@ class EmbeddingRegistry:
             raise StorageError(
                 "No embedder configured for (%s, %s) and no default embedder has been provided. "
                 "Configure a default embedder via EmbeddingRegistry.configure_default_embedder or "
-                "register a dedicated embedder for this column." % (table_name, column_name)
+                "register a dedicated embedder for this column."
+                % (table_name, column_name)
             )
 
         return self._default_embedder, self._default_ndims
@@ -178,11 +184,16 @@ class EmbeddingRegistry:
         # Register HashingEmbedder for graph_relationships table
         # Relationship types are finite strings - hashing is sufficient and fast
         relationship_embedder = HashingEmbedder(ndims=effective_ndims)
-        self.register("graph_relationships", "vector", relationship_embedder, ndims=effective_ndims)
+        self.register(
+            "graph_relationships",
+            "vector",
+            relationship_embedder,
+            ndims=effective_ndims,
+        )
 
         logger.info(
             "Hybrid embeddings configured: graph_relationships using HashingEmbedder (ndims=%d)",
-            effective_ndims
+            effective_ndims,
         )
 
 

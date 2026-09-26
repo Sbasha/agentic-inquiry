@@ -93,7 +93,9 @@ class TestLocalSetup:
     def test_dev_mode_naming(self, tmp_path):
         """Test that dev mode uses test environment naming."""
         # Mock the input function to return a name
-        with patch("agentic_inquiry.cli.setup.base.prompt_input", return_value="ai-test"):
+        with patch(
+            "agentic_inquiry.cli.setup.base.prompt_input", return_value="ai-test"
+        ):
             setup = LocalSetup(is_dev=True, workspace=tmp_path)
             # Access env_name to trigger the prompt
             name = setup.env_name

@@ -13,6 +13,7 @@ from agentic_inquiry.cli.env_resolver import load_config_for_environment
 
 logger = logging.getLogger(__name__)
 
+
 class InquiryClient:
     """Client for interacting with a running ai MCP server."""
 
@@ -20,15 +21,15 @@ class InquiryClient:
         self.base_url = f"http://{host}:{port}"
         self.tools_url = f"{self.base_url}/mcp/tools"
         # FastMCP usually exposes tools via JSON-RPC or REST-like endpoints depending on configuration.
-        # For simplicity, we'll assume standard MCP-over-HTTP if available, 
+        # For simplicity, we'll assume standard MCP-over-HTTP if available,
         # or just check health first.
         # FastMCP default HTTP transport exposes SSE at /sse and messages at /message?
         # Let's check if we can hit the server root or health.
-        
+
     def is_server_running(self) -> bool:
         """Check if the server is responsive."""
         try:
-            # FastMCP doesn't strictly define a /health endpoint by default, 
+            # FastMCP doesn't strictly define a /health endpoint by default,
             # but we can try to connect.
             # We'll try hitting the docs endpoint or root.
             with urllib.request.urlopen(self.base_url, timeout=1) as response:
@@ -50,13 +51,16 @@ class InquiryClient:
         # FastMCP supports this via the /messages endpoint typically?
         # For now, we will just print what would happen.
         print(f"Calling {tool_name} with {args} on {self.base_url}...")
-        print("Note: interactive tool execution via HTTP is pending full MCP client implementation.")
+        print(
+            "Note: interactive tool execution via HTTP is pending full MCP client implementation."
+        )
         return None
+
 
 def run_shell(host: str, port: int):
     """Run an interactive shell."""
     client = InquiryClient(host, port)
-    
+
     if not client.is_server_running():
         print(f"❌ No server detected at http://{host}:{port}")
         print("Run 'ai setup' to configure or 'ai serve' to start the server.")
@@ -64,22 +68,22 @@ def run_shell(host: str, port: int):
 
     print(f"✅ Connected to Agentic Inquiry Server at http://{host}:{port}")
     print("Interactive shell (type 'exit' to quit, 'help' for info)")
-    
+
     while True:
         try:
             command = input("ai> ").strip()
             if not command:
                 continue
-            
+
             if command in ("exit", "quit"):
                 break
-            
+
             if command == "help":
                 print("Available commands:")
                 print("  <tool> <key>=<value> ... : Call a tool")
                 print("  exit                     : Quit shell")
                 continue
-                
+
             parts = command.split()
             tool = parts[0]
             args = {}
@@ -87,14 +91,15 @@ def run_shell(host: str, port: int):
                 if "=" in part:
                     k, v = part.split("=", 1)
                     args[k] = v
-            
+
             client.call_tool(tool, args)
-            
+
         except KeyboardInterrupt:
             print()
             break
         except Exception as e:
             print(f"Error: {e}")
+
 
 def connect_or_setup():
     """Entry point for client connection."""
@@ -109,7 +114,7 @@ def connect_or_setup():
         port = 8000
 
     client = InquiryClient(host, port)
-    
+
     if client.is_server_running():
         run_shell(host, port)
     else:

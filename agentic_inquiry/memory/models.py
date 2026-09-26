@@ -205,20 +205,30 @@ class MemoryItem:
         """Validate field values after initialization."""
         # Validate importance score
         if not 0.0 <= self.importance <= 1.0:
-            raise ValueError(f"importance must be between 0.0 and 1.0, got {self.importance}")
+            raise ValueError(
+                f"importance must be between 0.0 and 1.0, got {self.importance}"
+            )
 
         # Validate confidence score if present
         if self.confidence is not None and not 0.0 <= self.confidence <= 1.0:
-            raise ValueError(f"confidence must be between 0.0 and 1.0, got {self.confidence}")
+            raise ValueError(
+                f"confidence must be between 0.0 and 1.0, got {self.confidence}"
+            )
 
         # Validate emotional valence if present
-        if self.emotional_valence is not None and not -1.0 <= self.emotional_valence <= 1.0:
+        if (
+            self.emotional_valence is not None
+            and not -1.0 <= self.emotional_valence <= 1.0
+        ):
             raise ValueError(
                 f"emotional_valence must be between -1.0 and 1.0, got {self.emotional_valence}"
             )
 
         # Validate emotional arousal if present
-        if self.emotional_arousal is not None and not 0.0 <= self.emotional_arousal <= 1.0:
+        if (
+            self.emotional_arousal is not None
+            and not 0.0 <= self.emotional_arousal <= 1.0
+        ):
             raise ValueError(
                 f"emotional_arousal must be between 0.0 and 1.0, got {self.emotional_arousal}"
             )
@@ -267,9 +277,13 @@ class MemoryItem:
             "accessed_at": self.accessed_at.isoformat(),
             "modified_at": self.modified_at.isoformat() if self.modified_at else None,
             "access_count": self.access_count,
-            "embedding": self.embedding.tolist() if self.embedding is not None else None,
+            "embedding": self.embedding.tolist()
+            if self.embedding is not None
+            else None,
             "summary_embedding": (
-                self.summary_embedding.tolist() if self.summary_embedding is not None else None
+                self.summary_embedding.tolist()
+                if self.summary_embedding is not None
+                else None
             ),
             "event_type": self.event_type,
             "emotional_valence": self.emotional_valence,
@@ -310,14 +324,18 @@ class MemoryItem:
         # Convert embeddings
         embedding = np.array(data["embedding"]) if data.get("embedding") else None
         summary_embedding = (
-            np.array(data["summary_embedding"]) if data.get("summary_embedding") else None
+            np.array(data["summary_embedding"])
+            if data.get("summary_embedding")
+            else None
         )
 
         # Parse timestamps
         created_at = datetime.fromisoformat(data["created_at"])
         accessed_at = datetime.fromisoformat(data["accessed_at"])
         modified_at = (
-            datetime.fromisoformat(data["modified_at"]) if data.get("modified_at") else None
+            datetime.fromisoformat(data["modified_at"])
+            if data.get("modified_at")
+            else None
         )
 
         return cls(
@@ -412,7 +430,9 @@ class RetrievalResult:
     relevance_score: float
     retrieval_tier: MemoryTier
     retrieval_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
-    type: str | None = None  # Indicates why result was returned (e.g., "exact_match", "similar_to")
+    type: str | None = (
+        None  # Indicates why result was returned (e.g., "exact_match", "similar_to")
+    )
 
     @property
     def confidence(self) -> float:
@@ -529,7 +549,9 @@ class AgentProfile:
             agent_id=data["agent_id"],
             query_patterns=data.get("query_patterns", {}),
             successful_strategies=data.get("successful_strategies", {}),
-            preference_weights=data.get("preference_weights", {"temporal": 0.5, "semantic": 0.5}),
+            preference_weights=data.get(
+                "preference_weights", {"temporal": 0.5, "semantic": 0.5}
+            ),
             created_at=datetime.fromisoformat(data["created_at"]),
             updated_at=datetime.fromisoformat(data["updated_at"]),
             metadata=data.get("metadata", {}),

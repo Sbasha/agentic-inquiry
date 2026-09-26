@@ -3,6 +3,7 @@
 Wraps lancedb.rerankers.ColbertReranker for use with the RerankerProtocol.
 ColBERT uses late interaction for efficient, accurate reranking.
 """
+
 from __future__ import annotations
 
 import logging
@@ -110,4 +111,6 @@ class ColBERTReranker(RerankerProtocol):
             ]
 
         # Normalize scores to 0.0-1.0 using shared utility
-        return normalize_scored_tuples(scored_results, result_map, source="hybrid_colbert")
+        return normalize_scored_tuples(
+            scored_results, result_map, source="hybrid_colbert"
+        )

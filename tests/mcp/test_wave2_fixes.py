@@ -40,7 +40,7 @@ class TestGraphTraverseTypeField:
             "storage": mock_db_manager,
             "session_manager": mock_session_manager,
             "event_system": mock_event_system,
-            "config": mock_config
+            "config": mock_config,
         }
 
     @pytest.mark.asyncio
@@ -53,17 +53,46 @@ class TestGraphTraverseTypeField:
         # Mock start entity lookup and relationship queries
         mock_db.advanced_filter.side_effect = [
             # First call: find start entity
-            [{"id": "entity_001", "name": "SearchService", "type": "class", "file_path": "src/search.py"}],
+            [
+                {
+                    "id": "entity_001",
+                    "name": "SearchService",
+                    "type": "class",
+                    "file_path": "src/search.py",
+                }
+            ],
             # Second call: outbound relationships (imports, calls, inherits)
             [
-                {"source_id": "entity_001", "target_id": "entity_002", "type": "imports", "metadata": {}},
-                {"source_id": "entity_001", "target_id": "entity_003", "type": "calls", "metadata": {}},
-                {"source_id": "entity_001", "target_id": "entity_004", "type": "inherits", "metadata": {}},
+                {
+                    "source_id": "entity_001",
+                    "target_id": "entity_002",
+                    "type": "imports",
+                    "metadata": {},
+                },
+                {
+                    "source_id": "entity_001",
+                    "target_id": "entity_003",
+                    "type": "calls",
+                    "metadata": {},
+                },
+                {
+                    "source_id": "entity_001",
+                    "target_id": "entity_004",
+                    "type": "inherits",
+                    "metadata": {},
+                },
             ],
             # Third call: inbound relationships (empty for simplicity)
             [],
             # Subsequent calls for neighbor entity lookups
-            [{"id": "entity_002", "name": "Config", "type": "class", "file_path": "src/config.py"}],
+            [
+                {
+                    "id": "entity_002",
+                    "name": "Config",
+                    "type": "class",
+                    "file_path": "src/config.py",
+                }
+            ],
         ]
 
         # Test: filter to only "imports" relationships
@@ -73,7 +102,7 @@ class TestGraphTraverseTypeField:
             start_id="entity_001",
             relationship_types=["imports"],  # Only want imports
             direction="both",
-            max_depth=1
+            max_depth=1,
         )
 
         # Verify success (no "status" key means success - errors have "status": "failed")
@@ -92,16 +121,40 @@ class TestGraphTraverseTypeField:
 
         mock_db.advanced_filter.side_effect = [
             # Start entity
-            [{"id": "entity_001", "name": "MyClass", "type": "class", "file_path": "src/my.py"}],
+            [
+                {
+                    "id": "entity_001",
+                    "name": "MyClass",
+                    "type": "class",
+                    "file_path": "src/my.py",
+                }
+            ],
             # Outbound relationships with different case types
             [
-                {"source_id": "entity_001", "target_id": "entity_002", "type": "IMPORTS", "metadata": {}},
-                {"source_id": "entity_001", "target_id": "entity_003", "type": "Calls", "metadata": {}},
+                {
+                    "source_id": "entity_001",
+                    "target_id": "entity_002",
+                    "type": "IMPORTS",
+                    "metadata": {},
+                },
+                {
+                    "source_id": "entity_001",
+                    "target_id": "entity_003",
+                    "type": "Calls",
+                    "metadata": {},
+                },
             ],
             # Inbound
             [],
             # Neighbor lookups
-            [{"id": "entity_002", "name": "Dep", "type": "class", "file_path": "src/dep.py"}],
+            [
+                {
+                    "id": "entity_002",
+                    "name": "Dep",
+                    "type": "class",
+                    "file_path": "src/dep.py",
+                }
+            ],
         ]
 
         # Filter with lowercase - should match "IMPORTS" (uppercase in DB)
@@ -111,7 +164,7 @@ class TestGraphTraverseTypeField:
             start_id="entity_001",
             relationship_types=["imports"],  # lowercase
             direction="both",
-            max_depth=1
+            max_depth=1,
         )
 
         # Verify success (no "status" key means success - errors have "status": "failed")
@@ -130,7 +183,7 @@ class TestGraphTraverseTypeField:
             services=mock_services,
             session_id="sess_123",
             start_id="entity_001",
-            max_depth=0
+            max_depth=0,
         )
 
         assert result["status"] == "failed"
@@ -142,7 +195,7 @@ class TestGraphTraverseTypeField:
             services=mock_services,
             session_id="sess_123",
             start_id="entity_001",
-            max_depth=10
+            max_depth=10,
         )
 
         assert result["status"] == "failed"
@@ -158,7 +211,7 @@ class TestGraphTraverseTypeField:
             services=mock_services,
             session_id="sess_123",
             start_id="entity_001",
-            direction="sideways"  # Invalid direction
+            direction="sideways",  # Invalid direction
         )
 
         assert result["status"] == "failed"
@@ -179,7 +232,7 @@ class TestGraphTraverseTypeField:
             services=mock_services,
             session_id="sess_123",
             start_id="NonExistentEntity",
-            max_depth=2
+            max_depth=2,
         )
 
         assert result["status"] == "failed"
@@ -348,9 +401,7 @@ class TestEntityResolverPreference:
             },
         ]
 
-        result = await resolver._case_insensitive_match(
-            "SEARCHSERVICE", "test_project"
-        )
+        result = await resolver._case_insensitive_match("SEARCHSERVICE", "test_project")
 
         # Should find the code_class match (case-insensitive) and prefer it
         # Note: Both have names that match case-insensitively
@@ -358,9 +409,7 @@ class TestEntityResolverPreference:
         assert result.entity_type == EntityType.CODE_CLASS.value
 
     @pytest.mark.asyncio
-    async def test_single_result_returned_directly(
-        self, resolver, mock_storage_facade
-    ):
+    async def test_single_result_returned_directly(self, resolver, mock_storage_facade):
         """Verify single result is returned without preference logic."""
         mock_storage_facade.query_entities.return_value = [
             {
@@ -407,7 +456,7 @@ class TestRelationshipResolverLogging:
             project_root=str(tmp_path),
             db_manager=mock_db_manager,
             enable_cache_prewarming=False,  # Disable for faster tests
-            skip_database_lookups=False  # Enable DB lookups for logging test
+            skip_database_lookups=False,  # Enable DB lookups for logging test
         )
 
     @pytest.mark.asyncio
@@ -416,14 +465,16 @@ class TestRelationshipResolverLogging:
         import logging
 
         # Capture debug logs
-        with caplog.at_level(logging.DEBUG, logger="agentic_inquiry.indexing.relationship_resolver"):
+        with caplog.at_level(
+            logging.DEBUG, logger="agentic_inquiry.indexing.relationship_resolver"
+        ):
             # Call _resolve_impl - it will fail to resolve (no matching entities)
             _result = await resolver._resolve_impl(
                 target_name="NonExistentSymbol",
                 target_type=None,
                 source_file="test.py",
                 source_language="python",
-                import_path=None
+                import_path=None,
             )
             assert _result is None  # Confirms resolution failed
 
@@ -432,30 +483,41 @@ class TestRelationshipResolverLogging:
 
         # Check strategy attempt logging
         strategy_logs = [m for m in log_messages if "Trying resolution strategy" in m]
-        assert len(strategy_logs) > 0, "Expected 'Trying resolution strategy' debug logs"
+        assert len(strategy_logs) > 0, (
+            "Expected 'Trying resolution strategy' debug logs"
+        )
 
         # Check that multiple strategies were tried
-        assert any("database" in m for m in strategy_logs), "Expected 'database' strategy attempt"
-        assert any("symbol" in m for m in strategy_logs), "Expected 'symbol' strategy attempt"
+        assert any("database" in m for m in strategy_logs), (
+            "Expected 'database' strategy attempt"
+        )
+        assert any("symbol" in m for m in strategy_logs), (
+            "Expected 'symbol' strategy attempt"
+        )
 
     @pytest.mark.asyncio
     async def test_resolve_impl_logs_warning_on_failure(self, resolver, caplog):
         """Verify _resolve_impl logs warning when all strategies fail."""
         import logging
 
-        with caplog.at_level(logging.WARNING, logger="agentic_inquiry.indexing.relationship_resolver"):
+        with caplog.at_level(
+            logging.WARNING, logger="agentic_inquiry.indexing.relationship_resolver"
+        ):
             result = await resolver._resolve_impl(
                 target_name="UnresolvableSymbol",
                 target_type=None,
                 source_file="src/module.py",
                 source_language="python",
-                import_path=None
+                import_path=None,
             )
 
         # Result should be None (unresolved)
         assert result is None
 
         # Verify warning log for failure
-        warning_logs = [r.message for r in caplog.records if r.levelno >= logging.WARNING]
-        assert any("after trying all strategies" in m for m in warning_logs), \
+        warning_logs = [
+            r.message for r in caplog.records if r.levelno >= logging.WARNING
+        ]
+        assert any("after trying all strategies" in m for m in warning_logs), (
             "Expected warning about failing all strategies"
+        )

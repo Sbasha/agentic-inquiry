@@ -157,6 +157,7 @@ class TestSQLiteFileTrackerProviderMethods:
         )
         # Initialize using sync wrapper
         import asyncio
+
         asyncio.run(provider.initialize())
 
         # First call should return None (not tracked)

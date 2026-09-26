@@ -6,7 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 from agentic_inquiry.parsers.recognizers.lwc_salesforce import LwcSalesforceRecognizer
 
 pytestmark = pytest.mark.unit

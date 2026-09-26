@@ -53,21 +53,18 @@ async def cleanup_pending_tasks():
 @pytest_asyncio.fixture
 async def temp_event_store(tmp_path: Path) -> AsyncIterator[EventStore]:
     """Create temporary event store for testing.
-    
+
     This fixture provides an EventStore instance backed by a temporary
     SQLite database that is automatically cleaned up after the test.
-    
+
     Args:
         tmp_path: pytest's tmp_path fixture providing a temporary directory
-        
+
     Yields:
         EventStore instance ready for use in tests
     """
     db_path = tmp_path / "test_events.db"
-    store = await EventStore.from_config(
-        db_path=db_path,
-        project_id="test_project"
-    )
+    store = await EventStore.from_config(db_path=db_path, project_id="test_project")
     yield store
     await store.close()
 
@@ -75,25 +72,30 @@ async def temp_event_store(tmp_path: Path) -> AsyncIterator[EventStore]:
 @pytest_asyncio.fixture
 async def event_system(tmp_path: Path) -> AsyncIterator[EventSystem]:
     """Create event system with temp storage.
-    
+
     This fixture provides a fully initialized EventSystem with temporary
     storage, ready for testing event emission and querying. The background
     writer task is started automatically and stopped on cleanup.
-    
+
     Args:
         tmp_path: pytest's tmp_path fixture providing a temporary directory
-        
+
     Yields:
         EventSystem instance ready for use in tests
     """
-    from agentic_inquiry.config import Config, StorageConfig, EventStoreConfig, EventsConfig
-    
+    from agentic_inquiry.config import (
+        Config,
+        StorageConfig,
+        EventStoreConfig,
+        EventsConfig,
+    )
+
     # Create config with temp storage
     config = Config()
     config.storage = StorageConfig(
         root=str(tmp_path),
         default_project_id="test_project",
-        event_store=EventStoreConfig(path="test_events.db")
+        event_store=EventStoreConfig(path="test_events.db"),
     )
     config.events = EventsConfig(
         enabled=True,
@@ -103,7 +105,7 @@ async def event_system(tmp_path: Path) -> AsyncIterator[EventSystem]:
         retention_days=30,
         sampling_enabled=False,
     )
-    
+
     # Create and start event system
     system = await EventSystem.from_config(config, project_id="test_project")
     yield system
@@ -113,10 +115,10 @@ async def event_system(tmp_path: Path) -> AsyncIterator[EventSystem]:
 @pytest_asyncio.fixture
 def sample_event() -> Event:
     """Create a sample event for testing.
-    
+
     This fixture provides a basic Event instance with sensible defaults
     that can be used in tests or modified as needed.
-    
+
     Returns:
         Event instance with test data
     """

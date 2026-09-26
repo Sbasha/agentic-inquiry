@@ -14,6 +14,7 @@ logger = logging.getLogger("ai.indexing.branch_discovery")
 @dataclass
 class DiscoveredBranch:
     """A branch discovered for indexing."""
+
     name: str
     short_name: str
     last_commit_date: datetime
@@ -47,7 +48,9 @@ def discover_branches(
     try:
         result = subprocess.run(
             [
-                "git", "branch", "-r",
+                "git",
+                "branch",
+                "-r",
                 "--sort=-committerdate",
                 "--format=%(refname:short)\t%(committerdate:iso-strict)\t%(objectname:short)",
             ],
@@ -88,13 +91,15 @@ def discover_branches(
             if not is_default and commit_date < cutoff:
                 continue
 
-            branches.append(DiscoveredBranch(
-                name=ref_name,
-                short_name=short_name,
-                last_commit_date=commit_date,
-                last_commit_sha=sha,
-                is_default=is_default,
-            ))
+            branches.append(
+                DiscoveredBranch(
+                    name=ref_name,
+                    short_name=short_name,
+                    last_commit_date=commit_date,
+                    last_commit_sha=sha,
+                    is_default=is_default,
+                )
+            )
 
         return branches
 

@@ -24,6 +24,7 @@ Usage:
     # Get a schema by name
     schema = get_schema("document_chunks")
 """
+
 from __future__ import annotations
 
 from typing import Dict
@@ -84,8 +85,5 @@ def get_schema(name: str) -> LogicalSchema:
         KeyError: If schema not found
     """
     if name not in ALL_SCHEMAS:
-        raise KeyError(
-            f"Unknown schema: {name}. "
-            f"Available: {list(ALL_SCHEMAS.keys())}"
-        )
+        raise KeyError(f"Unknown schema: {name}. Available: {list(ALL_SCHEMAS.keys())}")
     return ALL_SCHEMAS[name]

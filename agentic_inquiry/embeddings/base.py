@@ -1,4 +1,5 @@
 """Base classes for embedder implementations."""
+
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
@@ -14,13 +15,13 @@ class Embedder(ABC):
 
     async def generate_async(self, texts: List[str]) -> List[List[float]]:
         """Async version of generate for non-blocking operation.
-        
+
         Default implementation runs generate in a thread pool.
         Subclasses may provide a more efficient async implementation.
         """
         import asyncio
         from concurrent.futures import ThreadPoolExecutor
-        
+
         loop = asyncio.get_running_loop()
         with ThreadPoolExecutor(max_workers=1) as executor:
             return await loop.run_in_executor(executor, self.generate, texts)

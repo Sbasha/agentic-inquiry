@@ -27,20 +27,14 @@ class InquiryDaemon:
 
     def __init__(self, workspace: str, config_overrides: dict | None = None) -> None:
         self.workspace = os.path.abspath(workspace)
-        self.project_id = hashlib.sha256(
-            self.workspace.encode()
-        ).hexdigest()[:16]
+        self.project_id = hashlib.sha256(self.workspace.encode()).hexdigest()[:16]
 
         # Paths
         self.ai_home = os.environ.get(
             "INQUIRY_HOME", os.path.expanduser("~/.agentic-inquiry")
         )
-        self.socket_path = os.path.join(
-            self.ai_home, f"daemon-{self.project_id}.sock"
-        )
-        self.pid_path = os.path.join(
-            self.ai_home, f"daemon-{self.project_id}.pid"
-        )
+        self.socket_path = os.path.join(self.ai_home, f"daemon-{self.project_id}.sock")
+        self.pid_path = os.path.join(self.ai_home, f"daemon-{self.project_id}.pid")
 
         # Config
         self.config = self._load_config(config_overrides)
@@ -56,9 +50,7 @@ class InquiryDaemon:
     def _load_config(self, overrides: dict | None = None) -> dict:
         """Load daemon configuration from defaults + overrides."""
         defaults_path = (
-            Path(__file__).parent.parent.parent
-            / "config"
-            / "daemon-defaults.yaml"
+            Path(__file__).parent.parent.parent / "config" / "daemon-defaults.yaml"
         )
         config = {}
         if defaults_path.exists():
@@ -76,11 +68,7 @@ class InquiryDaemon:
     def _deep_merge(base: dict, overlay: dict) -> dict:
         """Deep merge overlay into base dict."""
         for key, value in overlay.items():
-            if (
-                key in base
-                and isinstance(base[key], dict)
-                and isinstance(value, dict)
-            ):
+            if key in base and isinstance(base[key], dict) and isinstance(value, dict):
                 InquiryDaemon._deep_merge(base[key], value)
             else:
                 base[key] = value
@@ -110,9 +98,7 @@ class InquiryDaemon:
         await self._site.start()
 
         # Set socket permissions (owner only)
-        perms = self.config.get("security", {}).get(
-            "socket_permissions", 0o600
-        )
+        perms = self.config.get("security", {}).get("socket_permissions", 0o600)
         os.chmod(self.socket_path, perms)
 
         self._started = True

@@ -7,21 +7,22 @@ from typing import Any, Optional
 @dataclass
 class IndexingError:
     """Error that occurred during indexing with context.
-    
+
     Attributes:
         file_path: Path to the file that failed
         error_type: Type of error (e.g., "ParseError", "SchemaValidationError")
         error_message: Detailed error message
         suggestion: Suggested remediation for the error
     """
+
     file_path: str
     error_type: str
     error_message: str
     suggestion: str
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary for serialization.
-        
+
         Returns:
             Dictionary representation of the error
         """
@@ -29,7 +30,7 @@ class IndexingError:
             "file": self.file_path,
             "error": self.error_type,
             "message": self.error_message,
-            "suggestion": self.suggestion
+            "suggestion": self.suggestion,
         }
 
 
@@ -56,6 +57,7 @@ class IndexingResult:
         message: Human-readable message about the operation
         diagnostics: Optional dictionary with debugging information
     """
+
     operation_id: str
     status: str
     chunks_created: int = 0
@@ -66,7 +68,7 @@ class IndexingResult:
     errors: list[IndexingError] = field(default_factory=list)
     message: str = ""
     diagnostics: Optional[dict[str, Any]] = None
-    
+
     def is_empty(self) -> bool:
         """Check if indexing created no data.
 

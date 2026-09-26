@@ -39,7 +39,7 @@ def sample_config_data():
     config_dict["maintenance"] = {
         "enabled": True,
         "trigger": "project.closed",
-        "cleanup_retention_minutes": 120
+        "cleanup_retention_minutes": 120,
     }
 
     return config_dict
@@ -53,7 +53,7 @@ class TestConfigPersistence:
     ):
         """Test maintenance config persists across sessions (AC-4.1)."""
         # Write config to file
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(sample_config_data, f)
 
         # Load config in "session 1"
@@ -70,12 +70,15 @@ class TestConfigPersistence:
         # Config should be identical (persisted)
         assert config2.maintenance.enabled == config1.maintenance.enabled
         assert config2.maintenance.trigger == config1.maintenance.trigger
-        assert config2.maintenance.cleanup_retention_minutes == config1.maintenance.cleanup_retention_minutes
+        assert (
+            config2.maintenance.cleanup_retention_minutes
+            == config1.maintenance.cleanup_retention_minutes
+        )
 
     def test_config_updates_persist(self, temp_config_file, sample_config_data):
         """Test configuration updates persist to disk."""
         # Write initial config
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(sample_config_data, f)
 
         # Load config
@@ -86,7 +89,7 @@ class TestConfigPersistence:
         sample_config_data["maintenance"]["cleanup_retention_minutes"] = 240
 
         # Write updated config
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(sample_config_data, f)
 
         # Reload config
@@ -102,7 +105,7 @@ class TestConfigPersistence:
         config_data = base_config.to_dict()
         config_data.pop("maintenance", None)  # Remove maintenance section
 
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(config_data, f)
 
         # Load config
@@ -123,7 +126,7 @@ class TestConfigPersistence:
             # enabled and trigger not specified - should use defaults
         }
 
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(config_data, f)
 
         # Load config
@@ -152,9 +155,7 @@ class TestCleanupRetentionMinutes:
 
         # Run maintenance with specific retention
         await manager._run_maintenance_task(
-            project_id="test_project",
-            db_manager=mock_db_manager,
-            retention_minutes=180
+            project_id="test_project", db_manager=mock_db_manager, retention_minutes=180
         )
 
         # Verify run_maintenance was called with correct retention
@@ -172,7 +173,7 @@ class TestCleanupRetentionMinutes:
             "cleanup_retention_minutes": 2  # Below minimum of 5
         }
 
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(config_data, f)
 
         # Loading should raise ConfigurationError
@@ -189,7 +190,7 @@ class TestCleanupRetentionMinutes:
             "cleanup_retention_minutes": 2000  # Above maximum of 1440
         }
 
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(config_data, f)
 
         # Loading should raise ConfigurationError
@@ -204,7 +205,7 @@ class TestCleanupRetentionMinutes:
         # Test minimum valid value (5)
         config_data = base_config.to_dict()
         config_data["maintenance"] = {"cleanup_retention_minutes": 5}
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(config_data, f)
         config = Config.load(str(temp_config_file))
         assert config.maintenance.cleanup_retention_minutes == 5
@@ -212,7 +213,7 @@ class TestCleanupRetentionMinutes:
         # Test maximum valid value (1440)
         config_data = base_config.to_dict()
         config_data["maintenance"] = {"cleanup_retention_minutes": 1440}
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(config_data, f)
         config = Config.load(str(temp_config_file))
         assert config.maintenance.cleanup_retention_minutes == 1440
@@ -220,7 +221,7 @@ class TestCleanupRetentionMinutes:
         # Test mid-range value
         config_data = base_config.to_dict()
         config_data["maintenance"] = {"cleanup_retention_minutes": 720}
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(config_data, f)
         config = Config.load(str(temp_config_file))
         assert config.maintenance.cleanup_retention_minutes == 720
@@ -238,7 +239,7 @@ class TestMaintenanceTriggerValidation:
             config_data = base_config.to_dict()
             config_data["maintenance"] = {"trigger": trigger}
 
-            with open(temp_config_file, 'w') as f:
+            with open(temp_config_file, "w") as f:
                 yaml.dump(config_data, f)
 
             # Should load without error
@@ -250,11 +251,9 @@ class TestMaintenanceTriggerValidation:
         # Load base config and set invalid trigger
         base_config = Config.load()
         config_data = base_config.to_dict()
-        config_data["maintenance"] = {
-            "trigger": "invalid.trigger"
-        }
+        config_data["maintenance"] = {"trigger": "invalid.trigger"}
 
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(config_data, f)
 
         # Loading should raise ConfigurationError
@@ -272,12 +271,9 @@ class TestMaintenanceEnabledFlag:
         # Load base config and disable maintenance
         base_config = Config.load()
         config_data = base_config.to_dict()
-        config_data["maintenance"] = {
-            "enabled": False,
-            "trigger": "project.closed"
-        }
+        config_data["maintenance"] = {"enabled": False, "trigger": "project.closed"}
 
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(config_data, f)
 
         # Load config
@@ -305,6 +301,7 @@ class TestMaintenanceEnabledFlag:
 
             # Wait briefly
             import asyncio
+
             await asyncio.sleep(0.1)
 
             # Maintenance should NOT run
@@ -317,7 +314,7 @@ class TestEnvironmentVariableOverrides:
     def test_env_override_retention_minutes(self, temp_config_file, sample_config_data):
         """Test INQUIRY_MAINTENANCE_RETENTION_MINUTES environment variable."""
         # Write base config
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(sample_config_data, f)
 
         # Set environment variable
@@ -330,11 +327,13 @@ class TestEnvironmentVariableOverrides:
     def test_env_override_trigger(self, temp_config_file, sample_config_data):
         """Test INQUIRY_MAINTENANCE_TRIGGER environment variable."""
         # Write base config
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(sample_config_data, f)
 
         # Set environment variable
-        with patch.dict(os.environ, {"INQUIRY_MAINTENANCE_TRIGGER": "indexing.completed"}):
+        with patch.dict(
+            os.environ, {"INQUIRY_MAINTENANCE_TRIGGER": "indexing.completed"}
+        ):
             config = Config.load(str(temp_config_file))
 
             # Should use env var value
@@ -343,7 +342,7 @@ class TestEnvironmentVariableOverrides:
     def test_env_override_enabled(self, temp_config_file, sample_config_data):
         """Test INQUIRY_MAINTENANCE_ENABLED environment variable."""
         # Write base config
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(sample_config_data, f)
 
         # Set environment variable
@@ -360,7 +359,7 @@ class TestConfigToDict:
     def test_maintenance_config_in_to_dict(self, temp_config_file, sample_config_data):
         """Test maintenance config is included in to_dict() output."""
         # Write config
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(sample_config_data, f)
 
         # Load and convert to dict
@@ -381,11 +380,11 @@ class TestConfigToDict:
         original_config_data["maintenance"] = {
             "enabled": True,
             "trigger": "indexing.completed",
-            "cleanup_retention_minutes": 480
+            "cleanup_retention_minutes": 480,
         }
 
         # Write original
-        with open(temp_config_file, 'w') as f:
+        with open(temp_config_file, "w") as f:
             yaml.dump(original_config_data, f)
 
         # Load
@@ -396,7 +395,7 @@ class TestConfigToDict:
 
         # Write dict back to file
         roundtrip_file = temp_config_file.parent / "roundtrip.yaml"
-        with open(roundtrip_file, 'w') as f:
+        with open(roundtrip_file, "w") as f:
             yaml.dump(config_dict, f)
 
         # Load again
@@ -405,7 +404,10 @@ class TestConfigToDict:
         # Should match original
         assert roundtrip_config.maintenance.enabled == config.maintenance.enabled
         assert roundtrip_config.maintenance.trigger == config.maintenance.trigger
-        assert roundtrip_config.maintenance.cleanup_retention_minutes == config.maintenance.cleanup_retention_minutes
+        assert (
+            roundtrip_config.maintenance.cleanup_retention_minutes
+            == config.maintenance.cleanup_retention_minutes
+        )
 
 
 class TestMaintenanceConfigDefaults:
@@ -423,32 +425,24 @@ class TestMaintenanceConfigDefaults:
         """Test MaintenanceConfig.__post_init__ validates values."""
         # Valid config should not raise
         MaintenanceConfig(
-            enabled=True,
-            trigger="project.closed",
-            cleanup_retention_minutes=100
+            enabled=True, trigger="project.closed", cleanup_retention_minutes=100
         )
         # Should succeed (no exception)
 
         # Invalid trigger should raise
         with pytest.raises(ConfigurationError, match="maintenance trigger"):
             MaintenanceConfig(
-                enabled=True,
-                trigger="invalid",
-                cleanup_retention_minutes=60
+                enabled=True, trigger="invalid", cleanup_retention_minutes=60
             )
 
         # Invalid retention (too low) should raise
         with pytest.raises(ConfigurationError, match="cleanup_retention_minutes"):
             MaintenanceConfig(
-                enabled=True,
-                trigger="project.closed",
-                cleanup_retention_minutes=3
+                enabled=True, trigger="project.closed", cleanup_retention_minutes=3
             )
 
         # Invalid retention (too high) should raise
         with pytest.raises(ConfigurationError, match="cleanup_retention_minutes"):
             MaintenanceConfig(
-                enabled=True,
-                trigger="project.closed",
-                cleanup_retention_minutes=2000
+                enabled=True, trigger="project.closed", cleanup_retention_minutes=2000
             )

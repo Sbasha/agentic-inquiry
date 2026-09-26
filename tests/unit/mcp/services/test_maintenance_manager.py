@@ -23,11 +23,17 @@ from agentic_inquiry.events.types import EventTypes
 def mock_db_manager():
     """Create a mock LanceDB manager with maintenance methods."""
     manager = MagicMock()
-    manager.run_maintenance = AsyncMock(return_value={
-        "compaction": {"document_chunks": {"status": "success", "fragments_reduced": 5}},
-        "cleanup": {"document_chunks": {"status": "success", "versions_removed": 3}},
-        "summary": {"fragments_reduced": 5, "versions_removed": 3}
-    })
+    manager.run_maintenance = AsyncMock(
+        return_value={
+            "compaction": {
+                "document_chunks": {"status": "success", "fragments_reduced": 5}
+            },
+            "cleanup": {
+                "document_chunks": {"status": "success", "versions_removed": 3}
+            },
+            "summary": {"fragments_reduced": 5, "versions_removed": 3},
+        }
+    )
     manager.compact_tables = AsyncMock()
     manager.cleanup_old_versions = AsyncMock()
     return manager
@@ -57,11 +63,13 @@ def mock_storage(mock_lancedb_provider):
     """Create a mock StorageFacade."""
     storage = MagicMock()
     storage._graph_provider = mock_lancedb_provider
-    storage.run_maintenance = AsyncMock(return_value={
-        "compaction": {},
-        "cleanup": {},
-        "summary": {"fragments_reduced": 0, "versions_removed": 0}
-    })
+    storage.run_maintenance = AsyncMock(
+        return_value={
+            "compaction": {},
+            "cleanup": {},
+            "summary": {"fragments_reduced": 0, "versions_removed": 0},
+        }
+    )
     return storage
 
 
@@ -100,7 +108,7 @@ class TestMaintenanceOrdering:
             standalone_manager._run_maintenance_task(
                 project_id="test_project",
                 db_manager=mock_db_manager,
-                retention_minutes=60
+                retention_minutes=60,
             )
         )
 
@@ -204,7 +212,9 @@ class TestMaintenanceTriggerConfig:
 class TestMaintenanceCapabilityDetection:
     """Tests for backend capability detection (AC-3.4)."""
 
-    def test_supports_maintenance_check_lancedb(self, standalone_manager, mock_lancedb_provider):
+    def test_supports_maintenance_check_lancedb(
+        self, standalone_manager, mock_lancedb_provider
+    ):
         """Test capability detection for LanceDB provider."""
         # LanceDB provider should support maintenance
         assert standalone_manager._supports_maintenance(mock_lancedb_provider) is True
@@ -227,7 +237,9 @@ class TestMaintenanceCapabilityDetection:
         assert standalone_manager._supports_maintenance(provider) is False
 
     @pytest.mark.asyncio
-    async def test_postgresql_skips_maintenance(self, maintenance_manager, mock_db_manager):
+    async def test_postgresql_skips_maintenance(
+        self, maintenance_manager, mock_db_manager
+    ):
         """Test PostgreSQL backend uses facade maintenance (AC-3.4)."""
         # Create PostgreSQL provider
         pg_provider = MagicMock()
@@ -264,9 +276,7 @@ class TestMaintenanceIdempotency:
 
         # Run maintenance first time
         result1 = await standalone_manager._run_maintenance_task(
-            project_id=project_id,
-            db_manager=mock_db_manager,
-            retention_minutes=60
+            project_id=project_id, db_manager=mock_db_manager, retention_minutes=60
         )
 
         # Reset mock
@@ -274,9 +284,7 @@ class TestMaintenanceIdempotency:
 
         # Run maintenance second time (should be safe)
         result2 = await standalone_manager._run_maintenance_task(
-            project_id=project_id,
-            db_manager=mock_db_manager,
-            retention_minutes=60
+            project_id=project_id, db_manager=mock_db_manager, retention_minutes=60
         )
 
         # Both should succeed without errors
@@ -287,22 +295,20 @@ class TestMaintenanceIdempotency:
         assert mock_db_manager.run_maintenance.call_count == 1
 
     @pytest.mark.asyncio
-    async def test_duplicate_scheduling_prevented(self, standalone_manager, mock_db_manager):
+    async def test_duplicate_scheduling_prevented(
+        self, standalone_manager, mock_db_manager
+    ):
         """Test duplicate scheduling is prevented."""
         project_id = "test_project"
 
         # Schedule maintenance
         standalone_manager.schedule_maintenance(
-            project_id=project_id,
-            db_manager=mock_db_manager,
-            retention_minutes=60
+            project_id=project_id, db_manager=mock_db_manager, retention_minutes=60
         )
 
         # Try to schedule again (should be skipped)
         standalone_manager.schedule_maintenance(
-            project_id=project_id,
-            db_manager=mock_db_manager,
-            retention_minutes=60
+            project_id=project_id, db_manager=mock_db_manager, retention_minutes=60
         )
 
         # Wait for tasks to complete
@@ -326,9 +332,7 @@ class TestMaintenanceErrorHandling:
 
         # Run maintenance
         result = await standalone_manager._run_maintenance_task(
-            project_id="test_project",
-            db_manager=failing_manager,
-            retention_minutes=60
+            project_id="test_project", db_manager=failing_manager, retention_minutes=60
         )
 
         # Should return error dict, not raise exception
@@ -336,7 +340,9 @@ class TestMaintenanceErrorHandling:
         assert "Maintenance failed" in result["error"]
 
     @pytest.mark.asyncio
-    async def test_missing_project_id_in_event(self, maintenance_manager, mock_db_manager):
+    async def test_missing_project_id_in_event(
+        self, maintenance_manager, mock_db_manager
+    ):
         """Test event without project_id is handled gracefully."""
         with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
@@ -370,9 +376,7 @@ class TestMaintenanceNonBlocking:
 
         # Schedule maintenance
         standalone_manager.schedule_maintenance(
-            project_id="test_project",
-            db_manager=slow_manager,
-            retention_minutes=60
+            project_id="test_project", db_manager=slow_manager, retention_minutes=60
         )
 
         # Should return immediately (non-blocking)
@@ -409,9 +413,7 @@ class TestMaintenanceSerializationPerProject:
         # Start first maintenance task
         task1 = asyncio.create_task(
             standalone_manager._run_maintenance_task(
-                project_id=project_id,
-                db_manager=slow_manager,
-                retention_minutes=60
+                project_id=project_id, db_manager=slow_manager, retention_minutes=60
             )
         )
 
@@ -421,9 +423,7 @@ class TestMaintenanceSerializationPerProject:
         # Start second maintenance task (should wait for lock)
         task2 = asyncio.create_task(
             standalone_manager._run_maintenance_task(
-                project_id=project_id,
-                db_manager=slow_manager,
-                retention_minutes=60
+                project_id=project_id, db_manager=slow_manager, retention_minutes=60
             )
         )
 
@@ -443,31 +443,32 @@ class TestMaintenanceSerializationPerProject:
 
         async def slow_maintenance(project_label: str, **kwargs):
             import time
+
             call_timestamps[f"{project_label}_start"] = time.time()
             await asyncio.sleep(0.1)
             call_timestamps[f"{project_label}_end"] = time.time()
             return {"summary": {"fragments_reduced": 5}}
 
         slow_manager_1 = MagicMock()
-        slow_manager_1.run_maintenance = lambda **kwargs: slow_maintenance("project1", **kwargs)
+        slow_manager_1.run_maintenance = lambda **kwargs: slow_maintenance(
+            "project1", **kwargs
+        )
 
         slow_manager_2 = MagicMock()
-        slow_manager_2.run_maintenance = lambda **kwargs: slow_maintenance("project2", **kwargs)
+        slow_manager_2.run_maintenance = lambda **kwargs: slow_maintenance(
+            "project2", **kwargs
+        )
 
         # Start maintenance for two different projects
         task1 = asyncio.create_task(
             standalone_manager._run_maintenance_task(
-                project_id="project1",
-                db_manager=slow_manager_1,
-                retention_minutes=60
+                project_id="project1", db_manager=slow_manager_1, retention_minutes=60
             )
         )
 
         task2 = asyncio.create_task(
             standalone_manager._run_maintenance_task(
-                project_id="project2",
-                db_manager=slow_manager_2,
-                retention_minutes=60
+                project_id="project2", db_manager=slow_manager_2, retention_minutes=60
             )
         )
 
@@ -486,7 +487,9 @@ class TestMaintenanceEventSubscription:
     def test_event_subscription_on_init(self, mock_event_system, mock_storage):
         """Test MaintenanceManager subscribes to events on initialization."""
         # Create manager with event system
-        manager = MaintenanceManager(event_system=mock_event_system, storage=mock_storage)
+        manager = MaintenanceManager(
+            event_system=mock_event_system, storage=mock_storage
+        )
 
         # Verify subscriptions
         assert mock_event_system.bus.subscribe.call_count == 2
@@ -500,7 +503,9 @@ class TestMaintenanceEventSubscription:
         assert project_closed_call[0][0][1] == manager._on_project_closed
 
         # Verify subscribed to indexing.completed
-        indexing_completed_call = [c for c in calls if c[0][0] == EventTypes.Indexing.COMPLETED]
+        indexing_completed_call = [
+            c for c in calls if c[0][0] == EventTypes.Indexing.COMPLETED
+        ]
         assert len(indexing_completed_call) == 1
         assert indexing_completed_call[0][0][1] == manager._on_indexing_completed
 
@@ -518,7 +523,9 @@ class TestMaintenanceRetentionMinutes:
     """Tests for cleanup retention configuration."""
 
     @pytest.mark.asyncio
-    async def test_retention_minutes_respected(self, standalone_manager, mock_db_manager):
+    async def test_retention_minutes_respected(
+        self, standalone_manager, mock_db_manager
+    ):
         """Test cleanup_retention_minutes is passed to run_maintenance."""
         retention_minutes = 120
 
@@ -526,16 +533,20 @@ class TestMaintenanceRetentionMinutes:
         await standalone_manager._run_maintenance_task(
             project_id="test_project",
             db_manager=mock_db_manager,
-            retention_minutes=retention_minutes
+            retention_minutes=retention_minutes,
         )
 
         # Verify run_maintenance was called with correct retention
         mock_db_manager.run_maintenance.assert_called_once()
         call_args = mock_db_manager.run_maintenance.call_args
-        assert call_args[1]["cleanup_older_than"] == timedelta(minutes=retention_minutes)
+        assert call_args[1]["cleanup_older_than"] == timedelta(
+            minutes=retention_minutes
+        )
 
     @pytest.mark.asyncio
-    async def test_event_uses_config_retention(self, maintenance_manager, mock_db_manager):
+    async def test_event_uses_config_retention(
+        self, maintenance_manager, mock_db_manager
+    ):
         """Test event handlers use config.maintenance.cleanup_retention_minutes."""
         # Mock config with custom retention
         with patch("agentic_inquiry.config.Config.load") as mock_load:

@@ -115,11 +115,11 @@ def retrieval_engine(
     # Create a mock Config with proper structure
     from unittest.mock import MagicMock
     from agentic_inquiry.config import Config, MemoryConfig
-    
+
     config = MagicMock(spec=Config)
     config.memory = MagicMock(spec=MemoryConfig)
     config.memory.retrieval = retrieval_config
-    
+
     return RetrievalEngine(
         working_memory=working_memory,
         episodic_memory=episodic_memory,
@@ -582,7 +582,7 @@ async def test_retrieve_with_disabled_cache(
     """Test retrieval with caching disabled."""
     # Create engine with caching disabled
     from agentic_inquiry.config import Config, MemoryConfig
-    
+
     retrieval_config = RetrievalConfig(
         default_strategy="adaptive",
         cache_enabled=False,
@@ -594,11 +594,11 @@ async def test_retrieve_with_disabled_cache(
             "importance": 0.2,
         },
     )
-    
+
     config = MagicMock(spec=Config)
     config.memory = MagicMock(spec=MemoryConfig)
     config.memory.retrieval = retrieval_config
-    
+
     engine = RetrievalEngine(
         working_memory=working_memory,
         episodic_memory=episodic_memory,
@@ -659,7 +659,7 @@ async def test_ranking_algorithm(
     """Test that ranking algorithm combines multiple factors."""
     # Add items with different characteristics
     items = []
-    
+
     # High relevance, low importance
     item1 = MemoryItem(
         id=str(uuid.uuid4()),
@@ -673,7 +673,7 @@ async def test_ranking_algorithm(
         embedding=np.random.rand(384).astype(np.float32),
     )
     items.append(item1)
-    
+
     # Low relevance, high importance
     item2 = MemoryItem(
         id=str(uuid.uuid4()),

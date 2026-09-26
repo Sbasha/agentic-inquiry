@@ -132,8 +132,12 @@ class TestGenerateRelationshipId:
         rel1 = create_mock_relationship(source_name="source1")
         rel2 = create_mock_relationship(source_name="source2")
 
-        id1 = RelationshipQueueManager.generate_relationship_id(rel1, "/path/to/file.py")
-        id2 = RelationshipQueueManager.generate_relationship_id(rel2, "/path/to/file.py")
+        id1 = RelationshipQueueManager.generate_relationship_id(
+            rel1, "/path/to/file.py"
+        )
+        id2 = RelationshipQueueManager.generate_relationship_id(
+            rel2, "/path/to/file.py"
+        )
 
         assert id1 != id2
 
@@ -141,8 +145,12 @@ class TestGenerateRelationshipId:
         """Test that same relationship in different files produces different IDs."""
         rel = create_mock_relationship()
 
-        id1 = RelationshipQueueManager.generate_relationship_id(rel, "/path/to/file1.py")
-        id2 = RelationshipQueueManager.generate_relationship_id(rel, "/path/to/file2.py")
+        id1 = RelationshipQueueManager.generate_relationship_id(
+            rel, "/path/to/file1.py"
+        )
+        id2 = RelationshipQueueManager.generate_relationship_id(
+            rel, "/path/to/file2.py"
+        )
 
         assert id1 != id2
 
@@ -150,7 +158,9 @@ class TestGenerateRelationshipId:
         """Test that generated ID has expected format."""
         rel = create_mock_relationship()
 
-        rel_id = RelationshipQueueManager.generate_relationship_id(rel, "/path/to/file.py")
+        rel_id = RelationshipQueueManager.generate_relationship_id(
+            rel, "/path/to/file.py"
+        )
 
         # Should be a 16-character hex string (SHA256 truncated)
         assert len(rel_id) == 16
@@ -284,9 +294,7 @@ class TestRemovePendingRelationshipsForFile:
     def test_remove_relationships_for_nonexistent_file(self):
         """Test removing relationships for a file that has none."""
         manager = RelationshipQueueManager()
-        manager.add_pending_relationship(
-            create_mock_relationship(), "/path/file1.py"
-        )
+        manager.add_pending_relationship(create_mock_relationship(), "/path/file1.py")
 
         removed = manager.remove_pending_relationships_for_file("/path/file2.py")
 
@@ -361,10 +369,12 @@ class TestGetStats:
             )
 
         # Mark some as committed
-        manager.mark_relationships_committed([
-            (create_mock_relationship(source_name="committed1"), "/path/c1.py"),
-            (create_mock_relationship(source_name="committed2"), "/path/c2.py"),
-        ])
+        manager.mark_relationships_committed(
+            [
+                (create_mock_relationship(source_name="committed1"), "/path/c1.py"),
+                (create_mock_relationship(source_name="committed2"), "/path/c2.py"),
+            ]
+        )
 
         stats = manager.get_stats()
 

@@ -15,7 +15,12 @@ from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union, cast
 import numpy as np
 
 
-from agentic_inquiry.memory.models import MemoryContext, MemoryStatus, MemoryTier, RetrievalResult
+from agentic_inquiry.memory.models import (
+    MemoryContext,
+    MemoryStatus,
+    MemoryTier,
+    RetrievalResult,
+)
 from agentic_inquiry.utils.metacognition import detect_ambiguity, ClarificationBuilder
 
 if TYPE_CHECKING:
@@ -106,17 +111,17 @@ class RetrievalEngine:
             ValueError: If embedding is empty or has wrong dimensions
         """
         embedding = await self.embedding_service.embed_async(query)
-        
+
         expected_dims = self.config.embeddings.default_dimensions
         actual_dims = len(embedding) if embedding is not None else 0
-        
+
         if actual_dims == 0:
             raise ValueError(
                 f"Embedding service returned empty vector for query. "
                 f"Expected {expected_dims} dimensions. "
                 f"This may indicate the embedding model is not loaded."
             )
-        
+
         if actual_dims != expected_dims:
             logger.warning(
                 "Embedding dimension mismatch: expected %d, got %d. "
@@ -124,7 +129,7 @@ class RetrievalEngine:
                 expected_dims,
                 actual_dims,
             )
-        
+
         return embedding
 
     def get_retrieval_stats(self) -> dict:
@@ -154,7 +159,12 @@ class RetrievalEngine:
         }
 
     def _get_cache_key(
-        self, query: str, context: MemoryContext, strategy: str, limit: int, include_history: bool = False
+        self,
+        query: str,
+        context: MemoryContext,
+        strategy: str,
+        limit: int,
+        include_history: bool = False,
     ) -> str:
         """
         Generate cache key for a query.
@@ -246,8 +256,12 @@ class RetrievalEngine:
         # Pass query_text to episodic/semantic layers for server-side embedding
         working_results, episodic_results, semantic_results = await asyncio.gather(
             self.working_memory.retrieve(working_embedding, context, limit),
-            self.episodic_memory.retrieve(episodic_embedding, context, limit, query_text=query),
-            self.semantic_memory.retrieve(semantic_embedding, context, limit, query_text=query),
+            self.episodic_memory.retrieve(
+                episodic_embedding, context, limit, query_text=query
+            ),
+            self.semantic_memory.retrieve(
+                semantic_embedding, context, limit, query_text=query
+            ),
         )
 
         # Combine and sort by relevance score
@@ -283,8 +297,12 @@ class RetrievalEngine:
         # Search all tiers in parallel
         working_results, episodic_results, semantic_results = await asyncio.gather(
             self.working_memory.retrieve(working_embedding, context, limit),
-            self.episodic_memory.retrieve(episodic_embedding, context, limit, query_text=query),
-            self.semantic_memory.retrieve(semantic_embedding, context, limit, query_text=query),
+            self.episodic_memory.retrieve(
+                episodic_embedding, context, limit, query_text=query
+            ),
+            self.semantic_memory.retrieve(
+                semantic_embedding, context, limit, query_text=query
+            ),
         )
 
         # Apply recency weighting
@@ -342,8 +360,12 @@ class RetrievalEngine:
         # Search all tiers in parallel
         working_results, episodic_results, semantic_results = await asyncio.gather(
             self.working_memory.retrieve(working_embedding, context, limit),
-            self.episodic_memory.retrieve(episodic_embedding, context, limit, query_text=query),
-            self.semantic_memory.retrieve(semantic_embedding, context, limit, query_text=query),
+            self.episodic_memory.retrieve(
+                episodic_embedding, context, limit, query_text=query
+            ),
+            self.semantic_memory.retrieve(
+                semantic_embedding, context, limit, query_text=query
+            ),
         )
 
         # Apply importance weighting
@@ -403,8 +425,12 @@ class RetrievalEngine:
         # Search all tiers in parallel
         working_results, episodic_results, semantic_results = await asyncio.gather(
             self.working_memory.retrieve(working_embedding, context, limit),
-            self.episodic_memory.retrieve(episodic_embedding, context, limit, query_text=query),
-            self.semantic_memory.retrieve(semantic_embedding, context, limit, query_text=query),
+            self.episodic_memory.retrieve(
+                episodic_embedding, context, limit, query_text=query
+            ),
+            self.semantic_memory.retrieve(
+                semantic_embedding, context, limit, query_text=query
+            ),
         )
 
         # Calculate adaptive scores
@@ -481,8 +507,12 @@ class RetrievalEngine:
         # Search all tiers in parallel
         working_results, episodic_results, semantic_results = await asyncio.gather(
             self.working_memory.retrieve(working_embedding, context, limit),
-            self.episodic_memory.retrieve(episodic_embedding, context, limit, query_text=query),
-            self.semantic_memory.retrieve(semantic_embedding, context, limit, query_text=query),
+            self.episodic_memory.retrieve(
+                episodic_embedding, context, limit, query_text=query
+            ),
+            self.semantic_memory.retrieve(
+                semantic_embedding, context, limit, query_text=query
+            ),
         )
 
         # Combine results
@@ -590,8 +620,12 @@ class RetrievalEngine:
         # Search all tiers in parallel
         working_results, episodic_results, semantic_results = await asyncio.gather(
             self.working_memory.retrieve(working_embedding, context, limit),
-            self.episodic_memory.retrieve(episodic_embedding, context, limit, query_text=query),
-            self.semantic_memory.retrieve(semantic_embedding, context, limit, query_text=query),
+            self.episodic_memory.retrieve(
+                episodic_embedding, context, limit, query_text=query
+            ),
+            self.semantic_memory.retrieve(
+                semantic_embedding, context, limit, query_text=query
+            ),
         )
 
         # Combine results
@@ -658,8 +692,12 @@ class RetrievalEngine:
         # Search all tiers in parallel
         working_results, episodic_results, semantic_results = await asyncio.gather(
             self.working_memory.retrieve(working_embedding, context, limit),
-            self.episodic_memory.retrieve(episodic_embedding, context, limit, query_text=query),
-            self.semantic_memory.retrieve(semantic_embedding, context, limit, query_text=query),
+            self.episodic_memory.retrieve(
+                episodic_embedding, context, limit, query_text=query
+            ),
+            self.semantic_memory.retrieve(
+                semantic_embedding, context, limit, query_text=query
+            ),
         )
 
         # Combine results
@@ -735,9 +773,7 @@ class RetrievalEngine:
         """
         # Request more results than needed to detect ambiguity
         extended_limit = max(limit, max_results_for_ambiguous * 2)
-        results = await self._search_hybrid_precision(
-            query, context, extended_limit
-        )
+        results = await self._search_hybrid_precision(query, context, extended_limit)
 
         # Detect ambiguity using shared utility
         ambiguity_info = self._detect_ambiguity(results)
@@ -745,11 +781,11 @@ class RetrievalEngine:
         if ambiguity_info["ambiguous"]:
             # Generate clarification question
             question = ClarificationBuilder.build_question(ambiguity_info, query)
-            
+
             return {
                 "results": results[:max_results_for_ambiguous],
                 "ambiguity": ambiguity_info,
-                "clarification_question": question
+                "clarification_question": question,
             }
         else:
             # Return requested limit for clear queries
@@ -896,7 +932,9 @@ class RetrievalEngine:
         )
 
         # Check cache
-        cache_key = self._get_cache_key(query, context, strategy, limit, include_history)
+        cache_key = self._get_cache_key(
+            query, context, strategy, limit, include_history
+        )
         cached_results = self._get_from_cache(cache_key)
 
         if cached_results is not None:
@@ -920,9 +958,7 @@ class RetrievalEngine:
         elif strategy == "importance":
             results = await self._search_importance(query, context, limit)
         elif strategy == "adaptive":
-            results = await self._search_adaptive(
-                query, context, limit, weights
-            )
+            results = await self._search_adaptive(query, context, limit, weights)
         elif strategy == "hybrid_precision":
             # Strategy for exact match prioritization
             results = await self._search_hybrid_precision(query, context, limit)
@@ -931,7 +967,9 @@ class RetrievalEngine:
             results = await self._search_with_ambiguity_detection(query, context, limit)
         elif strategy == "with_relationships":
             # Strategy that includes relationship type indicators
-            results = await self._search_with_relationship_indicators(query, context, limit)
+            results = await self._search_with_relationship_indicators(
+                query, context, limit
+            )
         else:
             raise ValueError(
                 f"Invalid search strategy: {strategy}. "
@@ -944,14 +982,12 @@ class RetrievalEngine:
             if isinstance(results, dict):
                 # Apply filtering to results in the dict
                 results["results"] = [
-                    r for r in results["results"] 
+                    r
+                    for r in results["results"]
                     if r.item.status == MemoryStatus.ACTIVE
                 ]
             else:
-                results = [
-                    r for r in results 
-                    if r.item.status == MemoryStatus.ACTIVE
-                ]
+                results = [r for r in results if r.item.status == MemoryStatus.ACTIVE]
 
         # Cache results
         self._put_in_cache(cache_key, results)

@@ -84,7 +84,9 @@ def _lancedb_dir(storage_root: Path) -> Path:
     return storage_root / "lancedb"
 
 
-async def _distinct_and_total(manager: LanceDBManager, table_name: str) -> tuple[int, int]:
+async def _distinct_and_total(
+    manager: LanceDBManager, table_name: str
+) -> tuple[int, int]:
     table = await manager.get_table(table_name)
     frame = table.search().select(["id", "project_id"]).limit(10**9).to_pandas()
     return int(len(frame.drop_duplicates())), int(len(frame))
@@ -142,7 +144,9 @@ async def test_concurrent_writes_never_conflict_or_duplicate_keys(
     await write(manager, build("seed"))
     caplog.set_level(logging.WARNING, logger="agentic_inquiry.database.lancedb_manager")
 
-    batches = [build("shared") for _ in range(8)] + [build(f"unique{i}") for i in range(8)]
+    batches = [build("shared") for _ in range(8)] + [
+        build(f"unique{i}") for i in range(8)
+    ]
     results = await asyncio.gather(
         *(write(manager, rows) for rows in batches), return_exceptions=True
     )
@@ -197,7 +201,9 @@ async def test_loser_of_create_race_still_writes_its_rows(storage_root: Path) ->
             return_exceptions=True,
         )
         assert [r for r in results if isinstance(r, BaseException)] == []
-        table = lancedb.connect(str(_lancedb_dir(storage_root))).open_table("document_chunks")
+        table = lancedb.connect(str(_lancedb_dir(storage_root))).open_table(
+            "document_chunks"
+        )
         assert table.count_rows() == 40
     finally:
         await first.close()
@@ -263,7 +269,9 @@ async def test_create_table_from_schema_on_missing_table_returns(
     from agentic_inquiry.database.lancedb_schemas import get_graph_entities_schema
 
     await asyncio.wait_for(
-        manager.create_table_from_schema("graph_entities", get_graph_entities_schema(_DIMS)),
+        manager.create_table_from_schema(
+            "graph_entities", get_graph_entities_schema(_DIMS)
+        ),
         timeout=30,
     )
     assert (await manager.get_table("graph_entities")) is not None
@@ -287,7 +295,9 @@ async def test_write_is_visible_on_return_without_optimize(
     await manager.add_document_chunks(_chunks("late", 1))
 
     assert forbidden == []
-    fresh = lancedb.connect(str(_lancedb_dir(storage_root))).open_table("document_chunks")
+    fresh = lancedb.connect(str(_lancedb_dir(storage_root))).open_table(
+        "document_chunks"
+    )
     assert fresh.count_rows() == 4
     filtered = await manager.advanced_filter(
         "document_chunks", filters={"id": "chunk_late_0"}, limit=5
@@ -327,7 +337,11 @@ async def test_upsert_into_duplicated_key_updates_every_copy(
         )
         assert len(stored) == 2
         payloads = {
-            json.loads(r["metadata"] if isinstance(r["metadata"], str) else json.dumps(r["metadata"]))["file_path"]
+            json.loads(
+                r["metadata"]
+                if isinstance(r["metadata"], str)
+                else json.dumps(r["metadata"])
+            )["file_path"]
             for r in stored
         }
         assert payloads == {"new"}
@@ -353,7 +367,9 @@ async def test_maintenance_concurrent_with_writes_keeps_every_row(
         manager.add_graph_entities(_entities(f"w{i}"), project_id="demo")
         for i in range(16)
     ]
-    results = await asyncio.gather(maintain(), *writes, maintain(), return_exceptions=True)
+    results = await asyncio.gather(
+        maintain(), *writes, maintain(), return_exceptions=True
+    )
 
     assert [r for r in results if isinstance(r, BaseException)] == []
     assert results[0]["compact_success"] and results[-1]["compact_success"]

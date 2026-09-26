@@ -183,10 +183,7 @@ class ServiceOrchestrator:
 
     def is_checkpoint_due(self) -> bool:
         """Check if a memory checkpoint is due."""
-        return (
-            self.turn_count > 0
-            and self.turn_count % self._checkpoint_interval == 0
-        )
+        return self.turn_count > 0 and self.turn_count % self._checkpoint_interval == 0
 
     # --- Cache ---
 
@@ -195,9 +192,7 @@ class ServiceOrchestrator:
         if self._cache_manager:
             self._cache_manager.invalidate(file_paths)
 
-    async def prefetch(
-        self, queries: list[str], session_id: str
-    ) -> None:
+    async def prefetch(self, queries: list[str], session_id: str) -> None:
         """Background prefetch for predicted queries."""
         if not self._context_manager:
             return
@@ -224,9 +219,7 @@ class ServiceOrchestrator:
 
     # --- Bash Classification ---
 
-    def classify_bash_command(
-        self, command: str, exit_code: int, output: str
-    ) -> dict:
+    def classify_bash_command(self, command: str, exit_code: int, output: str) -> dict:
         """Classify a bash command for memory capture."""
         category = "general"
         should_capture = False
@@ -250,9 +243,7 @@ class ServiceOrchestrator:
             category = "build"
             if exit_code != 0:
                 should_capture = True
-                prompt = (
-                    "[ai Memory] Build failed. Store the error and resolution."
-                )
+                prompt = "[ai Memory] Build failed. Store the error and resolution."
         elif GIT_PATTERNS.search(command):
             category = "git"
             should_capture = True
@@ -283,19 +274,19 @@ class ServiceOrchestrator:
         """Generate a memory prompt for task status transitions."""
         if status == "completed":
             return (
-                f"[ai Memory] Task completed: \"{subject}\". "
+                f'[ai Memory] Task completed: "{subject}". '
                 "REQUIRED: If this task produced a decision with rationale, "
                 "a gotcha worth avoiding, or a reusable pattern — store it now "
                 "via /ai:memory save."
             )
         elif status == "in_progress":
             return (
-                f"[ai Memory] Starting task: \"{subject}\". "
+                f'[ai Memory] Starting task: "{subject}". '
                 "Note your approach and key assumptions."
             )
         elif status == "pending":
             return (
-                f"[ai Memory] Task moved to pending: \"{subject}\". "
+                f'[ai Memory] Task moved to pending: "{subject}". '
                 "Note why — blocked, deprioritized, or needs rework?"
             )
         return None
@@ -312,9 +303,7 @@ class ServiceOrchestrator:
 
     # --- File Change Tracking ---
 
-    async def record_file_change(
-        self, file_path: str, change_type: str
-    ) -> None:
+    async def record_file_change(self, file_path: str, change_type: str) -> None:
         """Record a file change event for memory and cache."""
         # Invalidate relevant caches
         if self._cache_manager:

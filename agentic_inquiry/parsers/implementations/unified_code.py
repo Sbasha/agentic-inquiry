@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 try:
     import tree_sitter as ts
     from tree_sitter_language_pack import get_language, get_parser
+
     TREE_SITTER_AVAILABLE = True
 except ImportError:
     TREE_SITTER_AVAILABLE = False
@@ -36,6 +37,7 @@ except ImportError:
 try:
     import tree_sitter_c_sharp
     from tree_sitter import Language, Parser
+
     CSHARP_AVAILABLE = True
 except ImportError:
     CSHARP_AVAILABLE = False
@@ -57,21 +59,36 @@ DEFAULT_CHUNK_OVERLAP = 200
 # (`@code_module`), which are not emitted as elements and would silently
 # swallow the calls attributed to them. Node type names are unique per grammar,
 # so a flat set needs no per-language dispatch.
-_DEFINITION_NODE_TYPES = frozenset({
-    # Python
-    "function_definition", "class_definition",
-    # JavaScript / TypeScript / TSX / JSX (class/interface_declaration shared
-    # with Java)
-    "function_declaration", "method_definition", "class_declaration",
-    "interface_declaration",
-    # Java / Apex
-    "method_declaration", "constructor_declaration",
-    "trigger_declaration", "enum_declaration",
-    # Rust
-    "function_item", "struct_item", "enum_item", "trait_item", "impl_item",
-    # Ruby
-    "method", "singleton_method", "class", "singleton_class", "module",
-})
+_DEFINITION_NODE_TYPES = frozenset(
+    {
+        # Python
+        "function_definition",
+        "class_definition",
+        # JavaScript / TypeScript / TSX / JSX (class/interface_declaration shared
+        # with Java)
+        "function_declaration",
+        "method_definition",
+        "class_declaration",
+        "interface_declaration",
+        # Java / Apex
+        "method_declaration",
+        "constructor_declaration",
+        "trigger_declaration",
+        "enum_declaration",
+        # Rust
+        "function_item",
+        "struct_item",
+        "enum_item",
+        "trait_item",
+        "impl_item",
+        # Ruby
+        "method",
+        "singleton_method",
+        "class",
+        "singleton_class",
+        "module",
+    }
+)
 
 # For calls whose target sits in the `function` field (Python `call`; C-family
 # / Go / Rust / TS / C# `call_expression`/`invocation_expression`), the func
@@ -81,17 +98,28 @@ _DEFINITION_NODE_TYPES = frozenset({
 # that share an accessor node type name can name the receiver field differently
 # (Rust `field_expression` uses `value`, C++'s uses `argument`).
 _METHOD_ACCESSOR_FIELDS: Dict[str, tuple] = {
-    "attribute": ("object", "attribute"),                  # Python
-    "member_expression": ("object", "property"),           # JavaScript / TypeScript
-    "field_expression": (("value", "argument"), "field"),  # Rust (value) / C++ (argument)
-    "selector_expression": ("operand", "field"),           # Go
+    "attribute": ("object", "attribute"),  # Python
+    "member_expression": ("object", "property"),  # JavaScript / TypeScript
+    "field_expression": (
+        ("value", "argument"),
+        "field",
+    ),  # Rust (value) / C++ (argument)
+    "selector_expression": ("operand", "field"),  # Go
 }
 
 
 class CodeElement:
     """Represents a code element extracted from source."""
 
-    def __init__(self, element_type: str, name: str, start_line: int, end_line: int, content: str, **metadata: Any) -> None:
+    def __init__(
+        self,
+        element_type: str,
+        name: str,
+        start_line: int,
+        end_line: int,
+        content: str,
+        **metadata: Any,
+    ) -> None:
         self.element_type = element_type
         self.name = name
         self.start_line = start_line
@@ -194,12 +222,18 @@ class TreeSitterCodeParser:
         """Check if we have a query file for this language."""
         return self.query_loader.has_query(language)
 
-    def parse_content(self, content: str, language: str, file_path: Path) -> List[Dict[str, Any]]:
+    def parse_content(
+        self, content: str, language: str, file_path: Path
+    ) -> List[Dict[str, Any]]:
         """Parse content using custom tree-sitter queries."""
-        logger.debug("Using custom query extractor for %s file: %s", language, file_path)
+        logger.debug(
+            "Using custom query extractor for %s file: %s", language, file_path
+        )
         return self._parse_with_custom_logic(content, language, file_path)
 
-    def _parse_with_custom_logic(self, content: str, language: str, file_path: Path) -> List[Dict[str, Any]]:
+    def _parse_with_custom_logic(
+        self, content: str, language: str, file_path: Path
+    ) -> List[Dict[str, Any]]:
         """Parse using tree-sitter with custom queries."""
         parser = self._get_parser(language)
         if not parser:
@@ -209,7 +243,12 @@ class TreeSitterCodeParser:
             tree = parser.parse(content_bytes)
             return self._extract_with_query(tree, content, content_bytes, language)
         except Exception as e:
-            logger.debug("Custom tree-sitter parsing failed for %s: %s", language, e, exc_info=True)
+            logger.debug(
+                "Custom tree-sitter parsing failed for %s: %s",
+                language,
+                e,
+                exc_info=True,
+            )
             return []
 
     def _get_parser(self, language: str) -> Optional[Any]:
@@ -239,7 +278,9 @@ class TreeSitterCodeParser:
             logger.debug("Could not get parser for %s: %s", language, e, exc_info=True)
             return None
 
-    def _extract_with_query(self, tree: Any, content: str, content_bytes: bytes, language: str) -> List[Dict[str, Any]]:
+    def _extract_with_query(
+        self, tree: Any, content: str, content_bytes: bytes, language: str
+    ) -> List[Dict[str, Any]]:
         """Extract elements using tree-sitter queries."""
         if not self.query_loader:
             logger.debug("No query loader available for %s", language)
@@ -296,9 +337,11 @@ class TreeSitterCodeParser:
             for _pattern_index, captures_dict in matches_list:
                 for capture_name, nodes in captures_dict.items():
                     # Collect name captures
-                    if '.name' in capture_name:
+                    if ".name" in capture_name:
                         for node in nodes:
-                            name_text = content_bytes[node.start_byte : node.end_byte].decode("utf-8")
+                            name_text = content_bytes[
+                                node.start_byte : node.end_byte
+                            ].decode("utf-8")
                             # Store name for parent and all ancestors up to 3 levels
                             # Use position-based keys since Python id() changes between node references
                             # This handles cases like Go where type_identifier's parent is type_spec
@@ -317,7 +360,7 @@ class TreeSitterCodeParser:
                                     break
 
                     # Collect call captures for relationship extraction
-                    if capture_name in ('call', 'call.method'):
+                    if capture_name in ("call", "call.method"):
                         for node in nodes:
                             call_node_key = (node.start_byte, node.end_byte)
                             if call_node_key in seen_call_nodes:
@@ -325,26 +368,35 @@ class TreeSitterCodeParser:
                             call_info = self._extract_call_info(node, content_bytes)
                             if call_info:
                                 seen_call_nodes.add(call_node_key)
-                                container_key = self._find_containing_definition_key(node)
+                                container_key = self._find_containing_definition_key(
+                                    node
+                                )
                                 if container_key not in calls_by_container:
                                     calls_by_container[container_key] = []
                                 calls_by_container[container_key].append(call_info)
 
                     # Collect class bases for inheritance
-                    if capture_name == 'code_class.bases':
+                    if capture_name == "code_class.bases":
                         for node in nodes:
                             bases = self._extract_class_bases(node, content_bytes)
                             if bases:
                                 class_node = node.parent
                                 if class_node:
-                                    class_key = (class_node.start_byte, class_node.end_byte)
+                                    class_key = (
+                                        class_node.start_byte,
+                                        class_node.end_byte,
+                                    )
                                     class_bases.setdefault(class_key, []).extend(bases)
 
             # Second pass: process definition captures using collected data
             for _pattern_index, captures_dict in matches_list:
                 for capture_name, nodes in captures_dict.items():
                     # Only process definition captures (e.g., function.def, class.def)
-                    if not ('.def' in capture_name or capture_name in ['import', 'import.from', 'call', 'assignment']):
+                    if not (
+                        ".def" in capture_name
+                        or capture_name
+                        in ["import", "import.from", "call", "assignment"]
+                    ):
                         continue
 
                     for node in nodes:
@@ -357,7 +409,14 @@ class TreeSitterCodeParser:
                         node_pos_key = (node.start_byte, node.end_byte)
                         actual_name = name_captures.get(node_pos_key)
 
-                        element = self._process_capture(node, capture_name, content, content_bytes, language, actual_name)
+                        element = self._process_capture(
+                            node,
+                            capture_name,
+                            content,
+                            content_bytes,
+                            language,
+                            actual_name,
+                        )
                         if element:
                             # Use byte positions as key for lookups
                             node_key = (node.start_byte, node.end_byte)
@@ -375,11 +434,19 @@ class TreeSitterCodeParser:
             return sorted(elements, key=lambda x: x.get("start_line", 0))
 
         except Exception as e:
-            logger.warning("Query extraction failed for %s: %s", language, e, exc_info=True)
+            logger.warning(
+                "Query extraction failed for %s: %s", language, e, exc_info=True
+            )
             return []
 
     def _process_capture(
-        self, node: Any, capture_name: str, content: str, content_bytes: bytes, language: str, actual_name: Optional[str] = None
+        self,
+        node: Any,
+        capture_name: str,
+        content: str,
+        content_bytes: bytes,
+        language: str,
+        actual_name: Optional[str] = None,
     ) -> Optional[Dict[str, Any]]:
         """Process a captured node from a query."""
         try:
@@ -396,7 +463,9 @@ class TreeSitterCodeParser:
             if element_type == "class" and language == "python":
                 superclasses_node = node.child_by_field_name("superclasses")
                 if superclasses_node:
-                    bases_text = content_bytes[superclasses_node.start_byte : superclasses_node.end_byte].decode("utf-8")
+                    bases_text = content_bytes[
+                        superclasses_node.start_byte : superclasses_node.end_byte
+                    ].decode("utf-8")
                     if "Enum" in bases_text:
                         element_type = "enum"
 
@@ -465,7 +534,14 @@ class TreeSitterCodeParser:
 
         # For non-entity patterns (import, call, comment, etc.), return as-is
         # These are relationship/auxiliary patterns, not entity types
-        non_entity_patterns = {"import", "call", "comment", "doc", "docstring", "export"}
+        non_entity_patterns = {
+            "import",
+            "call",
+            "comment",
+            "doc",
+            "docstring",
+            "export",
+        }
         if first_part in non_entity_patterns:
             return first_part
 
@@ -521,7 +597,9 @@ class TreeSitterCodeParser:
                 # Extract imported names
                 named_match = re.search(r"\{\s*([^}]+)\s*\}", import_text)
                 if named_match:
-                    for name in re.findall(r"(\w+)(?:\s+as\s+\w+)?", named_match.group(1)):
+                    for name in re.findall(
+                        r"(\w+)(?:\s+as\s+\w+)?", named_match.group(1)
+                    ):
                         imports.append(name)
                 # Default import
                 default_match = re.match(r"import\s+(\w+)\s+from", import_text)
@@ -542,11 +620,21 @@ class TreeSitterCodeParser:
 
         return imports
 
-    def _extract_node_name(self, node: Any, capture_name: str, content_bytes: bytes) -> Optional[str]:
+    def _extract_node_name(
+        self, node: Any, capture_name: str, content_bytes: bytes
+    ) -> Optional[str]:
         """Extract name from a tree-sitter node."""
         # Handle string literals captured as imports
-        if "import" in capture_name and node.type in ["interpreted_string_literal", "string", "string_literal"]:
-            text = content_bytes[node.start_byte : node.end_byte].decode("utf-8").strip('"')
+        if "import" in capture_name and node.type in [
+            "interpreted_string_literal",
+            "string",
+            "string_literal",
+        ]:
+            text = (
+                content_bytes[node.start_byte : node.end_byte]
+                .decode("utf-8")
+                .strip('"')
+            )
             return text.split("/")[-1] if "/" in text else text
 
         # Handle scoped identifiers
@@ -561,7 +649,13 @@ class TreeSitterCodeParser:
         # Try to find a name child node
         # Include type_identifier and field_identifier for Go, type_identifier for TS
         for child in node.children:
-            if child.type in ["identifier", "name", "property_identifier", "type_identifier", "field_identifier"]:
+            if child.type in [
+                "identifier",
+                "name",
+                "property_identifier",
+                "type_identifier",
+                "field_identifier",
+            ]:
                 return content_bytes[child.start_byte : child.end_byte].decode("utf-8")
 
         # Try to extract from first line using patterns
@@ -574,7 +668,9 @@ class TreeSitterCodeParser:
 
         return CodeUtilities.extract_name_from_line(first_line, patterns)
 
-    def _extract_call_info(self, node: Any, content_bytes: bytes) -> Optional[Dict[str, Any]]:
+    def _extract_call_info(
+        self, node: Any, content_bytes: bytes
+    ) -> Optional[Dict[str, Any]]:
         """Extract information about a function/method call.
 
         Language-aware by structural probing rather than hardcoded to one
@@ -611,7 +707,9 @@ class TreeSitterCodeParser:
             if func_node is not None:
                 if func_node.type == "identifier":
                     # Simple call: foo()
-                    call_name = content_bytes[func_node.start_byte : func_node.end_byte].decode("utf-8")
+                    call_name = content_bytes[
+                        func_node.start_byte : func_node.end_byte
+                    ].decode("utf-8")
                     return {"name": call_name, "type": "function", "line": line}
 
                 accessor = _METHOD_ACCESSOR_FIELDS.get(func_node.type)
@@ -620,31 +718,55 @@ class TreeSitterCodeParser:
                     # by grammar. The object slot may list several candidate
                     # field names; take the first that resolves.
                     obj_field, name_field = accessor
-                    obj_fields = (obj_field,) if isinstance(obj_field, str) else obj_field
+                    obj_fields = (
+                        (obj_field,) if isinstance(obj_field, str) else obj_field
+                    )
                     name_node = func_node.child_by_field_name(name_field)
                     if name_node is not None:
-                        method_name = content_bytes[name_node.start_byte : name_node.end_byte].decode("utf-8")
+                        method_name = content_bytes[
+                            name_node.start_byte : name_node.end_byte
+                        ].decode("utf-8")
                         obj_node = None
                         for candidate in obj_fields:
                             obj_node = func_node.child_by_field_name(candidate)
                             if obj_node is not None:
                                 break
                         obj_name = (
-                            content_bytes[obj_node.start_byte : obj_node.end_byte].decode("utf-8")
+                            content_bytes[
+                                obj_node.start_byte : obj_node.end_byte
+                            ].decode("utf-8")
                             if obj_node is not None
                             else ""
                         )
-                        return {"name": method_name, "object": obj_name, "type": "method", "line": line}
+                        return {
+                            "name": method_name,
+                            "object": obj_name,
+                            "type": "method",
+                            "line": line,
+                        }
                 return None
 
             # Shape 2: target in the `name`/`method` field (Java, Ruby).
-            name_node = node.child_by_field_name("name") or node.child_by_field_name("method")
+            name_node = node.child_by_field_name("name") or node.child_by_field_name(
+                "method"
+            )
             if name_node is not None:
-                call_name = content_bytes[name_node.start_byte : name_node.end_byte].decode("utf-8")
-                obj_node = node.child_by_field_name("object") or node.child_by_field_name("receiver")
+                call_name = content_bytes[
+                    name_node.start_byte : name_node.end_byte
+                ].decode("utf-8")
+                obj_node = node.child_by_field_name(
+                    "object"
+                ) or node.child_by_field_name("receiver")
                 if obj_node is not None:
-                    obj_name = content_bytes[obj_node.start_byte : obj_node.end_byte].decode("utf-8")
-                    return {"name": call_name, "object": obj_name, "type": "method", "line": line}
+                    obj_name = content_bytes[
+                        obj_node.start_byte : obj_node.end_byte
+                    ].decode("utf-8")
+                    return {
+                        "name": call_name,
+                        "object": obj_name,
+                        "type": "method",
+                        "line": line,
+                    }
                 return {"name": call_name, "type": "function", "line": line}
 
             return None
@@ -706,30 +828,40 @@ class TreeSitterCodeParser:
             # argument_list (Python) or superclass/interfaces (Apex)
             for child in node.children:
                 if child.type in ("identifier", "type_identifier"):
-                    base_name = content_bytes[child.start_byte : child.end_byte].decode("utf-8")
+                    base_name = content_bytes[child.start_byte : child.end_byte].decode(
+                        "utf-8"
+                    )
                     bases.append(base_name)
                 elif child.type == "type_list":
                     for grandchild in child.children:
                         if grandchild.type in ("identifier", "type_identifier"):
                             bases.append(
-                                content_bytes[grandchild.start_byte : grandchild.end_byte].decode("utf-8")
+                                content_bytes[
+                                    grandchild.start_byte : grandchild.end_byte
+                                ].decode("utf-8")
                             )
                 elif child.type == "attribute":
                     # Qualified base class: class Foo(module.Base)
-                    base_text = content_bytes[child.start_byte : child.end_byte].decode("utf-8")
+                    base_text = content_bytes[child.start_byte : child.end_byte].decode(
+                        "utf-8"
+                    )
                     bases.append(base_text)
                 elif child.type == "subscript":
                     # Generic base: class Foo(List[str])
                     # Extract just the base class name (e.g., "List" from "List[str]")
                     value_node = child.child_by_field_name("value")
                     if value_node:
-                        base_text = content_bytes[value_node.start_byte : value_node.end_byte].decode("utf-8")
+                        base_text = content_bytes[
+                            value_node.start_byte : value_node.end_byte
+                        ].decode("utf-8")
                         bases.append(base_text)
                 elif child.type == "call":
                     # Generic with call: class Foo(Generic[T])
                     func_node = child.child_by_field_name("function")
                     if func_node:
-                        base_text = content_bytes[func_node.start_byte : func_node.end_byte].decode("utf-8")
+                        base_text = content_bytes[
+                            func_node.start_byte : func_node.end_byte
+                        ].decode("utf-8")
                         bases.append(base_text)
         except Exception:
             logger.debug("Failed to extract class bases", exc_info=True)
@@ -739,7 +871,7 @@ class TreeSitterCodeParser:
 
 class UnifiedCodeParser:
     """Main code parser that coordinates tree-sitter parsing strategy.
-    
+
     Adapted from akb_iq to work with the new ParserProtocol interface.
     """
 
@@ -747,7 +879,7 @@ class UnifiedCodeParser:
         """Initialize the unified parser with tree-sitter strategy."""
         if not TREE_SITTER_AVAILABLE:
             raise ImportError("tree-sitter is required for UnifiedCodeParser")
-        
+
         self.max_file_size = max_file_size
         self.tree_sitter_parser = TreeSitterCodeParser()
         self.supported_languages = self._detect_supported_languages()
@@ -755,7 +887,7 @@ class UnifiedCodeParser:
 
     async def can_parse(self, path: str) -> bool:
         """Check if this parser can handle the given file.
-        
+
         Performs O(1) extension check for efficient parser selection.
         """
         file_path = Path(path)
@@ -767,24 +899,24 @@ class UnifiedCodeParser:
         path: str,
         db_manager: Optional["LanceDBManager"] = None,
         embedding_service: Optional["EmbeddingService"] = None,
-        project_id: Optional[str] = None
+        project_id: Optional[str] = None,
     ) -> ParsedDocument:
         """Parse a complete file and return structured document.
-        
+
         Args:
             path: Path to the file to parse
             db_manager: Optional database manager for entity registration
             embedding_service: Optional embedding service for entity embeddings
             project_id: Optional project ID for entity isolation
-        
+
         Returns:
             ParsedDocument with code symbols and relationships
         """
         import asyncio
         import aiofiles
-        
+
         file_path = Path(path)
-        
+
         # Validate file
         if not file_path.exists():
             raise FileNotFoundError(f"File not found: {file_path}")
@@ -792,7 +924,9 @@ class UnifiedCodeParser:
         # Check file size
         file_stat = file_path.stat()
         if file_stat.st_size > self.max_file_size:
-            raise ParsingError(f"File too large: {file_path} ({file_stat.st_size} bytes)")
+            raise ParsingError(
+                f"File too large: {file_path} ({file_stat.st_size} bytes)"
+            )
 
         # Get language
         language = LanguageRegistry.get_language(file_path)
@@ -801,11 +935,11 @@ class UnifiedCodeParser:
 
         # Read content asynchronously
         try:
-            async with aiofiles.open(file_path, mode='r', encoding="utf-8") as f:
+            async with aiofiles.open(file_path, mode="r", encoding="utf-8") as f:
                 content = await f.read()
         except UnicodeDecodeError:
             try:
-                async with aiofiles.open(file_path, mode='r', encoding="latin-1") as f:
+                async with aiofiles.open(file_path, mode="r", encoding="latin-1") as f:
                     content = await f.read()
             except Exception as e:
                 raise ParsingError(f"Failed to read file: {e}") from e
@@ -818,12 +952,17 @@ class UnifiedCodeParser:
                 self.tree_sitter_parser.parse_content,
                 content,
                 language,
-                file_path
+                file_path,
             )
         except Exception as e:
-            logger.warning("Parsing failed for %s, falling back to simple chunking: %s", exc_info=True)
+            logger.warning(
+                "Parsing failed for %s, falling back to simple chunking: %s",
+                exc_info=True,
+            )
             # Return partial result with simple chunking
-            return self._create_fallback_document(file_path, content, language, error=str(e))
+            return self._create_fallback_document(
+                file_path, content, language, error=str(e)
+            )
 
         # Create chunks (synchronous - fast, in-memory symbol extraction)
         chunks = self._create_semantic_chunks(elements, content, language, file_path)
@@ -835,20 +974,24 @@ class UnifiedCodeParser:
         doc_id = str(file_path.resolve())
 
         # NEW: Extract and register granular entities if db_manager is provided
-        if db_manager is not None and embedding_service is not None and project_id is not None:
+        if (
+            db_manager is not None
+            and embedding_service is not None
+            and project_id is not None
+        ):
             try:
                 entities = await self._extract_entities(
                     elements=elements,
                     file_path=file_path,
                     project_id=project_id,
-                    doc_id=doc_id
+                    doc_id=doc_id,
                 )
-                
+
                 if entities:
                     await self._register_entities(
                         entities=entities,
                         db_manager=db_manager,
-                        embedding_service=embedding_service
+                        embedding_service=embedding_service,
                     )
             except Exception as e:
                 # Log error but don't fail the entire parse operation
@@ -856,7 +999,7 @@ class UnifiedCodeParser:
                     "Failed to extract/register entities for %s: %s",
                     file_path,
                     e,
-                    exc_info=True
+                    exc_info=True,
                 )
 
         return ParsedDocument(
@@ -871,7 +1014,7 @@ class UnifiedCodeParser:
         elements: List[Dict[str, Any]],
         file_path: Path,
         project_id: str,
-        doc_id: str
+        doc_id: str,
     ) -> List["GraphEntity"]:
         """Extract granular entities (functions, classes, methods) from parsed elements.
 
@@ -887,18 +1030,18 @@ class UnifiedCodeParser:
         from agentic_inquiry.models.graph_entity import GraphEntity
 
         entities = []
-        
+
         # Filter for granular entity types (functions, classes, methods)
         # These use 'code_*' prefix as returned by TreeSitterCodeParser.parse_content()
         granular_types = {
-            "code_function",   # Standalone functions
-            "code_method",     # Methods within classes
-            "code_class",      # Classes
-            "code_struct",     # Structs (C, Go, Rust)
+            "code_function",  # Standalone functions
+            "code_method",  # Methods within classes
+            "code_class",  # Classes
+            "code_struct",  # Structs (C, Go, Rust)
             "code_interface",  # Interfaces
-            "code_enum",       # Enums
+            "code_enum",  # Enums
         }
-        
+
         for element in elements:
             element_type = element.get("element_type", "")
 
@@ -916,7 +1059,11 @@ class UnifiedCodeParser:
             # Transform element_type to match EntityType enum values
             # TreeSitterCodeParser returns "code_class", "code_method", etc.
             # but EntityType uses "class", "method", etc.
-            entity_type = element_type.removeprefix("code_") if element_type.startswith("code_") else element_type
+            entity_type = (
+                element_type.removeprefix("code_")
+                if element_type.startswith("code_")
+                else element_type
+            )
 
             # Generate entity ID: {entity_type}::{project_id}::{file_path}::{element_name}
             # This matches the source_id/target_id format used by relationship_resolver
@@ -965,7 +1112,11 @@ class UnifiedCodeParser:
             "Extracted %d granular entities from %s (%s)",
             len(entities),
             file_path,
-            ", ".join(f"{sum(1 for e in entities if e.type == t)} {t}" for t in stored_types if any(e.type == t for e in entities))
+            ", ".join(
+                f"{sum(1 for e in entities if e.type == t)} {t}"
+                for t in stored_types
+                if any(e.type == t for e in entities)
+            ),
         )
 
         return entities
@@ -974,15 +1125,15 @@ class UnifiedCodeParser:
         self,
         entities: List["GraphEntity"],
         db_manager: "LanceDBManager",
-        embedding_service: "EmbeddingService"
+        embedding_service: "EmbeddingService",
     ) -> None:
         """Register entities in the graph_entities table with embeddings.
-        
+
         Args:
             entities: List of GraphEntity objects to register
             db_manager: Database manager for storage
             embedding_service: Service for generating embeddings
-            
+
         Note:
             This method generates embeddings separately from chunks; the
             entity write is committed and queryable when it returns.
@@ -996,25 +1147,26 @@ class UnifiedCodeParser:
 
         # Get embedder from the indexing EmbeddingService
         # The EmbeddingService from agentic_inquiry.indexing uses registry-based embedder lookup
-        embedder, _ = embedding_service.get_embedder_configuration("graph_entities", "vector")
+        embedder, _ = embedding_service.get_embedder_configuration(
+            "graph_entities", "vector"
+        )
         vectors = await embedding_service.generate_embeddings_batch(
             entity_names, embedder, "entity registration"
         )
-        
+
         # Assign vectors to entities (convert ndarray to list)
         for entity, vector in zip(entities, vectors):
-            entity.vector = vector.tolist() if hasattr(vector, 'tolist') else list(vector)
-        
+            entity.vector = (
+                vector.tolist() if hasattr(vector, "tolist") else list(vector)
+            )
+
         await db_manager.add_graph_entities(entities)
-        
-        logger.info(
-            "Registered %d entities in graph_entities table",
-            len(entities)
-        )
+
+        logger.info("Registered %d entities in graph_entities table", len(entities))
 
     def _detect_supported_languages(self) -> Set[str]:
         """Detect which languages are supported by tree-sitter.
-        
+
         We assume tree-sitter-language-pack supports all languages we have queries for,
         since it's a comprehensive package with 50+ languages.
         """
@@ -1022,7 +1174,7 @@ class UnifiedCodeParser:
 
         # Get all unique languages from the language map
         all_languages = set(LanguageRegistry.LANGUAGE_MAP.values())
-        
+
         # Check which ones have query files
         for lang in all_languages:
             if self.tree_sitter_parser.can_parse(lang):
@@ -1038,7 +1190,9 @@ class UnifiedCodeParser:
                 extensions.add(ext)
         return extensions
 
-    def _create_semantic_chunks(self, elements: List[Dict], content: str, language: str, file_path: Path) -> List[ParserChunk]:
+    def _create_semantic_chunks(
+        self, elements: List[Dict], content: str, language: str, file_path: Path
+    ) -> List[ParserChunk]:
         """Create semantically meaningful chunks based on code structure."""
         if not elements:
             # If no elements, create a single chunk
@@ -1075,41 +1229,53 @@ class UnifiedCodeParser:
                 if elem.get("element_type") in ["import", "from_import"]:
                     # Parse comma-separated import_names_str back to list
                     import_names_str = elem.get("import_names_str", "")
-                    import_names = [name.strip() for name in import_names_str.split(",") if name.strip()] if import_names_str else []
+                    import_names = (
+                        [
+                            name.strip()
+                            for name in import_names_str.split(",")
+                            if name.strip()
+                        ]
+                        if import_names_str
+                        else []
+                    )
                     # Extract the raw import statement text for import_path
                     import_text = elem.get("content", "").strip()
-                    
+
                     if import_names:
                         group_imports.extend(import_names)
-                        
+
                         # For from_import, extract module path and skip it in iteration
                         # _extract_all_import_names returns [module, name1, name2, ...]
                         module_path = None
                         if elem.get("element_type") == "from_import":
-                            from_match = re.match(r"from\s+([\w.]+)\s+import", import_text)
+                            from_match = re.match(
+                                r"from\s+([\w.]+)\s+import", import_text
+                            )
                             if from_match:
                                 module_path = from_match.group(1)
-                        
+
                         # Create import relationships
                         # Use the import name as target - pipeline will resolve to actual entity
                         for import_name in import_names:
                             # Skip the module path entry for from_imports (it's not an imported symbol)
                             if module_path and import_name == module_path:
                                 continue
-                            
+
                             # Build metadata with import_path for direct module resolution
                             metadata = {
                                 "import_type": elem.get("element_type"),
                                 "import_path": import_name,  # Direct import path for O(1) resolution
                             }
-                            
+
                             # For Python "from X import Y", include the module path
                             if module_path:
                                 metadata["import_path"] = f"{module_path}.{import_name}"
-                            
+
                             relationship = ParserRelationship(
                                 source_type="file",
-                                source_name=str(file_path),  # Full file path for resolution
+                                source_name=str(
+                                    file_path
+                                ),  # Full file path for resolution
                                 target_type="module",  # Could be class, function, or module
                                 target_name=import_name,  # The imported symbol name
                                 type="imports",
@@ -1125,10 +1291,12 @@ class UnifiedCodeParser:
                                 "import_type": elem.get("element_type"),
                                 "import_path": fallback_name,  # Direct import path
                             }
-                            
+
                             relationship = ParserRelationship(
                                 source_type="file",
-                                source_name=str(file_path),  # Full file path for resolution
+                                source_name=str(
+                                    file_path
+                                ),  # Full file path for resolution
                                 target_type="module",
                                 target_name=fallback_name,
                                 type="imports",
@@ -1142,7 +1310,11 @@ class UnifiedCodeParser:
                     elem_name = elem.get("name", "")
                     elem_type = elem.get("element_type", "")
                     # Normalize type by stripping code_ prefix for ontology compatibility
-                    normalized_elem_type = elem_type.removeprefix("code_") if elem_type.startswith("code_") else elem_type
+                    normalized_elem_type = (
+                        elem_type.removeprefix("code_")
+                        if elem_type.startswith("code_")
+                        else elem_type
+                    )
                     for call_info in calls:
                         call_name = call_info.get("name", "")
                         if not call_name:
@@ -1157,9 +1329,13 @@ class UnifiedCodeParser:
                             call_metadata["object"] = call_info["object"]
 
                         relationship = ParserRelationship(
-                            source_type=normalized_elem_type if normalized_elem_type else "function",
+                            source_type=normalized_elem_type
+                            if normalized_elem_type
+                            else "function",
                             source_name=elem_name if elem_name else str(file_path),
-                            target_type="function" if call_info.get("type") == "function" else "method",
+                            target_type="function"
+                            if call_info.get("type") == "function"
+                            else "method",
                             target_name=call_name,
                             type="calls",
                             metadata=call_metadata,
@@ -1188,7 +1364,11 @@ class UnifiedCodeParser:
                 elem_type = elem.get("element_type", "")
                 elem_name = elem.get("name", "")
                 # Normalize element type by stripping code_ prefix (e.g., code_method -> method)
-                normalized_elem_type = elem_type.removeprefix("code_") if elem_type.startswith("code_") else elem_type
+                normalized_elem_type = (
+                    elem_type.removeprefix("code_")
+                    if elem_type.startswith("code_")
+                    else elem_type
+                )
                 # "function" covers standalone functions, lambdas, closures; "method" for class methods
                 if normalized_elem_type in ("function", "method") and elem_name:
                     elem_start = elem.get("start_line", 0)
@@ -1204,8 +1384,17 @@ class UnifiedCodeParser:
                         # class, struct, interface, type are class-like containers
                         # Normalize by stripping code_ prefix (e.g., code_class -> class)
                         other_type = other_elem.get("element_type", "")
-                        normalized_other_type = other_type.removeprefix("code_") if other_type.startswith("code_") else other_type
-                        if normalized_other_type in ["class", "struct", "interface", "type"]:
+                        normalized_other_type = (
+                            other_type.removeprefix("code_")
+                            if other_type.startswith("code_")
+                            else other_type
+                        )
+                        if normalized_other_type in [
+                            "class",
+                            "struct",
+                            "interface",
+                            "type",
+                        ]:
                             class_start = other_elem.get("start_line", 0)
                             class_end = other_elem.get("end_line", 0)
                             # Check if the method is within the class line range
@@ -1217,14 +1406,24 @@ class UnifiedCodeParser:
                     # Go methods: func (c ComplexMetrics) Distance(...)
                     if not containing_class and language == "go":
                         # Extract receiver type from Go method signature
-                        receiver_match = re.match(r'func\s*\([^)]*\s+\*?(\w+)\)', elem_content)
+                        receiver_match = re.match(
+                            r"func\s*\([^)]*\s+\*?(\w+)\)", elem_content
+                        )
                         if receiver_match:
                             receiver_type = receiver_match.group(1)
                             # Find the matching struct/type in elements
                             for other_elem in sorted_elements:
                                 go_other_type = other_elem.get("element_type", "")
-                                normalized_go_type = go_other_type.removeprefix("code_") if go_other_type.startswith("code_") else go_other_type
-                                if normalized_go_type in ["type", "struct", "interface"]:
+                                normalized_go_type = (
+                                    go_other_type.removeprefix("code_")
+                                    if go_other_type.startswith("code_")
+                                    else go_other_type
+                                )
+                                if normalized_go_type in [
+                                    "type",
+                                    "struct",
+                                    "interface",
+                                ]:
                                     if other_elem.get("name") == receiver_type:
                                         containing_class = receiver_type
                                         break
@@ -1249,12 +1448,30 @@ class UnifiedCodeParser:
             group_symbols = []
             symbol_metadata = {}
             # Valid code entity types (plain structural types)
-            valid_entity_types = {"class", "function", "method", "enum", "variable", "type", "struct", "interface", "module", "namespace", "property", "decorator", "parameter"}
+            valid_entity_types = {
+                "class",
+                "function",
+                "method",
+                "enum",
+                "variable",
+                "type",
+                "struct",
+                "interface",
+                "module",
+                "namespace",
+                "property",
+                "decorator",
+                "parameter",
+            }
             for elem in group:
                 elem_type = elem.get("element_type", "")
                 elem_name = elem.get("name", "")
                 # Normalize type by stripping code_ prefix if present
-                normalized_type = elem_type.removeprefix("code_") if elem_type.startswith("code_") else elem_type
+                normalized_type = (
+                    elem_type.removeprefix("code_")
+                    if elem_type.startswith("code_")
+                    else elem_type
+                )
                 # Check for code entity types (plain structural types from get_element_type_mapping)
                 if normalized_type in valid_entity_types:
                     group_symbols.append(elem_name)
@@ -1282,16 +1499,28 @@ class UnifiedCodeParser:
                     continue
 
             # Aggregate complexity
-            complexities: list[float] = [elem["complexity"] for elem in group if elem.get("complexity") is not None]
-            avg_complexity = sum(complexities) / len(complexities) if complexities else 0
+            complexities: list[float] = [
+                elem["complexity"]
+                for elem in group
+                if elem.get("complexity") is not None
+            ]
+            avg_complexity = (
+                sum(complexities) / len(complexities) if complexities else 0
+            )
 
             # Generate FTS text for code
-            code_fts_text = self._generate_code_fts_text(group_symbols, group_imports, chunk_content)
+            code_fts_text = self._generate_code_fts_text(
+                group_symbols, group_imports, chunk_content
+            )
 
             # Create chunk with sentinel values instead of None
             # Set element_name and element_type from the primary symbol
             primary_symbol = group_symbols[0] if group_symbols else ""
-            primary_element_type = symbol_metadata.get(primary_symbol, {}).get("type", "code_semantic") if primary_symbol else "code_semantic"
+            primary_element_type = (
+                symbol_metadata.get(primary_symbol, {}).get("type", "code_semantic")
+                if primary_symbol
+                else "code_semantic"
+            )
 
             # Extract parent_class from any element in the group (for methods within classes)
             # This enables proper resolution of self.method() calls
@@ -1331,36 +1560,46 @@ class UnifiedCodeParser:
                 if elem.get("element_type") in ["import", "from_import"]:
                     # Parse comma-separated import_names_str back to list
                     import_names_str = elem.get("import_names_str", "")
-                    import_names = [name.strip() for name in import_names_str.split(",") if name.strip()] if import_names_str else []
+                    import_names = (
+                        [
+                            name.strip()
+                            for name in import_names_str.split(",")
+                            if name.strip()
+                        ]
+                        if import_names_str
+                        else []
+                    )
                     import_text = elem.get("content", "").strip()
-                    
+
                     if import_names:
                         all_imports.extend(import_names)
-                        
+
                         # For from_import, extract module path and skip it in iteration
                         # _extract_all_import_names returns [module, name1, name2, ...]
                         module_path = None
                         if elem.get("element_type") == "from_import":
-                            from_match = re.match(r"from\s+([\w.]+)\s+import", import_text)
+                            from_match = re.match(
+                                r"from\s+([\w.]+)\s+import", import_text
+                            )
                             if from_match:
                                 module_path = from_match.group(1)
-                        
+
                         # Create import relationships
                         for import_name in import_names:
                             # Skip the module path entry for from_imports (it's not an imported symbol)
                             if module_path and import_name == module_path:
                                 continue
-                            
+
                             # Build metadata with import_path
                             metadata = {
                                 "import_type": elem.get("element_type"),
                                 "import_path": import_name,
                             }
-                            
+
                             # For Python "from X import Y", include the module path
                             if module_path:
                                 metadata["import_path"] = f"{module_path}.{import_name}"
-                            
+
                             relationship = ParserRelationship(
                                 source_type="module",
                                 source_name=file_path.stem,
@@ -1401,12 +1640,30 @@ class UnifiedCodeParser:
             all_symbols = []
             all_symbol_metadata = {}
             # Valid code entity types (plain structural types)
-            valid_entity_types = {"class", "function", "method", "enum", "variable", "type", "struct", "interface", "module", "namespace", "property", "decorator", "parameter"}
+            valid_entity_types = {
+                "class",
+                "function",
+                "method",
+                "enum",
+                "variable",
+                "type",
+                "struct",
+                "interface",
+                "module",
+                "namespace",
+                "property",
+                "decorator",
+                "parameter",
+            }
             for elem in elements:
                 elem_type = elem.get("element_type", "")
                 elem_name = elem.get("name", "")
                 # Normalize type by stripping code_ prefix if present
-                normalized_type = elem_type.removeprefix("code_") if elem_type.startswith("code_") else elem_type
+                normalized_type = (
+                    elem_type.removeprefix("code_")
+                    if elem_type.startswith("code_")
+                    else elem_type
+                )
                 # Check for code entity types (plain structural types from get_element_type_mapping)
                 if normalized_type in valid_entity_types:
                     all_symbols.append(elem_name)
@@ -1417,10 +1674,18 @@ class UnifiedCodeParser:
                         "end_line": elem.get("end_line"),
                     }
 
-            all_complexities: list[float] = [elem["complexity"] for elem in elements if elem.get("complexity") is not None]
-            file_avg_complexity = sum(all_complexities) / len(all_complexities) if all_complexities else 0
+            all_complexities: list[float] = [
+                elem["complexity"]
+                for elem in elements
+                if elem.get("complexity") is not None
+            ]
+            file_avg_complexity = (
+                sum(all_complexities) / len(all_complexities) if all_complexities else 0
+            )
 
-            code_fts_text = self._generate_code_fts_text(all_symbols, all_imports, content)
+            code_fts_text = self._generate_code_fts_text(
+                all_symbols, all_imports, content
+            )
 
             chunks.append(
                 ParserChunk(
@@ -1464,14 +1729,16 @@ class UnifiedCodeParser:
             Space-separated words from the identifier
         """
         # Split on underscores first
-        parts = name.replace('_', ' ').replace('-', ' ')
+        parts = name.replace("_", " ").replace("-", " ")
         # Split CamelCase: insert space before uppercase that follows lowercase,
         # or before uppercase followed by uppercase+lowercase (e.g., HTTPResponse → HTTP Response)
-        parts = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', parts)
-        parts = re.sub(r'(?<=[A-Z])(?=[A-Z][a-z])', ' ', parts)
+        parts = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", parts)
+        parts = re.sub(r"(?<=[A-Z])(?=[A-Z][a-z])", " ", parts)
         return parts
 
-    def _generate_code_fts_text(self, symbols: List[str], imports: List[str], content: str) -> str:
+    def _generate_code_fts_text(
+        self, symbols: List[str], imports: List[str], content: str
+    ) -> str:
         """Generate FTS-optimized text for code chunks.
 
         Extracts identifiers and symbol names while removing syntax.
@@ -1493,8 +1760,8 @@ class UnifiedCodeParser:
             for imp in imports:
                 fts_parts.append(imp)
                 # Split dotted package paths
-                if '.' in imp:
-                    for part in imp.split('.'):
+                if "." in imp:
+                    for part in imp.split("."):
                         if part and len(part) > 1:
                             fts_parts.append(part)
                             split = self._split_compound_identifier(part)
@@ -1507,21 +1774,77 @@ class UnifiedCodeParser:
 
         # Extract additional identifiers from content
         # Remove common syntax characters and extract words
-        cleaned = re.sub(r'[(){}\[\];,.<>:=+\-*/&|!~%^]', ' ', content)
+        cleaned = re.sub(r"[(){}\[\];,.<>:=+\-*/&|!~%^]", " ", content)
         words = cleaned.split()
 
         # Filter to meaningful identifiers (not language keywords, not numbers)
         # Note: 'string' removed - it's a Java class (String), not a keyword
         # 'override' removed - it's an annotation, not a keyword
-        keywords = {'if', 'else', 'for', 'while', 'return', 'def', 'class', 'import', 'from', 'as',
-                   'function', 'const', 'let', 'var', 'public', 'private', 'protected', 'static',
-                   'void', 'int', 'boolean', 'new', 'this', 'null', 'true', 'false',
-                   'try', 'catch', 'finally', 'throw', 'throws', 'extends', 'implements',
-                   'interface', 'abstract', 'final', 'synchronized', 'volatile', 'transient',
-                   'native', 'package', 'instanceof', 'super', 'switch', 'case', 'default',
-                   'break', 'continue', 'do', 'goto', 'enum', 'assert',
-                   'byte', 'short', 'long', 'char', 'double', 'float'}
-        identifiers = [w for w in words if w and not w.isdigit() and w.lower() not in keywords and len(w) > 1]
+        keywords = {
+            "if",
+            "else",
+            "for",
+            "while",
+            "return",
+            "def",
+            "class",
+            "import",
+            "from",
+            "as",
+            "function",
+            "const",
+            "let",
+            "var",
+            "public",
+            "private",
+            "protected",
+            "static",
+            "void",
+            "int",
+            "boolean",
+            "new",
+            "this",
+            "null",
+            "true",
+            "false",
+            "try",
+            "catch",
+            "finally",
+            "throw",
+            "throws",
+            "extends",
+            "implements",
+            "interface",
+            "abstract",
+            "final",
+            "synchronized",
+            "volatile",
+            "transient",
+            "native",
+            "package",
+            "instanceof",
+            "super",
+            "switch",
+            "case",
+            "default",
+            "break",
+            "continue",
+            "do",
+            "goto",
+            "enum",
+            "assert",
+            "byte",
+            "short",
+            "long",
+            "char",
+            "double",
+            "float",
+        }
+        identifiers = [
+            w
+            for w in words
+            if w and not w.isdigit() and w.lower() not in keywords and len(w) > 1
+        ]
 
         # Add unique identifiers with CamelCase/snake_case splitting
         seen = set()
@@ -1534,11 +1857,13 @@ class UnifiedCodeParser:
                     fts_parts.append(split)
 
         # Cap by actual word count, not list entries (split forms have spaces)
-        result = ' '.join(fts_parts)
+        result = " ".join(fts_parts)
         words_out = result.split()
-        return ' '.join(words_out[:1000])
+        return " ".join(words_out[:1000])
 
-    def _group_related_elements(self, elements: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+    def _group_related_elements(
+        self, elements: List[Dict[str, Any]]
+    ) -> List[List[Dict[str, Any]]]:
         """Group related elements together for chunking."""
         if not elements:
             return []
@@ -1556,7 +1881,10 @@ class UnifiedCodeParser:
                 current_elem.get("start_line", 0) - prev_elem.get("end_line", 0) < 5
                 or
                 # Same class
-                (current_elem.get("class_name") and current_elem.get("class_name") == prev_elem.get("class_name"))
+                (
+                    current_elem.get("class_name")
+                    and current_elem.get("class_name") == prev_elem.get("class_name")
+                )
                 or
                 # Related types (class and its methods)
                 (
@@ -1591,7 +1919,9 @@ class UnifiedCodeParser:
 
         return "\n".join(lines[context_start:context_end])
 
-    def _create_metadata(self, file_path: Path, content: str, language: str, elements: List[Dict]) -> Dict[str, Any]:
+    def _create_metadata(
+        self, file_path: Path, content: str, language: str, elements: List[Dict]
+    ) -> Dict[str, Any]:
         """Create document metadata."""
         file_stat = file_path.stat()
 
@@ -1615,7 +1945,9 @@ class UnifiedCodeParser:
             "content_type": "CODE",
         }
 
-    def _create_fallback_document(self, file_path: Path, content: str, language: str, error: str) -> ParsedDocument:
+    def _create_fallback_document(
+        self, file_path: Path, content: str, language: str, error: str
+    ) -> ParsedDocument:
         """Create a fallback document when parsing fails."""
         # Create a single chunk with the content
         chunk = ParserChunk(

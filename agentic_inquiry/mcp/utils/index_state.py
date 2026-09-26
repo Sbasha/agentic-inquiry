@@ -167,9 +167,7 @@ def estimate_indexing_eta(
 
     # Need at least 5 seconds of data for meaningful estimate
     if elapsed < 5:
-        logger.debug(
-            "Insufficient elapsed time for ETA: %.2f seconds", elapsed
-        )
+        logger.debug("Insufficient elapsed time for ETA: %.2f seconds", elapsed)
         return None
 
     if files_processed <= 0:
@@ -256,9 +254,7 @@ async def detect_index_state(
             # Check if operation is still in progress
             if op_status.get("status") in ("started", "progress"):
                 # Active indexing operation found
-                logger.debug(
-                    "Active indexing operation found: %s", operation_id
-                )
+                logger.debug("Active indexing operation found: %s", operation_id)
 
                 # Extract progress info from metadata
                 metadata = started_event.metadata or {}

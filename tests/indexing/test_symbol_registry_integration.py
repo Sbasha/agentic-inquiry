@@ -1,4 +1,5 @@
 """Test Symbol Registry integration with IndexingPipeline."""
+
 import pytest
 
 pytestmark = pytest.mark.integration
@@ -33,12 +34,13 @@ class _DummyEmbedder(Embedder):
 
 def test_symbol_registry_integration():
     """Test that symbols are registered with rich metadata."""
+
     async def run():
         from agentic_inquiry.config import Config, StorageConfig
-        
+
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
-        
+
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-symbols")
         await mock_db_manager.create_tables_and_indexes()
@@ -46,6 +48,7 @@ def test_symbol_registry_integration():
 
         # Resolve paths to handle macOS /tmp -> /private/tmp symlink
         from pathlib import Path
+
         project_root = str(Path("/tmp/project").resolve())
         module_file = str(Path("/tmp/project/module.py").resolve())
 
@@ -70,12 +73,7 @@ def test_symbol_registry_integration():
                     line_start=1,
                     line_end=2,
                     symbols=["MyClass"],
-                    symbol_metadata={
-                        "MyClass": {
-                            "type": "class",
-                            "is_exported": True
-                        }
-                    }
+                    symbol_metadata={"MyClass": {"type": "class", "is_exported": True}},
                 ),
                 ParserChunk(
                     content="def my_function():\n    pass",
@@ -84,11 +82,8 @@ def test_symbol_registry_integration():
                     line_end=5,
                     symbols=["my_function"],
                     symbol_metadata={
-                        "my_function": {
-                            "type": "function",
-                            "is_exported": True
-                        }
-                    }
+                        "my_function": {"type": "function", "is_exported": True}
+                    },
                 ),
             ],
         )
@@ -116,7 +111,9 @@ def test_symbol_registry_integration():
         assert my_function_metadata[0].entity_type == "function"
 
         # Verify lookup by name and type works
-        class_lookup = pipeline.symbol_registry.lookup_by_name_and_type("MyClass", "class")
+        class_lookup = pipeline.symbol_registry.lookup_by_name_and_type(
+            "MyClass", "class"
+        )
         assert len(class_lookup) == 1
         assert class_lookup[0].name == "MyClass"
 
@@ -133,12 +130,13 @@ def test_symbol_registry_integration():
 
 def test_symbol_registry_multiple_definitions():
     """Test that multiple definitions of the same symbol are tracked."""
+
     async def run():
         from agentic_inquiry.config import Config, StorageConfig
-        
+
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
-        
+
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-multi")
         await mock_db_manager.create_tables_and_indexes()
@@ -146,6 +144,7 @@ def test_symbol_registry_multiple_definitions():
 
         # Resolve paths to handle macOS /tmp -> /private/tmp symlink
         from pathlib import Path
+
         project_root = str(Path("/tmp/project").resolve())
         module1_file = str(Path("/tmp/project/module1.py").resolve())
         module2_file = str(Path("/tmp/project/module2.py").resolve())
@@ -169,7 +168,7 @@ def test_symbol_registry_multiple_definitions():
                     content="class Helper:\n    pass",
                     language="python",
                     symbols=["Helper"],
-                    symbol_metadata={"Helper": {"type": "class"}}
+                    symbol_metadata={"Helper": {"type": "class"}},
                 ),
             ],
         )
@@ -182,7 +181,7 @@ def test_symbol_registry_multiple_definitions():
                     content="class Helper:\n    pass",
                     language="python",
                     symbols=["Helper"],
-                    symbol_metadata={"Helper": {"type": "class"}}
+                    symbol_metadata={"Helper": {"type": "class"}},
                 ),
             ],
         )
@@ -211,12 +210,13 @@ def test_symbol_registry_multiple_definitions():
 
 def test_symbol_registry_get_symbol_count():
     """Test get_symbol_count() method."""
+
     async def run():
         from agentic_inquiry.config import Config, StorageConfig
-        
+
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
-        
+
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-count")
         await mock_db_manager.create_tables_and_indexes()
@@ -224,6 +224,7 @@ def test_symbol_registry_get_symbol_count():
 
         # Resolve paths to handle macOS /tmp -> /private/tmp symlink
         from pathlib import Path
+
         project_root = str(Path("/tmp/project").resolve())
         module_file = str(Path("/tmp/project/module.py").resolve())
         module2_file = str(Path("/tmp/project/module2.py").resolve())
@@ -250,13 +251,13 @@ def test_symbol_registry_get_symbol_count():
                     content="class MyClass:\n    pass",
                     language="python",
                     symbols=["MyClass"],
-                    symbol_metadata={"MyClass": {"type": "class"}}
+                    symbol_metadata={"MyClass": {"type": "class"}},
                 ),
                 ParserChunk(
                     content="def my_function():\n    pass",
                     language="python",
                     symbols=["my_function"],
-                    symbol_metadata={"my_function": {"type": "function"}}
+                    symbol_metadata={"my_function": {"type": "function"}},
                 ),
             ],
         )
@@ -275,13 +276,13 @@ def test_symbol_registry_get_symbol_count():
                     content="class MyClass:\n    pass",  # Duplicate
                     language="python",
                     symbols=["MyClass"],
-                    symbol_metadata={"MyClass": {"type": "class"}}
+                    symbol_metadata={"MyClass": {"type": "class"}},
                 ),
                 ParserChunk(
                     content="def another_function():\n    pass",  # New
                     language="python",
                     symbols=["another_function"],
-                    symbol_metadata={"another_function": {"type": "function"}}
+                    symbol_metadata={"another_function": {"type": "function"}},
                 ),
             ],
         )
@@ -296,12 +297,13 @@ def test_symbol_registry_get_symbol_count():
 
 def test_symbol_registry_get_file_count():
     """Test get_file_count() method."""
+
     async def run():
         from agentic_inquiry.config import Config, StorageConfig
-        
+
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
-        
+
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-files")
         await mock_db_manager.create_tables_and_indexes()
@@ -309,6 +311,7 @@ def test_symbol_registry_get_file_count():
 
         # Resolve paths to handle macOS /tmp -> /private/tmp symlink
         from pathlib import Path
+
         project_root = str(Path("/tmp/project").resolve())
         module1_file = str(Path("/tmp/project/module1.py").resolve())
         module2_file = str(Path("/tmp/project/module2.py").resolve())
@@ -336,7 +339,7 @@ def test_symbol_registry_get_file_count():
                     content="class MyClass:\n    pass",
                     language="python",
                     symbols=["MyClass"],
-                    symbol_metadata={"MyClass": {"type": "class"}}
+                    symbol_metadata={"MyClass": {"type": "class"}},
                 ),
             ],
         )
@@ -353,7 +356,7 @@ def test_symbol_registry_get_file_count():
                     content="def my_function():\n    pass",
                     language="python",
                     symbols=["my_function"],
-                    symbol_metadata={"my_function": {"type": "function"}}
+                    symbol_metadata={"my_function": {"type": "function"}},
                 ),
             ],
         )
@@ -370,7 +373,7 @@ def test_symbol_registry_get_file_count():
                     content="def another_function():\n    pass",
                     language="python",
                     symbols=["another_function"],
-                    symbol_metadata={"another_function": {"type": "function"}}
+                    symbol_metadata={"another_function": {"type": "function"}},
                 ),
             ],
         )
@@ -383,12 +386,13 @@ def test_symbol_registry_get_file_count():
 
 def test_symbol_registry_get_statistics():
     """Test get_statistics() method."""
+
     async def run():
         from agentic_inquiry.config import Config, StorageConfig
-        
+
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
-        
+
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-stats")
         await mock_db_manager.create_tables_and_indexes()
@@ -396,6 +400,7 @@ def test_symbol_registry_get_statistics():
 
         # Resolve paths to handle macOS /tmp -> /private/tmp symlink
         from pathlib import Path
+
         project_root = str(Path("/tmp/project").resolve())
         module_file = str(Path("/tmp/project/module.py").resolve())
         other_file = str(Path("/tmp/project/other.py").resolve())
@@ -420,25 +425,25 @@ def test_symbol_registry_get_statistics():
                     content="class MyClass:\n    pass",
                     language="python",
                     symbols=["MyClass"],
-                    symbol_metadata={"MyClass": {"type": "class"}}
+                    symbol_metadata={"MyClass": {"type": "class"}},
                 ),
                 ParserChunk(
                     content="class AnotherClass:\n    pass",
                     language="python",
                     symbols=["AnotherClass"],
-                    symbol_metadata={"AnotherClass": {"type": "class"}}
+                    symbol_metadata={"AnotherClass": {"type": "class"}},
                 ),
                 ParserChunk(
                     content="def my_function():\n    pass",
                     language="python",
                     symbols=["my_function"],
-                    symbol_metadata={"my_function": {"type": "function"}}
+                    symbol_metadata={"my_function": {"type": "function"}},
                 ),
                 ParserChunk(
                     content="MY_CONSTANT = 42",
                     language="python",
                     symbols=["MY_CONSTANT"],
-                    symbol_metadata={"MY_CONSTANT": {"type": "variable"}}
+                    symbol_metadata={"MY_CONSTANT": {"type": "variable"}},
                 ),
             ],
         )
@@ -448,9 +453,13 @@ def test_symbol_registry_get_statistics():
         third_file = str(Path("/tmp/project/third.py").resolve())
         # Track some imports
         await pipeline.symbol_registry.track_import("MyClass", other_file, module_file)
-        await pipeline.symbol_registry.track_import("MyClass", another_file, module_file)
+        await pipeline.symbol_registry.track_import(
+            "MyClass", another_file, module_file
+        )
         await pipeline.symbol_registry.track_import("MyClass", third_file, module_file)
-        await pipeline.symbol_registry.track_import("my_function", other_file, module_file)
+        await pipeline.symbol_registry.track_import(
+            "my_function", other_file, module_file
+        )
 
         # Get statistics
         stats = pipeline.symbol_registry.get_statistics()

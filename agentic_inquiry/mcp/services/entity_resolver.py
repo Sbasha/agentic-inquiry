@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class EntityDefinition:
     """Complete entity information.
-    
+
     Attributes:
         entity_id: Unique identifier
         name: Entity name
@@ -32,6 +32,7 @@ class EntityDefinition:
         docstring: Entity documentation
         metadata: Additional metadata
     """
+
     entity_id: str
     name: str
     entity_type: str
@@ -46,7 +47,7 @@ class EntityDefinition:
 @dataclass
 class EntityReference:
     """Reference to an entity.
-    
+
     Attributes:
         entity_id: Unique identifier
         name: Entity name
@@ -54,6 +55,7 @@ class EntityReference:
         file_path: Path to file containing entity
         relationship_type: Type of relationship (imports, calls, inherits, etc.)
     """
+
     entity_id: str
     name: str
     entity_type: str
@@ -64,13 +66,14 @@ class EntityReference:
 @dataclass
 class UsageExample:
     """Example of where an entity is used.
-    
+
     Attributes:
         file_path: Path to file containing usage
         line_number: Line number of usage
         context: Code context around usage
         usage_type: Type of usage (call, import, reference, etc.)
     """
+
     file_path: str
     line_number: int
     context: str
@@ -79,12 +82,12 @@ class UsageExample:
 
 class EntityNotFoundError(Exception):
     """Raised when entity cannot be resolved.
-    
+
     Attributes:
         entity_name: Name of entity that was not found
         suggestions: List of suggested entity names
     """
-    
+
     def __init__(self, entity_name: str, suggestions: List[str]):
         self.entity_name = entity_name
         self.suggestions = suggestions
@@ -107,11 +110,7 @@ class EntityResolver:
     Supports caching of resolved entities per session for performance.
     """
 
-    def __init__(
-        self,
-        db_manager: StorageFacade,
-        config: Config
-    ):
+    def __init__(self, db_manager: StorageFacade, config: Config):
         """Initialize entity resolver.
 
         Args:
@@ -125,51 +124,52 @@ class EntityResolver:
 
         self.config = config
         self._cache: Dict[str, Optional[EntityDefinition]] = {}
-    
+
     async def resolve_entity(
         self,
         entity_name: str,
         project_id: str,
         entity_type: Optional[str] = None,
-        include_relationships: bool = True
+        include_relationships: bool = True,
     ) -> Optional[EntityDefinition]:
         """Resolve entity by name with fallback strategies.
-        
+
         Resolution order:
         1. Exact match on simple name
         2. CamelCase expansion match (e.g., "SearchService" -> "Search Service")
         3. Case-insensitive match
         4. Module path match (e.g., "SearchService" -> "module.SearchService")
         5. Fuzzy match with similarity threshold
-        
+
         Args:
             entity_name: Name of entity to resolve
             project_id: Project identifier
             entity_type: Optional entity type filter
             include_relationships: Whether to include relationship data
-        
+
         Returns:
             EntityDefinition if found, None otherwise
-            
+
         Raises:
             EntityNotFoundError: If entity not found after all strategies
         """
         # Check cache first
         from agentic_inquiry.models.graph_entity import EntityType
+
         entity_type = EntityType.normalize(entity_type) if entity_type else None
-        
+
         cache_key = f"{project_id}:{entity_name}:{entity_type}"
         if self.config.entity_resolution.cache_enabled and cache_key in self._cache:
             logger.debug("Entity resolution cache hit: %s", cache_key)
             return self._cache[cache_key]
-        
+
         logger.debug(
             "Resolving entity: name=%s, project_id=%s, entity_type=%s",
             entity_name,
             project_id,
-            entity_type
+            entity_type,
         )
-        
+
         # Strategy 1: Exact case-insensitive match
         entity = await self._exact_match(entity_name, project_id, entity_type)
         if entity:
@@ -177,7 +177,7 @@ class EntityResolver:
             if self.config.entity_resolution.cache_enabled:
                 self._cache[cache_key] = entity
             return entity
-        
+
         # Strategy 2: CamelCase expansion match (e.g., "SearchService" -> "Search Service")
         entity = await self._camelcase_match(entity_name, project_id, entity_type)
         if entity:
@@ -188,9 +188,13 @@ class EntityResolver:
 
         # Strategy 3: Case-insensitive LIKE query
         if self.config.entity_resolution.case_insensitive:
-            entity = await self._case_insensitive_match(entity_name, project_id, entity_type)
+            entity = await self._case_insensitive_match(
+                entity_name, project_id, entity_type
+            )
             if entity:
-                logger.debug("Entity resolved via case-insensitive match: %s", entity_name)
+                logger.debug(
+                    "Entity resolved via case-insensitive match: %s", entity_name
+                )
                 if self.config.entity_resolution.cache_enabled:
                     self._cache[cache_key] = entity
                 return entity
@@ -211,22 +215,19 @@ class EntityResolver:
                 if self.config.entity_resolution.cache_enabled:
                     self._cache[cache_key] = entity
                 return entity
-        
+
         # No match found - get suggestions
         suggestions = await self._get_suggestions(entity_name, project_id, entity_type)
         logger.warning(
             "Entity '%s' not found. Available entities: %s",
             entity_name,
-            suggestions[:10]
+            suggestions[:10],
         )
-        
+
         raise EntityNotFoundError(entity_name, suggestions)
-    
+
     async def _exact_match(
-        self,
-        entity_name: str,
-        project_id: str,
-        entity_type: Optional[str] = None
+        self, entity_name: str, project_id: str, entity_type: Optional[str] = None
     ) -> Optional[EntityDefinition]:
         """Try exact name match with preference for internal entities.
 
@@ -251,9 +252,7 @@ class EntityResolver:
         limit = 1 if entity_type else 10
 
         results = await self.db.query_entities(
-            project_id=project_id,
-            filters=filters,
-            limit=limit
+            project_id=project_id, filters=filters, limit=limit
         )
 
         if not results:
@@ -281,22 +280,19 @@ class EntityResolver:
                 logger.debug(
                     "Prioritized internal entity type '%s' for name '%s'",
                     result_type,
-                    entity_name
+                    entity_name,
                 )
                 return self._entity_to_definition(result)
 
         # Fallback to first result if no preferred type found
         logger.debug(
             "No preferred entity type found for '%s', falling back to first result",
-            entity_name
+            entity_name,
         )
         return self._entity_to_definition(results[0])
-    
+
     async def _case_insensitive_match(
-        self,
-        entity_name: str,
-        project_id: str,
-        entity_type: Optional[str] = None
+        self, entity_name: str, project_id: str, entity_type: Optional[str] = None
     ) -> Optional[EntityDefinition]:
         """Try case-insensitive match with preference for internal entities.
 
@@ -318,12 +314,14 @@ class EntityResolver:
         results = await self.db.query_entities(
             project_id=project_id,
             filters=filters,
-            limit=self.config.mcp.query.default_limit
+            limit=self.config.mcp.query.default_limit,
         )
 
         # Case-insensitive comparison - collect all matches
         entity_name_lower = entity_name.lower()
-        matches = [r for r in results if _get_attr(r, "name", "").lower() == entity_name_lower]
+        matches = [
+            r for r in results if _get_attr(r, "name", "").lower() == entity_name_lower
+        ]
 
         if not matches:
             return None
@@ -350,13 +348,13 @@ class EntityResolver:
                 logger.debug(
                     "Prioritized internal entity type '%s' for name '%s' (case-insensitive)",
                     match_type,
-                    entity_name
+                    entity_name,
                 )
                 return self._entity_to_definition(match)
 
         # Fallback to first match
         return self._entity_to_definition(matches[0])
-    
+
     @staticmethod
     def _expand_camelcase(name: str) -> list[str]:
         """Split a CamelCase name into its component words.
@@ -371,9 +369,9 @@ class EntityResolver:
             List of word parts. Single-word names return a one-element list.
         """
         # Insert space before uppercase letters preceded by lowercase
-        parts = re.sub(r'([a-z])([A-Z])', r'\1 \2', name)
+        parts = re.sub(r"([a-z])([A-Z])", r"\1 \2", name)
         # Insert space between acronym runs and the next word
-        parts = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1 \2', parts)
+        parts = re.sub(r"([A-Z]+)([A-Z][a-z])", r"\1 \2", parts)
         return parts.split()
 
     async def _camelcase_match(
@@ -442,7 +440,11 @@ class EntityResolver:
             name_word_count = len(r_name.split())
             word_match = 0 if name_word_count == word_count else 1
             # Type priority (lower is better)
-            type_prio = preferred_types.index(r_type) if r_type in preferred_types else len(preferred_types)
+            type_prio = (
+                preferred_types.index(r_type)
+                if r_type in preferred_types
+                else len(preferred_types)
+            )
             return (word_match, type_prio, len(r_name), r_name)
 
         results.sort(key=_sort_key)
@@ -519,36 +521,33 @@ class EntityResolver:
         return self._entity_to_definition(results[0])
 
     async def _fuzzy_match(
-        self,
-        entity_name: str,
-        project_id: str,
-        entity_type: Optional[str] = None
+        self, entity_name: str, project_id: str, entity_type: Optional[str] = None
     ) -> Optional[EntityDefinition]:
         """Try fuzzy match with similarity threshold.
-        
+
         Args:
             entity_name: Name to match
             project_id: Project identifier
             entity_type: Optional entity type filter
-        
+
         Returns:
             EntityDefinition if found, None otherwise
         """
         filters = {}
         if entity_type:
             filters["type"] = entity_type
-        
+
         results = await self.db.query_entities(
             project_id=project_id,
             filters=filters,
-            limit=self.config.mcp.query.default_limit
+            limit=self.config.mcp.query.default_limit,
         )
 
         # Calculate similarity scores
         threshold = self.config.entity_resolution.fuzzy_matching.threshold
         best_match = None
         best_score = 0.0
-        
+
         for result in results:
             name = _get_attr(result, "name", "")
             score = SequenceMatcher(None, entity_name.lower(), name.lower()).ratio()
@@ -561,38 +560,38 @@ class EntityResolver:
                 "Fuzzy match found: %s -> %s (score: %.2f)",
                 entity_name,
                 _get_attr(best_match, "name"),
-                best_score
+                best_score,
             )
             return self._entity_to_definition(best_match)
-        
+
         return None
-    
+
     async def _get_suggestions(
         self,
         entity_name: str,
         project_id: str,
         entity_type: Optional[str] = None,
-        limit: int = 10
+        limit: int = 10,
     ) -> List[str]:
         """Get entity name suggestions for failed lookup.
-        
+
         Args:
             entity_name: Name that was not found
             project_id: Project identifier
             entity_type: Optional entity type filter
             limit: Maximum number of suggestions
-        
+
         Returns:
             List of suggested entity names
         """
         filters = {}
         if entity_type:
             filters["type"] = entity_type
-        
+
         results = await self.db.query_entities(
             project_id=project_id,
             filters=filters,
-            limit=self.config.mcp.query.traversal_limit
+            limit=self.config.mcp.query.traversal_limit,
         )
 
         # Calculate similarity scores for suggestions
@@ -601,11 +600,11 @@ class EntityResolver:
             name = _get_attr(result, "name", "")
             score = SequenceMatcher(None, entity_name.lower(), name.lower()).ratio()
             suggestions.append((name, score))
-        
+
         # Sort by similarity and return top N
         suggestions.sort(key=lambda x: x[1], reverse=True)
         return [name for name, _ in suggestions[:limit]]
-    
+
     def _entity_to_definition(self, entity_data: Any) -> EntityDefinition:
         """Convert entity data to EntityDefinition.
 
@@ -624,22 +623,23 @@ class EntityResolver:
             line_end=_get_attr(entity_data, "line_end", -1),
             content="",  # Will be populated by caller if needed
             docstring=None,
-            metadata=entity_data if isinstance(entity_data, dict) else vars(entity_data) if hasattr(entity_data, '__dict__') else {}
+            metadata=entity_data
+            if isinstance(entity_data, dict)
+            else vars(entity_data)
+            if hasattr(entity_data, "__dict__")
+            else {},
         )
-    
+
     async def get_entity_dependencies(
-        self,
-        entity_id: str,
-        project_id: str,
-        depth: int = 1
+        self, entity_id: str, project_id: str, depth: int = 1
     ) -> List[EntityReference]:
         """Get entities that this entity depends on.
-        
+
         Args:
             entity_id: Entity identifier
             project_id: Project identifier
             depth: Traversal depth (1 = direct dependencies only)
-        
+
         Returns:
             List of entity references
         """
@@ -647,14 +647,14 @@ class EntityResolver:
             "Getting dependencies: entity_id=%s, project_id=%s, depth=%d",
             entity_id,
             project_id,
-            depth
+            depth,
         )
-        
+
         # Query outgoing relationships (this entity -> others)
         relationships = await self.db.query_relationships(
             project_id=project_id,
             filters={"source_id": entity_id},
-            limit=self.config.mcp.query.traversal_limit
+            limit=self.config.mcp.query.traversal_limit,
         )
 
         dependencies = []
@@ -666,33 +666,38 @@ class EntityResolver:
 
             # Get target entity details
             target_entities = await self.db.query_entities(
-                project_id=project_id,
-                filters={"id": target_id},
-                limit=1
+                project_id=project_id, filters={"id": target_id}, limit=1
             )
 
             if target_entities:
                 target = target_entities[0]
                 ref_id = _get_attr(target, "id", "")
                 seen_ids.add(ref_id)
-                dependencies.append(EntityReference(
-                    entity_id=ref_id,
-                    name=_get_attr(target, "name", ""),
-                    entity_type=_get_attr(target, "type", ""),
-                    file_path=_get_attr(target, "file_path", ""),
-                    relationship_type=_get_attr(rel, "type", "")
-                ))
+                dependencies.append(
+                    EntityReference(
+                        entity_id=ref_id,
+                        name=_get_attr(target, "name", ""),
+                        entity_type=_get_attr(target, "type", ""),
+                        file_path=_get_attr(target, "file_path", ""),
+                        relationship_type=_get_attr(rel, "type", ""),
+                    )
+                )
 
         # Also query incoming structural relationships (others -> this entity)
         # for document entities where contains/follows are directional
         # (parent contains child, sibling follows sibling)
-        _STRUCTURAL_TYPES = frozenset({
-            "contains", "contained_in", "follows", "precedes",
-        })
+        _STRUCTURAL_TYPES = frozenset(
+            {
+                "contains",
+                "contained_in",
+                "follows",
+                "precedes",
+            }
+        )
         incoming_rels = await self.db.query_relationships(
             project_id=project_id,
             filters={"target_id": entity_id},
-            limit=self.config.mcp.query.traversal_limit
+            limit=self.config.mcp.query.traversal_limit,
         )
         for rel in incoming_rels:
             rel_type = _get_attr(rel, "type", "")
@@ -703,49 +708,102 @@ class EntityResolver:
                 continue
 
             source_entities = await self.db.query_entities(
-                project_id=project_id,
-                filters={"id": source_id},
-                limit=1
+                project_id=project_id, filters={"id": source_id}, limit=1
             )
             if source_entities:
                 source = source_entities[0]
                 ref_id = _get_attr(source, "id", "")
                 seen_ids.add(ref_id)
-                dependencies.append(EntityReference(
-                    entity_id=ref_id,
-                    name=_get_attr(source, "name", ""),
-                    entity_type=_get_attr(source, "type", ""),
-                    file_path=_get_attr(source, "file_path", ""),
-                    relationship_type=rel_type
-                ))
-        
+                dependencies.append(
+                    EntityReference(
+                        entity_id=ref_id,
+                        name=_get_attr(source, "name", ""),
+                        entity_type=_get_attr(source, "type", ""),
+                        file_path=_get_attr(source, "file_path", ""),
+                        relationship_type=rel_type,
+                    )
+                )
+
         # Filter out Python stdlib/builtin modules from import dependencies.
         # These add noise to blast radius analysis without actionable insight.
-        _STDLIB_PREFIXES = frozenset({
-            "os", "sys", "re", "io", "abc", "ast", "csv", "json", "math",
-            "time", "uuid", "copy", "enum", "gzip", "html", "http",
-            "email", "queue", "shutil", "signal", "socket", "sqlite3",
-            "string", "struct", "typing", "urllib", "logging", "pathlib",
-            "hashlib", "inspect", "asyncio", "datetime", "functools",
-            "itertools", "importlib", "collections", "contextlib",
-            "dataclasses", "multiprocessing", "concurrent", "unittest",
-            "warnings", "textwrap", "tempfile", "threading", "traceback",
-            "configparser", "argparse", "platform", "operator", "pickle",
-            "pprint", "random", "secrets", "statistics", "subprocess",
-        })
+        _STDLIB_PREFIXES = frozenset(
+            {
+                "os",
+                "sys",
+                "re",
+                "io",
+                "abc",
+                "ast",
+                "csv",
+                "json",
+                "math",
+                "time",
+                "uuid",
+                "copy",
+                "enum",
+                "gzip",
+                "html",
+                "http",
+                "email",
+                "queue",
+                "shutil",
+                "signal",
+                "socket",
+                "sqlite3",
+                "string",
+                "struct",
+                "typing",
+                "urllib",
+                "logging",
+                "pathlib",
+                "hashlib",
+                "inspect",
+                "asyncio",
+                "datetime",
+                "functools",
+                "itertools",
+                "importlib",
+                "collections",
+                "contextlib",
+                "dataclasses",
+                "multiprocessing",
+                "concurrent",
+                "unittest",
+                "warnings",
+                "textwrap",
+                "tempfile",
+                "threading",
+                "traceback",
+                "configparser",
+                "argparse",
+                "platform",
+                "operator",
+                "pickle",
+                "pprint",
+                "random",
+                "secrets",
+                "statistics",
+                "subprocess",
+            }
+        )
         pre_filter = len(dependencies)
         dependencies = [
-            d for d in dependencies
+            d
+            for d in dependencies
             if not (
                 d.file_path.startswith("builtin://")
                 or d.file_path.startswith("external://")
-                or (d.relationship_type == "imports" and d.name.split(".")[0] in _STDLIB_PREFIXES)
+                or (
+                    d.relationship_type == "imports"
+                    and d.name.split(".")[0] in _STDLIB_PREFIXES
+                )
             )
         ]
         if pre_filter != len(dependencies):
             logger.debug(
                 "Filtered %d stdlib/builtin dependencies for entity %s",
-                pre_filter - len(dependencies), entity_id,
+                pre_filter - len(dependencies),
+                entity_id,
             )
 
         # Sort dependencies by relationship type priority:
@@ -759,26 +817,23 @@ class EntityResolver:
             "contains": 4,
             "follows": 5,
         }
-        dependencies.sort(
-            key=lambda d: type_priority.get(d.relationship_type, 3)
-        )
+        dependencies.sort(key=lambda d: type_priority.get(d.relationship_type, 3))
 
-        logger.debug("Found %d dependencies for entity %s", len(dependencies), entity_id)
+        logger.debug(
+            "Found %d dependencies for entity %s", len(dependencies), entity_id
+        )
         return dependencies
-    
+
     async def get_entity_usages(
-        self,
-        entity_id: str,
-        project_id: str,
-        limit: int = 10
+        self, entity_id: str, project_id: str, limit: int = 10
     ) -> List[UsageExample]:
         """Get examples of where this entity is used.
-        
+
         Args:
             entity_id: Entity identifier
             project_id: Project identifier
             limit: Maximum number of usage examples
-        
+
         Returns:
             List of usage examples
         """
@@ -786,16 +841,14 @@ class EntityResolver:
             "Getting usages: entity_id=%s, project_id=%s, limit=%d",
             entity_id,
             project_id,
-            limit
+            limit,
         )
-        
+
         # Query incoming relationships (others -> this entity)
         relationships = await self.db.query_relationships(
-            project_id=project_id,
-            filters={"target_id": entity_id},
-            limit=limit
+            project_id=project_id, filters={"target_id": entity_id}, limit=limit
         )
-        
+
         usages = []
         for rel in relationships:
             source_id = _get_attr(rel, "source_id")
@@ -804,19 +857,19 @@ class EntityResolver:
 
             # Get source entity details
             source_entities = await self.db.query_entities(
-                project_id=project_id,
-                filters={"id": source_id},
-                limit=1
+                project_id=project_id, filters={"id": source_id}, limit=1
             )
 
             if source_entities:
                 source = source_entities[0]
-                usages.append(UsageExample(
-                    file_path=_get_attr(source, "file_path", ""),
-                    line_number=_get_attr(source, "line_start", -1),
-                    context=f"{_get_attr(source, 'name', '')} {_get_attr(rel, 'type', '')} entity",
-                    usage_type=_get_attr(rel, "type", "")
-                ))
-        
+                usages.append(
+                    UsageExample(
+                        file_path=_get_attr(source, "file_path", ""),
+                        line_number=_get_attr(source, "line_start", -1),
+                        context=f"{_get_attr(source, 'name', '')} {_get_attr(rel, 'type', '')} entity",
+                        usage_type=_get_attr(rel, "type", ""),
+                    )
+                )
+
         logger.debug("Found %d usages for entity %s", len(usages), entity_id)
         return usages

@@ -6,6 +6,7 @@ Detects microservice architecture from:
 3. String patterns via ripgrep (URLs, connection references)
 4. Folder conventions
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -20,8 +21,12 @@ from typing import Any, Dict, List, Literal, Optional, Set, cast
 logger = logging.getLogger(__name__)
 
 # Type aliases for service map types
-ServiceType = Literal["application", "database", "queue", "cache", "gateway", "external", "unknown"]
-ProtocolType = Literal["HTTP", "HTTPS", "gRPC", "JDBC", "AMQP", "Redis", "MongoDB", "TCP", "unknown"]
+ServiceType = Literal[
+    "application", "database", "queue", "cache", "gateway", "external", "unknown"
+]
+ProtocolType = Literal[
+    "HTTP", "HTTPS", "gRPC", "JDBC", "AMQP", "Redis", "MongoDB", "TCP", "unknown"
+]
 ConfidenceType = Literal["high", "medium", "low"]
 
 
@@ -32,7 +37,9 @@ class ServiceNode:
     id: str
     name: str
     service_type: ServiceType
-    source: str  # Detection source: docker, k8s, terraform, ast-grep, ripgrep, convention
+    source: (
+        str  # Detection source: docker, k8s, terraform, ast-grep, ripgrep, convention
+    )
     confidence: ConfidenceType
     file_path: Optional[str] = None
     ports: List[int] = field(default_factory=list)
@@ -67,7 +74,9 @@ class ServiceMap:
         existing = next((s for s in self.services if s.name == service.name), None)
         if existing:
             # Merge: prefer higher confidence
-            if _confidence_rank(service.confidence) > _confidence_rank(existing.confidence):
+            if _confidence_rank(service.confidence) > _confidence_rank(
+                existing.confidence
+            ):
                 self.services.remove(existing)
                 self.services.append(service)
         else:
@@ -76,7 +85,11 @@ class ServiceMap:
     def add_connection(self, conn: ServiceConnection) -> None:
         """Add connection, deduplicating."""
         existing = next(
-            (c for c in self.connections if c.source_id == conn.source_id and c.target_id == conn.target_id),
+            (
+                c
+                for c in self.connections
+                if c.source_id == conn.source_id and c.target_id == conn.target_id
+            ),
             None,
         )
         if not existing:
@@ -134,18 +147,45 @@ class ServiceMapDetector:
     # Note: Order matters - cache is checked before database since redis can be either
     SERVICE_TYPE_PATTERNS = {
         "cache": [
-            "redis", "memcached", "hazelcast", "varnish",
+            "redis",
+            "memcached",
+            "hazelcast",
+            "varnish",
         ],
         "queue": [
-            "rabbitmq", "kafka", "activemq", "sqs", "pubsub", "nats", "zeromq",
+            "rabbitmq",
+            "kafka",
+            "activemq",
+            "sqs",
+            "pubsub",
+            "nats",
+            "zeromq",
         ],
         "gateway": [
-            "nginx", "traefik", "kong", "envoy", "haproxy", "istio", "ambassador",
+            "nginx",
+            "traefik",
+            "kong",
+            "envoy",
+            "haproxy",
+            "istio",
+            "ambassador",
         ],
         "database": [
-            "postgres", "mysql", "mariadb", "mongodb", "mongo",
-            "elasticsearch", "cassandra", "cockroach", "sqlite", "oracle",
-            "sqlserver", "mssql", "dynamodb", "firestore", "neo4j",
+            "postgres",
+            "mysql",
+            "mariadb",
+            "mongodb",
+            "mongo",
+            "elasticsearch",
+            "cassandra",
+            "cockroach",
+            "sqlite",
+            "oracle",
+            "sqlserver",
+            "mssql",
+            "dynamodb",
+            "firestore",
+            "neo4j",
         ],
     }
 
@@ -161,9 +201,20 @@ class ServiceMapDetector:
 
     # Directories to exclude from detection
     EXCLUDE_PATTERNS = [
-        ".venv", "venv", "node_modules", "__pycache__", ".git",
-        ".mypy_cache", ".pytest_cache", ".tox", ".cache", "dist",
-        "build", "egg-info", ".eggs", "site-packages",
+        ".venv",
+        "venv",
+        "node_modules",
+        "__pycache__",
+        ".git",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".tox",
+        ".cache",
+        "dist",
+        "build",
+        "egg-info",
+        ".eggs",
+        "site-packages",
     ]
 
     def __init__(self, workspace_path: Path):
@@ -208,7 +259,9 @@ class ServiceMapDetector:
                         service_map.add_service(svc)
                     for conn in connections:
                         service_map.add_connection(conn)
-                    logger.info("Detected %d services from %s", len(services), source_name)
+                    logger.info(
+                        "Detected %d services from %s", len(services), source_name
+                    )
             except Exception as e:
                 logger.warning("Detector %s failed: %s", source_name, e)
 
@@ -217,19 +270,23 @@ class ServiceMapDetector:
 
         return service_map
 
-    async def _detect_docker_compose(self) -> tuple[List[ServiceNode], List[ServiceConnection]]:
+    async def _detect_docker_compose(
+        self,
+    ) -> tuple[List[ServiceNode], List[ServiceConnection]]:
         """Parse docker-compose files."""
         services: List[ServiceNode] = []
         connections: List[ServiceConnection] = []
 
-        compose_files = list(self.workspace.glob("**/docker-compose*.yml")) + \
-                       list(self.workspace.glob("**/docker-compose*.yaml"))
+        compose_files = list(self.workspace.glob("**/docker-compose*.yml")) + list(
+            self.workspace.glob("**/docker-compose*.yaml")
+        )
 
         for compose_file in compose_files:
             if self._should_exclude(compose_file):
                 continue
             try:
                 import yaml
+
                 content = yaml.safe_load(compose_file.read_text())
                 if not content or "services" not in content:
                     continue
@@ -289,21 +346,26 @@ class ServiceMapDetector:
 
         return services, connections
 
-    async def _detect_kubernetes(self) -> tuple[List[ServiceNode], List[ServiceConnection]]:
+    async def _detect_kubernetes(
+        self,
+    ) -> tuple[List[ServiceNode], List[ServiceConnection]]:
         """Parse Kubernetes manifests."""
         services: List[ServiceNode] = []
         connections: List[ServiceConnection] = []
 
-        k8s_files = list(self.workspace.glob("**/k8s/**/*.yaml")) + \
-                   list(self.workspace.glob("**/k8s/**/*.yml")) + \
-                   list(self.workspace.glob("**/kubernetes/**/*.yaml")) + \
-                   list(self.workspace.glob("**/manifests/**/*.yaml"))
+        k8s_files = (
+            list(self.workspace.glob("**/k8s/**/*.yaml"))
+            + list(self.workspace.glob("**/k8s/**/*.yml"))
+            + list(self.workspace.glob("**/kubernetes/**/*.yaml"))
+            + list(self.workspace.glob("**/manifests/**/*.yaml"))
+        )
 
         for k8s_file in k8s_files:
             if self._should_exclude(k8s_file):
                 continue
             try:
                 import yaml
+
                 # Handle multi-document YAML
                 docs = list(yaml.safe_load_all(k8s_file.read_text()))
 
@@ -353,7 +415,9 @@ class ServiceMapDetector:
 
         return services, connections
 
-    async def _detect_terraform(self) -> tuple[List[ServiceNode], List[ServiceConnection]]:
+    async def _detect_terraform(
+        self,
+    ) -> tuple[List[ServiceNode], List[ServiceConnection]]:
         """Parse Terraform files for cloud resources."""
         services: List[ServiceNode] = []
         connections: List[ServiceConnection] = []
@@ -409,7 +473,9 @@ class ServiceMapDetector:
 
         return services, connections
 
-    async def _detect_ast_grep(self) -> tuple[List[ServiceNode], List[ServiceConnection]]:
+    async def _detect_ast_grep(
+        self,
+    ) -> tuple[List[ServiceNode], List[ServiceConnection]]:
         """Use ast-grep for structural code pattern detection."""
         services: List[ServiceNode] = []
         connections: List[ServiceConnection] = []
@@ -496,7 +562,9 @@ class ServiceMapDetector:
 
         return services, connections
 
-    async def _detect_ripgrep(self) -> tuple[List[ServiceNode], List[ServiceConnection]]:
+    async def _detect_ripgrep(
+        self,
+    ) -> tuple[List[ServiceNode], List[ServiceConnection]]:
         """Use ripgrep for string pattern detection."""
         services: List[ServiceNode] = []
         connections: List[ServiceConnection] = []
@@ -508,11 +576,11 @@ class ServiceMapDetector:
         # Patterns for connection detection
         connection_patterns = [
             # Database connections (variable names, not values!)
-            (r'(DATABASE_URL|DB_HOST|POSTGRES_HOST|MYSQL_HOST)', "database"),
-            (r'(REDIS_URL|REDIS_HOST|CACHE_URL)', "cache"),
-            (r'(RABBITMQ_URL|AMQP_URL|KAFKA_BROKERS)', "queue"),
+            (r"(DATABASE_URL|DB_HOST|POSTGRES_HOST|MYSQL_HOST)", "database"),
+            (r"(REDIS_URL|REDIS_HOST|CACHE_URL)", "cache"),
+            (r"(RABBITMQ_URL|AMQP_URL|KAFKA_BROKERS)", "queue"),
             # HTTP service references
-            (r'(API_URL|SERVICE_URL|BACKEND_URL)', "application"),
+            (r"(API_URL|SERVICE_URL|BACKEND_URL)", "application"),
         ]
 
         for pattern, target_type in connection_patterns:
@@ -525,7 +593,9 @@ class ServiceMapDetector:
                         var_name = env_var.group(1)
                         # This indicates a connection to a service of this type
                         # We'll add as a potential service if not already found
-                        svc_name = var_name.replace("_URL", "").replace("_HOST", "").lower()
+                        svc_name = (
+                            var_name.replace("_URL", "").replace("_HOST", "").lower()
+                        )
 
                         svc = ServiceNode(
                             id=f"env:{svc_name}",
@@ -543,7 +613,9 @@ class ServiceMapDetector:
 
         return services, connections
 
-    async def _detect_conventions(self) -> tuple[List[ServiceNode], List[ServiceConnection]]:
+    async def _detect_conventions(
+        self,
+    ) -> tuple[List[ServiceNode], List[ServiceConnection]]:
         """Detect services from folder naming conventions."""
         services: List[ServiceNode] = []
         connections: List[ServiceConnection] = []
@@ -565,7 +637,11 @@ class ServiceMapDetector:
 
                 # Each subdirectory might be a service
                 for subdir in dir_path.iterdir():
-                    if subdir.is_dir() and not subdir.name.startswith(".") and not self._should_exclude(subdir):
+                    if (
+                        subdir.is_dir()
+                        and not subdir.name.startswith(".")
+                        and not self._should_exclude(subdir)
+                    ):
                         svc = ServiceNode(
                             id=f"conv:{subdir.name}",
                             name=subdir.name,
@@ -620,7 +696,7 @@ class ServiceMapDetector:
                 result.append(port)
             elif isinstance(port, str):
                 # Handle "8080:80" or "8080"
-                match = re.search(r':?(\d+)$', port)
+                match = re.search(r":?(\d+)$", port)
                 if match:
                     result.append(int(match.group(1)))
         return result
@@ -645,7 +721,9 @@ class ServiceMapDetector:
             return "AMQP"
         return "HTTP"
 
-    def _extract_service_from_env(self, value: str, known_services: List[ServiceNode]) -> Optional[str]:
+    def _extract_service_from_env(
+        self, value: str, known_services: List[ServiceNode]
+    ) -> Optional[str]:
         """Try to match env value to a known service."""
         value_lower = value.lower()
         for svc in known_services:
@@ -682,7 +760,8 @@ class ServiceMapDetector:
 
         try:
             proc = await asyncio.create_subprocess_exec(
-                "sg", "--version",
+                "sg",
+                "--version",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -700,7 +779,8 @@ class ServiceMapDetector:
 
         try:
             proc = await asyncio.create_subprocess_exec(
-                "rg", "--version",
+                "rg",
+                "--version",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
             )
@@ -715,7 +795,12 @@ class ServiceMapDetector:
         """Run ast-grep with a pattern."""
         try:
             proc = await asyncio.create_subprocess_exec(
-                "sg", "--pattern", pattern, "--lang", lang, "--json",
+                "sg",
+                "--pattern",
+                pattern,
+                "--lang",
+                lang,
+                "--json",
                 str(self.workspace),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -733,7 +818,10 @@ class ServiceMapDetector:
         """Run ripgrep with a pattern."""
         try:
             proc = await asyncio.create_subprocess_exec(
-                "rg", "--json", "-e", pattern,
+                "rg",
+                "--json",
+                "-e",
+                pattern,
                 str(self.workspace),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
@@ -748,11 +836,17 @@ class ServiceMapDetector:
                             data = json.loads(line)
                             if data.get("type") == "match":
                                 match_data = data.get("data", {})
-                                results.append({
-                                    "file": match_data.get("path", {}).get("text", ""),
-                                    "line": match_data.get("line_number"),
-                                    "text": match_data.get("lines", {}).get("text", ""),
-                                })
+                                results.append(
+                                    {
+                                        "file": match_data.get("path", {}).get(
+                                            "text", ""
+                                        ),
+                                        "line": match_data.get("line_number"),
+                                        "text": match_data.get("lines", {}).get(
+                                            "text", ""
+                                        ),
+                                    }
+                                )
                         except json.JSONDecodeError:
                             pass
             return results

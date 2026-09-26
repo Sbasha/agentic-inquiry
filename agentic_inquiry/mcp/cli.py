@@ -6,13 +6,13 @@ the Agentic Inquiry MCP server.
 Usage:
     # Start with default configuration
     python -m agentic_inquiry.mcp.cli --project-id my_project
-    
+
     # With custom configuration
     python -m agentic_inquiry.mcp.cli --config custom.yaml --project-id my_project
-    
+
     # Enable direct access tools
     python -m agentic_inquiry.mcp.cli --project-id my_project --enable-direct-tools
-    
+
     # Specify host and port
     python -m agentic_inquiry.mcp.cli --project-id my_project --host 127.0.0.1 --port 9000
 """
@@ -33,15 +33,15 @@ from agentic_inquiry.mcp.utils.validation import validate_file_path, PathValidat
 # Using stderr by default since stdio transport uses stdout for JSON-RPC
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    stream=sys.stderr
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    stream=sys.stderr,
 )
 logger = logging.getLogger(__name__)
 
 
 def parse_arguments() -> argparse.Namespace:
     """Parse command-line arguments.
-    
+
     Returns:
         Parsed arguments namespace
     """
@@ -70,22 +70,19 @@ Examples:
 
   # Enable debug logging
   %(prog)s --project-id my_project --log-level DEBUG
-        """
+        """,
     )
-    
+
     # Configuration
     parser.add_argument(
         "--config",
         type=str,
-        help="Path to configuration file (default: uses Config.load() defaults)"
+        help="Path to configuration file (default: uses Config.load() defaults)",
     )
-    
+
     # Project
     parser.add_argument(
-        "--project-id",
-        type=str,
-        required=True,
-        help="Project identifier (required)"
+        "--project-id", type=str, required=True, help="Project identifier (required)"
     )
 
     parser.add_argument(
@@ -94,54 +91,54 @@ Examples:
         default=None,
         help="Project root whose integration ledger the maintenance tick drains",
     )
-    
+
     # Tool configuration
     parser.add_argument(
         "--enable-direct-tools",
         action="store_true",
-        help="Enable direct access tools (default: disabled)"
+        help="Enable direct access tools (default: disabled)",
     )
-    
+
     # Server configuration
     parser.add_argument(
         "--transport",
         type=str,
         choices=["stdio", "http", "sse"],
         default="stdio",
-        help="Transport type (default: stdio). Options: stdio (local CLI), http (web service), sse (legacy)"
+        help="Transport type (default: stdio). Options: stdio (local CLI), http (web service), sse (legacy)",
     )
 
     parser.add_argument(
         "--host",
         type=str,
-        help="Server host for http/sse transports (overrides config, default: 127.0.0.1)"
+        help="Server host for http/sse transports (overrides config, default: 127.0.0.1)",
     )
 
     parser.add_argument(
         "--port",
         type=int,
-        help="Server port for http/sse transports (overrides config, default: 8765)"
+        help="Server port for http/sse transports (overrides config, default: 8765)",
     )
-    
+
     # Logging
     parser.add_argument(
         "--log-level",
         type=str,
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
-        help="Logging level (default: INFO)"
+        help="Logging level (default: INFO)",
     )
-    
+
     parser.add_argument(
-        "--log-file",
-        type=str,
-        help="Log file path (default: logs to console only)"
+        "--log-file", type=str, help="Log file path (default: logs to console only)"
     )
-    
+
     return parser.parse_args()
 
 
-def configure_logging(log_level: str, log_file: Optional[str] = None, transport: str = "stdio"):
+def configure_logging(
+    log_level: str, log_file: Optional[str] = None, transport: str = "stdio"
+):
     """Configure logging based on CLI arguments.
 
     Args:
@@ -162,15 +159,16 @@ def configure_logging(log_level: str, log_file: Optional[str] = None, transport:
     console_handler = logging.StreamHandler(stream)
     console_handler.setLevel(getattr(logging, log_level))
     console_formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
     console_handler.setFormatter(console_formatter)
     root_logger.addHandler(console_handler)
-    
+
     # File handler (if specified)
     if log_file:
         # Validate log file path for security
         import os
+
         project_root = Path(os.getcwd())
         try:
             log_path = validate_file_path(log_file, project_root, must_exist=False)
@@ -179,29 +177,29 @@ def configure_logging(log_level: str, log_file: Optional[str] = None, transport:
             sys.stderr.write(f"Error: Invalid log file path - {e}\n")
             sys.stderr.write("Please use a path within the project directory.\n")
             sys.exit(1)
-        
+
         log_path.parent.mkdir(parents=True, exist_ok=True)
-        
+
         file_handler = logging.FileHandler(log_path)
         file_handler.setLevel(getattr(logging, log_level))
         file_formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         )
         file_handler.setFormatter(file_formatter)
         root_logger.addHandler(file_handler)
-        
+
         logger.info("Logging to file: %s", log_file)
 
 
 def load_configuration(config_path: Optional[str] = None) -> Config:
     """Load configuration from file or defaults.
-    
+
     Args:
         config_path: Optional path to configuration file
-        
+
     Returns:
         Configuration object
-        
+
     Raises:
         FileNotFoundError: If config file doesn't exist
         PathValidationError: If config path is outside project directory
@@ -211,26 +209,29 @@ def load_configuration(config_path: Optional[str] = None) -> Config:
         if config_path:
             # Validate config file path for security
             import os
+
             project_root = Path(os.getcwd())
             try:
-                config_file = validate_file_path(config_path, project_root, must_exist=False)
+                config_file = validate_file_path(
+                    config_path, project_root, must_exist=False
+                )
             except PathValidationError as e:
                 logger.error("Invalid config file path: %s", e)
                 sys.stderr.write(f"Error: Invalid config file path - {e}\n")
                 sys.stderr.write("Please use a path within the project directory.\n")
                 sys.exit(1)
-            
+
             if not config_file.exists():
                 raise FileNotFoundError(f"Configuration file not found: {config_path}")
-            
+
             logger.info("Loading configuration from: %s", config_path)
             config = Config.load(str(config_file))
         else:
             logger.info("Loading default configuration")
             config = Config.load()
-        
+
         return config
-        
+
     except Exception as e:
         logger.error("Failed to load configuration: %s", e)
         raise
@@ -286,7 +287,9 @@ async def run_server(
     try:
         # Create server
         logger.info("Creating MCP server")
-        server = MCPServer(config=config, project_id=project_id, project_root=project_root)
+        server = MCPServer(
+            config=config, project_id=project_id, project_root=project_root
+        )
 
         # Initialize server
         logger.info("Initializing MCP server")
@@ -310,8 +313,8 @@ async def run_server(
                 extra={
                     "transport": transport,
                     "host": host or config.mcp.api.host,
-                    "port": port or config.mcp.api.port
-                }
+                    "port": port or config.mcp.api.port,
+                },
             )
             await server.run_async(transport=transport, host=host, port=port)
 
@@ -354,7 +357,12 @@ async def async_main():
 
         # Run server
         result = await run_server(
-            config, args.project_id, args.transport, args.host, args.port, args.project_root
+            config,
+            args.project_id,
+            args.transport,
+            args.host,
+            args.port,
+            args.project_root,
         )
 
         # If stdio transport, we need to handle it specially

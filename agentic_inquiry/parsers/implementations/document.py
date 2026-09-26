@@ -75,9 +75,9 @@ ALLOWED_METADATA_TYPES = (str, int, float, bool, type(None))
 # Font size thresholds for PDF heading detection (relative to body text)
 # Headings are detected when font_size >= body_size * threshold
 PDF_HEADING_THRESHOLDS = {
-    1: 1.8,   # h1: 80% larger than body
-    2: 1.5,   # h2: 50% larger than body
-    3: 1.3,   # h3: 30% larger than body
+    1: 1.8,  # h1: 80% larger than body
+    2: 1.5,  # h2: 50% larger than body
+    3: 1.3,  # h3: 30% larger than body
     4: 1.15,  # h4: 15% larger than body
 }
 
@@ -181,7 +181,8 @@ class DocumentParser:
             if file_size > _MAX_DOC_FILE_SIZE:
                 logger.warning(
                     "Skipping oversized document (%s MB): %s",
-                    file_size / (1024 * 1024), file_path,
+                    file_size / (1024 * 1024),
+                    file_path,
                 )
                 return ParsedDocument(
                     chunks=[],
@@ -199,7 +200,9 @@ class DocumentParser:
 
             # Use pdftext for PDF files to get font-based heading detection
             if file_path.suffix.lower() == ".pdf":
-                logger.debug("Using pdftext for PDF structure extraction: %s", file_path)
+                logger.debug(
+                    "Using pdftext for PDF structure extraction: %s", file_path
+                )
                 loop = asyncio.get_running_loop()
                 elements = await loop.run_in_executor(
                     _doc_executor, self._extract_pdf_with_structure, file_path
@@ -218,7 +221,10 @@ class DocumentParser:
                 if file_path.suffix.lower() not in {".md", ".markdown"}:
                     partition_kwargs["infer_table_structure"] = True
 
-                logger.debug("Partitioning document with strategy: %s", partition_kwargs['strategy'])
+                logger.debug(
+                    "Partitioning document with strategy: %s",
+                    partition_kwargs["strategy"],
+                )
 
                 # Execute unstructured library calls in run_in_executor (I/O and CPU-bound)
                 # Use functools.partial to pass kwargs to run_in_executor
@@ -230,26 +236,32 @@ class DocumentParser:
                 logger.warning(
                     "No elements extracted from %s. "
                     "Document may be empty or in an unsupported format.",
-                    file_path
+                    file_path,
                 )
                 return ParsedDocument(
                     doc_id=self._generate_doc_id(path),
                     file_path=path,
                     chunks=[],
-                    metadata={"error": "No content extracted from document"}
+                    metadata={"error": "No content extracted from document"},
                 )
 
             logger.debug("Extracted %d raw elements from %s", len(elements), file_path)
 
             # Extract hierarchical relationships (synchronous - fast, in-memory)
-            relationships, heading_hierarchy = self._extract_relationships(elements, file_path)
+            relationships, heading_hierarchy = self._extract_relationships(
+                elements, file_path
+            )
 
             # Create one chunk per element with accurate metadata (synchronous - fast, in-memory)
-            chunks = self._elements_to_chunks(elements, heading_hierarchy, relationships, file_path)
-            
+            chunks = self._elements_to_chunks(
+                elements, heading_hierarchy, relationships, file_path
+            )
+
             logger.info(
                 "Successfully parsed %s: %d chunks, %d relationships",
-                file_path, len(chunks), len(relationships)
+                file_path,
+                len(chunks),
+                len(relationships),
             )
 
             # Extract metadata (synchronous - fast, in-memory)
@@ -268,13 +280,13 @@ class DocumentParser:
                 file_path,
                 type(e).__name__,
                 e,
-                exc_info=True
+                exc_info=True,
             )
             raise DocumentParsingError(
                 f"Document parsing failed for {file_path}: {e}",
                 file_path=str(file_path),
                 parser_type="document",
-                original_error=e
+                original_error=e,
             ) from e
 
     def _generate_doc_id(self, path: str) -> str:
@@ -334,7 +346,9 @@ class DocumentParser:
         body_size = size_counter.most_common(1)[0][0]
         logger.debug(
             "PDF body text size: %.1f (from %d valid samples, %d total)",
-            body_size, len(valid_sizes), len(font_sizes)
+            body_size,
+            len(valid_sizes),
+            len(font_sizes),
         )
 
         # Convert PDF structure to elements
@@ -372,11 +386,13 @@ class DocumentParser:
                     # Determine element type based on font characteristics
                     avg_font_size = (
                         sum(line_font_sizes) / len(line_font_sizes)
-                        if line_font_sizes else body_size
+                        if line_font_sizes
+                        else body_size
                     )
                     avg_font_weight = (
                         sum(line_font_weights) / len(line_font_weights)
-                        if line_font_weights else 400
+                        if line_font_weights
+                        else 400
                     )
 
                     element_type = self._classify_pdf_element(
@@ -394,15 +410,19 @@ class DocumentParser:
                         "coordinates": line.get("bbox", []),
                     }
 
-                    elements.append(PDFElement(
-                        text=line_text,
-                        element_type=element_type,
-                        metadata=metadata,
-                    ))
+                    elements.append(
+                        PDFElement(
+                            text=line_text,
+                            element_type=element_type,
+                            metadata=metadata,
+                        )
+                    )
 
         logger.info(
             "Extracted %d elements from PDF %s (body size: %.1f)",
-            len(elements), file_path, body_size
+            len(elements),
+            file_path,
+            body_size,
         )
 
         return elements
@@ -460,13 +480,13 @@ class DocumentParser:
         heading_stack: List[Dict[str, Any]],
         relationships: List[ParserRelationship],
         heading_hierarchy: Dict[int, str],
-        file_path: Path
+        file_path: Path,
     ) -> None:
         """Process a heading element and update relationships.
-        
+
         Extracts heading information, manages the heading stack, and creates
         hierarchical relationships (contains and follows) between headings.
-        
+
         Args:
             element: The heading element to process
             index: Index of the element in the document
@@ -479,18 +499,19 @@ class DocumentParser:
         if not element_name:
             logger.debug("Skipping heading at index %d with no name", index)
             return
-            
+
         # Determine heading level
         level = self._get_heading_level(element)
         logger.debug("Processing heading '%s' at level %d", element_name, level)
-        
+
         # Create "follows" relationship with previous sibling BEFORE popping
         # Must do this before popping to find siblings at the same level
         prev_sibling = self._find_previous_sibling(heading_stack, level)
         if prev_sibling:
             logger.debug(
                 "Creating 'follows' relationship: '%s' -> '%s'",
-                prev_sibling['name'], element_name
+                prev_sibling["name"],
+                element_name,
             )
             relationships.append(
                 ParserRelationship(
@@ -499,22 +520,23 @@ class DocumentParser:
                     target_type=EntityType.DOC_SECTION.value,
                     target_name=element_name,
                     type="follows",
-                    metadata={}
+                    metadata={},
                 )
             )
-        
+
         # Pop stack until we find the parent level
         while heading_stack and int(heading_stack[-1]["level"]) >= level:
             popped = heading_stack.pop()
-            logger.debug("Popped heading '%s' from stack", popped['name'])
-        
+            logger.debug("Popped heading '%s' from stack", popped["name"])
+
         # Create "contains" relationship to parent
         if heading_stack:
             parent = heading_stack[-1]
             parent_name = str(parent["name"])
             logger.debug(
                 "Creating 'contains' relationship: '%s' -> '%s'",
-                parent_name, element_name
+                parent_name,
+                element_name,
             )
             relationships.append(
                 ParserRelationship(
@@ -523,7 +545,7 @@ class DocumentParser:
                     target_type=EntityType.DOC_SECTION.value,
                     target_name=element_name,
                     type="contains",
-                    metadata={"hierarchy_level": level}
+                    metadata={"hierarchy_level": level},
                 )
             )
             # Set parent for this heading
@@ -532,7 +554,8 @@ class DocumentParser:
             # Top-level heading - parent is document
             logger.debug(
                 "Creating top-level 'contains' relationship: '%s' -> '%s'",
-                file_path.name, element_name
+                file_path.name,
+                element_name,
             )
             relationships.append(
                 ParserRelationship(
@@ -541,29 +564,25 @@ class DocumentParser:
                     target_type=EntityType.DOC_SECTION.value,
                     target_name=element_name,
                     type="contains",
-                    metadata={"hierarchy_level": level}
+                    metadata={"hierarchy_level": level},
                 )
             )
-        
+
         # Add to stack
-        heading_stack.append({
-            "name": element_name,
-            "level": level,
-            "index": index
-        })
+        heading_stack.append({"name": element_name, "level": level, "index": index})
 
     def _process_non_heading_element(
         self,
         index: int,
         heading_stack: List[Dict[str, Any]],
         heading_hierarchy: Dict[int, str],
-        mapped_type: str
+        mapped_type: str,
     ) -> None:
         """Process a non-heading element and update hierarchy.
-        
+
         Assigns the current heading as the parent for non-heading elements
         (paragraphs, lists, tables, etc.).
-        
+
         Args:
             index: Index of the element in the document
             heading_stack: Stack tracking current heading hierarchy
@@ -575,20 +594,20 @@ class DocumentParser:
             heading_hierarchy[index] = str(heading_stack[-1]["name"])
             logger.debug(
                 "Assigning parent '%s' to %s at index %d",
-                heading_stack[-1]['name'], mapped_type, index
+                heading_stack[-1]["name"],
+                mapped_type,
+                index,
             )
 
     def _extract_relationships(
-        self, 
-        elements: List[Any], 
-        file_path: Path
+        self, elements: List[Any], file_path: Path
     ) -> Tuple[List[ParserRelationship], Dict[int, str]]:
         """Extract hierarchical relationships and heading hierarchy.
-        
+
         Args:
             elements: List of unstructured elements
             file_path: Path to the document
-            
+
         Returns:
             Tuple of (relationships, heading_hierarchy) where:
             - relationships: List of ParserRelationship objects
@@ -597,77 +616,97 @@ class DocumentParser:
         # Implements subtasks 1.1, 1.4, 1.5, 1.6
         try:
             logger.debug("Starting relationship extraction for %s", file_path)
-            
+
             relationships: List[ParserRelationship] = []
-            heading_stack: List[Dict[str, Any]] = []  # Track heading hierarchy: [{name, level, index}]
-            heading_hierarchy: Dict[int, str] = {}  # Map element index to parent heading name
+            heading_stack: List[
+                Dict[str, Any]
+            ] = []  # Track heading hierarchy: [{name, level, index}]
+            heading_hierarchy: Dict[
+                int, str
+            ] = {}  # Map element index to parent heading name
             has_headings = False
 
             # Count element types for logging
             element_type_counts: Dict[str, int] = {}
-            
+
             for i, element in enumerate(elements):
                 try:
                     element_type = self._get_element_type(element)
                     mapped_type = self._map_element_type(element_type)
-                    
+
                     # Track element types
-                    element_type_counts[mapped_type] = element_type_counts.get(mapped_type, 0) + 1
-                    
+                    element_type_counts[mapped_type] = (
+                        element_type_counts.get(mapped_type, 0) + 1
+                    )
+
                     # Delegate processing based on element type
                     if mapped_type == EntityType.DOC_SECTION.value:
                         has_headings = True
                         self._process_heading_element(
-                            element, i, heading_stack, relationships, heading_hierarchy, file_path
+                            element,
+                            i,
+                            heading_stack,
+                            relationships,
+                            heading_hierarchy,
+                            file_path,
                         )
                     else:
                         self._process_non_heading_element(
                             i, heading_stack, heading_hierarchy, mapped_type
                         )
-                
+
                 except Exception as e:
                     logger.warning(
                         "Error processing element %d in %s: %s. Skipping element.",
-                        i, file_path, e,
-                        exc_info=True
+                        i,
+                        file_path,
+                        e,
+                        exc_info=True,
                     )
                     continue
-            
+
             # Log entity counts
             logger.info(
                 "Extracted entities from %s: %s",
                 file_path,
-                ', '.join(f'{count} {etype}(s)' for etype, count in sorted(element_type_counts.items()))
+                ", ".join(
+                    f"{count} {etype}(s)"
+                    for etype, count in sorted(element_type_counts.items())
+                ),
             )
-            
+
             # Log relationship counts
             contains_count = sum(1 for r in relationships if r.type == "contains")
             follows_count = sum(1 for r in relationships if r.type == "follows")
             logger.info(
                 "Created %d relationships for %s: %d contains, %d follows",
-                len(relationships), file_path, contains_count, follows_count
+                len(relationships),
+                file_path,
+                contains_count,
+                follows_count,
             )
-            
+
             # Log warning if no structural elements found
             if not has_headings:
                 logger.warning(
                     "No heading elements found in %s. "
                     "Document will be processed as flat structure with element_type='section'.",
-                    file_path
+                    file_path,
                 )
-            
+
             return relationships, heading_hierarchy
-            
+
         except Exception as e:
             logger.error(
                 "Failed to extract relationships from %s: %s. "
                 "Returning empty relationships.",
-                file_path, e,
-                exc_info=True
+                file_path,
+                e,
+                exc_info=True,
             )
             # Return empty relationships to allow document processing to continue
             return [], {}
-    
+
     def _get_heading_level(self, element: Any) -> int:
         """Determine heading level from element.
 
@@ -713,15 +752,17 @@ class DocumentParser:
 
             return 3  # Default for other types
         except Exception as e:
-            logger.debug("Error determining heading level: %s. Using default level 2.", e)
+            logger.debug(
+                "Error determining heading level: %s. Using default level 2.", e
+            )
             return 2
 
     def _get_element_name(self, element: Any) -> str:
         """Extract element name for all element types.
-        
+
         Args:
             element: Unstructured element
-            
+
         Returns:
             Element name string (empty string if no name available)
         """
@@ -729,10 +770,10 @@ class DocumentParser:
         try:
             element_type = self._get_element_type(element)
             text = self._get_element_text(element)
-            
+
             if not text:
                 return ""
-            
+
             # For headings: use the heading text
             if element_type in ["Title", "Header"]:
                 name = text.strip()
@@ -753,27 +794,27 @@ class DocumentParser:
                     name = sentences[0].strip()
                 else:
                     name = text.strip()[:100]
-            
+
             # Clean and truncate to 200 characters
             if len(name) > 200:
                 name = name[:200] + "..."
-            
+
             return name
         except Exception as e:
-            logger.debug("Error extracting element name: %s. Returning empty string.", e)
+            logger.debug(
+                "Error extracting element name: %s. Returning empty string.", e
+            )
             return ""
-    
+
     def _find_previous_sibling(
-        self, 
-        heading_stack: List[Dict], 
-        level: int
+        self, heading_stack: List[Dict], level: int
     ) -> Optional[Dict]:
         """Find the previous heading at the same level.
-        
+
         Args:
             heading_stack: Stack of heading dictionaries
             level: Level to search for
-            
+
         Returns:
             Previous sibling heading dict or None
         """
@@ -783,13 +824,13 @@ class DocumentParser:
             if heading_stack[i]["level"] == level:
                 return heading_stack[i]
         return None
-    
+
     def _map_element_type(self, element_type: str) -> str:
         """Map Unstructured element type to standardized entity type.
-        
+
         Args:
             element_type: Unstructured element type name
-            
+
         Returns:
             Standardized entity type
         """
@@ -801,7 +842,7 @@ class DocumentParser:
         elements: List[Any],
         heading_hierarchy: Dict[int, str],
         relationships: List[ParserRelationship],
-        file_path: Path
+        file_path: Path,
     ) -> List[ParserChunk]:
         """Convert unstructured elements to ParserChunk objects.
 
@@ -840,43 +881,45 @@ class DocumentParser:
                 if target not in rels_by_target:
                     rels_by_target[target] = []
                 rels_by_target[target].append(rel)
-            
+
             for i, element in enumerate(elements):
                 try:
                     text = self._get_element_text(element)
                     if not text:
                         skipped_count += 1
                         continue
-                    
+
                     # Get element type and map to standard type
                     raw_element_type = self._get_element_type(element)
                     mapped_element_type = self._map_element_type(raw_element_type)
-                    
+
                     # Get element name
                     element_name = self._get_element_name(element)
-                    
+
                     # Get parent_id from heading_hierarchy
                     parent_id = heading_hierarchy.get(i, "")
-                    
+
                     # Get relationships for this element (only outgoing)
                     # Note: Incoming relationships are NOT attached here - the query layer
                     # handles bidirectional traversal via the graph_relationships table
                     element_relationships = []
                     if element_name:
                         # Get relationships where this element is the source (outgoing)
-                        element_relationships.extend(rels_by_source.get(element_name, []))
-                    
+                        element_relationships.extend(
+                            rels_by_source.get(element_name, [])
+                        )
+
                     # Extract other metadata
                     metadata = self._extract_element_metadata(element)
-                    
+
                     # Generate FTS text for prose content
                     fts_text = self._generate_fts_text(text)
-                    
+
                     # Extract top-level fields from metadata
                     page_number = metadata.pop("page_number", -1)
                     content_type = metadata.pop("content_type", "PROSE")
                     language = metadata.pop("language", "")
-                    
+
                     chunks.append(
                         ParserChunk(
                             content=text,
@@ -893,19 +936,21 @@ class DocumentParser:
                             metadata=metadata,
                         )
                     )
-                
+
                 except Exception as e:
                     logger.warning(
                         "Error converting element %d to chunk: %s. Skipping element.",
                         i,
                         e,
-                        exc_info=True
+                        exc_info=True,
                     )
                     skipped_count += 1
                     continue
-            
+
             if skipped_count > 0:
-                logger.debug("Skipped %d elements (empty or failed to convert)", skipped_count)
+                logger.debug(
+                    "Skipped %d elements (empty or failed to convert)", skipped_count
+                )
 
             # Create a file chunk to hold document-level relationships
             # This ensures "contains" relationships from the document to top-level headings
@@ -931,12 +976,13 @@ class DocumentParser:
                 chunks.insert(0, file_chunk)
                 logger.debug(
                     "Created file chunk for %s with %d document-level relationships",
-                    file_name, len(file_relationships)
+                    file_name,
+                    len(file_relationships),
                 )
 
             logger.debug("Successfully converted %d elements to chunks", len(chunks))
             return chunks
-            
+
         except Exception as e:
             logger.error("Failed to convert elements to chunks: %s", e, exc_info=True)
             # Return empty list to allow parsing to continue
@@ -944,10 +990,10 @@ class DocumentParser:
 
     def _get_element_text(self, element: Any) -> str:
         """Extract text from an unstructured element.
-        
+
         Args:
             element: Unstructured element object
-            
+
         Returns:
             Text content of the element, or empty string if no text available
         """
@@ -979,22 +1025,22 @@ class DocumentParser:
 
     def _validate_metadata_types(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Filter metadata to only include allowed types.
-        
+
         LanceDB has strict schema constraints and only supports simple types
         (str, int, float, bool, None) in metadata fields. Complex types like
         lists, dicts, and custom objects must be filtered out.
-        
+
         Args:
             metadata: Raw metadata dictionary that may contain complex types
-            
+
         Returns:
             Filtered metadata dictionary containing only allowed types
-            
+
         Side Effects:
             Logs debug messages for any filtered fields
         """
         validated = {}
-        
+
         for field, value in metadata.items():
             if isinstance(value, ALLOWED_METADATA_TYPES):
                 validated[field] = value
@@ -1002,9 +1048,9 @@ class DocumentParser:
                 logger.debug(
                     "Skipping metadata field '%s' with unsupported type %s",
                     field,
-                    type(value).__name__
+                    type(value).__name__,
                 )
-        
+
         return validated
 
     def _extract_element_metadata(self, element: Any) -> Dict[str, Any]:
@@ -1037,7 +1083,9 @@ class DocumentParser:
                     if "coordinates" in elem_metadata and elem_metadata["coordinates"]:
                         coords = elem_metadata["coordinates"]
                         if isinstance(coords, list) and len(coords) == 4:
-                            metadata["bbox"] = ",".join(str(round(c, 1)) for c in coords)
+                            metadata["bbox"] = ",".join(
+                                str(round(c, 1)) for c in coords
+                            )
                 else:
                     # Handle unstructured elements (object with attributes)
                     for field in ["page_number", "filename", "section", "type"]:
@@ -1047,7 +1095,9 @@ class DocumentParser:
                                 if value is not None:
                                     metadata[field] = value
                         except Exception as e:
-                            logger.debug("Error extracting metadata field '%s': %s", field, e)
+                            logger.debug(
+                                "Error extracting metadata field '%s': %s", field, e
+                            )
                             continue
 
             # Set content type
@@ -1061,18 +1111,15 @@ class DocumentParser:
         return self._validate_metadata_types(metadata)
 
     def _extract_metadata(
-        self, 
-        file_path: Path, 
-        elements: List[Any], 
-        chunks: List[ParserChunk]
+        self, file_path: Path, elements: List[Any], chunks: List[ParserChunk]
     ) -> Dict[str, Any]:
         """Build document-level metadata.
-        
+
         Args:
             file_path: Path to the document file
             elements: List of unstructured elements
             chunks: List of ParserChunk objects created from elements
-            
+
         Returns:
             Dictionary containing document-level metadata including element counts,
             chunk statistics, and parser information
@@ -1093,7 +1140,10 @@ class DocumentParser:
                 "element_count": len(elements),
                 "chunk_count": len(chunks),
                 "element_types": element_types,
-                "avg_chunk_size": sum(len(c.content or "") for c in chunks) // len(chunks) if chunks else 0,
+                "avg_chunk_size": sum(len(c.content or "") for c in chunks)
+                // len(chunks)
+                if chunks
+                else 0,
                 "parser": "document",
                 "approach": "individual_elements",
             }
@@ -1109,8 +1159,8 @@ class DocumentParser:
         """Generate FTS-optimized text for prose content."""
         if not text:
             return ""
-        
+
         # Basic cleaning: normalize whitespace
         cleaned = " ".join(text.split())
-        
+
         return cleaned

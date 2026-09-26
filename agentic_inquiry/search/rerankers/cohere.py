@@ -3,6 +3,7 @@
 Wraps lancedb.rerankers.CohereReranker for use with the RerankerProtocol.
 Uses Cohere's hosted reranking API for high-quality semantic reranking.
 """
+
 from __future__ import annotations
 
 import logging
@@ -125,4 +126,6 @@ class CohereReranker(RerankerProtocol):
             ]
 
         # Normalize scores to 0.0-1.0 using shared utility
-        return normalize_scored_tuples(scored_results, result_map, source="hybrid_cohere")
+        return normalize_scored_tuples(
+            scored_results, result_map, source="hybrid_cohere"
+        )

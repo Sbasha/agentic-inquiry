@@ -49,7 +49,7 @@ class TestGraphBuilderExceptionHandling:
         mock_db_manager,
         mock_symbol_registry,
         mock_relationship_resolver,
-        mock_embedding_service
+        mock_embedding_service,
     ):
         """Create a GraphBuilder instance with mocked dependencies."""
         builder = GraphBuilder(
@@ -59,7 +59,7 @@ class TestGraphBuilderExceptionHandling:
             embedding_service=mock_embedding_service,
             project_id="test_project",
             project_hash="test_hash",
-            project_root="/tmp/test_project"
+            project_root="/tmp/test_project",
         )
         return builder
 
@@ -74,17 +74,22 @@ class TestGraphBuilderExceptionHandling:
             source_name="test_source",
             target_type="function",
             target_name="test_target",
-            type="calls"
+            type="calls",
         )
 
         # Mock Path.suffix to raise KeyboardInterrupt
-        with patch("pathlib.Path.suffix", new_callable=lambda: property(lambda self: (_ for _ in ()).throw(KeyboardInterrupt()))):
+        with patch(
+            "pathlib.Path.suffix",
+            new_callable=lambda: property(
+                lambda self: (_ for _ in ()).throw(KeyboardInterrupt())
+            ),
+        ):
             # KeyboardInterrupt should propagate, not be caught
             with pytest.raises(KeyboardInterrupt):
                 await graph_builder._resolve_import(
                     relationship=relationship,
                     source_file_path="test.py",
-                    import_path=None
+                    import_path=None,
                 )
 
     @pytest.mark.asyncio
@@ -98,17 +103,22 @@ class TestGraphBuilderExceptionHandling:
             source_name="test_source",
             target_type="function",
             target_name="test_target",
-            type="calls"
+            type="calls",
         )
 
         # Mock Path.suffix to raise SystemExit
-        with patch("pathlib.Path.suffix", new_callable=lambda: property(lambda self: (_ for _ in ()).throw(SystemExit(1)))):
+        with patch(
+            "pathlib.Path.suffix",
+            new_callable=lambda: property(
+                lambda self: (_ for _ in ()).throw(SystemExit(1))
+            ),
+        ):
             # SystemExit should propagate, not be caught
             with pytest.raises(SystemExit):
                 await graph_builder._resolve_import(
                     relationship=relationship,
                     source_file_path="test.py",
-                    import_path=None
+                    import_path=None,
                 )
 
     @pytest.mark.asyncio
@@ -122,25 +132,25 @@ class TestGraphBuilderExceptionHandling:
             source_name="test_source",
             target_type="function",
             target_name="test_target",
-            type="calls"
+            type="calls",
         )
 
         # Mock Path to raise TypeError (a recoverable exception)
         with patch("pathlib.Path") as mock_path:
             mock_path.side_effect = TypeError("Invalid path type")
-            
+
             # Capture logs at WARNING level
             with caplog.at_level(logging.WARNING):
                 # Should not raise, should continue with empty source_language
                 result = await graph_builder._resolve_import(
                     relationship=relationship,
                     source_file_path=None,  # This will cause TypeError
-                    import_path=None
+                    import_path=None,
                 )
-                
+
                 # Verify the method completed (returned result from resolver)
                 assert result is None  # Mock returns None
-                
+
                 # Verify exception was logged
                 assert any(
                     "Failed to determine source language" in record.message
@@ -158,29 +168,30 @@ class TestGraphBuilderExceptionHandling:
             source_name="test_source",
             target_type="function",
             target_name="test_target",
-            type="calls"
+            type="calls",
         )
 
         # Mock Path to raise AttributeError
         with patch("pathlib.Path") as mock_path:
             mock_path.side_effect = AttributeError("Invalid attribute access")
-            
+
             # Capture logs at WARNING level
             with caplog.at_level(logging.WARNING):
                 # Should not raise
                 await graph_builder._resolve_import(
                     relationship=relationship,
                     source_file_path="invalid",
-                    import_path=None
+                    import_path=None,
                 )
-                
+
                 # Verify exception was logged with exc_info
                 warning_records = [
-                    record for record in caplog.records
+                    record
+                    for record in caplog.records
                     if "Failed to determine source language" in record.message
                 ]
                 assert len(warning_records) > 0
-                
+
                 # Check that exc_info was included (traceback available)
                 assert any(record.exc_info is not None for record in warning_records)
 
@@ -195,16 +206,14 @@ class TestGraphBuilderExceptionHandling:
             source_name="test_source",
             target_type="function",
             target_name="test_target",
-            type="calls"
+            type="calls",
         )
 
         # Should work without raising any exceptions
         await graph_builder._resolve_import(
-            relationship=relationship,
-            source_file_path="test.py",
-            import_path=None
+            relationship=relationship, source_file_path="test.py", import_path=None
         )
-        
+
         # Verify the resolver was called with correct language
         mock_relationship_resolver.resolve_import.assert_called_once()
         call_kwargs = mock_relationship_resolver.resolve_import.call_args.kwargs
