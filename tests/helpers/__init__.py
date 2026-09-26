@@ -7,6 +7,8 @@ Modules:
     async_utils: Async testing utilities (condition polling, cleanup)
     assertions: Custom assertion helpers
     factories: Test data factories
+    thread_watchdog: pytest plugin, loaded from tests/conftest.py, that names
+        non-daemon threads blocking interpreter exit
 """
 
 from tests.helpers.async_utils import AsyncTestHelper

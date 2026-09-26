@@ -732,7 +732,7 @@ async def test_mcp_server_event_persistence_end_to_end(tmp_path: Path):
     
     Requirements: 1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 2.4, 2.5
     """
-    from agentic_inquiry.mcp.factories import create_mcp_services
+    from agentic_inquiry.mcp.factories import close_mcp_services, create_mcp_services
     
     # Create config with temp storage
     config = Config()
@@ -880,13 +880,8 @@ async def test_mcp_server_event_persistence_end_to_end(tmp_path: Path):
             assert latest_events[i].timestamp >= latest_events[i + 1].timestamp
         
     finally:
-        # Cleanup: Stop event system (simulates server shutdown)
-        if "event_system" in services:
-            await services["event_system"].stop(timeout=2.0)
-        
-        # Close other services
-        if "mock_db_manager" in services:
-            await services["mock_db_manager"].close()
+        # Simulates server shutdown
+        await close_mcp_services(services)
 
 
 @pytest.mark.asyncio
@@ -902,7 +897,7 @@ async def test_mcp_server_multiple_operations_event_isolation(tmp_path: Path):
     
     Requirements: 2.1, 2.2, 2.3, 2.4, 2.5
     """
-    from agentic_inquiry.mcp.factories import create_mcp_services
+    from agentic_inquiry.mcp.factories import close_mcp_services, create_mcp_services
     
     # Create config with temp storage
     config = Config()
@@ -1017,8 +1012,4 @@ async def test_mcp_server_multiple_operations_event_isolation(tmp_path: Path):
             assert all(e.event_type == EventTypes.Search.QUERY_STARTED for e in events)
     
     finally:
-        # Cleanup
-        if "event_system" in services:
-            await services["event_system"].stop(timeout=2.0)
-        if "mock_db_manager" in services:
-            await services["mock_db_manager"].close()
+        await close_mcp_services(services)

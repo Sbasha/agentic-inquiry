@@ -128,7 +128,13 @@ async def _reconcile_locked(
             rows.append(_row_view(exhausted, _stored_result(exhausted) or dict(_EMPTY)))
         remaining = ledger.remaining_claimable()
     finally:
-        ledger.close()
+        try:
+            if storage is not None:
+                from agentic_inquiry.cli.memory import close_memory_system
+
+                await close_memory_system(memory, storage)
+        finally:
+            ledger.close()
     return {
         "committed": committed,
         "failed": failed,
@@ -370,7 +376,7 @@ async def _track(pipeline: Any, binding: Any, path: Path) -> None:
 
 async def _open_runtime(binding: Any) -> tuple[Any, Any, Any]:
     from agentic_inquiry.cli.env_resolver import load_config_for_environment
-    from agentic_inquiry.cli.memory import create_memory_system
+    from agentic_inquiry.cli.memory import close_memory_system, create_memory_system
     from agentic_inquiry.indexing.pipeline import IndexingPipeline
 
     config = load_config_for_environment(
@@ -378,13 +384,17 @@ async def _open_runtime(binding: Any) -> tuple[Any, Any, Any]:
     )
     _configure_embedder(config)
     memory, storage = await create_memory_system(config, binding.storage_project_id)
-    pipeline = IndexingPipeline(
-        storage,
-        config,
-        binding.storage_project_id,
-        project_root=binding.project_root,
-        auto_watch=False,
-    )
+    try:
+        pipeline = IndexingPipeline(
+            storage,
+            config,
+            binding.storage_project_id,
+            project_root=binding.project_root,
+            auto_watch=False,
+        )
+    except BaseException:
+        await close_memory_system(memory, storage)
+        raise
     return memory, storage, pipeline
 
 
