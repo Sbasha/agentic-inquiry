@@ -338,7 +338,7 @@ class HybridSearchConfig:
     rerank_by_graph: bool = True
 
     # Reranking strategy configuration
-    reranker_type: str = "linear_combination"
+    reranker_type: str = "rrf"
     reranker_params: Dict[str, Any] = field(default_factory=dict)
 
     # RRF (Reciprocal Rank Fusion) configuration
