@@ -354,6 +354,9 @@ class HybridSearchConfig:
     # rerank_top_n results and reorders only those. Empty disables it.
     rerank_model: str = ""
     rerank_top_n: int = 30
+    # "fuse" combines the cross-encoder order with the fused order by RRF, so
+    # it adds an opinion; "replace" lets the cross-encoder order stand alone.
+    rerank_mode: str = "fuse"
 
     # Optional graph channel: callers and callees of definitions in the fused
     # top graph_seeds results join fusion as a third list. 0 disables it.

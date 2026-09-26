@@ -438,15 +438,23 @@ class Graphify:
 # --------------------------------------------------------------------------
 
 
-def _inquiry_code_hash() -> str:
+# Packages that shape queries and answers but not what an index contains.
+_SEARCH_ONLY = ("agentic_inquiry/search/", "agentic_inquiry/mcp/", "agentic_inquiry/cli/",
+                "agentic_inquiry/server/", "agentic_inquiry/integration/")
+
+
+def _inquiry_code_hash(index_only: bool = False) -> str:
     """Content hash of the runtime package, its config and the worker.
 
     Hashes file bytes rather than git objects so the cache key is the same
-    before and after a commit of identical content.
+    before and after a commit of identical content. ``index_only`` leaves out
+    search-only packages, so a ranking change reuses existing indexes.
     """
     paths = ["agentic_inquiry", "config", "evals/inquiry_worker.py"]
     listed = subprocess.run(["git", "ls-files", "-co", "--exclude-standard", "--", *paths], cwd=REPO_ROOT,
                             capture_output=True, text=True, check=True).stdout.split()
+    if index_only:
+        listed = [name for name in listed if not name.startswith(_SEARCH_ONLY)]
     digest = hashlib.sha256()
     for name in sorted(listed):
         path = REPO_ROOT / name
@@ -468,10 +476,10 @@ class Inquiry:
 
         settings = yaml.safe_load(self.config_path.read_text()) or {}
         code = _inquiry_code_hash().encode()
-        # The index depends on everything but search-time settings, so ablations
-        # of ranking (per-file cap, graph channel, rerank) reuse one index.
+        # The index depends on everything but search-time code and settings, so
+        # ranking ablations (per-file cap, graph channel, rerank) reuse one index.
         index_part = json.dumps({k: v for k, v in settings.items() if k != "search"}, sort_keys=True, default=str)
-        self.index_hash = hashlib.sha256(code + index_part.encode()).hexdigest()[:16]
+        self.index_hash = hashlib.sha256(_inquiry_code_hash(index_only=True).encode() + index_part.encode()).hexdigest()[:16]
         self.code_hash = hashlib.sha256(code + self.config_path.read_bytes()).hexdigest()[:16]
 
     def config(self) -> dict[str, Any]:

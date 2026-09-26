@@ -307,6 +307,11 @@ class HybridSearchService:
         loop = asyncio.get_running_loop()
         scores = await loop.run_in_executor(None, _cross_encoder(settings.rerank_model).predict, pairs)
         order = sorted(range(len(head)), key=lambda i: -float(scores[i]))
+        if settings.rerank_mode != "replace":
+            # RRF of the fused order (index i) and the cross-encoder order.
+            k = DEFAULT_K
+            ce_rank = {index: rank for rank, index in enumerate(order)}
+            order = sorted(range(len(head)), key=lambda i: -(1 / (k + i + 1) + 1 / (k + ce_rank[i] + 1)))
         fused_scores = sorted((r.get("score", 0.0) for r in head), reverse=True)
         reordered = []
         for rank, index in enumerate(order):

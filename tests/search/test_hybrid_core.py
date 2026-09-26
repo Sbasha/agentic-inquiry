@@ -87,8 +87,28 @@ class TestRerankStage:
         svc = service(5)
         svc.config.search.hybrid_search.rerank_model = "fake"
         svc.config.search.hybrid_search.rerank_top_n = 2
+        svc.config.search.hybrid_search.rerank_mode = "replace"
         vector = [result("a", "a.py"), result("b", "b.py"), result("c", "c.py")]
         vector_fn, fts_fn = fns(vector, [], {})
         out = await svc.hybrid_search([0.0], "q", "q", vector_fn, fts_fn, limit=3)
         assert [r["id"] for r in out] == ["b", "a", "c"]
         assert out[0]["score"] >= out[1]["score"] >= out[2]["score"]
+
+    async def test_fuse_mode_moves_a_result_only_when_both_orders_agree(self, monkeypatch) -> None:
+        import agentic_inquiry.search.hybrid_search as hybrid
+
+        class Fake:
+            def predict(self, pairs):  # type: ignore[no-untyped-def]
+                # Cross-encoder puts c first and a last.
+                return [{"a.py": 0.0, "b.py": 0.5, "c.py": 1.0}[text.split("\n")[0]] for _, text in pairs]
+
+        monkeypatch.setattr(hybrid, "_cross_encoder", lambda name: Fake())
+        svc = service(5)
+        svc.config.search.hybrid_search.rerank_model = "fake"
+        svc.config.search.hybrid_search.rerank_top_n = 3
+        vector = [result("a", "a.py"), result("b", "b.py"), result("c", "c.py")]
+        vector_fn, fts_fn = fns(vector, [], {})
+        out = await svc.hybrid_search([0.0], "q", "q", vector_fn, fts_fn, limit=3)
+        # Fused a>b>c against cross-encoder c>b>a: the ranks cancel, b sits in the middle.
+        assert out[1]["id"] == "b"
+

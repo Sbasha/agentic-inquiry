@@ -474,6 +474,14 @@
               "minimum": 0,
               "maximum": 20,
               "description": "Fused results whose definitions seed the one-hop graph channel; 0 disables it."
+            },
+            "rerank_mode": {
+              "type": "string",
+              "enum": [
+                "fuse",
+                "replace"
+              ],
+              "description": "How the cross-encoder order combines with the fused order."
             }
           },
           "additionalProperties": false

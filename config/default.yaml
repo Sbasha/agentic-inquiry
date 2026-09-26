@@ -157,6 +157,7 @@ search:
     # Optional cross-encoder second stage over the fused top results ("" = off)
     rerank_model: ""
     rerank_top_n: 30
+    rerank_mode: "fuse"  # fuse: RRF with the fused order; replace: cross-encoder order alone
     # Optional graph channel: neighbours of the fused top N definitions (0 = off)
     graph_seeds: 0
   # Entity matching configuration (for find_similar tool)
