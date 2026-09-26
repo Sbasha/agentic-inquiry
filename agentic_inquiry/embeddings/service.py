@@ -192,7 +192,7 @@ class EmbeddingService:
         the model loads in parallel. The first query that needs embeddings
         will wait for warmup to complete (via the embedder's internal lock).
 
-        Thread safety is handled by the embedder's _load_lock - concurrent
+        Model loads are serialised process-wide by the embedder, so concurrent
         access during warmup is safe.
 
         Example:

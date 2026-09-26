@@ -604,6 +604,8 @@ class TestGetProjectInfo:
         assert result["status"]["indexed"] is False
         assert result["status"]["has_entities"] is False
         assert result["status"]["has_relationships"] is False
+        assert result["warnings"] == ["Could not read index statistics; counts are unknown."]
+        assert not any("not yet indexed" in step for step in result["guidance"]["next_steps"])
 
 
 class TestRunMaintenance:

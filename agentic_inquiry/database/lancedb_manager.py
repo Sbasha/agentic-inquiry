@@ -957,82 +957,33 @@ class LanceDBManager:
         data: List[Dict[str, Any]],
         key_field: str = "id",
     ) -> None:
-        """Insert or update records in a table.
+        """Insert or update records in a table, matched on key_field.
 
-        Checks if records exist by key_field and updates if found, inserts if not.
+        One merge_insert commit: a record is never absent between removing an
+        old version and writing the new one, even if the caller is cancelled.
 
         Args:
             table_name: Name of the table to upsert into
             data: List of records to upsert
             key_field: Field name to use for uniqueness check (default: "id")
 
-        Performance Notes:
-            - This method checks existence for each record individually
-            - For large batches, consider using batch operations if available
-            - Empty data list is handled gracefully (no-op)
+        Raises:
+            ValueError: If a record has no value for key_field
 
         Examples:
-            # Upsert sessions
             await db.upsert(
                 table_name="mcp_sessions",
-                data=[{
-                    "id": "session_123",
-                    "session_id": "session_123",
-                    "project_id": "proj_1",
-                    "state": "active"
-                }],
-                key_field="session_id"
-            )
-
-            # Upsert multiple entities
-            await db.upsert(
-                table_name="graph_entities",
-                data=[
-                    {"id": "e1", "name": "Foo", "type": "class"},
-                    {"id": "e2", "name": "Bar", "type": "function"}
-                ]
+                data=[{"id": "s1", "session_id": "s1", "project_id": "p1"}],
+                key_field="session_id",
             )
         """
-        if not data:
-            return
-
-        # Separate records into updates and inserts
-        to_insert = []
-        to_delete_ids = []
-
-        for record in data:
-            key_value = record.get(key_field)
-            if not key_value:
-                # No key value, treat as insert
-                to_insert.append(record)
-                continue
-
-            # Check if record exists
-            existing = await self.advanced_filter(
-                table_name=table_name,
-                filters={key_field: key_value},
-                limit=1,
-                project_id=None,  # Don't filter by project for existence check
+        missing = [record for record in data if not record.get(key_field)]
+        if missing:
+            raise ValueError(
+                f"upsert into {table_name} needs '{key_field}' on every record; "
+                f"{len(missing)} record(s) lack it"
             )
-
-            if existing:
-                # Record exists - mark for deletion and re-insert
-                # Use the 'id' field for deletion (standard primary key)
-                existing_id = existing[0].get("id")
-                if existing_id:
-                    to_delete_ids.append(existing_id)
-                to_insert.append(record)
-            else:
-                # Record doesn't exist, insert it
-                to_insert.append(record)
-
-        # Delete existing records first
-        if to_delete_ids:
-            await self._delete_rows(table_name=table_name, ids=to_delete_ids)
-
-        # Insert all records (both new and updated)
-        if to_insert:
-            await self._add_rows(table_name=table_name, items=to_insert)
+        await self._upsert_rows(table_name=table_name, items=data, key_column=key_field)
 
     async def delete_by_ids(
         self,

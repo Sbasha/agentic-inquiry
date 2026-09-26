@@ -427,13 +427,12 @@
             },
             "reranker_type": {
               "type": "string",
-              "description": "Reranking strategy to use for hybrid search. Options: rrf (recommended, lightweight), linear_combination (weighted scores), cross_encoder (requires sentence-transformers), colbert (requires colbert-ai), cohere (requires API key)",
+              "description": "Reranking strategy to use for hybrid search. Options: rrf (recommended, lightweight), linear_combination (weighted scores), cross_encoder (requires sentence-transformers), colbert (requires colbert-ai)",
               "enum": [
                 "rrf",
                 "linear_combination",
                 "cross_encoder",
-                "colbert",
-                "cohere"
+                "colbert"
               ],
               "default": "rrf"
             },
@@ -1883,26 +1882,160 @@
         "relationships": {
           "type": "object",
           "description": "Relationships configuration",
+          "properties": {
+            "max_depth": {
+              "type": "integer",
+              "description": "Maximum relationship traversal depth",
+              "minimum": 1,
+              "default": 3
+            },
+            "max_per_node": {
+              "type": "integer",
+              "description": "Maximum relationships returned per node",
+              "minimum": 1,
+              "default": 10000
+            }
+          },
           "additionalProperties": false
         },
         "tokens": {
           "type": "object",
           "description": "Token configuration",
+          "properties": {
+            "estimation_model": {
+              "type": "string",
+              "description": "Tokenizer encoding used to estimate token counts",
+              "default": "cl100k_base"
+            },
+            "default_budget": {
+              "type": "integer",
+              "description": "Default token budget for MCP responses",
+              "minimum": 1,
+              "default": 4000
+            }
+          },
           "additionalProperties": false
         },
         "defaults": {
           "type": "object",
           "description": "Default behavior settings",
+          "properties": {
+            "search": {
+              "type": "object",
+              "description": "Default search tool parameters",
+              "additionalProperties": true
+            },
+            "context": {
+              "type": "object",
+              "description": "Default context tool parameters",
+              "additionalProperties": true
+            },
+            "impact": {
+              "type": "object",
+              "description": "Default impact tool parameters",
+              "additionalProperties": true
+            },
+            "memory": {
+              "type": "object",
+              "description": "Default memory tool parameters",
+              "additionalProperties": true
+            },
+            "events": {
+              "type": "object",
+              "description": "Default events tool parameters",
+              "additionalProperties": true
+            },
+            "patterns": {
+              "type": "object",
+              "description": "Default patterns tool parameters",
+              "additionalProperties": true
+            },
+            "temporal": {
+              "type": "object",
+              "description": "Default temporal tool parameters",
+              "additionalProperties": true
+            },
+            "session_ttl_hours": {
+              "type": "integer",
+              "description": "Deprecated: use mcp.session.ttl_hours",
+              "minimum": 1,
+              "default": 48
+            }
+          },
           "additionalProperties": false
         },
         "behavior": {
           "type": "object",
           "description": "Behavior flags",
+          "properties": {
+            "suggest_on_empty": {
+              "type": "boolean",
+              "description": "Suggest alternatives when a query returns nothing",
+              "default": true
+            },
+            "include_alternatives": {
+              "type": "boolean",
+              "description": "Include alternative results in responses",
+              "default": true
+            },
+            "log_all_requests": {
+              "type": "boolean",
+              "description": "Log every MCP request",
+              "default": true
+            },
+            "track_performance": {
+              "type": "boolean",
+              "description": "Record per-request timing",
+              "default": true
+            },
+            "cache_responses": {
+              "type": "boolean",
+              "description": "Cache tool responses",
+              "default": true
+            },
+            "cache_ttl_seconds": {
+              "type": "integer",
+              "description": "Response cache lifetime in seconds",
+              "minimum": 0,
+              "default": 300
+            }
+          },
           "additionalProperties": false
         },
         "logging": {
           "type": "object",
           "description": "Logging configuration",
+          "properties": {
+            "level": {
+              "type": "string",
+              "enum": [
+                "DEBUG",
+                "INFO",
+                "WARNING",
+                "ERROR",
+                "CRITICAL"
+              ],
+              "default": "INFO"
+            },
+            "format": {
+              "type": "string",
+              "default": "json"
+            },
+            "log_dir": {
+              "type": "string",
+              "default": "${HOME}/.agentic-inquiry/logs"
+            },
+            "max_size_mb": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 100
+            },
+            "retention_days": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 30
+            }
+          },
           "additionalProperties": false
         }
       },

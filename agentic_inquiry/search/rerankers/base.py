@@ -70,7 +70,7 @@ def normalize_scored_tuples(
     """Normalize scores from (id, score) tuples using proportional normalization.
 
     Variant of normalize_scores for rerankers that work with (id, score) tuples
-    like cross_encoder, colbert, and cohere.
+    like cross_encoder and colbert.
 
     Args:
         scored_results: List of (id, score) tuples, already sorted by score descending.

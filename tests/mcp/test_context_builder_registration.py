@@ -36,7 +36,7 @@ async def test_context_builder_has_all_dependencies(mock_config):
     # Verify all dependencies are set and have expected types
     from agentic_inquiry.search.service import SearchService
     from agentic_inquiry.memory.system import MemorySystem
-    from agentic_inquiry.database.lancedb_manager import LanceDBManager
+    from agentic_inquiry.storage.facade import StorageFacade
     from agentic_inquiry.mcp.services.session_manager import SessionManager
     from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
 
@@ -45,7 +45,7 @@ async def test_context_builder_has_all_dependencies(mock_config):
     assert context_builder.memory is not None
     assert isinstance(context_builder.memory, MemorySystem)
     assert context_builder.db is not None
-    assert isinstance(context_builder.db, LanceDBManager)
+    assert isinstance(context_builder.db, StorageFacade)
     assert context_builder.session_manager is not None
     assert isinstance(context_builder.session_manager, SessionManager)
     assert context_builder.config is not None
@@ -59,7 +59,7 @@ async def test_context_builder_dependencies_are_correct_types(mock_config):
     """Test that ContextBuilder dependencies are correct types."""
     from agentic_inquiry.search.service import SearchService
     from agentic_inquiry.memory.system import MemorySystem
-    from agentic_inquiry.database.lancedb_manager import LanceDBManager
+    from agentic_inquiry.storage.facade import StorageFacade
     from agentic_inquiry.mcp.services.session_manager import SessionManager
     from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
     
@@ -71,7 +71,7 @@ async def test_context_builder_dependencies_are_correct_types(mock_config):
     # Verify dependency types
     assert isinstance(context_builder.search, SearchService)
     assert isinstance(context_builder.memory, MemorySystem)
-    assert isinstance(context_builder.db, LanceDBManager)
+    assert isinstance(context_builder.db, StorageFacade)
     assert isinstance(context_builder.session_manager, SessionManager)
     assert isinstance(context_builder.config, Config)
     assert isinstance(context_builder.token_optimizer, TokenOptimizer)

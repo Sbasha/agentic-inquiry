@@ -155,6 +155,26 @@ class LanceDBMemoryAdapter:
             logger.error("Failed to store memory item %s: %s", item.id, e)
             raise RuntimeError(f"Failed to store memory item: {e}") from e
 
+    async def replace(
+        self,
+        item: MemoryItem,
+        vector: List[float],
+    ) -> None:
+        """Write item over any stored row with the same id, in one commit.
+
+        Raises:
+            RuntimeError: If the write fails
+        """
+        if not self._initialized:
+            await self.initialize()
+
+        try:
+            row = self._memory_item_to_row(item, vector)
+            await self._manager.upsert(self._table_name, [row], key_field="id")
+        except Exception as e:
+            logger.error("Failed to replace memory item %s: %s", item.id, e)
+            raise RuntimeError(f"Failed to replace memory item: {e}") from e
+
     async def retrieve(
         self,
         query_vector: List[float],

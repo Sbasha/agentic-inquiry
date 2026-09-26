@@ -63,10 +63,10 @@ def pattern_analyzer(mock_search_service, mock_db_manager, mock_embedding_servic
 
 
 @pytest.mark.asyncio
-async def test_find_patterns_insufficient_results(pattern_analyzer, mock_search_service):
+async def test_find_patterns_insufficient_results(pattern_analyzer, mock_db_manager):
     """Test pattern discovery with insufficient results."""
-    # Mock search to return too few results
-    mock_search_service.hybrid_search.return_value = [
+    # Too few indexed chunks to cluster
+    mock_db_manager.query_raw.return_value = [
         {"id": "1", "vector": [0.1, 0.2], "content": "test"}
     ]
     
@@ -101,7 +101,7 @@ async def test_find_patterns_no_embeddings(pattern_analyzer, mock_search_service
 
 
 @pytest.mark.asyncio
-async def test_find_patterns_successful_clustering(pattern_analyzer, mock_search_service):
+async def test_find_patterns_successful_clustering(pattern_analyzer, mock_db_manager):
     """Test successful pattern clustering."""
     # Create mock results with embeddings
     # Cluster 1: Similar vectors around [1, 0]
@@ -124,7 +124,7 @@ async def test_find_patterns_successful_clustering(pattern_analyzer, mock_search
             "line_start": i * 20
         })
     
-    mock_search_service.hybrid_search.return_value = mock_results
+    mock_db_manager.query_raw.return_value = mock_results
     
     result = await pattern_analyzer.find_patterns(
         project_id="test_project",
@@ -239,7 +239,7 @@ def test_infer_pattern_name_antipattern(pattern_analyzer):
 
 
 @pytest.mark.asyncio
-async def test_find_patterns_max_clusters_limit(pattern_analyzer, mock_search_service):
+async def test_find_patterns_max_clusters_limit(pattern_analyzer, mock_db_manager):
     """Test that limit parameter is respected."""
     # Create many results that could form many clusters
     mock_results = [
@@ -252,7 +252,7 @@ async def test_find_patterns_max_clusters_limit(pattern_analyzer, mock_search_se
         }
         for i in range(30)
     ]
-    mock_search_service.hybrid_search.return_value = mock_results
+    mock_db_manager.query_raw.return_value = mock_results
     
     result = await pattern_analyzer.find_patterns(
         project_id="test_project",
@@ -262,7 +262,7 @@ async def test_find_patterns_max_clusters_limit(pattern_analyzer, mock_search_se
     
     # Should not exceed limit
     assert isinstance(result, list)
-    assert len(result) <= 3
+    assert 0 < len(result) <= 3
 
 
 @pytest.mark.asyncio
@@ -316,12 +316,11 @@ async def test_find_patterns_calls_embedding_service(
 
     await pattern_analyzer.find_patterns(
         project_id="test_project",
-        pattern_type="architectural",
+        pattern_type="design",
         limit=5
     )
 
     # Verify embedding service was called (once per query)
-    # The architectural pattern type has 5 queries in _get_pattern_queries
     assert mock_embedding_service.embed_async.call_count >= 1, \
         "Expected embedding service to be called at least once"
 

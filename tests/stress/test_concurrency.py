@@ -188,6 +188,7 @@ class TestResourceContention:
         except asyncio.TimeoutError:
             pytest.fail("Connection pool exhausted - deadlock detected")
 
+    @pytest.mark.perf
     @pytest.mark.asyncio
     async def test_graceful_degradation(
         self,

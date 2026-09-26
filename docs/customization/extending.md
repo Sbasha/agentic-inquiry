@@ -141,29 +141,23 @@ class CSVParser:
 - `symbols`: List of code symbols (for code parsers)
 - `relationships`: List of ParserRelationship objects
 - `line_start`, `line_end`: Line numbers in source file
-- `metadata`: Additional metadata (use simple types only)
+- `metadata`: Additional JSON-serializable metadata
 - `ranking_signals`: Metrics for search ranking
 
 ### Metadata Guidelines
 
-**IMPORTANT**: The `metadata` field has strict constraints:
+`metadata` is stored as a single JSON string, so any JSON-serializable values
+work, including lists and nested dicts. If one value cannot be encoded (a
+`Path`, a `datetime`), the whole dict is replaced with `{}` and a warning is
+logged; convert such values to strings first.
 
 ```python
-# ❌ BAD - Will cause schema errors
 chunk = ParserChunk(
     content="...",
+    symbols=["parse_row"],                 # Top-level field: searchable
     metadata={
-        "tags": ["tag1", "tag2"],  # List - will fail!
-        "nested": {"key": "value"},  # Nested dict - will fail!
-    }
-)
-
-# ✅ GOOD - Use simple types
-chunk = ParserChunk(
-    content="...",
-    metadata={
-        "tag_count": 2,
-        "primary_tag": "tag1",
+        "tags": ["tag1", "tag2"],
+        "source": {"sheet": "Q3", "row": 12},
     },
     ranking_signals={
         "importance": 0.8,
@@ -172,9 +166,8 @@ chunk = ParserChunk(
 )
 ```
 
-- Only use simple types: `str`, `int`, `float`, `bool`, `None`
-- DO NOT include lists or nested dicts
-- Prefer using top-level fields (`symbols`, `language`, etc.)
+- Prefer top-level fields (`symbols`, `language`, etc.) for data you want to
+  search or filter on; `metadata` is returned with the chunk but not indexed
 - Use `ranking_signals` for metrics and scores
 
 ### Registering Parsers

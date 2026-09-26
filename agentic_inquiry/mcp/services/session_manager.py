@@ -391,11 +391,11 @@ class SessionManager:
         Returns:
             True if session exists and is not expired
         """
-        # Check memory cache first
-        if session_id in self.active_sessions:
-            cached_session = self.active_sessions[session_id]
-            if not cached_session.is_expired:
-                return True
+        # The cache holds the newest state; an expired cached session must not
+        # be revived by an older, still-active copy in the database.
+        cached_session = self.active_sessions.get(session_id)
+        if cached_session is not None:
+            return not cached_session.is_expired
 
         # Check database
         db_session = await self._load_session_from_db(session_id)
@@ -646,9 +646,9 @@ class SessionManager:
                 
                 # Get last indexed timestamp from most recent chunk
                 timestamps = [
-                    chunk.get("created_at")
+                    chunk.get("indexed_at")
                     for chunk in chunks
-                    if chunk.get("created_at")
+                    if chunk.get("indexed_at")
                 ]
                 if timestamps:
                     # Convert to datetime if needed - filter out None values

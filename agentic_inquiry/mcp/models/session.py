@@ -40,7 +40,7 @@ class ProjectStatistics(BaseModel):
         if not self.last_indexed:
             # Only stale if truly empty - not just missing timestamp
             return self.total_chunks == 0
-        age_days = (datetime.now() - self.last_indexed).days
+        age_days = (datetime.now(self.last_indexed.tzinfo) - self.last_indexed).days
         return age_days > days
     
     def to_dict(self) -> Dict[str, Any]:

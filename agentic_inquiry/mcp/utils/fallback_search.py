@@ -72,29 +72,6 @@ class FallbackResult:
     metadata: dict[str, str | int | float | bool] = field(default_factory=dict)
 
 
-def sanitize_ripgrep_query(query: str) -> str:
-    """Prevent flag injection in ripgrep queries.
-
-    Ripgrep interprets arguments starting with '-' as flags.
-    This function escapes such queries to ensure they are treated as patterns.
-
-    Args:
-        query: The search query to sanitize.
-
-    Returns:
-        Sanitized query safe for ripgrep.
-
-    Example:
-        >>> sanitize_ripgrep_query("-e malicious")
-        "\\-e malicious"
-        >>> sanitize_ripgrep_query("normal query")
-        "normal query"
-    """
-    if query.startswith("-"):
-        query = f"\\{query}"
-    return query
-
-
 def validate_result_path(file_path: str, project_root: Path) -> bool:
     """Ensure path is within project root (no traversal).
 
@@ -136,7 +113,7 @@ async def ripgrep_search(
     context support.
 
     Args:
-        query: Search pattern (regex supported).
+        query: Literal text to search for, matched case-insensitively.
         project_root: Root directory to search.
         limit: Maximum number of results to return.
         timeout: Maximum seconds to wait for ripgrep.
@@ -155,7 +132,7 @@ async def ripgrep_search(
         ...     print(f"{r.file_path}:{r.line_number}: {r.content}")
 
     Security:
-        - Query is sanitized to prevent flag injection.
+        - Query follows '--', so it is never parsed as a flag.
         - Result paths are validated to prevent directory traversal.
         - Timeout protection prevents resource exhaustion.
     """
@@ -168,9 +145,6 @@ async def ripgrep_search(
     # Resolve project root to absolute path
     project_root = project_root.resolve()
 
-    # Sanitize the query to prevent flag injection
-    safe_query = sanitize_ripgrep_query(query)
-
     # Build ripgrep command
     # Use '--' to signal end of flags and prevent injection
     cmd = [
@@ -178,11 +152,13 @@ async def ripgrep_search(
         "--json",                       # JSON output for parsing
         "--max-count", str(limit * 2),  # Get extra for filtering
         "--context", "2",               # Include 2 lines of context
+        "--fixed-strings",              # Queries are free text, not regex
+        "--ignore-case",                # Same matching as the Python fallback
         "--"                            # End of flags
     ]
 
-    # Add sanitized query and project root
-    cmd.append(safe_query)
+    # Add query and project root
+    cmd.append(query)
     cmd.append(str(project_root))
 
     # Add file patterns if specified

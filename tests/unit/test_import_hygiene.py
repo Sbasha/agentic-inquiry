@@ -14,6 +14,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 HEAVY = ["lancedb", "pyarrow", "pandas", "torch", "sentence_transformers", "fastmcp", "fastapi", "fsspec"]
 
 
@@ -77,6 +79,7 @@ def test_lazy_subpackage_attributes_still_resolve(tmp_path: Path) -> None:
     assert completed.stdout.strip() == "ok"
 
 
+@pytest.mark.perf
 def test_package_import_is_fast(tmp_path: Path) -> None:
     code = (
         "import time\n"

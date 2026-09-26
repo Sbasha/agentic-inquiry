@@ -6,7 +6,6 @@ import logging
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from typing import Optional
 
 logger = logging.getLogger("ai.indexing.branch_discovery")
 
@@ -49,7 +48,9 @@ def discover_branches(
             [
                 "git", "branch", "-r",
                 "--sort=-committerdate",
-                "--format=%(refname:short)\t%(committerdate:iso-strict)\t%(objectname:short)",
+                # lstrip=2 keeps "origin/HEAD" intact; :short collapses it to
+                # "origin" on newer git, which would slip past the HEAD filter.
+                "--format=%(refname:lstrip=2)\t%(committerdate:iso-strict)\t%(objectname:short)",
             ],
             capture_output=True,
             text=True,

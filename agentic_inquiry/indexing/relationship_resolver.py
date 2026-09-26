@@ -643,7 +643,7 @@ class RelationshipResolver:
             results = await self.db_manager.query_raw(
                 table_name="graph_relationships",
                 filters={
-                    "relationship_type": "imports",
+                    "type": "imports",
                 },
                 limit=50,
                 project_id=CURRENT_PROJECT_ID,

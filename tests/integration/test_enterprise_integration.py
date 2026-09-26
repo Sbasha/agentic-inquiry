@@ -14,13 +14,10 @@ from __future__ import annotations
 
 import os
 import subprocess
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
 pytestmark = pytest.mark.integration
@@ -29,7 +26,6 @@ from agentic_inquiry.config import (
     Config,
     MCPAPIConfig,
     MCPConfig,
-    OverlayConfig,
     StorageConfig,
 )
 
@@ -62,6 +58,7 @@ async def test_auth_middleware_unauthenticated_returns_401(tmp_path):
     config.storage = StorageConfig(
         root=str(tmp_path / "storage"),
         default_project_id="test_auth",
+        backend="lancedb",
     )
 
     from agentic_inquiry.server.app import create_app
@@ -85,6 +82,7 @@ async def test_auth_middleware_authenticated_not_401(tmp_path):
     config.storage = StorageConfig(
         root=str(tmp_path / "storage"),
         default_project_id="test_auth",
+        backend="lancedb",
     )
 
     from agentic_inquiry.server.app import create_app
@@ -108,6 +106,7 @@ async def test_health_endpoint_accessible_without_auth(tmp_path):
     config.storage = StorageConfig(
         root=str(tmp_path / "storage"),
         default_project_id="test_health",
+        backend="lancedb",
     )
 
     from agentic_inquiry.server.app import create_app
@@ -135,6 +134,7 @@ async def test_search_with_local_diff_returns_local_changes_summary(tmp_path):
     config.storage = StorageConfig(
         root=str(tmp_path / "storage"),
         default_project_id="test_diff",
+        backend="lancedb",
     )
 
     from agentic_inquiry.server.app import create_app
@@ -181,6 +181,7 @@ async def test_search_with_local_diff_annotates_results(tmp_path):
     config.storage = StorageConfig(
         root=str(tmp_path / "storage"),
         default_project_id="test_annotation",
+        backend="lancedb",
     )
 
     from agentic_inquiry.server.app import create_app
@@ -252,7 +253,10 @@ def test_env_resolver_falls_back_to_default_when_no_cloud(tmp_path):
 
 def _init_git_repo(repo_path: Path) -> None:
     """Initialise a bare-minimum git repo for branch discovery tests."""
-    subprocess.run(["git", "init", str(repo_path)], check=True, capture_output=True)
+    subprocess.run(
+        ["git", "init", "--initial-branch=main", str(repo_path)],
+        check=True, capture_output=True,
+    )
     subprocess.run(
         ["git", "config", "user.email", "test@test.com"],
         cwd=str(repo_path), check=True, capture_output=True,
@@ -280,7 +284,7 @@ def _make_commit(repo_path: Path, filename: str = "file.txt", message: str = "co
 
 def test_branch_discovery_filters_stale_branches(tmp_path):
     """discover_branches must only return branches within age cutoff (plus default)."""
-    from agentic_inquiry.indexing.branch_discovery import discover_branches, DiscoveredBranch
+    from agentic_inquiry.indexing.branch_discovery import discover_branches
 
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -311,10 +315,7 @@ def test_branch_discovery_filters_stale_branches(tmp_path):
     branches = discover_branches(str(clone), max_age_days=30)
 
     branch_names = {b.short_name for b in branches}
-    # Should include at minimum main (default) and feature/recent
-    assert "main" in branch_names or any("main" in n for n in branch_names), (
-        f"Expected main in {branch_names}"
-    )
+    assert branch_names == {"main", "feature/recent"}
 
 
 @pytest.mark.asyncio

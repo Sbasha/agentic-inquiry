@@ -8,6 +8,7 @@ Tests the full maintenance flow including:
 """
 
 import asyncio
+from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
@@ -16,9 +17,18 @@ pytestmark = pytest.mark.integration
 from agentic_inquiry.mcp.services.maintenance_manager import MaintenanceManager
 from agentic_inquiry.events.system import EventSystem
 from agentic_inquiry.events.types import EventTypes
-from agentic_inquiry.config import Config
+from agentic_inquiry.config import Config, MaintenanceConfig
 from agentic_inquiry.database.lancedb_manager import LanceDBManager
 
+
+
+async def _maintenance_dispatched(storage, timeout: float = 5.0) -> None:
+    """Wait until the event handler has awaited run_maintenance, or time out."""
+    async def dispatched() -> None:
+        while not storage.run_maintenance.await_count:
+            await asyncio.sleep(0.01)
+
+    await asyncio.wait_for(dispatched(), timeout)
 
 @pytest.fixture
 async def temp_db_path(tmp_path):
@@ -111,7 +121,7 @@ class TestMaintenanceIntegration:
     ):
         """Test full event-driven maintenance flow."""
         # Create manager with event system and the mock storage
-        manager = MaintenanceManager(
+        _manager = MaintenanceManager(
             event_system=event_system,
             storage=mock_storage_with_lancedb
         )
@@ -124,10 +134,13 @@ class TestMaintenanceIntegration:
         )
 
         # Wait for the event to be processed
-        await asyncio.sleep(0.2)
+        await _maintenance_dispatched(mock_storage_with_lancedb)
 
         # Verify that the mock's run_maintenance method was called
-        mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(project_id="test_project")
+        retention = Config.load().maintenance.cleanup_retention_minutes
+        mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(
+            project_id="test_project", cleanup_older_than=timedelta(minutes=retention)
+        )
 
     @pytest.mark.asyncio
     async def test_maintenance_with_actual_tables(
@@ -179,7 +192,7 @@ class TestMaintenanceConfigIntegration:
         self, event_system, mock_storage_with_lancedb
     ):
         """Test different trigger configs change behavior."""
-        manager = MaintenanceManager(
+        _manager = MaintenanceManager(
             event_system=event_system,
             storage=mock_storage_with_lancedb
         )
@@ -188,8 +201,9 @@ class TestMaintenanceConfigIntegration:
         mock_storage_with_lancedb.run_maintenance.reset_mock()
         with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
-            mock_config.maintenance.enabled = True
-            mock_config.maintenance.trigger = "project.closed"
+            mock_config.maintenance = MaintenanceConfig(
+                enabled=True, trigger="project.closed", cleanup_retention_minutes=60
+            )
             mock_load.return_value = mock_config
 
             await event_system.emit(
@@ -197,15 +211,18 @@ class TestMaintenanceConfigIntegration:
                 source="test",
                 project_id="project1"
             )
-            await asyncio.sleep(0.1)
-            mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(project_id="project1")
+            await _maintenance_dispatched(mock_storage_with_lancedb)
+            mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(
+                project_id="project1", cleanup_older_than=timedelta(minutes=60)
+            )
 
         # Test 2: indexing.completed trigger
         mock_storage_with_lancedb.run_maintenance.reset_mock()
         with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
-            mock_config.maintenance.enabled = True
-            mock_config.maintenance.trigger = "indexing.completed"
+            mock_config.maintenance = MaintenanceConfig(
+                enabled=True, trigger="indexing.completed", cleanup_retention_minutes=60
+            )
             mock_load.return_value = mock_config
 
             await event_system.emit(
@@ -221,8 +238,10 @@ class TestMaintenanceConfigIntegration:
                 source="test",
                 project_id="project3"
             )
-            await asyncio.sleep(0.1)
-            mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(project_id="project3")
+            await _maintenance_dispatched(mock_storage_with_lancedb)
+            mock_storage_with_lancedb.run_maintenance.assert_awaited_once_with(
+                project_id="project3", cleanup_older_than=timedelta(minutes=60)
+            )
 
 
 class TestMaintenanceConcurrency:
@@ -401,8 +420,9 @@ class TestMaintenanceBackendSupport:
         # Mock config
         with patch("agentic_inquiry.config.Config.load") as mock_load:
             mock_config = MagicMock()
-            mock_config.maintenance.enabled = True
-            mock_config.maintenance.trigger = "project.closed"
+            mock_config.maintenance = MaintenanceConfig(
+                enabled=True, trigger="project.closed", cleanup_retention_minutes=60
+            )
             mock_load.return_value = mock_config
 
             # Trigger event

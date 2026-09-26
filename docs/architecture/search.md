@@ -256,7 +256,7 @@ results = await search.hybrid_search(
 ```yaml
 search:
   hybrid_search:
-    reranker_type: "rrf"  # RRF (default), linear_combination, cross_encoder, colbert, cohere
+    reranker_type: "rrf"  # RRF (default), linear_combination, cross_encoder, colbert
     reranker_params:
       k: 30  # RRF rank constant (lower = favor top results more aggressively)
       dual_source_bonus: 1.3  # Multiplicative bonus for results in both vector and FTS

@@ -19,6 +19,11 @@ _DEVICE_ENV_VAR = "INQUIRY_EMBEDDING_DEVICE"
 
 _KNOWN_DEVICES = frozenset({"cpu", "cuda", "mps"})
 
+# transformers builds models under process-global meta-device patching that
+# is not thread-safe: two loads that overlap can leave every later load in the
+# process failing with "Cannot copy out of meta tensor". Serialise all loads.
+_MODEL_LOAD_LOCK = threading.Lock()
+
 
 def _select_device(preferred: Optional[str] = None) -> str:
     """Pick the torch device for the embedding model.
@@ -68,7 +73,6 @@ class SentenceTransformerEmbedder(Embedder):
         self._ndims = ndims
         self._metrics = get_metrics_tracker()
         self._model = None
-        self._load_lock = threading.Lock()
 
     def ensure_model_loaded(self) -> None:
         """Ensure the underlying model is ready for inference."""
@@ -96,7 +100,9 @@ class SentenceTransformerEmbedder(Embedder):
         if self._model is not None:
             return
 
-        with self._load_lock:
+        if _MODEL_LOAD_LOCK.locked():
+            logger.info("Waiting for another model load to finish before loading %s", self.model_name)
+        with _MODEL_LOAD_LOCK:
             if self._model is not None:
                 return
 

@@ -10,12 +10,10 @@ Test coverage:
 """
 from __future__ import annotations
 
-import uuid
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
 pytestmark = pytest.mark.integration
@@ -35,6 +33,7 @@ def _make_config(tmp_path_str: str, project_id: str = "test_e2e") -> Config:
     config.storage = StorageConfig(
         root=tmp_path_str,
         default_project_id=project_id,
+        backend="lancedb",
     )
     return config
 
