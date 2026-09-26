@@ -17,6 +17,7 @@ import sqlite3
 import subprocess
 import sys
 import time
+import uuid
 from collections.abc import Iterator
 from dataclasses import dataclass
 from functools import lru_cache
@@ -430,13 +431,20 @@ class Inquiry:
     def __init__(self) -> None:
         override = os.environ.get("EVALS_INQUIRY_CONFIG")
         self.config_path = Path(override).resolve() if override else REPO_ROOT / "config" / "default.yaml"
-        digest = hashlib.sha256(_inquiry_code_hash().encode() + self.config_path.read_bytes()).hexdigest()
-        self.code_hash = digest[:16]
+        import yaml
+
+        settings = yaml.safe_load(self.config_path.read_text()) or {}
+        code = _inquiry_code_hash().encode()
+        # The index depends on everything but search-time settings, so ablations
+        # of ranking (per-file cap, graph channel, rerank) reuse one index.
+        index_part = json.dumps({k: v for k, v in settings.items() if k != "search"}, sort_keys=True, default=str)
+        self.index_hash = hashlib.sha256(code + index_part.encode()).hexdigest()[:16]
+        self.code_hash = hashlib.sha256(code + self.config_path.read_bytes()).hexdigest()[:16]
 
     def config(self) -> dict[str, Any]:
         return {"entry": "IndexingPipeline.index_directory + SearchService.hybrid_search",
                 "config": str(self.config_path.relative_to(REPO_ROOT)) if self.config_path.is_relative_to(REPO_ROOT)
-                else str(self.config_path), "code_hash": self.code_hash}
+                else str(self.config_path), "code_hash": self.code_hash, "index_hash": self.index_hash}
 
     def _worker(self, *args: str, timeout: int) -> None:
         env = dict(os.environ, INQUIRY_CONFIG=str(self.config_path))
@@ -446,7 +454,7 @@ class Inquiry:
             raise RuntimeError(f"inquiry worker {args[0]} failed: {result.stderr.strip()[-600:]}")
 
     def index(self, corpus: str, root: Path, suite: Suite) -> Any:
-        target = CACHE / "index" / f"inquiry-{self.code_hash}" / _safe(corpus)
+        target = CACHE / "index" / f"inquiry-{self.index_hash}" / _safe(corpus)
         if (target / "index.json").exists():
             return target, root
         shutil.rmtree(target, ignore_errors=True)
@@ -456,12 +464,16 @@ class Inquiry:
 
     def search(self, handle: Any, queries: list[str], k: int) -> list[tuple[list[Hit], float]]:
         target, root = handle
-        request = target / "queries.json"
-        response = target / "results.json"
+        # Unique names: search-time ablations share one index directory.
+        token = uuid.uuid4().hex
+        request = target / f"queries-{token}.json"
+        response = target / f"results-{token}.json"
         request.write_text(json.dumps({"queries": queries, "k": k}))
         self._worker("search", str(target), str(root), str(request), str(response),
                      timeout=QUERY_TIMEOUT_S * max(1, len(queries)))
         rows = json.loads(response.read_text())
+        request.unlink(missing_ok=True)
+        response.unlink(missing_ok=True)
         out = []
         for row in rows:
             hits = []
