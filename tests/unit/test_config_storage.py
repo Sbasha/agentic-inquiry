@@ -609,33 +609,24 @@ class TestHybridSearchFallbackConfig:
             'parsers': {}
         }
     
-    @pytest.mark.parametrize(
-        ("overrides", "expected_fallback", "expected_log"),
-        [
-            ({}, True, False),
-            ({"fallback_to_vector": False}, False, False),
-            ({"fallback_to_vector": True}, True, False),
-            ({"log_diagnostics": True}, True, True),
-            ({"log_diagnostics": False}, True, False),
-            ({"fallback_to_vector": False, "log_diagnostics": True}, False, True),
-        ],
-    )
-    def test_fallback_and_diagnostics_flags(
-        self, minimal_config_base, overrides, expected_fallback, expected_log
-    ):
-        """Test fallback_to_vector/log_diagnostics combinations."""
+    def test_removed_ranking_keys_still_load_with_a_warning(self, minimal_config_base, caplog):
+        """Configs written before the retrieval-core change keep loading."""
         minimal_config_base['search']['hybrid_search'] = {
             'vector_weight': 0.7,
             'fts_weight': 0.3,
-            **overrides,
+            'fallback_to_vector': False,
+            'log_diagnostics': True,
+            'rerank_by_graph': True,
         }
 
         Config._validate_config(minimal_config_base)
-        config = Config._from_dict(minimal_config_base)
+        with caplog.at_level("WARNING"):
+            config = Config._from_dict(minimal_config_base)
 
-        assert config.search.hybrid_search.fallback_to_vector is expected_fallback
-        assert config.search.hybrid_search.log_diagnostics is expected_log
-    
+        assert config.search.hybrid_search.reranker_type == "rrf"
+        assert "Ignoring removed search settings" in caplog.text
+        assert "search.hybrid_search.rerank_by_graph" in caplog.text
+
     @pytest.mark.parametrize(
         "overrides",
         [

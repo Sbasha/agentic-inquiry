@@ -139,14 +139,9 @@ search:
   
   # Hybrid search configuration (combines vector and full-text search)
   hybrid_search:
-    # Weight for vector search results (0.0-1.0)
+    # Weights for the linear_combination reranker only; RRF fuses by rank.
     vector_weight: 0.7
-    
-    # Weight for full-text search results (0.0-1.0)
     fts_weight: 0.3
-    
-    # Enable graph-based reranking of results using PageRank
-    rerank_by_graph: true
     
     # Reranking strategy for hybrid search
     # Options: rrf (recommended), linear_combination, cross_encoder, colbert
@@ -159,49 +154,6 @@ search:
     # For cross_encoder/colbert: model_name optional
     reranker_params:
       k: 60  # RRF constant
-    
-    # Fallback to vector-only search when hybrid search fails or returns no results
-    fallback_to_vector: true
-
-    # Enable diagnostic logging for hybrid search (useful for debugging)
-    log_diagnostics: false
-
-    # Boost factor for overview/documentation files in search results
-    overview_boost_factor: 1.5
-
-  # Overview/documentation boosting configuration
-  overview_boost:
-    # Enable automatic boosting of documentation content
-    enabled: true
-
-    # Auto-detect overview queries (readme, what is, how to, etc.)
-    auto_detect: true
-
-    # Boost weights for different content types (positive = boost, negative = penalize)
-    # These values are subtracted from distance scores (lower distance = better match)
-    weights:
-      readme: 0.35          # README files (README.md, README.txt, etc.)
-      docs_directory: 0.25  # Files in docs/, documentation/, wiki/ directories
-      markdown: 0.15        # Any .md file
-      early_chunk: 0.15     # First 3 chunks in a file (chunk_index < 3)
-      heading_title: 0.20   # HEADING or TITLE content types
-      code_penalty: -0.10   # CODE content type (de-boost)
-
-    # Patterns for detecting overview queries (regex, case-insensitive)
-    # If any pattern matches, the query is treated as an overview query
-    overview_keywords:
-      - "readme"
-      - "overview"
-      - "architecture"
-      - "getting.?started"
-      - "what.*(does|is)"
-      - "how.*(does|to|do)"
-      - "purpose"
-      - "intro"
-      - "documentation"
-      - "guide"
-      - "tutorial"
-
   # Entity matching configuration (for find_similar tool)
   entity_matching:
     # Enable semantic bridge for entity discovery

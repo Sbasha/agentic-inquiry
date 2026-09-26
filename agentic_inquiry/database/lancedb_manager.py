@@ -291,6 +291,8 @@ class LanceDBManager:
             run_sync_fn=self._run_sync,
             project_id=self._project_id,
             invalidate_cache_fn=self.invalidate_table_cache,
+            similarity_metric=self._similarity_metric,
+            lexical_root=uri if prepare_local_path else None,
         )
 
         self._schema_manager = LanceDBSchemaManager(

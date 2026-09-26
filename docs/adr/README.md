@@ -25,6 +25,7 @@ from new ADRs or RFCs.
 | [0004](0004-agent-vault-base-as-product-lineage.md) | Product lineage: the Agent Vault base over the 0.1.0 preview | Accepted |
 | [0005](0005-afp-lifecycle-contract-public-surface.md) | Host integration: a stdlib-only CLI lifecycle contract over plugin-embedded logic | Accepted |
 | [0006](0006-eval-dependencies-and-isolated-competitors.md) | Evaluation dependencies live in an optional group; competitors run in isolated environments | Accepted |
+| [0007](0007-tantivy-lexical-projection.md) | Full-text ranking uses a Tantivy BM25 projection of the chunk table | Accepted |
 
 (The `new-adr` skill appends new rows to this table; keep the header
 above intact.)

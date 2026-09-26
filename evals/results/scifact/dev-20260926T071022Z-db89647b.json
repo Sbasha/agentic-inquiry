@@ -1,0 +1,2026 @@
+{
+ "budget_tokens": 2000,
+ "comparisons": [
+  {
+   "a": "inquiry",
+   "b": "inquiry@e8b80e5a",
+   "ci_high": -0.09108,
+   "ci_low": -0.279156,
+   "clustered": false,
+   "mde": 0.137082,
+   "mean_diff": -0.185167,
+   "metric": "ndcg@10",
+   "n": 97,
+   "p_perm": 0.0003,
+   "valid": true
+  },
+  {
+   "a": "inquiry",
+   "b": "inquiry@e8b80e5a",
+   "ci_high": 0.041237,
+   "ci_low": -0.035052,
+   "clustered": false,
+   "mde": 0.053611,
+   "mean_diff": 0.001031,
+   "metric": "recall@100",
+   "n": 97,
+   "p_perm": 1.0,
+   "valid": true
+  }
+ ],
+ "provenance": {
+  "arms": {
+   "inquiry": {
+    "code_hash": "ad7d24ea2144dc33",
+    "config": "config/default.yaml",
+    "entry": "IndexingPipeline.index_directory + SearchService.hybrid_search"
+   },
+   "inquiry@e8b80e5a": {
+    "recorded_from": "evals/results/scifact/dev-20260926T064347Z-e8b80e5a.json"
+   }
+  },
+  "datasets": {
+   "scifact": "536e14446a0ba56ed1398ab1055f39fe852686ecad24a6306c80c490fa8e0165"
+  },
+  "dirty": true,
+  "dropped": {},
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "python": "3.12.13",
+  "rfc_sha256": "acc93f05925fad5907e8c190578d7535968654913daabc1083dc8acfe678e8ab",
+  "seed": 20260926,
+  "sha": "db89647bb7b060a72b876256e8d8af8eddcceef8",
+  "started_utc": "2026-09-26T07:10:22+00:00",
+  "tokenizer": "tiktoken cl100k_base"
+ },
+ "rows": [
+  {
+   "arm": "inquiry",
+   "case": "scifact-3",
+   "latency_ms": 221.9,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-42",
+   "latency_ms": 98.08,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-118",
+   "latency_ms": 108.12,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-129",
+   "latency_ms": 171.46,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-132",
+   "latency_ms": 141.33,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-143",
+   "latency_ms": 180.63,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-148",
+   "latency_ms": 115.8,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-171",
+   "latency_ms": 251.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-183",
+   "latency_ms": 145.94,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-198",
+   "latency_ms": 135.54,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-216",
+   "latency_ms": 162.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-219",
+   "latency_ms": 195.96,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-232",
+   "latency_ms": 175.02,
+   "metrics": {
+    "mrr@10": 0.1,
+    "ndcg@10": 0.2890648263178879,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-236",
+   "latency_ms": 120.57,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-261",
+   "latency_ms": 85.23,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-269",
+   "latency_ms": 171.89,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-303",
+   "latency_ms": 89.78,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-314",
+   "latency_ms": 92.78,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-324",
+   "latency_ms": 87.96,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-384",
+   "latency_ms": 90.27,
+   "metrics": {
+    "mrr@10": 0.1,
+    "ndcg@10": 0.2890648263178879,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-388",
+   "latency_ms": 87.83,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-399",
+   "latency_ms": 81.7,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-415",
+   "latency_ms": 87.11,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-431",
+   "latency_ms": 103.0,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-436",
+   "latency_ms": 90.93,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-439",
+   "latency_ms": 85.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-475",
+   "latency_ms": 89.75,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-501",
+   "latency_ms": 92.67,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-502",
+   "latency_ms": 113.13,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-507",
+   "latency_ms": 75.81,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-508",
+   "latency_ms": 95.28,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.3562071871080222,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-514",
+   "latency_ms": 86.36,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-517",
+   "latency_ms": 82.94,
+   "metrics": {
+    "mrr@10": 0.1111111111111111,
+    "ndcg@10": 0.3010299956639812,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-521",
+   "latency_ms": 93.98,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-533",
+   "latency_ms": 92.6,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-536",
+   "latency_ms": 121.62,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-560",
+   "latency_ms": 93.4,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-587",
+   "latency_ms": 86.47,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-593",
+   "latency_ms": 93.53,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-598",
+   "latency_ms": 96.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-613",
+   "latency_ms": 96.02,
+   "metrics": {
+    "mrr@10": 0.1,
+    "ndcg@10": 0.2890648263178879,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-619",
+   "latency_ms": 100.38,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-623",
+   "latency_ms": 93.25,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-644",
+   "latency_ms": 90.31,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-659",
+   "latency_ms": 93.79,
+   "metrics": {
+    "mrr@10": 0.1,
+    "ndcg@10": 0.2890648263178879,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-691",
+   "latency_ms": 102.67,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-692",
+   "latency_ms": 92.19,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-715",
+   "latency_ms": 95.75,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-718",
+   "latency_ms": 151.87,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-768",
+   "latency_ms": 56.35,
+   "metrics": {
+    "mrr@10": 0.25,
+    "ndcg@10": 0.43067655807339306,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-781",
+   "latency_ms": 80.2,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-784",
+   "latency_ms": 84.28,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-800",
+   "latency_ms": 78.43,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-805",
+   "latency_ms": 75.21,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-808",
+   "latency_ms": 74.59,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-811",
+   "latency_ms": 83.01,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-814",
+   "latency_ms": 86.27,
+   "metrics": {
+    "mrr@10": 0.1111111111111111,
+    "ndcg@10": 0.3010299956639812,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-821",
+   "latency_ms": 91.48,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-832",
+   "latency_ms": 96.59,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-837",
+   "latency_ms": 76.95,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.3562071871080222,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-839",
+   "latency_ms": 89.0,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-847",
+   "latency_ms": 81.8,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-873",
+   "latency_ms": 85.64,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.6
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-887",
+   "latency_ms": 89.5,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-904",
+   "latency_ms": 92.9,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-921",
+   "latency_ms": 89.55,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-922",
+   "latency_ms": 89.96,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-960",
+   "latency_ms": 95.14,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-982",
+   "latency_ms": 94.08,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-993",
+   "latency_ms": 102.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1020",
+   "latency_ms": 86.51,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1049",
+   "latency_ms": 88.44,
+   "metrics": {
+    "mrr@10": 0.2,
+    "ndcg@10": 0.38685280723454163,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1088",
+   "latency_ms": 109.5,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1089",
+   "latency_ms": 101.73,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1100",
+   "latency_ms": 91.72,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1104",
+   "latency_ms": 189.69,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1132",
+   "latency_ms": 85.45,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.5
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1150",
+   "latency_ms": 81.61,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1179",
+   "latency_ms": 88.11,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1197",
+   "latency_ms": 88.33,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1202",
+   "latency_ms": 127.54,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1204",
+   "latency_ms": 83.36,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1207",
+   "latency_ms": 89.21,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1213",
+   "latency_ms": 75.1,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1262",
+   "latency_ms": 97.92,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1266",
+   "latency_ms": 78.47,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1273",
+   "latency_ms": 84.07,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1274",
+   "latency_ms": 79.0,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 0.46927872602275644,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1278",
+   "latency_ms": 74.31,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1281",
+   "latency_ms": 176.21,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1290",
+   "latency_ms": 174.55,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1298",
+   "latency_ms": 122.25,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1303",
+   "latency_ms": 79.22,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1332",
+   "latency_ms": 121.29,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1336",
+   "latency_ms": 84.44,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1385",
+   "latency_ms": 119.08,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry",
+   "case": "scifact-1389",
+   "latency_ms": 113.12,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-3",
+   "latency_ms": 165.15,
+   "metrics": {
+    "mrr@10": 0.1,
+    "ndcg@10": 0.2890648263178879,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-42",
+   "latency_ms": 76.04,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-118",
+   "latency_ms": 74.6,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-129",
+   "latency_ms": 69.8,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-132",
+   "latency_ms": 66.66,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-143",
+   "latency_ms": 77.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-148",
+   "latency_ms": 64.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-171",
+   "latency_ms": 71.77,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-183",
+   "latency_ms": 67.71,
+   "metrics": {
+    "mrr@10": 0.2,
+    "ndcg@10": 0.38685280723454163,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-198",
+   "latency_ms": 68.31,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-216",
+   "latency_ms": 67.56,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-219",
+   "latency_ms": 68.91,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-232",
+   "latency_ms": 70.23,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-236",
+   "latency_ms": 65.95,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-261",
+   "latency_ms": 71.68,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-269",
+   "latency_ms": 67.77,
+   "metrics": {
+    "mrr@10": 0.25,
+    "ndcg@10": 0.43067655807339306,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-303",
+   "latency_ms": 69.23,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-314",
+   "latency_ms": 71.71,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-324",
+   "latency_ms": 70.65,
+   "metrics": {
+    "mrr@10": 0.125,
+    "ndcg@10": 0.31546487678572877,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-384",
+   "latency_ms": 72.7,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-388",
+   "latency_ms": 68.41,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-399",
+   "latency_ms": 70.11,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-415",
+   "latency_ms": 72.32,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.3562071871080222,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-431",
+   "latency_ms": 71.94,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-436",
+   "latency_ms": 69.49,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-439",
+   "latency_ms": 71.22,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-475",
+   "latency_ms": 67.52,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-501",
+   "latency_ms": 66.08,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-502",
+   "latency_ms": 70.98,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-507",
+   "latency_ms": 71.32,
+   "metrics": {
+    "mrr@10": 0.1111111111111111,
+    "ndcg@10": 0.3010299956639812,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-508",
+   "latency_ms": 72.22,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-514",
+   "latency_ms": 78.35,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-517",
+   "latency_ms": 68.35,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-521",
+   "latency_ms": 85.55,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-533",
+   "latency_ms": 68.91,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-536",
+   "latency_ms": 69.1,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-560",
+   "latency_ms": 71.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-587",
+   "latency_ms": 78.56,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-593",
+   "latency_ms": 71.08,
+   "metrics": {
+    "mrr@10": 0.25,
+    "ndcg@10": 0.43067655807339306,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-598",
+   "latency_ms": 78.04,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-613",
+   "latency_ms": 73.35,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-619",
+   "latency_ms": 71.7,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-623",
+   "latency_ms": 71.59,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-644",
+   "latency_ms": 68.74,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-659",
+   "latency_ms": 67.82,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-691",
+   "latency_ms": 73.75,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-692",
+   "latency_ms": 70.55,
+   "metrics": {
+    "mrr@10": 0.2,
+    "ndcg@10": 0.38685280723454163,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-715",
+   "latency_ms": 73.26,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-718",
+   "latency_ms": 68.5,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-768",
+   "latency_ms": 50.41,
+   "metrics": {
+    "mrr@10": 0.25,
+    "ndcg@10": 0.43067655807339306,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-781",
+   "latency_ms": 71.22,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-784",
+   "latency_ms": 71.52,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-800",
+   "latency_ms": 74.46,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-805",
+   "latency_ms": 67.27,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-808",
+   "latency_ms": 67.35,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-811",
+   "latency_ms": 72.31,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-814",
+   "latency_ms": 78.48,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-821",
+   "latency_ms": 70.28,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-832",
+   "latency_ms": 66.93,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-837",
+   "latency_ms": 69.38,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-839",
+   "latency_ms": 72.23,
+   "metrics": {
+    "mrr@10": 0.2,
+    "ndcg@10": 0.38685280723454163,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-847",
+   "latency_ms": 73.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-873",
+   "latency_ms": 64.29,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-887",
+   "latency_ms": 72.44,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-904",
+   "latency_ms": 76.3,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-921",
+   "latency_ms": 71.6,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-922",
+   "latency_ms": 68.7,
+   "metrics": {
+    "mrr@10": 0.25,
+    "ndcg@10": 0.43067655807339306,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-960",
+   "latency_ms": 68.02,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-982",
+   "latency_ms": 71.3,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.3562071871080222,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-993",
+   "latency_ms": 65.27,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1020",
+   "latency_ms": 80.56,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1049",
+   "latency_ms": 68.86,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.3562071871080222,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1088",
+   "latency_ms": 67.45,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1089",
+   "latency_ms": 72.07,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1100",
+   "latency_ms": 65.57,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1104",
+   "latency_ms": 78.39,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1132",
+   "latency_ms": 70.08,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1150",
+   "latency_ms": 68.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1179",
+   "latency_ms": 71.1,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1197",
+   "latency_ms": 67.13,
+   "metrics": {
+    "mrr@10": 0.125,
+    "ndcg@10": 0.31546487678572877,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1202",
+   "latency_ms": 68.1,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1204",
+   "latency_ms": 71.12,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1207",
+   "latency_ms": 72.72,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1213",
+   "latency_ms": 68.22,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1262",
+   "latency_ms": 71.53,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1266",
+   "latency_ms": 77.52,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1273",
+   "latency_ms": 70.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1274",
+   "latency_ms": 79.8,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.5307212739772434,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1278",
+   "latency_ms": 72.87,
+   "metrics": {
+    "mrr@10": 0.14285714285714285,
+    "ndcg@10": 0.3333333333333333,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1281",
+   "latency_ms": 70.07,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1290",
+   "latency_ms": 73.26,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1298",
+   "latency_ms": 83.23,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1303",
+   "latency_ms": 129.93,
+   "metrics": {
+    "mrr@10": 0.14285714285714285,
+    "ndcg@10": 0.3333333333333333,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1332",
+   "latency_ms": 76.44,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1336",
+   "latency_ms": 68.24,
+   "metrics": {
+    "mrr@10": 0.1111111111111111,
+    "ndcg@10": 0.3010299956639812,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1385",
+   "latency_ms": 67.5,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "inquiry@e8b80e5a",
+   "case": "scifact-1389",
+   "latency_ms": 69.76,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  }
+ ],
+ "schema": "InquiryEval/v1",
+ "split": "dev",
+ "suite": "scifact",
+ "summary": {
+  "inquiry": {
+   "cases": 97,
+   "failure_share": 0.0,
+   "failures": 0,
+   "mean_index_s": 885.99,
+   "metrics": {
+    "mrr@10": 0.3341,
+    "ndcg@10": 0.3559,
+    "recall@100": 0.9082
+   },
+   "p50_latency_ms": 92.6
+  },
+  "inquiry@e8b80e5a": {
+   "cases": 97,
+   "failure_share": 0.0,
+   "failures": 0,
+   "mean_index_s": null,
+   "metrics": {
+    "mrr@10": 0.4858,
+    "ndcg@10": 0.541,
+    "recall@100": 0.9072
+   },
+   "p50_latency_ms": 71.08
+  }
+ }
+}

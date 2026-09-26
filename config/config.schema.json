@@ -422,7 +422,7 @@
             },
             "rerank_by_graph": {
               "type": "boolean",
-              "description": "Enable graph-based reranking of results",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "default": true
             },
             "reranker_type": {
@@ -445,17 +445,17 @@
             },
             "fallback_to_vector": {
               "type": "boolean",
-              "description": "Fallback to vector-only search when hybrid search fails or returns no results",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "default": true
             },
             "log_diagnostics": {
               "type": "boolean",
-              "description": "Enable diagnostic logging for hybrid search (useful for debugging)",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "default": false
             },
             "overview_boost_factor": {
               "type": "number",
-              "description": "Boost factor for overview/documentation files in search results",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 1.0,
               "default": 1.5
             }
@@ -464,7 +464,7 @@
         },
         "overview_boost": {
           "type": "object",
-          "description": "Overview/documentation boosting configuration",
+          "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
           "properties": {
             "enabled": {
               "type": "boolean",

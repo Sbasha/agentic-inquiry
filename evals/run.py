@@ -191,8 +191,26 @@ def applicable_arms(suite: Suite, arm_names: list[str]) -> list[Any]:
     return [make_arm(name) for name in arm_names if suite.code or name != "graphify"]
 
 
+@dataclass
+class RecordedArm:
+    """An arm replayed from an earlier results file, for paired before/after comparisons."""
+
+    name: str
+    source: str
+
+    def config(self) -> dict[str, Any]:
+        return {"recorded_from": self.source}
+
+
+def recorded(path: Path, arm: str, case_ids: set[str]) -> tuple[RecordedArm, list[dict[str, Any]]]:
+    report = json.loads(path.read_text())
+    label = f"{arm}@{report['provenance']['sha'][:8]}"
+    rows = [dict(r, arm=label) for r in report["rows"] if r["arm"] == arm and r["case"] in case_ids]
+    return RecordedArm(label, str(path)), rows
+
+
 def run(suite_name: str, arm_names: list[str], split: str, limit: int | None = None,
-        corpora_limit: int | None = None, jobs: int = 1) -> Path:
+        corpora_limit: int | None = None, jobs: int = 1, baseline: Path | None = None) -> Path:
     dirty = bool(_git("status", "--porcelain", "--untracked-files=no"))
     if split == "test" and dirty:
         raise SystemExit("refusing --split test on a dirty tree (RFC-0003): commit first")
@@ -211,6 +229,10 @@ def run(suite_name: str, arm_names: list[str], split: str, limit: int | None = N
             else:
                 metrics = score_case(case, suite, got.hits, got.indexed)
                 rows.append({"arm": arm.name, "case": case.id, "latency_ms": round(got.latency_ms, 2), "metrics": metrics})
+    if baseline is not None:
+        replay, replay_rows = recorded(baseline, "inquiry", {c.id for c in cases})
+        arms = [*arms, replay]
+        rows.extend(replay_rows)
 
     report = _report(suite, cases, arms, rows, split, started, dirty, index_seconds)
     stamp = started.strftime("%Y%m%dT%H%M%SZ")

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from pathlib import Path
 
 from evals.data import LOADERS
 
@@ -21,6 +22,7 @@ def main() -> None:
     run.add_argument("--limit", type=int, help="first N cases (smoke runs only)")
     run.add_argument("--corpora", type=int, help="first N corpora (smoke runs only)")
     run.add_argument("--jobs", type=int, default=3, help="concurrent index builds for subprocess arms")
+    run.add_argument("--baseline", type=Path, help="earlier results file; its inquiry rows join as a paired arm")
 
     answer = sub.add_parser("answer", help="Level B answer quality on LOCOMO")
     answer.add_argument("--arms", default="bm25,dense,hybrid,inquiry")
@@ -37,7 +39,8 @@ def main() -> None:
     elif args.command == "run":
         from evals.run import run as run_suite
 
-        run_suite(args.suite, [a for a in args.arms.split(",") if a], args.split, args.limit, args.corpora, args.jobs)
+        run_suite(args.suite, [a for a in args.arms.split(",") if a], args.split, args.limit, args.corpora, args.jobs,
+                  args.baseline)
     elif args.command == "answer":
         from evals.answer import run_answers
 

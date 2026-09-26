@@ -322,6 +322,10 @@ class CacheConfig:
     document_cache: DocumentCacheConfig = field(default_factory=DocumentCacheConfig)
 
 
+# Keys the retrieval-core change removed; still accepted so old configs load.
+_REMOVED_HYBRID_KEYS = ("rerank_by_graph", "rrf_k", "fallback_to_vector", "log_diagnostics", "overview_boost_factor")
+
+
 @dataclass
 class HybridSearchConfig:
     """Hybrid search configuration.
@@ -333,26 +337,14 @@ class HybridSearchConfig:
     - colbert: ColBERT-based reranking
     """
 
+    # Weights for the linear_combination reranker only; RRF fuses by rank.
     vector_weight: float = 0.7
     fts_weight: float = 0.3
-    rerank_by_graph: bool = True
 
-    # Reranking strategy configuration
-    reranker_type: str = "linear_combination"
-    reranker_params: Dict[str, Any] = field(default_factory=dict)
-
-    # RRF (Reciprocal Rank Fusion) configuration
-    # The RRF formula is: score = Σ 1/(k + rank) where k controls rank smoothing.
-    # Higher k values give more weight to lower-ranked results.
-    # Default k=60 is research-backed (Cormack et al., SIGIR 2009).
-    rrf_k: int = 60
-
-    # Fallback and diagnostic options
-    fallback_to_vector: bool = True
-    log_diagnostics: bool = False
-
-    # Overview boosting
-    overview_boost_factor: float = 1.5
+    # Reranking strategy: "rrf" fuses the vector and full-text lists by rank;
+    # reranker_params["k"] is the RRF constant (default 60).
+    reranker_type: str = "rrf"
+    reranker_params: Dict[str, Any] = field(default_factory=lambda: {"k": 60})
 
 
 @dataclass
@@ -2065,6 +2057,15 @@ class Config:
             if 'impact_include_indirect' not in indexing_data:
                 indexing_data['impact_include_indirect'] = impact_data.get('include_indirect', True)
 
+        # Ranking heuristics removed by docs/specs/retrieval-core: older configs
+        # that still set them load, with a warning that the keys do nothing.
+        search = data.get('search') or {}
+        hybrid = search.get('hybrid_search') or {}
+        ignored = [f"search.hybrid_search.{key}" for key in _REMOVED_HYBRID_KEYS if key in hybrid]
+        if 'overview_boost' in search:
+            ignored.append("search.overview_boost")
+        if ignored:
+            logger.warning("Ignoring removed search settings: %s", ", ".join(ignored))
         return data
 
     @classmethod
@@ -2145,7 +2146,6 @@ class Config:
                 'hybrid_search': {
                     'vector_weight': self.search.hybrid_search.vector_weight,
                     'fts_weight': self.search.hybrid_search.fts_weight,
-                    'rerank_by_graph': self.search.hybrid_search.rerank_by_graph,
                 },
                 'graph_search': {
                     'max_depth': self.search.graph_search.max_depth,

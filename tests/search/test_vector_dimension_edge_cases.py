@@ -47,9 +47,7 @@ def mock_config():
     """Create a mock configuration."""
     config = MagicMock()
     config.search.default_limit = 10
-    config.search.hybrid_search.rerank_by_graph = False
     config.search.hybrid_search.reranker.enabled = False
-    config.search.hybrid_search.overview_boost_factor = 1.5
     config.search.hybrid_search.reranker_type = "rrf"
     config.search.hybrid_search.reranker_params = {}
     config.search.hybrid_search.vector_weight = 0.7

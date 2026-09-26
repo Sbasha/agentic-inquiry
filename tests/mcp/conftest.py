@@ -70,7 +70,6 @@ async def mcp_services(tmp_path):
         hybrid_search=HybridSearchConfig(
             vector_weight=0.7,
             fts_weight=0.3,
-            rerank_by_graph=True,
             reranker_type="rrf",
             reranker_params={},
         ),

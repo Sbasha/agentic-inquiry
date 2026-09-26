@@ -79,8 +79,7 @@ class CodeGatherer(ContextGathererProtocol):
                 query_vector=query_vector,
                 query_fts=context.query,
                 limit=search_limit,
-                project_id=context.project_id,
-                boost_overview=context.include_overview
+                project_id=context.project_id
             )
 
             logger.info("Search returned %s results", len(results))

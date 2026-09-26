@@ -544,8 +544,7 @@ async def _entities_from_semantic_search(
             project_id=project_id,
             limit=min(limit, 10),  # Cap at 10 chunks for faster semantic bridge
             content_preference="CODE",  # Boost code, but include docs for discovery
-            content_preference_weight=0.7,  # 70% boost for code content
-            boost_overview=False  # We want code, not docs
+            content_preference_weight=0.7
         )
         step1_time = (time.perf_counter() - step1_start) * 1000
 
@@ -1856,7 +1855,6 @@ async def find_similar(
                     project_id=project_id,
                     limit=limit * 2,  # Get more to filter by threshold
                     filters=content_filters,  # SDD-001: Apply content_type filter
-                    boost_overview=False
                 )
 
                 content_results = []

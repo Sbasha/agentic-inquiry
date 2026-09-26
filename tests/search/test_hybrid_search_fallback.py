@@ -50,7 +50,6 @@ def base_config():
     """Create a base configuration for testing."""
     config = Config.load()
     config.search.default_limit = 10
-    config.search.hybrid_search.rerank_by_graph = False
     return config
 
 
@@ -274,49 +273,6 @@ class TestHybridSearchFallbackStrategies:
                 limit=10
             )
     
-    @pytest.mark.asyncio
-    async def test_reranker_eliminates_all_results(self, search_service, mock_db_manager):
-        """Test fallback when reranker eliminates all results.
-
-        When the reranker returns empty results, hybrid search should
-        fall back to vector results.
-        """
-        # Setup mock results as SearchResult objects with different file_paths for diversity
-        vector_dicts = [
-            {"id": "v1", "content": "vector result 1", "score": 0.9, "file_path": "/a/file1.py"},
-            {"id": "v2", "content": "vector result 2", "score": 0.8, "file_path": "/b/file2.py"},
-        ]
-        fts_dicts = [
-            {"id": "f1", "content": "fts result 1", "score": 0.85, "file_path": "/c/file3.py"},
-        ]
-
-        # Mock the individual search methods to return SearchResult objects
-        search_service.vector_search = AsyncMock(
-            return_value=_make_search_results(vector_dicts, source="vector")
-        )
-        search_service.fts_search = AsyncMock(
-            return_value=_make_search_results(fts_dicts, source="fts")
-        )
-
-        # Mock reranker to return empty results
-        mock_reranker = MagicMock()
-        mock_reranker.rerank = MagicMock(return_value=[])
-        search_service._hybrid_search._create_reranker = MagicMock(return_value=mock_reranker)
-
-        # Execute hybrid search
-        query_vector = [0.1] * 384
-        query_fts = "test query"
-        results = await search_service.hybrid_search(
-            query_vector=query_vector,
-            query_fts=query_fts,
-            limit=10
-        )
-
-        # Verify fallback to vector results - at least first result present
-        # (deduplication may filter some results based on diversity threshold)
-        assert len(results) >= 1
-        result_ids = {r.id for r in results}
-        assert "v1" in result_ids  # First vector result should be present
 
 
 

@@ -54,6 +54,7 @@ class TestQueryConstruction:
         query_mock.limit = MagicMock(return_value=query_mock)
         query_mock.to_list = MagicMock(return_value=[{"id": "1", "content": "test"}])
         mock_table.search = MagicMock(return_value=query_mock)
+        mock_table.count_rows = MagicMock(return_value=10)
 
         # Execute
         results = await query_builder.vector_search(
@@ -76,6 +77,7 @@ class TestQueryConstruction:
         query_mock.limit = MagicMock(return_value=query_mock)
         query_mock.to_list = MagicMock(return_value=[])
         mock_table.search = MagicMock(return_value=query_mock)
+        mock_table.count_rows = MagicMock(return_value=10)
 
         # Execute
         await query_builder.vector_search(
@@ -100,6 +102,7 @@ class TestQueryConstruction:
         query_mock.limit = MagicMock(return_value=query_mock)
         query_mock.to_list = MagicMock(return_value=[{"id": "1", "content": "test"}])
         mock_table.search = MagicMock(return_value=query_mock)
+        mock_table.count_rows = MagicMock(return_value=10)
 
         # Execute
         results = await query_builder.fts_search(
@@ -122,6 +125,7 @@ class TestQueryConstruction:
         query_mock.limit = MagicMock(return_value=query_mock)
         query_mock.to_list = MagicMock(return_value=[])
         mock_table.search = MagicMock(return_value=query_mock)
+        mock_table.count_rows = MagicMock(return_value=10)
 
         # Execute
         await query_builder.hybrid_search(
@@ -272,6 +276,7 @@ class TestCrossProjectQueries:
         query_mock.limit = MagicMock(return_value=query_mock)
         query_mock.to_list = MagicMock(return_value=[])
         mock_table.search = MagicMock(return_value=query_mock)
+        mock_table.count_rows = MagicMock(return_value=10)
 
         # Execute
         await query_builder.query_across_projects(
@@ -293,6 +298,7 @@ class TestCrossProjectQueries:
         query_mock.limit = MagicMock(return_value=query_mock)
         query_mock.to_list = MagicMock(return_value=[])
         mock_table.search = MagicMock(return_value=query_mock)
+        mock_table.count_rows = MagicMock(return_value=10)
 
         # Execute
         await query_builder.vector_search_across_projects(
