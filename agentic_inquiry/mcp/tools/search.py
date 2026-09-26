@@ -9,7 +9,7 @@ import os
 import re
 import time
 from pathlib import Path
-from typing import Any, Optional, List, Literal
+from typing import Any, Optional, List, Literal, Union
 
 from agentic_inquiry.mcp.utils.errors import MCPErrorHandler
 from agentic_inquiry.mcp.utils.index_state import (
@@ -500,7 +500,7 @@ async def _entities_from_semantic_search(
     project_id: str,
     entity_type_lower: Optional[str] = None,
     limit: int = 20,
-    query_vector: Optional[np.ndarray] = None,
+    query_vector: Optional[Union[np.ndarray, str]] = None,
 ) -> List[dict]:
     """Find entities by searching code chunks semantically, then extracting entities.
 
@@ -522,7 +522,8 @@ async def _entities_from_semantic_search(
         project_id: Project ID to filter results
         entity_type_lower: Optional entity type filter (lowercase)
         limit: Maximum entities to return
-        query_vector: Pre-computed query embedding (avoids duplicate embedding generation)
+        query_vector: Pre-computed query embedding (avoids duplicate embedding generation),
+            or raw query text for server-side embedding
 
     Returns:
         List of entity dicts with 'semantic_bridge_score' indicating relevance
@@ -795,6 +796,7 @@ async def search_knowledge(
         # For server-side embedding backends (AlloyDB, RDS), pass the raw query
         # string so the database generates the embedding in the correct dimensions.
         embedding_start = time.perf_counter()
+        query_vector: Union[np.ndarray, str]
         capabilities = services.get("capabilities")
         if capabilities is None:
             # Fallback: derive capabilities from storage backend
@@ -804,7 +806,7 @@ async def search_knowledge(
 
         if capabilities.uses_server_side_embedding:
             # Pass raw query text — PostgreSQL vector_search will use embedding() SQL function
-            query_vector = query  # type: ignore[assignment]
+            query_vector = query
             embedding_time_ms = 0.0
         else:
             embedding_service = services["embedding_service"]
@@ -1522,6 +1524,7 @@ async def find_similar(
         # Generate query embedding
         # For server-side embedding backends, pass raw query text
         embedding_start = time.perf_counter()
+        query_vector: Union[np.ndarray, str]
         capabilities_fs = services.get("capabilities")
         if capabilities_fs is None:
             from agentic_inquiry.storage.capabilities import get_capabilities_for_backend
@@ -1529,7 +1532,7 @@ async def find_similar(
             capabilities_fs = get_capabilities_for_backend(_backend_fs)
 
         if capabilities_fs.uses_server_side_embedding:
-            query_vector = query  # type: ignore[assignment]
+            query_vector = query
             embedding_time_ms = 0.0
         else:
             query_vector = await embedding_service.embed_async(query)

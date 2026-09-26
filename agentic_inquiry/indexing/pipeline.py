@@ -22,6 +22,7 @@ from agentic_inquiry.watching import WatcherProtocol
 # TYPE_CHECKING import to avoid circular dependency
 from typing import TYPE_CHECKING, cast
 if TYPE_CHECKING:
+    from agentic_inquiry.embeddings.base import Embedder
     from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
     from agentic_inquiry.indexing.models import IndexingResult
     from agentic_inquiry.connectors.protocols import ConnectorProtocol
@@ -2081,6 +2082,7 @@ class IndexingPipeline:
                 _caps = get_capabilities_for_backend(self._backend_type)
                 _skip_local_embedding = _caps.uses_server_side_embedding
 
+                chunk_embedder: Optional[Embedder]
                 if _skip_local_embedding:
                     chunk_embedder, chunk_dims = None, 768  # text-embedding-005 dimensionality
                     logger.debug("Server-side embedding backend: skipping local chunk embedding generation")
@@ -2145,7 +2147,7 @@ class IndexingPipeline:
                 for index, chunk in enumerate(chunks_for_processing):
                     doc_chunk_id = f"{parsed_document.doc_id}_{index}"
 
-                    if _skip_local_embedding:
+                    if chunk_embedder is None:
                         # AlloyDB: no embedding needed, just validate chunk has content
                         if not chunk.content:
                             stats["skipped_chunks"] += 1
@@ -2221,7 +2223,8 @@ class IndexingPipeline:
                 # but not zero. Peak per-document memory for embedding
                 # roughly doubles vs. the old per-chunk loop; fine for
                 # typical workloads.
-                if texts_to_embed:
+                # texts_to_embed only fills on the local-embedding path.
+                if chunk_embedder is not None and texts_to_embed:
                     loop = asyncio.get_running_loop()
                     try:
                         batch_vectors = await loop.run_in_executor(

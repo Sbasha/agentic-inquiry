@@ -932,5 +932,22 @@ class TestPDFStructureExtraction:
             "PDF chunks should include font_size metadata"
 
 
+@pytest.mark.asyncio
+async def test_oversized_document_is_skipped(parser, tmp_path, monkeypatch):
+    """A document over the size limit yields an empty, flagged result."""
+    path = tmp_path / "big.docx"
+    path.write_bytes(b"xx")
+    monkeypatch.setattr(
+        "agentic_inquiry.parsers.implementations.document._MAX_DOC_FILE_SIZE", 1
+    )
+
+    result = await parser.parse(str(path))
+
+    assert result.file_path == str(path)
+    assert result.doc_id
+    assert result.chunks == []
+    assert result.metadata == {"skipped": True, "reason": "file_too_large"}
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

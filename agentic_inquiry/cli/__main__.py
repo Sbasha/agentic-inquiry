@@ -21,6 +21,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -141,7 +142,7 @@ Environment:
 
 def _parse_server_flags(args: list[str]) -> dict:
     """Parse --port, --project-id, --env flags from server command args."""
-    result = {
+    result: dict[str, Any] = {
         "port": None,
         "project_id": os.environ.get("INQUIRY_PROJECT_ID", "default"),
         "env": os.environ.get("INQUIRY_SERVER_ENV", "default"),

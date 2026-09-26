@@ -125,6 +125,46 @@ a defect found while qualifying and left for its own change.
 - **`tantivy` dependency:** no code imports it after the native FTS
   switch. Remove it from `pyproject.toml` with an ADR.
 
+## mypy-clean
+
+Open items from [`specs/mypy-clean/spec.md`](specs/mypy-clean/spec.md).
+None is a deferred acceptance criterion. Each is a gap the type fixes
+exposed where the fix would change search, indexing, or memory behaviour.
+
+- **Initial-index shortcut never runs on LanceDB:**
+  `GraphBuilder.flush_pending_relationships_batched` calls
+  `db_manager.count_records`, but on the LanceDB path `db_manager` is a
+  `LanceDBAdapter`, which has no such method. The `AttributeError` is
+  caught, so `RelationshipResolver._skip_database_lookups` is never set and
+  every fresh index pays for database lookups that return nothing. Decide
+  whether to enable it by giving `LanceDBAdapter` a project-scoped
+  `count_records`, then measure resolution time and edge counts before and
+  after on a fresh index. The call carries a `type: ignore[union-attr]`
+  until then.
+- **`ai index --branch` doesn't tag chunks:** the command indexes the
+  branch's worktree, but nothing records the branch on the stored rows.
+  `branch_expiry` reads a `branch` field that no writer sets, so it never
+  prunes branch data. Unblocked by threading the branch name from
+  `index_command` into the chunk and entity writers.
+- **Raw query text reaches list-only vector providers:**
+  `SearchService.vector_search` accepts `str` for server-side embedding and
+  forwards it to `StorageFacade.vector_search`, whose provider contract takes
+  an embedding only. Text arrives there when a backend sets
+  `embedding_strategy: server_side` (honoured by `mcp/factories.py`) or when
+  `server/routes/search.py` has no `embedding_service`. LanceDB then runs the
+  vector leg as full-text search, so hybrid results quietly lose their
+  semantic half. Decide between widening the vector-search provider contract
+  to `Union[str, List[float]]` (with list-only providers raising, as
+  `entity_vector_search` does) and making those callers always embed. The
+  facade call carries a `type: ignore[arg-type]` until then.
+- **REST memories below the episodic threshold can't be recalled:**
+  `server/routes/memory.py` mints a new session per request, and the working
+  tier filters by session. A memory stored with importance under the
+  episodic threshold (0.7 by default) lands in working memory and no later
+  `/memory/recall` finds it. Unblocked by giving REST calls a stable
+  per-project session, after checking how that interacts with working-memory
+  capacity and consolidation.
+
 <!-- Add one section per spec with open work, e.g.:
 
 ## <spec-name>

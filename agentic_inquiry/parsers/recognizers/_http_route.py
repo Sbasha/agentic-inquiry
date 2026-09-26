@@ -293,18 +293,18 @@ class HTTPRouteRecognizer:
                 ranged.append((chunk.line_start, chunk.line_end, chunk))
 
         for route in routes:
-            chunk = self._locate_chunk(
+            owner = self._locate_chunk(
                 route,
                 by_name_line,
                 by_name,
                 ranged,
                 code_full_fallback,
             )
-            if chunk is None:
+            if owner is None:
                 continue
 
             relationship = ParserRelationship(
-                source_type=_resolve_source_type(chunk, route.source_name),
+                source_type=_resolve_source_type(owner, route.source_name),
                 source_name=route.source_name,
                 target_type="http_route",
                 target_name=f"{route.http_method} {route.path}",
@@ -318,8 +318,8 @@ class HTTPRouteRecognizer:
                 },
             )
 
-            if not self._has_equivalent(chunk.relationships, relationship):
-                chunk.relationships.append(relationship)
+            if not self._has_equivalent(owner.relationships, relationship):
+                owner.relationships.append(relationship)
 
     def _locate_chunk(
         self,

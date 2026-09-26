@@ -20,6 +20,7 @@ from agentic_inquiry.storage.capabilities import (
 
 if TYPE_CHECKING:
     from agentic_inquiry.config import Config
+    from agentic_inquiry.embeddings.base import Embedder
 
 logger = logging.getLogger(__name__)
 
@@ -197,7 +198,7 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
         # forward pass to cache. Skip the CachingEmbedder wrap here
         # regardless of ``embeddings.cache.enabled``; it wouldn't hurt
         # but the NoOpEmbedder's ``generate`` is a zero-cost stub.
-        embedder = NoOpEmbedder(ndims=ndims)
+        embedder: Embedder = NoOpEmbedder(ndims=ndims)
         embedding_registry.configure_default_embedder(embedder, ndims=ndims)
         if not quiet:
             logger.info(

@@ -2,7 +2,7 @@
 """Protocol definition for context gatherers."""
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Any, Dict, List, Optional, Protocol, Union, runtime_checkable
 
 from agentic_inquiry.mcp.services.token_optimizer import TokenBudget
 
@@ -20,7 +20,8 @@ class GatherContext:
     project_id: Optional[str] = None
     session_id: Optional[str] = None
     include_overview: bool = False
-    query_vector: Optional[List[float]] = None
+    # Raw query text when the backend embeds server-side
+    query_vector: Optional[Union[List[float], str]] = None
     # For graph expansion - initial context to expand from
     initial_context: Dict[str, List[Any]] = field(default_factory=dict)
 
