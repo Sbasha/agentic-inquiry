@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-\"\"\"Domain-specific embedding model fine-tuning script.
+"""Domain-specific embedding model fine-tuning script.
 
 This script enables lightweight fine-tuning of embedding models on local data
 (code, documentation, logs) to improve semantic relevance for a specific domain.
@@ -13,7 +13,7 @@ Features:
 
 Usage:
     python scripts/finetune_model.py --data-dir ./docs --output-dir ./models/my-domain-model
-\"\"\"
+"""
 
 import argparse
 import json
@@ -38,13 +38,13 @@ logger = logging.getLogger(__name__)
 
 
 class SyntheticDataGenerator:
-    \"\"\"Generate training data from local files.\"\"\"
+    """Generate training data from local files."""
     
     def __init__(self, data_dir: Path):
         self.data_dir = data_dir
         
     def collect_texts(self, extensions: List[str] = [".md", ".py", ".txt"]) -> List[str]:
-        \"\"\"Collect all text chunks from the data directory.\"\"\"
+        """Collect all text chunks from the data directory."""
         texts = []
         for ext in extensions:
             for path in self.data_dir.rglob(f"*{ext}"):
@@ -59,11 +59,11 @@ class SyntheticDataGenerator:
         return texts
 
     def create_simcse_examples(self, texts: List[str]) -> List[InputExample]:
-        \"\"\"Create examples for unsupervised SimCSE.
+        """Create examples for unsupervised SimCSE.
         
         SimCSE uses the same sentence twice in a pair; the model's dropout
         creates two different embeddings, and the loss forces them together.
-        \"\"\"
+        """
         return [InputExample(texts=[text, text]) for text in texts]
 
 
@@ -76,7 +76,7 @@ def train_model(
     use_mrl: bool = False,
     mrl_dimensions: List[int] = [64, 128, 256, 384, 512, 768]
 ) -> SentenceTransformer:
-    \"\"\"Fine-tune the model.\"\"\"
+    """Fine-tune the model."""
     logger.info("Loading base model: %s", base_model_name)
     model = SentenceTransformer(base_model_name)
     
@@ -102,7 +102,7 @@ def train_model(
 
 
 def export_to_onnx(model_path: Path, output_path: Path, quantize: bool = False):
-    \"\"\"Export the fine-tuned model to ONNX format.\"\"\"
+    """Export the fine-tuned model to ONNX format."""
     logger.info("Exporting model to ONNX...")
     try:
         from optimum.onnxruntime import ORTModelForFeatureExtraction
@@ -134,7 +134,7 @@ def export_to_onnx(model_path: Path, output_path: Path, quantize: bool = False):
 
 
 def save_metadata(model_dir: Path, model_id: str, dimensions: int):
-    \"\"\"Save metadata for LocalModelEmbedder compatibility.\"\"\"
+    """Save metadata for LocalModelEmbedder compatibility."""
     # We need to reach into agentic-inquiry to use the metadata class if possible
     # but for a standalone script, we can just write the JSON.
     metadata = {
