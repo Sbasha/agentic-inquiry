@@ -171,19 +171,19 @@ exits.
 
 **Depends on:** T3
 **Mode:** TDD
-**Touches:** agentic_inquiry/integration/reconcile.py, agentic_inquiry/memory/system.py, tests/memory/test_memory_system.py, tests/integration/test_reconcile_runtime_release.py
+**Touches:** agentic_inquiry/integration/reconcile.py, agentic_inquiry/memory/system.py, tests/memory/test_memory_system.py, tests/integration/test_integration_maintenance_tick.py
 
 **Tests:**
 - An initialized `MemorySystem` with an active context:
   `shutdown(consolidate=False)` leaves the consolidation and
   context-manager tasks done and never calls
   `consolidation_engine.consolidate`.
-- With `_open_runtime` and `_commit_one` replaced by async mocks, a pass
-  that commits awaits `memory.shutdown(consolidate=False)` once and closes
-  the storage.
-- A pass whose `_commit_one` raises does the same.
-- `_open_runtime` with the `IndexingPipeline` constructor raising closes
-  the storage it opened.
+- On a real queued capture (the maintenance-tick fixture), a tick that
+  commits calls `MemorySystem.shutdown(consolidate=False)` once and leaves
+  no new aiosqlite thread.
+- A pass whose `_commit_one` raises does the same and re-raises.
+- A pass whose `IndexingPipeline` constructor raises inside
+  `_open_runtime` leaves no new aiosqlite thread and re-raises.
 
 **Approach:** `MemorySystem.shutdown` gains `consolidate: bool = True`.
 In `_reconcile_locked`'s `finally`, when the runtime was opened, await
