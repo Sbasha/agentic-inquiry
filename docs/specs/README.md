@@ -31,3 +31,5 @@ files inside any feature dir are gitignored — see
 [`salesforce-apex-parsing`](salesforce-apex-parsing/spec.md) - Apex class and trigger extraction.
 
 [`salesforce-intelligence`](salesforce-intelligence/spec.md) - Salesforce recognizer and metadata allowlist.
+
+[`lazy-default-watcher`](lazy-default-watcher/spec.md) - Import `agentic_inquiry.watching` without creating files; build the default watcher on first lookup.
