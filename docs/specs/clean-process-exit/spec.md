@@ -92,13 +92,15 @@ store. Leaks in other CLI commands and in `ai server` are tracked in
 - [ ] `tests/conftest.py` neither opens nor compacts
       `./.agentic-inquiry/lancedb` and does not touch `concurrent.futures`
       private state.
-- [ ] With `INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER=hashing` in a fresh git
-      project, `ai memory save "<text>" --importance 0.9`, then
-      `ai memory list` and `ai memory recall "<text>"`, each exit 0
-      within 60 seconds.
-- [ ] With the hashing embedder, `ai mcp --project-id demo` over stdio
-      logs `MCP server ready`, then exits 0 within 30 seconds of its stdin
-      closing.
+- [ ] With `INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER=hashing` and
+      `INQUIRY_EMBEDDINGS_HASHING_NDIMS=384` in a fresh git project,
+      `ai memory save "<text>" --importance 0.9`, then `ai memory list` and
+      `ai memory recall "<text>"`, each exit 0 within 60 seconds. (384
+      matches the size recall embeds at; see the recall item in
+      [`docs/backlog.md`](../../backlog.md#clean-process-exit).)
+- [ ] With the default sentence-transformer model already cached,
+      `ai mcp --project-id demo` over stdio logs `MCP server ready`, then
+      exits 0 within 30 seconds of its stdin closing.
 - [ ] After `create_mcp_services` then `close_mcp_services`, and after a
       `create_mcp_services` call that fails partway, no aiosqlite thread
       from those services is alive and the maintenance task is done.
@@ -135,9 +137,11 @@ store. Leaks in other CLI commands and in `ai server` are tracked in
   path of `create_mcp_services` already runs (source:
   `agentic_inquiry/mcp/factories.py:145`); it lengthens shutdown by that
   consolidation.
-- Product: a reconcile pass stops its memory system without the final
-  consolidation, so rows it committed are left as committed and the
-  project lock is not held for a consolidation (source:
+- Product: a reconcile pass and each `ai memory` command stop their
+  memory system without the final consolidation, so rows they wrote are
+  left as written and a reconcile does not hold the project lock for a
+  consolidation; the `ai memory` commands never consolidated on exit
+  (source:
   `agentic_inquiry/integration/reconcile.py:62-70`,
   `agentic_inquiry/memory/system.py:381-395`).
 - Technical: `ai mcp` over stdio builds its services inside one

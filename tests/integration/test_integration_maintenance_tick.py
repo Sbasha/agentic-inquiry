@@ -11,7 +11,6 @@ import subprocess
 import sys
 import threading
 from pathlib import Path
-from typing import Any
 
 import pytest
 from unittest.mock import AsyncMock, Mock
@@ -150,26 +149,24 @@ def test_tick_skips_when_the_project_lock_is_held(
 def _aiosqlite_threads() -> set[threading.Thread]:
     import aiosqlite
 
-    return {t for t in threading.enumerate() if isinstance(t, aiosqlite.Connection)}
+    return {
+        t
+        for t in threading.enumerate()
+        if isinstance(t, aiosqlite.Connection) and t.is_alive()
+    }
 
 
 @pytest.fixture
-def memory_shutdowns(monkeypatch: pytest.MonkeyPatch) -> list[dict[str, Any]]:
-    from agentic_inquiry.memory.system import MemorySystem
+def consolidations(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+    from agentic_inquiry.memory.consolidation import ConsolidationEngine
 
-    calls: list[dict[str, Any]] = []
-    shutdown = MemorySystem.shutdown
-
-    async def recording_shutdown(self: MemorySystem, **kwargs: Any) -> None:
-        calls.append(kwargs)
-        await shutdown(self, **kwargs)
-
-    monkeypatch.setattr(MemorySystem, "shutdown", recording_shutdown)
-    return calls
+    consolidate = AsyncMock()
+    monkeypatch.setattr(ConsolidationEngine, "consolidate", consolidate)
+    return consolidate
 
 
-def test_tick_releases_the_runtime_it_opened(
-    queued: tuple[Path, Path], memory_shutdowns: list[dict[str, Any]]
+def test_tick_releases_the_runtime_without_consolidating(
+    queued: tuple[Path, Path], consolidations: AsyncMock
 ) -> None:
     home, project = queued
     before = _aiosqlite_threads()
@@ -177,14 +174,29 @@ def test_tick_releases_the_runtime_it_opened(
     asyncio.run(_maintenance_tick(None, None, str(project)))
 
     assert _row(home, project)["state"] == "committed"
-    assert memory_shutdowns == [{"consolidate": False}]
+    consolidations.assert_not_awaited()
     assert _aiosqlite_threads() - before == set()
 
 
-def test_failed_commit_still_releases_the_runtime(
-    queued: tuple[Path, Path],
-    memory_shutdowns: list[dict[str, Any]],
-    monkeypatch: pytest.MonkeyPatch,
+def test_failed_row_still_releases_the_runtime(
+    queued: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, project = queued
+    monkeypatch.setattr(
+        reconcile_module,
+        "_commit_one",
+        AsyncMock(return_value=("failed", {"outcome": "failed", "memory_ids": []}, None)),
+    )
+    before = _aiosqlite_threads()
+
+    result = asyncio.run(reconcile_module.reconcile(str(project), lock_timeout=0))
+
+    assert result["failed"] == 1
+    assert _aiosqlite_threads() - before == set()
+
+
+def test_raising_commit_still_releases_the_runtime(
+    queued: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _, project = queued
     monkeypatch.setattr(
@@ -195,7 +207,23 @@ def test_failed_commit_still_releases_the_runtime(
     with pytest.raises(RuntimeError, match="commit failed"):
         asyncio.run(reconcile_module.reconcile(str(project), lock_timeout=0))
 
-    assert memory_shutdowns == [{"consolidate": False}]
+    assert _aiosqlite_threads() - before == set()
+
+
+def test_failing_memory_shutdown_still_closes_storage(
+    queued: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from agentic_inquiry.memory.system import MemorySystem
+
+    home, project = queued
+    monkeypatch.setattr(
+        MemorySystem, "shutdown", AsyncMock(side_effect=RuntimeError("shutdown failed"))
+    )
+    before = _aiosqlite_threads()
+
+    asyncio.run(_maintenance_tick(None, None, str(project)))
+
+    assert _row(home, project)["state"] == "committed"
     assert _aiosqlite_threads() - before == set()
 
 
@@ -213,4 +241,3 @@ def test_failed_runtime_setup_closes_its_storage(
         asyncio.run(reconcile_module.reconcile(str(project), lock_timeout=0))
 
     assert _aiosqlite_threads() - before == set()
-

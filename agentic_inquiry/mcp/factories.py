@@ -512,6 +512,12 @@ async def create_mcp_services(
         )
         raise
 
+    except BaseException:
+        # Cancellation or Ctrl-C mid-start: release what was built so its
+        # aiosqlite threads do not keep the interrupted process alive.
+        await cleanup_on_failure()
+        raise
+
 
 async def close_mcp_services(services: Mapping[str, Any]) -> None:
     """Release what ``create_mcp_services`` opened, dependents first.

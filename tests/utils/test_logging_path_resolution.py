@@ -25,9 +25,9 @@ def restore_root_handlers():
 
 
 def test_logging_path_relative_to_storage_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify logs are placed under storage.root when using relative path."""
     # The default storage root is relative to the cwd.
     monkeypatch.chdir(tmp_path)
-    """Verify logs are placed under storage.root when using relative path."""
     # Load default config
     config = Config.load()
     
@@ -69,9 +69,9 @@ def test_logging_path_relative_to_storage_root(tmp_path: Path, monkeypatch: pyte
 
 
 def test_default_logging_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Verify default config places logs under .agentic-inquiry/logs."""
     # The default storage root is relative to the cwd.
     monkeypatch.chdir(tmp_path)
-    """Verify default config places logs under .agentic-inquiry/logs."""
     # Load default config
     config = Config.load()
     

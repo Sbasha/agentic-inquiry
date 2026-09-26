@@ -1027,7 +1027,11 @@ class TestCloseMCPServices:
             return closer
 
         async def tick() -> None:
-            await asyncio.sleep(3600)
+            try:
+                await asyncio.sleep(3600)
+            except asyncio.CancelledError:
+                calls.append("maintenance_task")
+                raise
 
         memory_system = Mock()
         memory_system.shutdown = AsyncMock(side_effect=record("memory_system"))
@@ -1046,10 +1050,10 @@ class TestCloseMCPServices:
         calls: list[str] = []
         services = self._services(calls)
 
+        await asyncio.sleep(0)  # let the maintenance task start
         await close_mcp_services(services)
 
-        assert services["maintenance_task"].cancelled()
-        assert calls == ["memory_system", "event_system", "storage"]
+        assert calls == ["maintenance_task", "memory_system", "event_system", "storage"]
 
     async def test_skips_absent_services(self):
         storage = Mock()
@@ -1063,10 +1067,11 @@ class TestCloseMCPServices:
         calls: list[str] = []
         services = self._services(calls)
         services["memory_system"].shutdown = AsyncMock(side_effect=RuntimeError("boom"))
+        await asyncio.sleep(0)  # let the maintenance task start
 
         await close_mcp_services(services)
 
-        assert calls == ["event_system", "storage"]
+        assert calls == ["maintenance_task", "event_system", "storage"]
 
 
 def _aiosqlite_threads() -> set:
@@ -1074,7 +1079,11 @@ def _aiosqlite_threads() -> set:
 
     import aiosqlite
 
-    return {t for t in threading.enumerate() if isinstance(t, aiosqlite.Connection)}
+    return {
+        t
+        for t in threading.enumerate()
+        if isinstance(t, aiosqlite.Connection) and t.is_alive()
+    }
 
 
 @pytest.fixture
@@ -1105,15 +1114,16 @@ class TestCloseMCPServicesReleasesStores:
         assert services["maintenance_task"].done()
         assert _aiosqlite_threads() - before == set()
 
-    async def test_failed_create_leaves_no_connection_thread(self, hashing_config):
+    @pytest.mark.parametrize("error", [RuntimeError("initialize failed"), asyncio.CancelledError()])
+    async def test_failed_create_leaves_no_connection_thread(self, hashing_config, error):
         before = _aiosqlite_threads()
         tasks_before = asyncio.all_tasks()
 
         with patch(
             "agentic_inquiry.mcp.factories.MemorySystem.initialize",
-            AsyncMock(side_effect=RuntimeError("initialize failed")),
+            AsyncMock(side_effect=error),
         ):
-            with pytest.raises(RuntimeError, match="initialize failed"):
+            with pytest.raises(type(error)):
                 await create_mcp_services(hashing_config, "test_project")
 
         assert _aiosqlite_threads() - before == set()

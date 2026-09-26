@@ -13,17 +13,23 @@ import pytest
 pytestmark = pytest.mark.integration
 
 _READY = "MCP server ready"
+_MODEL_CACHE = "models--sentence-transformers--all-MiniLM-L6-v2"
 
 
 def test_stdio_server_exits_after_stdin_closes(tmp_path: Path) -> None:
+    # ai mcp loads the sentence-transformer whatever the configured provider;
+    # use the developer's cache offline rather than download it per run.
+    hf_home = Path(os.environ.get("HF_HOME", Path.home() / ".cache" / "huggingface"))
+    if not (hf_home / "hub" / _MODEL_CACHE).is_dir():
+        pytest.skip(f"{_MODEL_CACHE} is not in the HuggingFace cache")
     project = tmp_path / "project"
     project.mkdir()
     subprocess.run(["git", "init", "-q", str(project)], check=True)
     env = {
         **{k: v for k, v in os.environ.items() if not k.startswith("INQUIRY_")},
         "HOME": str(tmp_path / "home"),
-        "INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER": "hashing",
-        "INQUIRY_EMBEDDINGS_DEFAULT_DIMENSIONS": "128",
+        "HF_HOME": str(hf_home),
+        "HF_HUB_OFFLINE": "1",
     }
     log = tmp_path / "stderr.log"
     with log.open("wb") as stderr:

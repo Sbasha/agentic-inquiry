@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import logging
 import stat
 import time
 from pathlib import Path
@@ -23,8 +22,6 @@ from agentic_inquiry.integration.state import (
 )
 from agentic_inquiry.integration.verbs import _canonical_root, _configure_embedder
 from agentic_inquiry.mcp.utils.validation import PathValidationError, validate_file_path
-
-logger = logging.getLogger(__name__)
 
 _ROW_BUDGET = 30.0
 _EMPTY = {"outcome": "skipped", "memory_ids": []}
@@ -131,8 +128,13 @@ async def _reconcile_locked(
             rows.append(_row_view(exhausted, _stored_result(exhausted) or dict(_EMPTY)))
         remaining = ledger.remaining_claimable()
     finally:
-        await _close_runtime(memory, storage)
-        ledger.close()
+        try:
+            if storage is not None:
+                from agentic_inquiry.cli.memory import close_memory_system
+
+                await close_memory_system(memory, storage)
+        finally:
+            ledger.close()
     return {
         "committed": committed,
         "failed": failed,
@@ -374,7 +376,7 @@ async def _track(pipeline: Any, binding: Any, path: Path) -> None:
 
 async def _open_runtime(binding: Any) -> tuple[Any, Any, Any]:
     from agentic_inquiry.cli.env_resolver import load_config_for_environment
-    from agentic_inquiry.cli.memory import create_memory_system
+    from agentic_inquiry.cli.memory import close_memory_system, create_memory_system
     from agentic_inquiry.indexing.pipeline import IndexingPipeline
 
     config = load_config_for_environment(
@@ -391,28 +393,9 @@ async def _open_runtime(binding: Any) -> tuple[Any, Any, Any]:
             auto_watch=False,
         )
     except BaseException:
-        await _close_runtime(memory, storage)
+        await close_memory_system(memory, storage)
         raise
     return memory, storage, pipeline
-
-
-async def _close_runtime(memory: Any, storage: Any) -> None:
-    """Release what ``_open_runtime`` opened.
-
-    The memory system stops without a final consolidation, so the rows this
-    pass committed stay as written. Closing storage ends its events writer
-    thread, which would otherwise outlive the pass in the MCP server.
-    """
-    if memory is not None:
-        try:
-            await memory.shutdown(consolidate=False)
-        except Exception:
-            logger.warning("Error stopping reconcile memory system", exc_info=True)
-    if storage is not None:
-        try:
-            await storage.close()
-        except Exception:
-            logger.warning("Error closing reconcile storage", exc_info=True)
 
 
 async def _invalidate(storage: Any, binding: Any) -> None:

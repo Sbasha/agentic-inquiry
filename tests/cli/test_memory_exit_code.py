@@ -280,7 +280,11 @@ async def test_adapter_initialize_creates_configured_table(tmp_path: Path) -> No
 def _aiosqlite_threads() -> set[threading.Thread]:
     import aiosqlite
 
-    return {t for t in threading.enumerate() if isinstance(t, aiosqlite.Connection)}
+    return {
+        t
+        for t in threading.enumerate()
+        if isinstance(t, aiosqlite.Connection) and t.is_alive()
+    }
 
 
 @pytest.mark.asyncio

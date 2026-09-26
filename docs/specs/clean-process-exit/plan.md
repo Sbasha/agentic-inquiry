@@ -87,7 +87,7 @@ pre-change baseline with identical flags.
 
 **Depends on:** none
 **Mode:** goal-based (census)
-**Touches:** tests/database/test_factories.py, tests/events/test_system.py, tests/events/test_performance.py, tests/utils/test_logging_path_resolution.py, tests/conftest.py, tests/memory/test_memory_system.py
+**Touches:** tests/database/test_factories.py, tests/events/test_system.py, tests/events/test_performance.py, tests/indexing/test_flush_relationships.py, tests/utils/test_logging_path_resolution.py, tests/conftest.py, tests/memory/test_memory_system.py
 
 **Tests:**
 - Census over the touched files shows no surviving `aiosqlite` thread.
@@ -103,13 +103,16 @@ pre-change baseline with identical flags.
   `tests/mcp/test_context_builder_registration.py`, the census's other
   cwd writer.
 - `test_stop_flushes_pending_events` closes the read-back store.
-- Performance tests set `config.storage.root` to `tmp_path`; the
+- Performance and flush-relationships tests set `config.storage.root` to
+  `tmp_path`; the
   logging-path tests, which assert the default relative root, run with
   `monkeypatch.chdir(tmp_path)`.
 - The files in the first AC need two pre-existing breaks fixed to run:
   `integration_config` passes the parser config subclasses
   `ParsersConfig` declares, and `test_memory_system.py` imports memory
-  layers from `agentic_inquiry.memory.layers`.
+  layers from `agentic_inquiry.memory.layers`. The logging-path tests
+  also pick the configurator's own `main.log` handler (pytest adds a
+  `/dev/null` file handler) and remove the handlers they add.
 
 **Done when:** both tests above hold and the touched files pass.
 
@@ -131,9 +134,10 @@ pre-change baseline with identical flags.
 - Integration: `create_mcp_services` with `MemorySystem.initialize`
   patched to raise leaves the aiosqlite thread set unchanged and no
   pending maintenance task.
-- Subprocess: `python -m agentic_inquiry.cli mcp --project-id demo` with
-  the hashing embedder in a temp git project logs `MCP server ready`;
-  after stdin closes it exits 0 within 30 seconds.
+- Subprocess: `python -m agentic_inquiry.cli mcp --project-id demo` in a
+  temp git project, with the developer's HuggingFace cache offline (skipped
+  when the model is not cached), logs `MCP server ready`; after stdin
+  closes it exits 0 within 30 seconds.
 - Existing `test_shutdown_cancels_maintenance_task` and
   `test_shutdown_cleans_up_services` stay green.
 
@@ -143,7 +147,9 @@ pre-change baseline with identical flags.
 - `MCPServer.shutdown()` calls it in place of its own maintenance-task
   and event-system blocks; drop the no-op `db_manager` block.
 - Every test that calls `create_mcp_services` for real tears down through
-  it.
+  it. `test_context_builder_registration.py` asserts the `StorageFacade`
+  the factory passes as `ContextBuilder.db`.
+- The failure path also runs on `BaseException` (cancellation, Ctrl-C).
 
 **Done when:** the new tests and `tests/mcp/` pass.
 
@@ -160,9 +166,11 @@ pre-change baseline with identical flags.
 - `create_memory_system` with `MemorySystem.initialize` raising closes the
   storage it opened and re-raises.
 
-**Approach:** `save_command`, `recall_command` and `list_command` close
-the storage in a `finally`; `create_memory_system` closes it on its own
-failure.
+**Approach:** `close_memory_system(memory_system, storage)` beside
+`create_memory_system` stops the memory system without consolidating, then
+closes storage in a `finally`, logging either failure. `save_command`,
+`recall_command` and `list_command` call it in a `finally`;
+`create_memory_system` calls it on its own failure.
 
 **Done when:** both tests pass and the manual `ai memory save` repro
 exits.
@@ -179,16 +187,18 @@ exits.
   context-manager tasks done and never calls
   `consolidation_engine.consolidate`.
 - On a real queued capture (the maintenance-tick fixture), a tick that
-  commits calls `MemorySystem.shutdown(consolidate=False)` once and leaves
-  no new aiosqlite thread.
-- A pass whose `_commit_one` raises does the same and re-raises.
+  commits never runs `ConsolidationEngine.consolidate` and leaves no new
+  aiosqlite thread.
+- A pass whose `_commit_one` returns `failed`, or raises, leaves no new
+  aiosqlite thread.
+- A pass whose `MemorySystem.shutdown` raises still closes storage.
 - A pass whose `IndexingPipeline` constructor raises inside
   `_open_runtime` leaves no new aiosqlite thread and re-raises.
 
 **Approach:** `MemorySystem.shutdown` gains `consolidate: bool = True`.
-In `_reconcile_locked`'s `finally`, when the runtime was opened, await
-`memory.shutdown(consolidate=False)` then `storage.close()`, each failure
-logged; `_open_runtime` closes storage on its own failure.
+`_reconcile_locked`'s `finally` calls `close_memory_system` when the
+runtime was opened, then closes the ledger in a nested `finally`;
+`_open_runtime` calls it on its own failure.
 
 **Done when:** the three tests pass and the maintenance-tick integration
 test is green.

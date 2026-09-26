@@ -161,6 +161,16 @@ owners that spec covers.
   vectors but `recall` embeds its query at 384 dims and fails with
   `query dim(384) doesn't match the column vector vector dim(128)`. Find
   where the recall path picks an embedder other than the configured one.
+- **`ai mcp` ignores `embeddings.default_provider`:** `create_mcp_services`
+  registers a `SentenceTransformerEmbedder` whenever the registry is
+  unconfigured, so `INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER=hashing` still
+  loads (and on a cold cache downloads) the model. Honor the configured
+  provider as `create_memory_system` does.
+- **`close_mcp_services` swallows a cancellation aimed at its caller:**
+  awaiting the cancelled maintenance task catches every `CancelledError`,
+  including one delivered to the caller. Re-raise when the current task is
+  itself being cancelled (`Task.cancelling()`, Python 3.11+; the package
+  still supports 3.10).
 - **Importing `agentic_inquiry.watching` creates `./.agentic-inquiry`:**
   `_register_default_watcher()` builds a `FileTracker()` at import time,
   which creates the directory in the importing process's cwd. Register

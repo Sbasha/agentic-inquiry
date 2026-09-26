@@ -50,7 +50,9 @@ def test_leaked_thread_is_reported_after_the_summary(tmp_path: Path) -> None:
     )
 
     assert "1 passed" in completed.stdout
-    assert "--- leaky-probe (threading.Thread)" in completed.stderr
+    report = completed.stderr.split("--- leaky-probe (threading.Thread)", 1)
+    assert len(report) == 2, completed.stderr
+    assert 'File "' in report[1]
     assert completed.returncode == 1
 
 
