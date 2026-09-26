@@ -172,10 +172,20 @@ class Bm25:
 # --------------------------------------------------------------------------
 
 
+# BGE-m3 is served by Ollama (llama.cpp) by default: its memory stays bounded,
+# while PyTorch on Metal compiles a graph per input shape and a long run of
+# variable-length windows grew one process to 80 GB. EVALS_DENSE_BACKEND=torch
+# selects sentence-transformers instead.
+DENSE_BACKEND = os.environ.get("EVALS_DENSE_BACKEND", "ollama")
+OLLAMA_MODEL = "bge-m3"
+OLLAMA_URL = "http://localhost:11434/api/embed"
+
+
 class _Embedder:
     def __init__(self) -> None:
         self._model: Any = None
-        path = CACHE / "embeddings" / f"{DENSE_MODEL.replace('/', '__')}-{DENSE_MAX_TOKENS}.sqlite"
+        suffix = "" if DENSE_BACKEND == "torch" else f"-{DENSE_BACKEND}"
+        path = CACHE / "embeddings" / f"{DENSE_MODEL.replace('/', '__')}-{DENSE_MAX_TOKENS}{suffix}.sqlite"
         path.parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(path, check_same_thread=False)
         self._db.execute("CREATE TABLE IF NOT EXISTS emb (key TEXT PRIMARY KEY, vec BLOB)")
@@ -203,7 +213,16 @@ class _Embedder:
             for key, blob in self._db.execute(f"SELECT key, vec FROM emb WHERE key IN ({marks})", batch):  # noqa: S608 - placeholders only
                 found[key] = np.frombuffer(blob, dtype=np.float16).astype(np.float32)
         missing = sorted({k: t for k, t in zip(keys, texts) if k not in found}.items(), key=lambda kv: len(kv[1]))
-        if missing:
+        if missing and DENSE_BACKEND == "ollama":
+            for start in range(0, len(missing), 64):
+                chunk = missing[start : start + 64]
+                vectors = _ollama_embed([t for _, t in chunk])
+                rows = [(k, v.astype(np.float16).tobytes()) for (k, _), v in zip(chunk, vectors)]
+                self._db.executemany("INSERT OR REPLACE INTO emb VALUES (?, ?)", rows)
+                self._db.commit()
+                for (k, _), v in zip(chunk, vectors):
+                    found[k] = v.astype(np.float16).astype(np.float32)
+        elif missing:
             model = self._load()
             for start in range(0, len(missing), 256):
                 chunk = missing[start : start + 256]
@@ -225,6 +244,19 @@ class _Embedder:
                 for (k, _), v in zip(chunk, vectors):
                     found[k] = v.astype(np.float16).astype(np.float32)
         return np.stack([found[k] for k in keys]) if keys else np.zeros((0, 1024), dtype=np.float32)
+
+
+def _ollama_embed(texts: list[str]) -> np.ndarray:
+    """Normalized BGE-m3 vectors from a local Ollama, truncated at DENSE_MAX_TOKENS."""
+    import urllib.request
+
+    body = json.dumps({"model": OLLAMA_MODEL, "input": texts, "truncate": True,
+                       "options": {"num_ctx": DENSE_MAX_TOKENS}}).encode()
+    request = urllib.request.Request(OLLAMA_URL, data=body, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(request, timeout=600) as response:  # noqa: S310 - local Ollama
+        vectors = np.asarray(json.loads(response.read())["embeddings"], dtype=np.float32)
+    norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+    return vectors / np.where(norms == 0, 1.0, norms)
 
 
 def _release_gpu_cache() -> None:
@@ -259,8 +291,9 @@ class Dense:
     def config(self) -> dict[str, Any]:
         import sentence_transformers
 
-        return {"model": DENSE_MODEL, "max_tokens": DENSE_MAX_TOKENS,
-                "impl": f"sentence-transformers=={sentence_transformers.__version__}", "similarity": "cosine"}
+        impl = (f"ollama {OLLAMA_MODEL}" if DENSE_BACKEND == "ollama"
+                else f"sentence-transformers=={sentence_transformers.__version__}")
+        return {"model": DENSE_MODEL, "max_tokens": DENSE_MAX_TOKENS, "impl": impl, "similarity": "cosine"}
 
     def index(self, corpus: str, root: Path, suite: Suite) -> Any:
         units = build_units(root, suite.window)
