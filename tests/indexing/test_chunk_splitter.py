@@ -5,7 +5,6 @@ from __future__ import annotations
 import pytest
 
 from agentic_inquiry.indexing.chunk_splitter import (
-    MIN_CHUNK_SIZE,
     _hard_split,
     _split_content,
     _split_on_separator,

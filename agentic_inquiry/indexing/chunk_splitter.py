@@ -8,7 +8,7 @@ This prevents failures in AlloyDB's ai.initialize_embeddings() which has a
 from __future__ import annotations
 
 import logging
-from typing import List, Optional, Union
+from typing import List, Optional
 
 from agentic_inquiry.parsers.models import ParserChunk
 

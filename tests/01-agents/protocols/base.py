@@ -65,7 +65,7 @@ async def index_and_wait(
     due to project scoping, but detect_index_state and search both work correctly.
     """
     from agentic_inquiry.mcp.tools.knowledge import add_knowledge
-    from agentic_inquiry.mcp.utils.index_state import detect_index_state, IndexState
+    from agentic_inquiry.mcp.utils.index_state import detect_index_state
 
     t0 = time.time()
     r, _ = await call_tool(
@@ -327,7 +327,6 @@ def compute_adoption_score(evidence: Dict[str, Any]) -> int:
     positives = journal_summary.get("positive", 0)
     negatives = journal_summary.get("negative", 0)
     blockers = journal_summary.get("blocker", 0)
-    neutrals = journal_summary.get("neutral", 0)
 
     if blockers > 0:
         base = min(base, 4)

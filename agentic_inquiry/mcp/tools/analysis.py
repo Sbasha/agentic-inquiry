@@ -944,7 +944,6 @@ async def compare_patterns(
     """
     session_manager = services["session_manager"]
     entity_resolver = services["entity_resolver"]
-    db_manager = services["storage"]
 
     if not await session_manager.validate_session(session_id):
         from agentic_inquiry.mcp.utils.errors import MCPErrorHandler
@@ -965,7 +964,6 @@ async def compare_patterns(
         target_sig = {
             (d.relationship_type, d.name) for d in target_deps
         }
-        target_types = {d.relationship_type for d in target_deps}
 
         # Find reference entities matching pattern
         from agentic_inquiry.mcp.tools.info import list_entities

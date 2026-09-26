@@ -10,12 +10,10 @@ Test coverage:
 """
 from __future__ import annotations
 
-import uuid
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
 pytestmark = pytest.mark.integration

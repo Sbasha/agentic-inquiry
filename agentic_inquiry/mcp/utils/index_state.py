@@ -427,8 +427,8 @@ async def detect_index_state(
                         status=IndexState.EMBEDDING,
                         indexed_so_far=chunks,
                         message=(
-                            f"Chunks are stored but embeddings are still generating. "
-                            f"Search results may be incomplete until embedding completes."
+                            "Chunks are stored but embeddings are still generating. "
+                            "Search results may be incomplete until embedding completes."
                         ),
                     )
     except Exception as e:

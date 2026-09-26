@@ -44,6 +44,7 @@ if TYPE_CHECKING:
     from agentic_inquiry.storage.protocols.graph import GraphStorageProtocol
     from agentic_inquiry.storage.protocols.events import EventStorageProtocol
     from agentic_inquiry.storage.protocols.file_tracker import FileTrackerProtocol
+    from agentic_inquiry.storage.capabilities import ProviderCapabilities
     from agentic_inquiry.storage.pool import BackendPoolManager
 
 logger = logging.getLogger(__name__)

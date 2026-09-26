@@ -2,7 +2,6 @@
 
 import logging
 from fastapi import APIRouter, Request
-from pydantic import BaseModel
 
 logger = logging.getLogger("ai.server.routes.index")
 

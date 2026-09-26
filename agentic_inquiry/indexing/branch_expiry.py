@@ -185,7 +185,6 @@ async def _prune_lancedb(
         )
         return 0
 
-    cutoff_str = cutoff.isoformat()
     prunable_ids: list[str] = []
     for rec in records:
         expired_at_raw = rec.get("expired_at")

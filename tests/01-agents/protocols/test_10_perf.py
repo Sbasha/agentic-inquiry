@@ -46,8 +46,8 @@ async def run(
     output_dir: Path,
 ) -> Dict[str, Any]:
     from agentic_inquiry.mcp.tools.search import search_knowledge
-    from agentic_inquiry.mcp.tools.info import get_project_info, list_entities
-    from agentic_inquiry.mcp.tools.analysis import understand_entity, analyze_impact
+    from agentic_inquiry.mcp.tools.info import get_project_info
+    from agentic_inquiry.mcp.tools.analysis import understand_entity
     
 
     results: Dict[str, Any] = {}
@@ -118,7 +118,6 @@ async def run(
 
     # ── T1.1: Find the hybrid search implementation ────────────────────
     log(test_id, "T1.1: Find hybrid search bottleneck implementation")
-    t1_start = time.time()
     try:
         r, t = await call_tool(
             search_knowledge, services=services, session_id=session_id,
