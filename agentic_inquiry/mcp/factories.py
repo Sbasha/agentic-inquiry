@@ -7,6 +7,7 @@ creates MCP-specific orchestration services.
 
 import asyncio
 import logging
+from collections.abc import Mapping
 from typing import Dict, Any
 
 from agentic_inquiry.config import Config
@@ -144,29 +145,14 @@ async def create_mcp_services(
 
     async def cleanup_on_failure() -> None:
         """Clean up all services that were successfully created."""
-        if maintenance_task is not None:
-            maintenance_task.cancel()
-            try:
-                await maintenance_task
-            except asyncio.CancelledError:
-                pass  # Expected: we just cancelled it.
-            except Exception as cleanup_err:
-                logger.debug("Maintenance task raised during shutdown: %s", cleanup_err)
-        if memory_system is not None:
-            try:
-                await memory_system.shutdown()
-            except Exception as cleanup_err:
-                logger.debug("Error during memory_system cleanup: %s", cleanup_err)
-        if event_system is not None:
-            try:
-                await event_system.stop()
-            except Exception as cleanup_err:
-                logger.debug("Error during event_system cleanup: %s", cleanup_err)
-        if storage is not None:
-            try:
-                await storage.close()
-            except Exception as cleanup_err:
-                logger.debug("Error during storage cleanup: %s", cleanup_err)
+        await close_mcp_services(
+            {
+                "maintenance_task": maintenance_task,
+                "memory_system": memory_system,
+                "event_system": event_system,
+                "storage": storage,
+            }
+        )
 
     try:
         # Create core services (existing Agentic Inquiry components)
@@ -527,4 +513,38 @@ async def create_mcp_services(
         raise
 
 
-__all__ = ["create_mcp_services"]
+async def close_mcp_services(services: Mapping[str, Any]) -> None:
+    """Release what ``create_mcp_services`` opened, dependents first.
+
+    Cancels the maintenance task, then shuts down the memory system, stops
+    the event system and closes storage. The event store and storage each
+    hold an aiosqlite connection whose non-daemon thread blocks interpreter
+    exit until closed. Absent services are skipped, so a partial mapping from
+    a failed start is fine. A service that fails to close is logged and the
+    rest are still closed.
+    """
+    maintenance_task = services.get("maintenance_task")
+    if maintenance_task is not None:
+        maintenance_task.cancel()
+        try:
+            await maintenance_task
+        except asyncio.CancelledError:
+            pass  # Expected: we just cancelled it.
+        except Exception:
+            logger.debug("Maintenance task raised during shutdown", exc_info=True)
+
+    for key, method in (
+        ("memory_system", "shutdown"),
+        ("event_system", "stop"),
+        ("storage", "close"),
+    ):
+        service = services.get(key)
+        if service is None:
+            continue
+        try:
+            await getattr(service, method)()
+        except Exception:
+            logger.warning("Error closing MCP %s", key, exc_info=True)
+
+
+__all__ = ["close_mcp_services", "create_mcp_services"]

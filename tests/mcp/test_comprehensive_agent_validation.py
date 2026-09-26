@@ -13,7 +13,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
-from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.factories import close_mcp_services, create_mcp_services
 from agentic_inquiry.mcp.tools.session import create_session
 from agentic_inquiry.mcp.tools.knowledge import add_knowledge
 from agentic_inquiry.mcp.tools.search import search_knowledge
@@ -41,6 +41,8 @@ async def test_services(mock_config, tmp_path, monkeypatch):
     )
     
     yield services
+
+    await close_mcp_services(services)
 
 
 # ============================================================================

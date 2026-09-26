@@ -1,6 +1,5 @@
 """FastMCP server initialization and orchestration."""
 
-import asyncio
 import logging
 import inspect
 import functools
@@ -11,7 +10,7 @@ from fastmcp import FastMCP
 
 from agentic_inquiry.config import Config
 from agentic_inquiry.executors import shutdown_executors_async
-from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.factories import close_mcp_services, create_mcp_services
 from agentic_inquiry.mcp.utils.rate_limiter import get_rate_limiter
 
 
@@ -641,50 +640,7 @@ class MCPServer:
 
         # Cleanup services
         if self.services:
-            # Cancel the background maintenance task before tearing down its
-            # dependencies (memory_system / storage). Without this, the task's
-            # next tick fires against torn-down services and logs spurious
-            # "Periodic … failed" exceptions.
-            maintenance_task = self.services.get("maintenance_task")
-            if maintenance_task is not None and not maintenance_task.done():
-                maintenance_task.cancel()
-                try:
-                    await maintenance_task
-                except asyncio.CancelledError:
-                    pass  # Expected: we just cancelled it.
-                except Exception as cleanup_err:
-                    logger.debug(
-                        "Maintenance task raised during shutdown: %s",
-                        cleanup_err,
-                    )
-
-            # Stop event system and close EventStore connection
-            if "event_system" in self.services:
-                try:
-                    logger.debug("Stopping EventSystem")
-                    await self.services["event_system"].stop()
-                    logger.debug("EventSystem stopped successfully")
-                except Exception as e:
-                    logger.error(
-                        "Error stopping EventSystem: %s",
-                        str(e),
-                        exc_info=True,
-                        extra={"error_type": type(e).__name__, "error_message": str(e)},
-                    )
-
-            # Close database connections
-            if "db_manager" in self.services:
-                try:
-                    # LanceDB doesn't require explicit cleanup in most cases
-                    # but we log it for completeness
-                    logger.debug("Closing database connections")
-                except Exception as e:
-                    logger.error(
-                        "Error closing database: %s",
-                        str(e),
-                        exc_info=True,
-                        extra={"error_type": type(e).__name__, "error_message": str(e)},
-                    )
+            await close_mcp_services(self.services)
 
             # Shutdown thread pool executors
             try:
