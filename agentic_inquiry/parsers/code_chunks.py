@@ -56,8 +56,13 @@ def _definitions(chunks: Sequence[ParserChunk], line_count: int) -> List[_Defini
 
 def partition_lines(lines: Sequence[str], roots: Sequence[_Definition], max_chars: int) -> List[Tuple[int, int]]:
     """Split the file top-down on definitions until pieces fit, then merge small neighbours."""
+    # prefix[i] is the character count of lines 1..i, so any span's size is O(1).
+    prefix = [0]
+    for line in lines:
+        prefix.append(prefix[-1] + len(line) + 1)
+
     def size(start: int, end: int) -> int:
-        return sum(len(lines[i - 1]) + 1 for i in range(start, end + 1))
+        return prefix[end] - prefix[start - 1]
 
     def split(start: int, end: int, children: Sequence[_Definition]) -> List[Tuple[int, int]]:
         if size(start, end) <= max_chars:

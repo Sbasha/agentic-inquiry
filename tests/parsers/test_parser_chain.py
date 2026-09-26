@@ -380,3 +380,15 @@ async def test_parser_chain_honors_fallback_text_config(tmp_path):
     registered = get_parser_instance("fallback_text")
     assert isinstance(registered, FallbackTextParser)
     assert registered.max_chunk_size == 1000
+
+
+def test_minified_files_are_skipped(tmp_path):
+    """A machine-packed bundle is refused before any parser runs."""
+    from agentic_inquiry.parsers.chain import is_minified
+
+    bundle = tmp_path / "app.min.js"
+    bundle.write_text("var a=1;" * 2000)
+    source = tmp_path / "app.js"
+    source.write_text("\n".join(f"var a{i} = {i};" for i in range(500)))
+    assert is_minified(str(bundle))
+    assert not is_minified(str(source))

@@ -33,6 +33,25 @@ from .implementations.fallback_text import FallbackTextParser
 logger = logging.getLogger(__name__)
 
 
+# Minified bundles (one enormous line, or kilobytes of lines averaging hundreds of
+# characters) are slow to parse and useless to retrieve.
+_MINIFIED_SNIFF_BYTES = 1 << 20
+_MINIFIED_MAX_LINE = 3000
+_MINIFIED_MEAN_LINE = 300
+
+
+def is_minified(path: str) -> bool:
+    """True for a text file whose lines look machine-packed rather than written."""
+    try:
+        with open(path, "rb") as handle:
+            sample = handle.read(_MINIFIED_SNIFF_BYTES)
+    except OSError:
+        return False
+    lines = sample.split(b"\n")
+    longest = max((len(line) for line in lines), default=0)
+    return longest > _MINIFIED_MAX_LINE or (len(sample) > 5000 and len(sample) / len(lines) > _MINIFIED_MEAN_LINE)
+
+
 class NoOpEventSystem:
     """Minimal event system that does nothing, for standalone usage."""
 
@@ -193,6 +212,9 @@ class ParserChain:
         from agentic_inquiry.events.context_managers import track_operation
         from agentic_inquiry.events.models import EventStatus
         from agentic_inquiry.events.types import EventTypes
+
+        if is_minified(path):
+            raise ParsingError(f"Minified file skipped: {path}")
 
         errors = []
 

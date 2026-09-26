@@ -24,7 +24,7 @@ def pack_lines(lines: Sequence[str], first_line: int, budget: int) -> List[Tuple
             cut = blanks[-1] + 1 if blanks else index
             spans.append((first_line + start, first_line + cut - 1))
             start = cut
-            size = sum(len(lines[i]) + 1 for i in range(start, index))
+            size = sum(len(lines[i]) + 1 for i in range(start, index))  # the carried-over tail only
             if index > start and size + cost > budget:
                 spans.append((first_line + start, first_line + index - 1))
                 start, size = index, 0
