@@ -94,7 +94,7 @@ class TestRerankStage:
         assert [r["id"] for r in out] == ["b", "a", "c"]
         assert out[0]["score"] >= out[1]["score"] >= out[2]["score"]
 
-    async def test_fuse_mode_moves_a_result_only_when_both_orders_agree(self, monkeypatch) -> None:
+    async def test_fuse_mode_does_not_let_the_cross_encoder_override_fusion(self, monkeypatch) -> None:
         import agentic_inquiry.search.hybrid_search as hybrid
 
         class Fake:
@@ -109,6 +109,8 @@ class TestRerankStage:
         vector = [result("a", "a.py"), result("b", "b.py"), result("c", "c.py")]
         vector_fn, fts_fn = fns(vector, [], {})
         out = await svc.hybrid_search([0.0], "q", "q", vector_fn, fts_fn, limit=3)
-        # Fused a>b>c against cross-encoder c>b>a: the ranks cancel, b sits in the middle.
-        assert out[1]["id"] == "b"
+        # Fused a>b>c against cross-encoder c>b>a: replace mode would return c first;
+        # fused with RRF, a keeps the top (ties keep the fused order).
+        assert out[0]["id"] == "a"
+        assert {r["id"] for r in out} == {"a", "b", "c"}
 
