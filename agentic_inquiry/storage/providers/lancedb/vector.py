@@ -342,10 +342,13 @@ class LanceDBVectorProvider:
 
         effective_project_id = project_id or self._project_id
 
-        # Add project_id to filters if provided
-        query_filters = dict(filters)
-        if effective_project_id:
-            query_filters["project_id"] = effective_project_id
+        # Scope to the project: a key for dict filters, a conjunct for a filter AST.
+        if filters is None or isinstance(filters, dict):
+            query_filters: Any = dict(filters or {})
+            if effective_project_id:
+                query_filters["project_id"] = effective_project_id
+        else:
+            query_filters = and_(filters, eq("project_id", effective_project_id)) if effective_project_id else filters
 
         results = await self._db_manager.advanced_filter(
             table_name=DOCUMENT_CHUNKS_TABLE,

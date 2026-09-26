@@ -9,7 +9,6 @@ and focuses on graph-specific operations (entities and relationships).
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Sequence
 
@@ -621,7 +620,10 @@ class LanceDBGraphProvider:
         # - 'relationship_type' is used by callers (e.g., relationship_resolver)
         # - 'type' is the actual LanceDB column name (schema uses 'type')
         mapped_filters = {}
-        if filters:
+        if filters and not isinstance(filters, dict):
+            # A filter AST already names real columns; pass it through.
+            mapped_filters = filters
+        elif filters:
             for key, value in filters.items():
                 if key == "relationship_type":
                     mapped_filters["type"] = value
