@@ -589,7 +589,9 @@ class TestLifecycleManagement:
         assert result is True
         
         # Verify all events were stored
+        # Reading after stop() reopens the store's writer connection.
         events = await temp_event_system.store.get_latest_events(limit=10)
+        await temp_event_system.store.close()
         assert len(events) == 5
     
     @pytest.mark.asyncio
