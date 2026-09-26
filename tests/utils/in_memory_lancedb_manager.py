@@ -257,46 +257,36 @@ class InMemoryLanceDBManager:
         data: List[Dict[str, Any]],
         key_field: str = "id",
     ) -> None:
-        """Insert or update records in a table."""
+        """Insert or update records, matching LanceDBManager.upsert().
+
+        Rows whose key matches are updated in place, keeping columns a record
+        omits; the rest are inserted.
+        """
         if not data:
             return
-        
-        # Separate records into updates and inserts
-        to_insert = []
-        to_delete_ids = []
-        
         for record in data:
             key_value = record.get(key_field)
-            if not key_value:
-                # No key value, treat as insert
-                to_insert.append(record)
-                continue
-            
-            # Check if record exists
-            existing = await self.advanced_filter(
-                table_name=table_name,
-                filters={key_field: key_value},
-                limit=1,
-                project_id=None,
+            if key_value is None or key_value == "":
+                raise ValueError(
+                    f"Cannot upsert into {table_name}: a record has no {key_field}"
+                )
+        fields = set(data[0])
+        if any(set(record) != fields for record in data[1:]):
+            raise ValueError(
+                f"Cannot upsert into {table_name}: records must all have the same fields"
             )
-            
-            if existing:
-                # Record exists - mark for deletion and re-insert
-                # Use the 'id' field for deletion (standard primary key)
-                if existing[0].get("id"):
-                    to_delete_ids.append(existing[0]["id"])
-                to_insert.append(record)
-            else:
-                # Record doesn't exist, insert it
-                to_insert.append(record)
-        
-        # Delete existing records
-        if to_delete_ids:
-            await self._delete_rows(table_name=table_name, ids=to_delete_ids)
-        
-        # Insert all records (both new and updated)
-        if to_insert:
-            await self._add_rows(table_name=table_name, items=to_insert)
+
+        async with self._lock:
+            table = self._tables.setdefault(table_name, [])
+            for record in data:
+                self._validate_record(table_name, record)
+                matches = [
+                    row for row in table if row.get(key_field) == record[key_field]
+                ]
+                for row in matches:
+                    row.update(deepcopy(record))
+                if not matches:
+                    table.append(deepcopy(record))
     
     async def query_across_projects(
         self,
