@@ -38,6 +38,8 @@ def main() -> None:
     agent.add_argument("--repeats", type=int, default=3)
     agent.add_argument("--model", default="claude-sonnet-5")
 
+    sub.add_parser("report", help="RFC-0003 hypothesis verdicts from the latest test runs")
+
     args = parser.parse_args()
     if args.command == "cases":
         suite = LOADERS[args.suite]()
@@ -53,6 +55,10 @@ def main() -> None:
         from evals.answer import run_answers
 
         run_answers([a for a in args.arms.split(",") if a], args.split, args.n, args.jobs)
+    elif args.command == "report":
+        from evals.report import main as report_main
+
+        report_main()
     elif args.command == "agent":
         from evals.agent import run_agents
 
