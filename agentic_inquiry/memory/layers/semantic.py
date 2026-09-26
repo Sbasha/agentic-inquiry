@@ -172,8 +172,9 @@ class SemanticMemory:
         """
         Update an existing memory item (fact).
 
-        Replaces the item entirely (delete + store) to ensure all fields
-        including the embedding vector are updated.
+        Replaces every field, including the embedding vectors, in one
+        commit, so a concurrent update of the same item cannot leave a second
+        row behind.
 
         Args:
             item: MemoryItem with updated values
@@ -181,10 +182,6 @@ class SemanticMemory:
         if not self._initialized:
             await self.initialize()
 
-        # Delete old version and insert updated version
-        await self._storage.delete(item.id)
-
-        # Insert updated version
         vector = item.embedding.tolist() if item.embedding is not None else []
         await self._storage.store(item, vector)
 

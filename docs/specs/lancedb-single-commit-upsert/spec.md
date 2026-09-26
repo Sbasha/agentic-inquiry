@@ -50,8 +50,6 @@ sees a half-negated item.
 - Changing `upsert()` to replace absent columns with null (whole-row
   semantics) instead of leaving them as stored.
 - Changing `store_batch()` from append to upsert.
-- Keeping `store()` as an upsert if its p50 latency on a 10k-row memory table
-  more than doubles compared with the append.
 
 ### Never do
 
@@ -131,6 +129,8 @@ table's `version` by exactly one.
   `agentic_inquiry/memory/consolidation.py` and
   `MemorySystem.promote_to_semantic` (source: code read, 2026-09-26).
   `InMemoryMemoryAdapter.store()` already replaces by id.
+- Product: `store()` upserts by id although the `merge_insert` adds a flat
+  ~8 ms per call over an append (source: user confirmation 2026-09-26).
 - Process: `update_fields()` and `LanceDBManager.update_by_ids()` land on
   `feature/memory-update-lost-write`, and this branch rebases onto it before
   T4 (source: message from the session implementing memory-update-atomicity,

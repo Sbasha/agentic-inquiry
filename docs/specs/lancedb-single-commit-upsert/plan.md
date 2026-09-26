@@ -73,10 +73,16 @@ methods under test.
 
 ### Quality attributes (NFRs)
 
-- `store()` now runs a `merge_insert` join on `id` instead of an append. T3
-  measures single-item `store()` latency at 1k and 10k rows before and after,
-  and records the numbers here. If the 10k-row p50 more than doubles, T3
-  stops and asks the user (spec, Ask first).
+- `store()` runs a `merge_insert` join on `id` instead of an append.
+  Single-item `store()` latency, 30 calls each on an on-disk table:
+
+  | Rows | Append p50 / p90 | Upsert p50 / p90 |
+  |---|---|---|
+  | 1k | 4.3 / 5.4 ms | 12.3 / 20.3 ms |
+  | 10k | 3.5 / 4.5 ms | 11.5 / 15.5 ms |
+
+  The overhead is flat in table size; the user accepted it (spec,
+  Assumptions).
 
 ## Tasks
 
@@ -135,7 +141,7 @@ failures against `main`.
 **Approach:** `store()` → `self._manager.upsert(self._table_name, [row])`;
 layer `update(item)` → `self._storage.store(item, vector)`; fix docstrings
 that describe delete + store or append.
-**Done when:** listed tests green; latency numbers recorded above;
+**Done when:** listed tests green; latency recorded above;
 `tests/memory` shows no new failures against `main`.
 
 ### T4: negate and supersede write only their columns
