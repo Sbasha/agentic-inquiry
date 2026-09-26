@@ -1,0 +1,7 @@
+# Commits that only reformat code. git blame skips them when run with
+# `git config blame.ignoreRevsFile .git-blame-ignore-revs`; GitHub reads
+# this file automatically. The SHAs only hold if the PR is merged with a
+# merge commit, not squashed or rebased.
+
+# chore(format): apply ruff format repo-wide
+aa91eec5365425f1f9186f07a91c743e46b5d229
