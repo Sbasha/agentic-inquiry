@@ -10,18 +10,24 @@ from agentic_inquiry.parsers.implementations.utils.chunking import pack_lines
 from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk
 
 
-# A NUL byte in the first block marks a binary file (images, archives, PDFs,
-# compiled objects); decoding those as text fills the index with noise.
-_SNIFF_BYTES = 8192
+# Binary files (images, archives, PDFs, compiled objects) decoded as text fill
+# the index with noise. A NUL byte, or more than 5% control characters, in the
+# first megabyte marks a file binary; PDFs often put their first NUL well past
+# the first few kilobytes.
+_SNIFF_BYTES = 1 << 20
+_CONTROL = bytes(range(0, 9)) + bytes(range(14, 32)) + b"\x7f"
 _MARKDOWN = {".md", ".markdown"}
 _HEADING = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
 _FENCE = re.compile(r"^\s*(```|~~~)")
 
 
 def is_binary(path: Path) -> bool:
-    """True when the file's first block contains a NUL byte."""
+    """True when the file's first megabyte has a NUL byte or is over 5% control characters."""
     with path.open("rb") as handle:
-        return b"\x00" in handle.read(_SNIFF_BYTES)
+        sample = handle.read(_SNIFF_BYTES)
+    if b"\x00" in sample:
+        return True
+    return bool(sample) and len(sample) - len(sample.translate(None, _CONTROL)) > 0.05 * len(sample)
 
 
 def markdown_sections(lines: List[str]) -> List[Tuple[str, ...]]:
