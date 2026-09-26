@@ -31,3 +31,5 @@ files inside any feature dir are gitignored — see
 [`salesforce-apex-parsing`](salesforce-apex-parsing/spec.md) - Apex class and trigger extraction.
 
 [`salesforce-intelligence`](salesforce-intelligence/spec.md) - Salesforce recognizer and metadata allowlist.
+
+[`mypy-clean`](mypy-clean/spec.md) - Zero mypy errors on `agentic_inquiry/`, and the defects the type errors exposed.

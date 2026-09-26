@@ -199,9 +199,9 @@ class LanceDBQueryBuilder:
         # Add project_id filter if specified
         filters = self._add_project_filter(filters, project_id)
         filter_expression = self._filters_to_expression(filters)
+        safe_query = _fts_sanitizer.sanitize(query)
 
         def _run_search() -> List[Dict[str, Any]]:
-            safe_query = _fts_sanitizer.sanitize(query)
             query_builder = table.search(
                 safe_query,
                 query_type="fts",

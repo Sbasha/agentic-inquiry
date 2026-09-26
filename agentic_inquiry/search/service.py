@@ -245,7 +245,7 @@ class SearchService:
 
     def _sanitize_query_metadata(
         self,
-        query_vector: Optional[List[float]] = None,
+        query_vector: Optional[Union[List[float], str]] = None,
         query_fts: Optional[str] = None,
         limit: Optional[int] = None,
         filters: Optional[Dict[str, Any]] = None,
@@ -545,7 +545,7 @@ class SearchService:
                     # Use StorageFacade for protocol-compliant search
                     # (table and vector_column are handled internally by the provider)
                     search_results = await self._storage_facade.vector_search(
-                        query_vector=query_vector,
+                        query_vector=query_vector,  # type: ignore[arg-type]  # raw text reaches a list-only provider; see docs/backlog.md mypy-clean
                         limit=limit,
                         filters=filters,
                         project_id=resolved_project_id,
@@ -656,7 +656,7 @@ class SearchService:
         filters: Dict[str, Any],
         limit: Optional[int] = None,
         project_id: Optional[str] = CURRENT_PROJECT_ID,
-    ) -> List[SearchResult]:
+    ) -> List[Dict[str, Any]]:
         """Perform advanced filtering on a table.
 
         Args:
@@ -667,7 +667,7 @@ class SearchService:
                        specific ID for single project, or None for all projects.
 
         Returns:
-            List of SearchResult with filter source and project_id in metadata
+            Matching rows as dicts, each carrying its project_id
         """
         if limit is None:
             limit = self.config.search.max_limit
@@ -785,12 +785,13 @@ class SearchService:
                     "is only supported for hybrid search. "
                     "Use hybrid search or query projects individually."
                 )
-            return await self.advanced_filter_search(
+            rows = await self.advanced_filter_search(
                 table_name=query.table,
                 filters=filters if filters else {},  # type: ignore[arg-type]
                 limit=query.limit,
                 project_id=project_id,
             )
+            return dicts_to_search_results(rows, source="filter")
 
     async def graph_filtered_search(
         self,

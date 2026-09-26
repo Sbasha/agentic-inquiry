@@ -304,12 +304,12 @@ class HybridSearchService:
 
         # Tokenize query: split CamelCase, snake_case, and spaces
         raw_terms = re.split(r'[\s_\-]+', query)
-        terms = []
+        terms: List[str] = []
         for t in raw_terms:
             # Split CamelCase
             parts = re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', t).split()
-            parts = [re.sub(r'(?<=[A-Z])(?=[A-Z][a-z])', ' ', p).split() for p in parts]
-            for part_list in parts:
+            acronym_splits = [re.sub(r'(?<=[A-Z])(?=[A-Z][a-z])', ' ', p).split() for p in parts]
+            for part_list in acronym_splits:
                 terms.extend(part_list)
 
         # Filter stop words and short terms
@@ -621,7 +621,7 @@ class HybridSearchService:
 
     async def hybrid_search(
         self,
-        query_vector: List[float],
+        query_vector: Union[List[float], str],
         query_fts: str,
         sanitized_fts_query: str,
         vector_search_fn,
@@ -641,7 +641,8 @@ class HybridSearchService:
         """Perform hybrid search combining vector and full-text search.
 
         Args:
-            query_vector: Query vector for semantic search
+            query_vector: Query vector for semantic search, or raw query text
+                for server-side embedding; passed through to ``vector_search_fn``
             query_fts: Original FTS query string
             sanitized_fts_query: Sanitized FTS query string
             vector_search_fn: Function returning List[SearchResult]

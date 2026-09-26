@@ -355,7 +355,7 @@ def _extract(root_node: TSNode, source: bytes) -> Tuple[List[_Bean], List[_Dep]]
 
         class_line = class_node.start_point[0] + 1
 
-        if is_spring_class:
+        if stereotype_ann is not None:
             bean_name = _annotation_string_arg(stereotype_ann, source) or _decapitalize(
                 class_name
             )
@@ -876,8 +876,8 @@ def _attach(
         return code_full_fallback
 
     for bean in beans:
-        chunk = _locate(bean.provider_name, bean.provider_line)
-        if chunk is None:
+        owner = _locate(bean.provider_name, bean.provider_line)
+        if owner is None:
             continue
         relationship = ParserRelationship(
             source_type="class"
@@ -895,12 +895,12 @@ def _attach(
                 "framework": "spring",
             },
         )
-        if not _has_equivalent_bean(chunk.relationships, relationship):
-            chunk.relationships.append(relationship)
+        if not _has_equivalent_bean(owner.relationships, relationship):
+            owner.relationships.append(relationship)
 
     for dep in deps:
-        chunk = _locate(dep.consumer_name, dep.consumer_line)
-        if chunk is None:
+        owner = _locate(dep.consumer_name, dep.consumer_line)
+        if owner is None:
             continue
         relationship = ParserRelationship(
             source_type=dep.consumer_kind,
@@ -916,8 +916,8 @@ def _attach(
                 "framework": "spring",
             },
         )
-        if not _has_equivalent_dep(chunk.relationships, relationship):
-            chunk.relationships.append(relationship)
+        if not _has_equivalent_dep(owner.relationships, relationship):
+            owner.relationships.append(relationship)
 
 
 def _has_equivalent_bean(

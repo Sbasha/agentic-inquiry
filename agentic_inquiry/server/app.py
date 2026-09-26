@@ -52,7 +52,7 @@ async def create_app(
     await mcp_server.initialize()
 
     # Get ASGI app from FastMCP
-    mcp_asgi = mcp_server.app.http_app(path="/mcp")
+    mcp_asgi = mcp_server.get_app().http_app(path="/mcp")
 
     # Create FastAPI app with MCP's lifespan
     app = FastAPI(

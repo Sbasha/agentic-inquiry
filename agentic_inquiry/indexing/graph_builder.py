@@ -698,6 +698,7 @@ class GraphBuilder:
             "document_relationships": 0,
         }
 
+        entity_embedder: Optional[Embedder]
         if self._skip_local_embedding:
             entity_embedder, entity_dims = None, 768  # text-embedding-005
             logger.debug("AlloyDB backend: skipping local entity embedding generation")
@@ -723,7 +724,7 @@ class GraphBuilder:
             file_language = chunks[0].language
 
         # Generate embedding for the file path (in executor to avoid blocking)
-        if self._skip_local_embedding:
+        if entity_embedder is None:
             file_vector = [0.0] * entity_dims
         else:
             loop = asyncio.get_running_loop()
@@ -809,7 +810,7 @@ class GraphBuilder:
                 )
                 
                 # Create graph entity for document element
-                if self._skip_local_embedding:
+                if entity_embedder is None:
                     vector_entity = [0.0] * entity_dims
                 else:
                     vectors = await loop.run_in_executor(
@@ -842,7 +843,7 @@ class GraphBuilder:
                 stats["code_entities"] += len(chunk.symbols)
                 for symbol in chunk.symbols:
                     # Generate embedding for symbol
-                    if self._skip_local_embedding:
+                    if entity_embedder is None:
                         vector_entity = [0.0] * entity_dims
                     else:
                         vectors = await loop.run_in_executor(
@@ -1024,6 +1025,7 @@ class GraphBuilder:
         )
         logger.debug("Symbol registry contains %d unique symbols", self.symbol_registry.get_symbol_count())
         
+        relationship_embedder: Optional[Embedder]
         if self._skip_local_embedding:
             relationship_embedder, relationship_dims = None, 768
         else:
@@ -1034,7 +1036,7 @@ class GraphBuilder:
         # Pre-compute embeddings for all relationship types (batch generation)
         # This optimization reduces embedding calls from N relationships to ~5-10 unique types
         unique_rel_types = list({rel.type for rel, _ in self._pending_relationships})
-        if self._skip_local_embedding:
+        if relationship_embedder is None:
             rel_type_embedding_cache: Dict[str, List[float]] = {t: [0.0] * relationship_dims for t in unique_rel_types}
         else:
             # Run batch embedding in executor to avoid blocking
@@ -1162,7 +1164,7 @@ class GraphBuilder:
         # DB lookup returns 0 rows — pure overhead (~70% of resolution time).
         # On re-index, the table is non-empty and DB lookups replay prior resolutions.
         try:
-            existing_rel_count = await self.db_manager.count_records(
+            existing_rel_count = await self.db_manager.count_records(  # type: ignore[union-attr]  # LanceDBAdapter lacks it; the except below absorbs the AttributeError
                 table_name="graph_relationships",
                 project_id=self.project_id,
             )
@@ -1213,6 +1215,7 @@ class GraphBuilder:
         stats["original_total"] = total_relationships
 
         # Get embedding configuration
+        relationship_embedder: Optional[Embedder]
         if self._skip_local_embedding:
             relationship_embedder, relationship_dims = None, 768
         else:
@@ -1223,7 +1226,7 @@ class GraphBuilder:
         # Pre-compute embeddings for all relationship types (batch generation)
         # This optimization reduces embedding calls from N relationships to ~5-10 unique types
         unique_rel_types = list({rel.type for rel, _ in relationships_to_process})
-        if self._skip_local_embedding:
+        if relationship_embedder is None:
             rel_type_embedding_cache: Dict[str, List[float]] = {t: [0.0] * relationship_dims for t in unique_rel_types}
         else:
             # Run batch embedding in executor to avoid blocking
@@ -1521,7 +1524,7 @@ class GraphBuilder:
         self,
         batch: List[Tuple[ParserRelationship, str]],
         batch_number: int,
-        relationship_embedder: Embedder,
+        relationship_embedder: Optional[Embedder],
         relationship_dims: int,
         document_processor: Any,
         use_two_pass: bool,
@@ -1536,7 +1539,7 @@ class GraphBuilder:
         Args:
             batch: List of (relationship, source_file_path) tuples
             batch_number: Sequential batch number for logging
-            relationship_embedder: Embedder for vectors
+            relationship_embedder: Embedder for vectors; None when the backend embeds server-side
             relationship_dims: Expected dimensions
             document_processor: Processor for validation
             use_two_pass: Two-pass resolution flag
@@ -1736,7 +1739,7 @@ class GraphBuilder:
         self,
         relationship: ParserRelationship,
         source_file_path: str,
-        relationship_embedder: Embedder,
+        relationship_embedder: Optional[Embedder],
         relationship_dims: int,
         document_processor: Any,
         stats: Dict[str, Any],
@@ -1749,7 +1752,7 @@ class GraphBuilder:
         Args:
             relationship: The relationship to resolve
             source_file_path: Path to the source file
-            relationship_embedder: Embedder for relationship vectors
+            relationship_embedder: Embedder for relationship vectors; None when the backend embeds server-side
             relationship_dims: Expected vector dimensions
             document_processor: Document processor for validation
             stats: Statistics dictionary to update
@@ -2127,7 +2130,7 @@ class GraphBuilder:
         target_type: str,
         confidence: Optional[float],
         resolution_strategy: Optional[str],
-        relationship_embedder: Embedder,
+        relationship_embedder: Optional[Embedder],
         relationship_dims: int,
         document_processor: Any,
         target_id: Optional[str] = None,
@@ -2143,7 +2146,7 @@ class GraphBuilder:
             target_type: Target entity type
             confidence: Resolution confidence
             resolution_strategy: Resolution strategy used
-            relationship_embedder: Embedder for relationship vectors
+            relationship_embedder: Embedder for relationship vectors; None when the backend embeds server-side
             relationship_dims: Expected vector dimensions
             document_processor: Document processor for validation
             target_id: Optional explicit target ID (for external entities)
@@ -2161,7 +2164,7 @@ class GraphBuilder:
         # Use cached embedding if available, otherwise generate and cache
         if rel_type_embedding_cache is not None and relationship.type in rel_type_embedding_cache:
             rel_vector = rel_type_embedding_cache[relationship.type]
-        elif self._skip_local_embedding:
+        elif relationship_embedder is None:
             rel_vector = [0.0] * relationship_dims
             if rel_type_embedding_cache is not None:
                 rel_type_embedding_cache[relationship.type] = rel_vector
@@ -2269,7 +2272,7 @@ class GraphBuilder:
     async def _second_pass_resolution(
         self,
         low_confidence_relationships: List[Tuple],
-        relationship_embedder: Embedder,
+        relationship_embedder: Optional[Embedder],
         relationship_dims: int,
         document_processor: Any,
         stats: Dict[str, Any],
@@ -2280,7 +2283,7 @@ class GraphBuilder:
 
         Args:
             low_confidence_relationships: List of low-confidence relationships
-            relationship_embedder: Embedder for relationship vectors
+            relationship_embedder: Embedder for relationship vectors; None when the backend embeds server-side
             relationship_dims: Expected vector dimensions
             document_processor: Document processor for validation
             stats: Statistics dictionary to update
@@ -2395,7 +2398,7 @@ class GraphBuilder:
         new_target_type: str,
         new_confidence: float,
         old_confidence: float,
-        relationship_embedder: Embedder,
+        relationship_embedder: Optional[Embedder],
         relationship_dims: int,
         document_processor: Any,
         rel_type_embedding_cache: Optional[Dict[str, List[float]]] = None,
@@ -2410,7 +2413,7 @@ class GraphBuilder:
             new_target_type: New target entity type
             new_confidence: New confidence score
             old_confidence: Old confidence score
-            relationship_embedder: Embedder for relationship vectors
+            relationship_embedder: Embedder for relationship vectors; None when the backend embeds server-side
             relationship_dims: Expected vector dimensions
             document_processor: Document processor for validation
             rel_type_embedding_cache: Pre-computed embeddings for relationship types
@@ -2425,7 +2428,7 @@ class GraphBuilder:
         # Use cached embedding if available, otherwise generate and cache
         if rel_type_embedding_cache is not None and relationship.type in rel_type_embedding_cache:
             rel_vector = rel_type_embedding_cache[relationship.type]
-        elif self._skip_local_embedding:
+        elif relationship_embedder is None:
             rel_vector = [0.0] * relationship_dims
             if rel_type_embedding_cache is not None:
                 rel_type_embedding_cache[relationship.type] = rel_vector
