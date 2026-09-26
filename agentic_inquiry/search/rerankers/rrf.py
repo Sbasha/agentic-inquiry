@@ -37,12 +37,16 @@ class RRFReranker(RerankerProtocol):
         fts_results: List[SearchResult],
         config: Optional[Dict[str, Any]] = None,
     ) -> List[SearchResult]:
+        return self.fuse([vector_results, fts_results])
+
+    def fuse(self, rankings: List[List[SearchResult]]) -> List[SearchResult]:
+        """Fuse any number of ranked lists; 1.0 means first in every list."""
         scores: Dict[str, float] = {}
         first: Dict[str, SearchResult] = {}
-        for ranking in (vector_results, fts_results):
+        for ranking in rankings:
             for rank, result in enumerate(ranking):
                 scores[result.id] = scores.get(result.id, 0.0) + 1.0 / (self.k + rank + 1)
                 first.setdefault(result.id, result)
-        best = 2.0 / (self.k + 1)
+        best = max(1, len(rankings)) / (self.k + 1)
         ordered = sorted(scores, key=lambda rid: -scores[rid])
         return [first[rid].with_score(min(1.0, scores[rid] / best), source="hybrid_rrf") for rid in ordered]

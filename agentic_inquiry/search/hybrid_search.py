@@ -19,6 +19,7 @@ from agentic_inquiry.events.types import EventTypes
 from agentic_inquiry.exceptions import ConfigurationError
 from agentic_inquiry.metrics import get_metrics_tracker
 from agentic_inquiry.search.deduplicator import SearchDeduplicator
+from agentic_inquiry.search.graph_channel import graph_candidates
 from agentic_inquiry.search.rerankers import (
     LinearCombinationReranker,
     RerankerProtocol,
@@ -385,7 +386,8 @@ class HybridSearchService:
                 filters=filters,
                 project_id=project_id,
             )
-            fused = self._create_reranker().rerank(
+            reranker = self._create_reranker()
+            fused = reranker.rerank(
                 query=sanitized_fts_query or "",
                 vector_results=vector_results,
                 fts_results=fts_results,
@@ -394,6 +396,15 @@ class HybridSearchService:
                     "fts_weight": self.config.search.hybrid_search.fts_weight,
                 },
             )
+            seeds = self.config.search.hybrid_search.graph_seeds
+            if seeds > 0 and isinstance(reranker, RRFReranker) and fused:
+                neighbours = await graph_candidates(
+                    self._storage_facade, [r.data for r in fused[:seeds]],
+                    self._resolve_project_id(project_id), limit=depth // 3,
+                )
+                if neighbours:
+                    graph_list = [self._dict_to_search_result(dict(row, score=0.5)) for row in neighbours]
+                    fused = reranker.fuse([vector_results, fts_results, graph_list])
             results = [self._search_result_to_dict(r) for r in fused]
             results = await self._rerank_head(query_fts, results)
             results = self._apply_content_preference(results, content_preference, content_preference_weight)

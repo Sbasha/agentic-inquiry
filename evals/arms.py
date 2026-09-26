@@ -89,7 +89,7 @@ def corpus_files(root: Path) -> Iterator[tuple[str, str]]:
             yield path.relative_to(root).as_posix(), text
 
 
-@lru_cache(maxsize=4)
+@lru_cache(maxsize=2)
 def build_units(root: Path, window: int) -> tuple[Unit, ...]:
     units: list[Unit] = []
     for rel, text in corpus_files(root):
@@ -220,9 +220,22 @@ class _Embedder:
                 rows = [(k, v.astype(np.float16).tobytes()) for (k, _), v in zip(chunk, vectors)]
                 self._db.executemany("INSERT OR REPLACE INTO emb VALUES (?, ?)", rows)
                 self._db.commit()
+                _release_gpu_cache()
                 for (k, _), v in zip(chunk, vectors):
                     found[k] = v.astype(np.float16).astype(np.float32)
         return np.stack([found[k] for k in keys]) if keys else np.zeros((0, 1024), dtype=np.float32)
+
+
+def _release_gpu_cache() -> None:
+    """Return cached MPS blocks to the system; PyTorch keeps them otherwise and a
+    long run grows to tens of gigabytes of unified memory."""
+    try:
+        import torch
+
+        if torch.backends.mps.is_available():
+            torch.mps.empty_cache()
+    except (ImportError, RuntimeError):
+        pass
 
 
 @lru_cache(maxsize=1)

@@ -355,6 +355,10 @@ class HybridSearchConfig:
     rerank_model: str = ""
     rerank_top_n: int = 30
 
+    # Optional graph channel: callers and callees of definitions in the fused
+    # top graph_seeds results join fusion as a third list. 0 disables it.
+    graph_seeds: int = 0
+
 
 @dataclass
 class GraphTimeoutsConfig:
