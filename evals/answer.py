@@ -15,6 +15,7 @@ import string
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.request
 from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -143,11 +144,15 @@ def complete(model: str, prompt: str) -> dict[str, Any]:
 
 def _claude(model: str, prompt: str) -> dict[str, Any]:
     with tempfile.TemporaryDirectory() as cwd:
-        proc = subprocess.run(
-            ["claude", "-p", "--model", model, "--output-format", "json", "--setting-sources", "project",
-             "--no-session-persistence", "--tools", "", "--system-prompt", "You are a precise assistant."],
-            input=prompt, capture_output=True, text=True, cwd=cwd, timeout=300,
-        )
+        for attempt in range(6):
+            proc = subprocess.run(
+                ["claude", "-p", "--model", model, "--output-format", "json", "--setting-sources", "project",
+                 "--no-session-persistence", "--tools", "", "--system-prompt", "You are a precise assistant."],
+                input=prompt, capture_output=True, text=True, cwd=cwd, timeout=300,
+            )
+            if not re.search(r"rate limit|overloaded|529|usage limit|too many requests", proc.stdout + proc.stderr, re.I):
+                break
+            time.sleep(min(600, 60 * 2**attempt))
     if proc.returncode != 0:
         raise RuntimeError(f"claude -p failed: {proc.stderr.strip()[-300:] or proc.stdout[-300:]}")
     data = json.loads(proc.stdout)

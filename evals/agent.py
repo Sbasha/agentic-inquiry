@@ -15,6 +15,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -153,7 +154,11 @@ def run_agent(prompt: str, root: Path, config: dict[str, Any], allowed: list[str
         if guidance:
             command += ["--append-system-prompt", guidance]
         env = dict(os.environ, MCP_TIMEOUT="180000")
-        proc = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=1800, env=env)
+        for attempt in range(6):
+            proc = subprocess.run(command, cwd=root, capture_output=True, text=True, timeout=1800, env=env)
+            if not _transient(proc.stdout + proc.stderr):
+                break
+            time.sleep(min(600, 60 * 2**attempt))
     init: dict[str, Any] = {}
     result: dict[str, Any] = {}
     tool_calls: dict[str, int] = defaultdict(int)
@@ -183,6 +188,15 @@ def run_agent(prompt: str, root: Path, config: dict[str, Any], allowed: list[str
         "mcp_servers": init.get("mcp_servers", []),
         "tool_calls": dict(tool_calls),
     }
+
+
+_TRANSIENT = re.compile(r"rate limit|rate_limit|overloaded|529|usage limit|too many requests", re.IGNORECASE)
+
+
+def _transient(output: str) -> bool:
+    """A rate-limit or overload reply, worth retrying after a pause."""
+    tail = output[-4000:]
+    return bool(_TRANSIENT.search(tail)) and '"is_error":true' in tail.replace(" ", "")
 
 
 def manifest_ok(arm: str, record: dict[str, Any]) -> bool:
