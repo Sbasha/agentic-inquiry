@@ -114,6 +114,23 @@ def _cluster(case: Case, suite: Suite) -> str | None:
     return None
 
 
+def guard_test_split(split: str) -> bool:
+    """Return whether the tree is dirty; refuse a test-split run on a dirty tree (RFC-0003)."""
+    dirty = bool(_git("status", "--porcelain", "--untracked-files=no"))
+    if split == "test" and dirty:
+        raise SystemExit("refusing --split test on a dirty tree (RFC-0003): commit first")
+    return dirty
+
+
+def record_test_run(suite: str, arms: list[str], report: dict[str, Any], target: Path) -> None:
+    """Append every test-split run to the committed ledger, so none can go unreported."""
+    entry = {"utc": report["provenance"]["started_utc"], "sha": report["provenance"]["sha"], "suite": suite,
+             "arms": arms, "rfc_sha256": hashlib.sha256(RFC.read_bytes()).hexdigest(),
+             "summary": report["summary"], "results": str(target.relative_to(REPO_ROOT))}
+    with LEDGER.open("a") as ledger:
+        ledger.write(json.dumps(entry, sort_keys=True) + "\n")
+
+
 def _prefetch(suite: Suite, corpora: list[str], arms: list[Any], jobs: int) -> None:
     """Build subprocess-arm indexes for many corpora at once to warm their caches.
 
@@ -217,9 +234,7 @@ def recorded(path: Path, arm: str, case_ids: set[str]) -> tuple[RecordedArm, lis
 
 def run(suite_name: str, arm_names: list[str], split: str, limit: int | None = None,
         corpora_limit: int | None = None, jobs: int = 1, baseline: Path | None = None) -> Path:
-    dirty = bool(_git("status", "--porcelain", "--untracked-files=no"))
-    if split == "test" and dirty:
-        raise SystemExit("refusing --split test on a dirty tree (RFC-0003): commit first")
+    dirty = guard_test_split(split)
     suite = LOADERS[suite_name]()
     cases = select_cases(suite, split, limit, corpora_limit)
     arms = applicable_arms(suite, arm_names)
@@ -246,11 +261,7 @@ def run(suite_name: str, arm_names: list[str], split: str, limit: int | None = N
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(report, indent=1, sort_keys=True) + "\n")
     if split == "test":
-        entry = {"utc": report["provenance"]["started_utc"], "sha": report["provenance"]["sha"], "suite": suite.name,
-                 "arms": arm_names, "rfc_sha256": report["provenance"]["rfc_sha256"],
-                 "summary": report["summary"], "results": str(target.relative_to(REPO_ROOT))}
-        with LEDGER.open("a") as ledger:
-            ledger.write(json.dumps(entry, sort_keys=True) + "\n")
+        record_test_run(suite.name, arm_names, report, target)
     print_summary(report)
     print(f"results: {target.relative_to(REPO_ROOT)}", file=sys.stderr)
     return target

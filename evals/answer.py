@@ -24,7 +24,7 @@ from typing import Any
 
 from evals.data import CACHE, LOADERS, SEED, Case
 from evals.metrics import paired, render
-from evals.run import REPO_ROOT, RESULTS, _git, applicable_arms, collect
+from evals.run import REPO_ROOT, RESULTS, _git, guard_test_split, record_test_run, applicable_arms, collect
 
 BUDGET = 2000
 ANSWERER = "claude-haiku-4-5-20251001"
@@ -198,6 +198,7 @@ def _ollama_digest(model: str) -> str:
 
 
 def run_answers(arm_names: list[str], split: str, n: int, jobs: int = 3) -> Path:
+    guard_test_split(split)
     suite = LOADERS["locomo"]()
     pool_cases = [c for c in suite.cases if c.split == split]
     cases = stratified(pool_cases, n, "category")
@@ -245,6 +246,8 @@ def run_answers(arm_names: list[str], split: str, n: int, jobs: int = 3) -> Path
     target = RESULTS / "locomo" / f"answers-{split}-{stamp}-{_git('rev-parse', '--short=8', 'HEAD')}.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(report, indent=1, sort_keys=True) + "\n")
+    if split == "test":
+        record_test_run("locomo-answers", [a.name for a in arms], report, target)
     _print(report)
     print(f"results: {target.relative_to(REPO_ROOT)}", file=sys.stderr)
     return target

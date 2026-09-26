@@ -24,7 +24,7 @@ from typing import Any
 from evals.arms import Graphify, Inquiry
 from evals.data import CACHE, LOADERS, SEED, Case, Suite
 from evals.metrics import paired
-from evals.run import REPO_ROOT, RESULTS, _git
+from evals.run import REPO_ROOT, RESULTS, _git, guard_test_split, record_test_run
 
 MODEL = "claude-sonnet-5"
 MAX_TURNS = 14
@@ -194,6 +194,7 @@ def manifest_ok(arm: str, record: dict[str, Any]) -> bool:
 
 
 def run_agents(arm_names: list[str], suite_names: list[str], split: str, n: int, repeats: int, model: str) -> Path:
+    guard_test_split(split)
     started = datetime.now(timezone.utc)
     work: list[tuple[str, Suite, Case, int]] = []
     for suite_name in suite_names:
@@ -239,6 +240,8 @@ def run_agents(arm_names: list[str], suite_names: list[str], split: str, n: int,
     target = RESULTS / "agent" / f"{split}-{started.strftime('%Y%m%dT%H%M%SZ')}-{_git('rev-parse', '--short=8', 'HEAD')}.json"
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(report, indent=1, sort_keys=True) + "\n")
+    if split == "test":
+        record_test_run("agent", arm_names, report, target)
     _print(report)
     print(f"results: {target.relative_to(REPO_ROOT)}", file=sys.stderr)
     return target
