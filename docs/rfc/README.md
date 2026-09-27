@@ -8,6 +8,7 @@
 |---|-------|--------|
 | [0001](0001-golden-bench.md) | Golden bench: pin recall@10 + latency | accepted |
 | [0002](0002-afp-lifecycle-contract.md) | AFP lifecycle contract: capabilities, integration hook, mcp | accepted |
+| [0003](0003-knowledge-architecture.md) | Knowledge architecture: governed libraries, project stores and memory | draft |
 
 ## Adding a new RFC
 
