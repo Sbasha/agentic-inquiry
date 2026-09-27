@@ -1,12 +1,12 @@
 # Pre-commit hooks for code quality and security
-# Install: pip install pre-commit
-# Setup: pre-commit install
-# Run manually: pre-commit run --all-files
+# Setup: uvx pre-commit install
+# Run manually: uvx pre-commit run --all-files
+# Remote hooks are pinned to the commit behind each release tag.
 
 repos:
   # Secret detection
   - repo: https://github.com/Yelp/detect-secrets
-    rev: v1.4.0
+    rev: 001e16323a2f0162336345f4ceb6d72c204980b5  # frozen: v1.4.0
     hooks:
       - id: detect-secrets
         args: ['--baseline', '.secrets.baseline']
@@ -18,9 +18,20 @@ repos:
             \.git/.*
           )$
 
+  # detect-secrets-hook suppresses every baseline entry whatever its audit
+  # label, so a new or real-marked entry must not reach a commit.
+  - repo: local
+    hooks:
+      - id: secrets-baseline-audited
+        name: secrets baseline is fully audited
+        language: pygrep
+        entry: '"is_secret":\s*true|"line_number":\s*\d+\s*\}'
+        args: [--multiline]
+        files: ^\.secrets\.baseline$
+
   # General pre-commit hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
     hooks:
       # Prevent committing large files
       - id: check-added-large-files
@@ -41,6 +52,7 @@ repos:
 
       # Check for valid Python syntax
       - id: check-ast
+        exclude: ^tests/parsers/samples/(corrupted|partial)\.py$  # deliberately malformed
 
       # Prevent committing to main/master directly
       - id: no-commit-to-branch
@@ -52,24 +64,38 @@ repos:
       # Trim trailing whitespace
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
+        exclude: ^tests/parsers/samples/  # byte-exact parser fixtures
 
       # Ensure files end with newline
       - id: end-of-file-fixer
+        exclude: ^tests/parsers/samples/  # byte-exact parser fixtures
 
       # Fix mixed line endings
       - id: mixed-line-ending
         args: ['--fix=lf']
+        exclude: ^tests/parsers/samples/  # byte-exact parser fixtures
 
-  # Python-specific hooks
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.9
+  # Python-specific hooks. Ruff runs through uv so the hooks use the version
+  # pinned in uv.lock; a separate ruff-pre-commit rev drifts from it, and
+  # formatter output changes between ruff releases.
+  - repo: local
     hooks:
       # Run Ruff linter
       - id: ruff
+        name: ruff
+        entry: uv run --frozen ruff check --force-exclude
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
         args: [--fix, --exit-non-zero-on-fix]
 
       # Run Ruff formatter
       - id: ruff-format
+        name: ruff-format
+        entry: uv run --frozen ruff format --force-exclude
+        language: system
+        types_or: [python, pyi, jupyter]
+        require_serial: true
 
   # Type checking (optional - can be slow)
   # - repo: https://github.com/pre-commit/mirrors-mypy

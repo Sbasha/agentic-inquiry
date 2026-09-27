@@ -33,3 +33,5 @@ files inside any feature dir are gitignored — see
 [`salesforce-intelligence`](salesforce-intelligence/spec.md) - Salesforce recognizer and metadata allowlist.
 
 [`lazy-default-watcher`](lazy-default-watcher/spec.md) - Import `agentic_inquiry.watching` without creating files; build the default watcher on first lookup.
+
+[`secrets-baseline`](secrets-baseline/spec.md) - Audited detect-secrets baseline and working pre-commit hooks.
