@@ -62,6 +62,17 @@ def main() -> None:
         "report", help="RFC-0003 hypothesis verdicts from the latest test runs"
     )
     sub.add_parser("mine-fresh", help="mine the RFC-0004 C3 task list once")
+    sub.add_parser(
+        "claims-report",
+        help="every RFC-0004 claim test run, verified against the ledger",
+    )
+    claim = sub.add_parser("claim", help="run one RFC-0004 claim once")
+    claim.add_argument("name", choices=["c1", "c2", "c3"])
+    claim.add_argument("--split", default="dev", choices=["dev", "test"])
+    claim.add_argument("--jobs", type=int, default=2)
+    claim.add_argument(
+        "--limit", type=int, default=None, help="dev only: first N items"
+    )
 
     args = parser.parse_args()
     if args.command == "cases":
@@ -85,12 +96,20 @@ def main() -> None:
         from evals.answer import run_answers
 
         run_answers(
-            [a for a in args.arms.split(",") if a],
-            args.split,
-            args.n,
-            args.jobs,
-            args.suite,
+            [a for a in args.arms.split(",") if a], args.split, args.n, args.jobs
         )
+    elif args.command == "claim":
+        from evals.claims import CLAIMS
+
+        if args.split == "test" and args.limit is not None:
+            raise SystemExit(
+                "--limit is for dev smoke runs; a test run uses the registered sample"
+            )
+        CLAIMS[args.name](args.split, args.jobs, args.limit)
+    elif args.command == "claims-report":
+        from evals.claims import claims_report
+
+        raise SystemExit(claims_report())
     elif args.command == "mine-fresh":
         from evals.fresh import mine
 

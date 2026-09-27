@@ -11,7 +11,6 @@ import json
 import sys
 from typing import Any, Optional
 
-from evals.arms import COMPETITORS
 from evals.run import LEDGER, REPO_ROOT
 
 MEMORY_BASELINES = ("bm25", "dense", "hybrid")
@@ -119,19 +118,6 @@ def verdicts() -> dict[str, Any]:
         }
     else:
         out["H4"] = {"pass": None, "status": "not run"}
-
-    competitors = (
-        tuple(arm for arm in answers["report"]["summary"] if arm in COMPETITORS)
-        if answers
-        else ()
-    )
-    if answers and competitors:
-        out["H6"] = {
-            "suite": "locomo",
-            **_beats(answers["report"], "accuracy", competitors),
-        }
-    else:
-        out["H6"] = {"pass": None, "status": "not run"}
 
     agent = runs.get("agent")
     if agent:

@@ -13,6 +13,7 @@ import re
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
 from functools import lru_cache
+from typing import Any
 
 import numpy as np
 
@@ -220,4 +221,66 @@ def paired(
         "ci_high": round(float(np.percentile(boot, 97.5)), 6),
         "p_perm": round((extreme + 1) / (resamples + 1), 6) if mean != 0.0 else 1.0,
         "mde": round(_MDE_Z * sd / math.sqrt(n), 6),
+    }
+
+
+def mcnemar(a: Sequence[bool], b: Sequence[bool]) -> dict[str, float]:
+    """Exact two-sided McNemar test on paired pass/fail outcomes (RFC-0004).
+
+    Only discordant pairs carry information: ``a_only`` items that ``a`` got
+    right and ``b`` got wrong, ``b_only`` the reverse. Under the null each
+    discordant pair is a fair coin, so the p-value is a two-sided binomial tail.
+    """
+    if len(a) != len(b):
+        raise ValueError(f"paired outcomes differ in length: {len(a)} != {len(b)}")
+    a_only = sum(1 for x, y in zip(a, b) if x and not y)
+    b_only = sum(1 for x, y in zip(a, b) if y and not x)
+    n = a_only + b_only
+    tail = (
+        sum(math.comb(n, k) for k in range(min(a_only, b_only) + 1)) / 2**n
+        if n
+        else 1.0
+    )
+    return {
+        "n": len(a),
+        "a_rate": round(sum(map(bool, a)) / len(a), 6) if a else 0.0,
+        "b_rate": round(sum(map(bool, b)) / len(b), 6) if b else 0.0,
+        "a_only": a_only,
+        "b_only": b_only,
+        "p": round(min(1.0, 2 * tail), 6),
+    }
+
+
+def holm(pvalues: Mapping[str, float]) -> dict[str, float]:
+    """Holm step-down adjusted p-values, monotone and capped at 1."""
+    ordered = sorted(pvalues.items(), key=lambda item: item[1])
+    adjusted: dict[str, float] = {}
+    running = 0.0
+    for rank, (name, p) in enumerate(ordered):
+        running = max(running, min(1.0, (len(ordered) - rank) * p))
+        adjusted[name] = round(running, 6)
+    return adjusted
+
+
+def ratio_interval(
+    a: Sequence[float], b: Sequence[float], seed: int, resamples: int = 10_000
+) -> dict[str, Any]:
+    """Ratio of totals ``sum(a) / sum(b)`` over paired items, with a 95% bootstrap interval."""
+    x = np.asarray(a, dtype=float)
+    y = np.asarray(b, dtype=float)
+    if len(x) != len(y) or not len(x) or y.sum() == 0:
+        return {
+            "ratio": None,
+            "ci_low": None,
+            "ci_high": None,
+            "reason": "zero denominator",
+        }
+    rng = np.random.default_rng(seed)
+    draws = rng.integers(0, len(x), size=(resamples, len(x)))
+    denominators = y[draws].sum(axis=1)
+    ratios = x[draws].sum(axis=1) / np.where(denominators == 0, np.nan, denominators)
+    return {
+        "ratio": round(float(x.sum() / y.sum()), 6),
+        "ci_low": round(float(np.nanpercentile(ratios, 2.5)), 6),
+        "ci_high": round(float(np.nanpercentile(ratios, 97.5)), 6),
     }

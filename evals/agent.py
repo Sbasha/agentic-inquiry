@@ -26,7 +26,7 @@ from typing import Any
 from evals.arms import Graphify, Inquiry
 from evals.data import CACHE, LOADERS, SEED, Case, Suite
 from evals.metrics import paired
-from evals.run import REPO_ROOT, RESULTS, _git, guard_test_split, record_test_run
+from evals.run import REPO_ROOT, RESULTS, _git, guard_test_split
 
 MODEL = "claude-sonnet-5"
 MAX_TURNS = 14
@@ -182,8 +182,14 @@ def run_agent(
     hidden: list[str],
     model: str,
     guidance: str = "",
+    extra_tools: tuple[str, ...] = (),
+    extra_env: dict[str, str] | None = None,
 ) -> dict[str, Any]:
-    """One isolated ``claude -p`` run; returns the final text, usage and the tool manifest it saw."""
+    """One isolated ``claude -p`` run; returns the final text, usage and the tool manifest it saw.
+
+    ``extra_tools`` adds built-in tools (RFC-0004 C3 offers ``Bash``, limited by
+    ``allowed`` patterns to one tool's CLI); ``extra_env`` reaches those commands.
+    """
     with tempfile.TemporaryDirectory() as scratch:
         config_path = Path(scratch) / "mcp.json"
         config_path.write_text(json.dumps(config))
@@ -207,6 +213,7 @@ def run_agent(
             str(config_path),
             "--tools",
             *FLOOR_TOOLS,
+            *extra_tools,
             "--allowedTools",
             *allowed,
         ]
@@ -214,7 +221,7 @@ def run_agent(
             command += ["--disallowedTools", *hidden]
         if guidance:
             command += ["--append-system-prompt", guidance]
-        env = dict(os.environ, MCP_TIMEOUT="180000")
+        env = dict(os.environ, MCP_TIMEOUT="180000", **(extra_env or {}))
         for attempt in range(6):
             proc = subprocess.run(
                 command, cwd=root, capture_output=True, text=True, timeout=1800, env=env
@@ -225,6 +232,7 @@ def run_agent(
     init: dict[str, Any] = {}
     result: dict[str, Any] = {}
     tool_calls: dict[str, int] = defaultdict(int)
+    uses: dict[str, dict[str, Any]] = {}
     for line in proc.stdout.splitlines():
         try:
             event = json.loads(line)
@@ -236,6 +244,17 @@ def run_agent(
             for block in (event.get("message") or {}).get("content") or []:
                 if block.get("type") == "tool_use":
                     tool_calls[block.get("name", "?")] += 1
+                    uses[block.get("id", str(len(uses)))] = {
+                        "name": block.get("name", "?"),
+                        "command": (block.get("input") or {}).get("command"),
+                        "error": None,
+                    }
+        elif event.get("type") == "user":
+            for block in (event.get("message") or {}).get("content") or []:
+                if isinstance(block, dict) and block.get("type") == "tool_result":
+                    use = uses.get(block.get("tool_use_id", ""))
+                    if use is not None:
+                        use["error"] = bool(block.get("is_error"))
         elif event.get("type") == "result":
             result = event
     usage = result.get("usage") or {}
@@ -244,6 +263,8 @@ def run_agent(
         "is_error": bool(result.get("is_error")) or proc.returncode != 0,
         "stderr": proc.stderr[-500:],
         "turns": result.get("num_turns"),
+        "duration_ms": result.get("duration_ms", 0),
+        "api_ms": result.get("duration_api_ms", 0),
         "input_tokens": usage.get("input_tokens", 0)
         + usage.get("cache_read_input_tokens", 0)
         + usage.get("cache_creation_input_tokens", 0),
@@ -251,6 +272,9 @@ def run_agent(
         "tools": init.get("tools", []),
         "mcp_servers": init.get("mcp_servers", []),
         "tool_calls": dict(tool_calls),
+        "tool_uses": list(uses.values()),
+        "permission_denials": result.get("permission_denials") or [],
+        "model_usage": result.get("modelUsage") or {},
     }
 
 
@@ -370,8 +394,6 @@ def run_agents(
     )
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(report, indent=1, sort_keys=True) + "\n")
-    if split == "test":
-        record_test_run("agent", arm_names, report, target)
     _print(report)
     print(f"results: {target.relative_to(REPO_ROOT)}", file=sys.stderr)
     return target

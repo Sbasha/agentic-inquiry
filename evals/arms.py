@@ -487,13 +487,18 @@ class Graphify:
     name = "graphify"
     version = GRAPHIFY_SPEC.split("==")[1]
 
-    def __init__(self) -> None:
+    def __init__(self, default_build: bool = False) -> None:
+        """``default_build`` runs Graphify's documented ``graphify update .`` (AST extraction,
+        clustering and report, no LLM) for RFC-0004; RFC-0003 Level A used ``--no-cluster``."""
         self.venv = CACHE / "venvs" / f"graphifyy-mcp-{self.version}"
+        self.default_build = default_build
 
     def config(self) -> dict[str, Any]:
         return {
             "package": GRAPHIFY_SPEC,
-            "build": "graphify update <tree> --no-cluster (AST only, no LLM)",
+            "build": "graphify update <tree>"
+            + ("" if self.default_build else " --no-cluster")
+            + " (AST only, no LLM)",
             "query": "graphify query <q> --budget 100000",
             "display": "verbatim output lines",
         }
@@ -525,7 +530,8 @@ class Graphify:
         return env
 
     def index(self, corpus: str, root: Path, suite: Suite) -> Any:
-        target = CACHE / "index" / f"graphify-{self.version}" / _safe(corpus)
+        variant = "-default" if self.default_build else ""
+        target = CACHE / "index" / f"graphify-{self.version}{variant}" / _safe(corpus)
         graph = target / "graph.json"
         if graph.exists():
             return target
@@ -536,7 +542,8 @@ class Graphify:
         subprocess.run(["cp", "-al", f"{root}/.", str(tree)], check=True)
         t0 = time.perf_counter()
         subprocess.run(
-            [str(binary), "update", ".", "--no-cluster"],
+            [str(binary), "update", "."]
+            + ([] if self.default_build else ["--no-cluster"]),
             cwd=tree,
             env=self._env(),
             check=True,
@@ -546,7 +553,11 @@ class Graphify:
         (target / "build.json").write_text(
             json.dumps({"seconds": round(time.perf_counter() - t0, 2)})
         )
-        shutil.move(str(tree / "graphify-out" / "graph.json"), graph)
+        if self.default_build:
+            shutil.move(str(tree / "graphify-out"), target / "graphify-out")
+            shutil.copy(target / "graphify-out" / "graph.json", graph)
+        else:
+            shutil.move(str(tree / "graphify-out" / "graph.json"), graph)
         shutil.rmtree(tree)
         return target
 
@@ -751,36 +762,49 @@ class Inquiry:
 
 
 # --------------------------------------------------------------------------
-# Live competitors that rewrite content (RFC-0003 amendment: Level B only)
+# Memory tools for RFC-0004 claim C1 (answer accuracy only)
 # --------------------------------------------------------------------------
 
 # arm name -> (package spec, venv directory under CACHE/venvs)
 COMPETITORS = {
-    "graphify-text": ("graphifyy==0.9.68", "graphifyy-0.9.68"),
     "mem0": ("mem0ai==2.2.1", "mem0ai"),
-    "openkb": ("openkb==0.4.5", "openkb"),
     "cognee": ("cognee==1.6.1", "cognee"),
 }
 _WORKER = REPO_ROOT / "evals" / "competitor_worker.py"
+BUILD_ATTEMPTS = 3
+_SHIM = REPO_ROOT / "evals" / "claude_shim.py"
+SHIM_URL = os.environ.get("EVALS_SHIM_URL", "http://127.0.0.1:8765")
 
 
 class Competitor:
-    """A released memory or knowledge tool, built and queried by ``competitor_worker.py``
-    inside its own virtualenv. Its context is the tool's native query output as text."""
+    """A released memory tool, built and queried by ``competitor_worker.py`` in its own
+    virtualenv. Its context is the tool's native retrieval output as text."""
 
     def __init__(self, name: str) -> None:
+        from evals.answer import ANSWERER, _ollama_digest
+
         self.name = name
         self.spec, venv = COMPETITORS[name]
         self.venv = CACHE / "venvs" / venv
-        self.worker_hash = hashlib.sha256(_WORKER.read_bytes()).hexdigest()[:8]
+        # A build depends on the tool, our adapter and shim, the model and the embedder.
+        self.key = hashlib.sha256(
+            json.dumps(
+                [
+                    self.spec,
+                    _WORKER.read_text(),
+                    _SHIM.read_text(),
+                    ANSWERER,
+                    _ollama_digest(OLLAMA_MODEL),
+                ]
+            ).encode()
+        ).hexdigest()[:12]
 
     def config(self) -> dict[str, Any]:
         return {
             "package": self.spec,
-            "worker": f"evals/competitor_worker.py@{self.worker_hash}",
-            "llm": "claude-haiku-4-5-20251001 via the Claude subscription",
-            "embeddings": "ollama bge-m3",
-            "display": "native query output as text",
+            "build_key": self.key,
+            "llm": "claude-haiku-4-5-20251001 via evals/claude_shim.py",
+            "embeddings": f"ollama {OLLAMA_MODEL}",
         }
 
     def _python(self) -> Path:
@@ -803,6 +827,7 @@ class Competitor:
             capture_output=True,
             text=True,
             timeout=timeout,
+            env=dict(os.environ, EVALS_SHIM_URL=SHIM_URL),
         )
         if result.returncode != 0:
             raise RuntimeError(
@@ -811,42 +836,40 @@ class Competitor:
         return result.stdout
 
     def index(self, corpus: str, root: Path, suite: Suite) -> Any:
-        version = self.spec.split("==")[1]
-        target = (
-            CACHE
-            / "index"
-            / f"{self.name}-{version}-{self.worker_hash}"
-            / _safe(corpus)
-        )
-        if not (target / "build.json").exists():
+        target = CACHE / "index" / f"{self.name}-{self.key}" / _safe(corpus)
+        # A build that fails for an infrastructure reason (timeout, rate limit) is
+        # retried; replies already made are served from the shim cache.
+        for attempt in range(BUILD_ATTEMPTS):
+            if (target / "build.json").exists():
+                break
             shutil.rmtree(target, ignore_errors=True)
             target.mkdir(parents=True)
-            self._run(
-                "index", self.name, str(root), str(target), timeout=INDEX_TIMEOUT_S
-            )
+            try:
+                self._run(
+                    "index", self.name, str(root), str(target), timeout=INDEX_TIMEOUT_S
+                )
+            except (RuntimeError, subprocess.TimeoutExpired):
+                if attempt == BUILD_ATTEMPTS - 1:
+                    raise
         return target
 
-    def build_seconds(self, handle: Any) -> float | None:
-        return float(json.loads((Path(handle) / "build.json").read_text())["seconds"])
+    def build_info(self, handle: Any) -> dict[str, Any]:
+        """Seconds, stored items and shim LLM usage recorded when the build finished."""
+        return dict(json.loads((Path(handle) / "build.json").read_text()))
 
-    def search(
-        self, handle: Any, queries: list[str], k: int
-    ) -> list[tuple[list[Hit], float]]:
+    def query(self, handle: Any, queries: list[str]) -> list[dict[str, Any]]:
+        """Per query: the context, seconds, the shim LLM usage and an error or None."""
         out = self._run(
             "search",
             self.name,
             str(handle),
-            str(k),
             stdin=json.dumps(queries),
             timeout=QUERY_TIMEOUT_S * 5 * max(1, len(queries)),
         )
         return [
-            ([Hit("", 0, 0, line) for line in text.rstrip("\n").split("\n")], ms)
-            for text, ms in json.loads(out)
+            {"context": context, "seconds": seconds, "llm": llm, "error": error}
+            for context, seconds, llm, error in json.loads(out)
         ]
-
-    def indexed_paths(self, handle: Any) -> set[str]:
-        return set()
 
 
 ARMS: dict[str, type] = {
@@ -859,8 +882,6 @@ ARMS: dict[str, type] = {
 
 
 def make_arm(name: str) -> Arm:
-    if name in COMPETITORS:
-        return Competitor(name)
     if name == "bm25-paths":
         return Bm25(pointers=True)
     return ARMS[name]()  # type: ignore[no-any-return]

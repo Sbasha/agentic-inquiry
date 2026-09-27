@@ -4,11 +4,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import platform
 import subprocess
 import sys
 import time
 import traceback
+import uuid
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
@@ -16,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from evals.arms import COMPETITORS, REPO_ROOT, make_arm
+from evals.arms import REPO_ROOT, make_arm
 from evals.data import LOADERS, SEED, Case, Suite
 from evals.metrics import (
     Hit,
@@ -34,9 +36,10 @@ PRIMARY_BUDGET = 2000
 RESULTS = REPO_ROOT / "evals" / "results"
 LEDGER = RESULTS / "test-ledger.jsonl"
 RFC = REPO_ROOT / "docs" / "rfc" / "0003-eval-harness-and-competitor-parity.md"
+RFCS = (RFC, REPO_ROOT / "docs" / "rfc" / "0004-eval-claims-preregistration.md")
 MAX_FAILURE_SHARE = 0.05
 # Arms whose index build runs in a subprocess and can be built concurrently.
-PREFETCH = {"graphify", "inquiry", "graphify-text", "mem0", "openkb", "cognee"}
+PREFETCH = {"graphify", "inquiry"}
 
 # Metrics compared between arms, per suite family (RFC-0003 primary first).
 COMPARED = {
@@ -143,30 +146,73 @@ def _cluster(case: Case, suite: Suite) -> str | None:
 
 
 def guard_test_split(split: str) -> bool:
-    """Return whether the tree is dirty; refuse a test-split run on a dirty tree (RFC-0003)."""
-    dirty = bool(_git("status", "--porcelain", "--untracked-files=no"))
-    if split == "test" and dirty:
+    """Return whether the tree is dirty. RFC-0004 superseded RFC-0003's test runs, so
+    Level A, B and C commands run on dev only; test runs go through ``claim``."""
+    if split == "test":
         raise SystemExit(
-            "refusing --split test on a dirty tree (RFC-0003): commit first"
+            "RFC-0004 superseded RFC-0003 test runs: use `python -m evals claim c1|c2|c3 --split test`"
         )
-    return dirty
+    return bool(_git("status", "--porcelain"))
+
+
+def guard_clean_tree() -> None:
+    """Refuse a test run unless code, ledger and earlier results are all committed (RFC-0004)."""
+    if _git("status", "--porcelain"):
+        raise SystemExit(
+            "refusing a test run on a dirty tree (RFC-0004): commit the code, the ledger "
+            "and the previous results first"
+        )
+
+
+def _append(entry: dict[str, Any]) -> None:
+    LEDGER.parent.mkdir(parents=True, exist_ok=True)
+    with LEDGER.open("a") as ledger:
+        ledger.write(json.dumps(entry, sort_keys=True) + "\n")
+
+
+def begin_test_run(suite: str, arms: dict[str, Any], options: dict[str, Any]) -> str:
+    """Append a ``start`` entry before any computation, so an aborted run leaves a trace."""
+    run_id = uuid.uuid4().hex
+    _append(
+        {
+            "event": "start",
+            "run": run_id,
+            "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "sha": _git("rev-parse", "HEAD"),
+            "suite": suite,
+            "arms": arms,
+            "options": options,
+            "env": {
+                "EVALS_INQUIRY_CONFIG": os.environ.get("EVALS_INQUIRY_CONFIG"),
+                "MOONSHOT_API_KEY_set": bool(os.environ.get("MOONSHOT_API_KEY")),
+            },
+            "rfc_sha256": {
+                path.name: hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in RFCS
+            },
+        }
+    )
+    return run_id
 
 
 def record_test_run(
-    suite: str, arms: list[str], report: dict[str, Any], target: Path
+    run_id: str, suite: str, arms: list[str], report: dict[str, Any], target: Path
 ) -> None:
-    """Append every test-split run to the committed ledger, so none can go unreported."""
-    entry = {
-        "utc": report["provenance"]["started_utc"],
-        "sha": report["provenance"]["sha"],
-        "suite": suite,
-        "arms": arms,
-        "rfc_sha256": hashlib.sha256(RFC.read_bytes()).hexdigest(),
-        "summary": report["summary"],
-        "results": str(target.relative_to(REPO_ROOT)),
-    }
-    with LEDGER.open("a") as ledger:
-        ledger.write(json.dumps(entry, sort_keys=True) + "\n")
+    """Append the ``end`` entry that binds the results file by its sha256."""
+    _append(
+        {
+            "event": "end",
+            "run": run_id,
+            "utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "started_utc": report["provenance"]["started_utc"],
+            "sha": report["provenance"]["sha"],
+            "suite": suite,
+            "arms": arms,
+            "summary": report["summary"],
+            "results": str(target.relative_to(REPO_ROOT)),
+            "results_sha256": hashlib.sha256(target.read_bytes()).hexdigest(),
+        }
+    )
 
 
 def _prefetch(suite: Suite, corpora: list[str], arms: list[Any], jobs: int) -> None:
@@ -253,18 +299,9 @@ def select_cases(
     return cases[:limit] if limit else cases
 
 
-def applicable_arms(
-    suite: Suite, arm_names: list[str], answers: bool = False
-) -> list[Any]:
-    # graphify is the AST-only code graph; its text path is the graphify-text
-    # competitor. bm25-paths is the pointer-output control for code localization.
-    # Competitors rewrite content, so they have no source spans to score outside
-    # Level B (RFC-0003 amendment).
-    rewriting = sorted(set(arm_names) & set(COMPETITORS))
-    if rewriting and not answers:
-        raise SystemExit(
-            f"{', '.join(rewriting)}: Level B only (python -m evals answer)"
-        )
+def applicable_arms(suite: Suite, arm_names: list[str]) -> list[Any]:
+    # Graphify builds graphs from code without an LLM, so it runs on code suites
+    # only (RFC-0003). bm25-paths is the pointer-output control for code localization.
     code_only = {"graphify", "bm25-paths"}
     return [make_arm(name) for name in arm_names if suite.code or name not in code_only]
 
@@ -353,8 +390,6 @@ def run(
     )
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(report, indent=1, sort_keys=True) + "\n")
-    if split == "test":
-        record_test_run(suite.name, arm_names, report, target)
     print_summary(report)
     print(f"results: {target.relative_to(REPO_ROOT)}", file=sys.stderr)
     return target

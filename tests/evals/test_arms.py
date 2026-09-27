@@ -3,13 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, cast
-
-import pytest
 
 from evals.arms import build_units, parse_graphify, rrf
-from evals.competitor_worker import sessions, turns
-from evals.run import applicable_arms
 
 GRAPHIFY_OUTPUT = """Graph: graph.json (10 nodes) | Traversal: BFS depth=2 | Start: ['Session']
 
@@ -51,28 +46,3 @@ def test_build_units_windows_and_skips(tmp_path: Path) -> None:
     ]
     whole = build_units(tmp_path, 0)
     assert [(u.path, u.start, u.end) for u in whole] == [("a.py", 1, 120)]
-
-
-def test_competitors_are_refused_outside_level_b() -> None:
-    # The refusal happens before the suite is read.
-    with pytest.raises(SystemExit, match="mem0: Level B only"):
-        applicable_arms(cast(Any, None), ["inquiry", "mem0"])
-
-
-def test_worker_orders_sessions_and_keeps_dates(tmp_path: Path) -> None:
-    (tmp_path / "session_10.txt").write_text(
-        "[D10:1] (1 pm on 9 May, 2023) Ann: late\n"
-    )
-    (tmp_path / "session_2.txt").write_text("[D2:1] (1 pm on 8 May, 2023) Ann: early\n")
-    assert [p.name for p in sessions(tmp_path)] == ["session_2.txt", "session_10.txt"]
-    lme = tmp_path / "lme"
-    lme.mkdir()
-    (lme / "b.txt").write_text(
-        "[b#t0] (2023/05/24 (Wed) 06:42) user: hi\n[b#t1] (2023/05/24 (Wed) 06:42) assistant: yo\n"
-    )
-    (lme / "a.txt").write_text("[a#t0] (2023/06/01 (Thu) 10:00) user: later\n")
-    assert [p.name for p in sessions(lme)] == ["b.txt", "a.txt"]
-    assert turns(lme / "b.txt") == [
-        {"role": "user", "content": "(2023/05/24 (Wed) 06:42) user: hi"},
-        {"role": "assistant", "content": "(2023/05/24 (Wed) 06:42) assistant: yo"},
-    ]

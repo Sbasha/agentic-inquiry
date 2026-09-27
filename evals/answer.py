@@ -31,7 +31,6 @@ from evals.run import (
     RESULTS,
     _git,
     guard_test_split,
-    record_test_run,
     applicable_arms,
     collect,
 )
@@ -132,8 +131,13 @@ def stratified(cases: list[Case], n: int, key: str) -> list[Case]:
 # --------------------------------------------------------------------------
 
 
+# Calls through ``claude -p`` stand in for a direct API call, which does not
+# think unless asked; the CLI's extended thinking is switched off (RFC-0004).
+NO_THINKING = {"MAX_THINKING_TOKENS": "0"}
+
+
 def _cache_path(model: str, prompt: str) -> Path:
-    key = hashlib.sha256(f"{model}\n{prompt}".encode()).hexdigest()
+    key = hashlib.sha256(f"{model}\nno-thinking\n{prompt}".encode()).hexdigest()
     return CACHE / "llm" / key[:2] / f"{key}.json"
 
 
@@ -153,36 +157,62 @@ def complete(model: str, prompt: str) -> dict[str, Any]:
     return result
 
 
-def _claude(model: str, prompt: str) -> dict[str, Any]:
+_TRANSIENT = re.compile(
+    r"rate limit|overloaded|529|usage limit|too many requests", re.I
+)
+
+
+def _transient_failure(proc: subprocess.CompletedProcess[str]) -> bool:
+    """A failed call whose error is a rate limit or overload; a successful reply that
+    happens to mention one of those words is not a failure."""
+    try:
+        data = json.loads(proc.stdout)
+    except json.JSONDecodeError:
+        data = {}
+    failed = proc.returncode != 0 or bool(data.get("is_error"))
+    detail = proc.stderr + (str(data.get("result", "")) if data.get("is_error") else "")
+    if proc.returncode != 0 and not data:
+        detail += proc.stdout
+    return failed and bool(_TRANSIENT.search(detail))
+
+
+def _claude(
+    model: str, prompt: str, schema: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """One ``claude -p`` call with no tools; ``schema`` constrains the reply to JSON.
+
+    The record keeps provider-reported usage and API time, and the model the CLI
+    says it used, so cost and time can be computed later (RFC-0004).
+    """
+    command = [
+        "claude",
+        "-p",
+        "--model",
+        model,
+        "--output-format",
+        "json",
+        "--setting-sources",
+        "project",
+        "--no-session-persistence",
+        "--tools",
+        "",
+        "--system-prompt",
+        "You are a precise assistant.",
+    ]
+    if schema is not None:
+        command += ["--json-schema", json.dumps(schema)]
     with tempfile.TemporaryDirectory() as cwd:
         for attempt in range(6):
             proc = subprocess.run(
-                [
-                    "claude",
-                    "-p",
-                    "--model",
-                    model,
-                    "--output-format",
-                    "json",
-                    "--setting-sources",
-                    "project",
-                    "--no-session-persistence",
-                    "--tools",
-                    "",
-                    "--system-prompt",
-                    "You are a precise assistant.",
-                ],
+                command,
                 input=prompt,
                 capture_output=True,
                 text=True,
                 cwd=cwd,
-                timeout=300,
+                timeout=600,
+                env=dict(os.environ, **NO_THINKING),
             )
-            if not re.search(
-                r"rate limit|overloaded|529|usage limit|too many requests",
-                proc.stdout + proc.stderr,
-                re.I,
-            ):
+            if not _transient_failure(proc):
                 break
             time.sleep(min(600, 60 * 2**attempt))
     if proc.returncode != 0:
@@ -193,13 +223,21 @@ def _claude(model: str, prompt: str) -> dict[str, Any]:
     if data.get("is_error"):
         raise RuntimeError(f"claude -p error: {str(data.get('result'))[:300]}")
     usage = data.get("usage", {})
+    structured = data.get("structured_output")
+    text = (
+        json.dumps(structured)
+        if schema is not None and structured is not None
+        else str(data.get("result", "")).strip()
+    )
     return {
-        "text": str(data.get("result", "")).strip(),
+        "text": text,
         "model": model,
+        "resolved_model": next(iter(data.get("modelUsage") or {}), model),
         "input_tokens": usage.get("input_tokens", 0)
         + usage.get("cache_read_input_tokens", 0)
         + usage.get("cache_creation_input_tokens", 0),
         "output_tokens": usage.get("output_tokens", 0),
+        "api_ms": data.get("duration_api_ms", 0),
     }
 
 
@@ -235,7 +273,6 @@ def _ollama(model: str, prompt: str) -> dict[str, Any]:
         {
             "model": model,
             "stream": False,
-            "format": "json",
             "options": {"temperature": 0, "seed": SEED},
             "messages": [{"role": "user", "content": prompt}],
         }
@@ -274,34 +311,12 @@ def _ollama_digest(model: str) -> str:
 # --------------------------------------------------------------------------
 
 
-def lme_sample(cases: list[Case], per_type: int) -> list[Case]:
-    """LongMemEval questions pre-registered for Level B: the ``per_type`` lowest
-    ``sha256(question_id)`` within each question type (RFC-0003 amendment)."""
-    by_type: dict[str, list[Case]] = defaultdict(list)
-    for case in cases:
-        by_type[case.meta["type"]].append(case)
-    return [
-        case
-        for kind in sorted(by_type)
-        for case in sorted(
-            by_type[kind], key=lambda c: hashlib.sha256(c.id.encode()).hexdigest()
-        )[:per_type]
-    ]
-
-
-def run_answers(
-    arm_names: list[str], split: str, n: int, jobs: int = 3, suite_name: str = "locomo"
-) -> Path:
-    """Answer and judge ``n`` questions; for LongMemEval ``n`` is per question type."""
+def run_answers(arm_names: list[str], split: str, n: int, jobs: int = 3) -> Path:
     guard_test_split(split)
-    suite = LOADERS[suite_name]()
+    suite = LOADERS["locomo"]()
     pool_cases = [c for c in suite.cases if c.split == split]
-    cases = (
-        lme_sample(pool_cases, n)
-        if suite_name == "longmemeval"
-        else stratified(pool_cases, n, "category")
-    )
-    arms = applicable_arms(suite, arm_names, answers=True)
+    cases = stratified(pool_cases, n, "category")
+    arms = applicable_arms(suite, arm_names)
     answerer = KIMI if os.environ.get("MOONSHOT_API_KEY") else ANSWERER
     judge = KIMI if os.environ.get("MOONSHOT_API_KEY") else JUDGE
     started = datetime.now(timezone.utc)
@@ -342,7 +357,7 @@ def run_answers(
         return {
             "arm": arm_name,
             "case": case.id,
-            "category": case.meta.get("category", case.meta.get("type")),
+            "category": case.meta.get("category"),
             "context_tokens": tokens,
             "gold": gold,
             "answer": answer["text"],
@@ -359,17 +374,14 @@ def run_answers(
                 print(f"  answered {number}/{len(work)}", file=sys.stderr)
 
     report = _answer_report(rows, arms, cases, split, started, answerer, judge)
-    report["suite"] = suite_name
     stamp = started.strftime("%Y%m%dT%H%M%SZ")
     target = (
         RESULTS
-        / suite_name
+        / "locomo"
         / f"answers-{split}-{stamp}-{_git('rev-parse', '--short=8', 'HEAD')}.json"
     )
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(report, indent=1, sort_keys=True) + "\n")
-    if split == "test":
-        record_test_run(f"{suite_name}-answers", [a.name for a in arms], report, target)
     _print(report)
     print(f"results: {target.relative_to(REPO_ROOT)}", file=sys.stderr)
     return target
@@ -460,7 +472,7 @@ def _answer_report(
 
 def _print(report: dict[str, Any]) -> None:
     print(
-        f"\n{report['suite']} answers / {report['split']}  kappa={report['judge_agreement']['cohen_kappa']:.3f}"
+        f"\nlocomo answers / {report['split']}  kappa={report['judge_agreement']['cohen_kappa']:.3f}"
     )
     print(f"{'arm':12}  {'accuracy':>9}  {'judge2':>7}  {'f1':>6}  {'ctx tok':>7}  err")
     for arm, s in report["summary"].items():

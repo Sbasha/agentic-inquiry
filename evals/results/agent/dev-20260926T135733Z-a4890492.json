@@ -1,0 +1,268 @@
+{
+ "comparisons": [
+  {
+   "a": "inquiry",
+   "b": "graphify",
+   "ci_high": 0.0,
+   "ci_low": 0.0,
+   "clustered": true,
+   "mde": 0.0,
+   "mean_diff": 0.0,
+   "metric": "fn_hit",
+   "n": 1,
+   "p_perm": 1.0
+  },
+  {
+   "a": "inquiry",
+   "b": "graphify",
+   "ci_high": 0.0,
+   "ci_low": 0.0,
+   "clustered": true,
+   "mde": 0.0,
+   "mean_diff": 0.0,
+   "metric": "file_recall",
+   "n": 1,
+   "p_perm": 1.0
+  },
+  {
+   "a": "inquiry",
+   "b": "graphify",
+   "ci_high": -0.166667,
+   "ci_low": -0.166667,
+   "clustered": true,
+   "mde": 0.0,
+   "mean_diff": -0.166667,
+   "metric": "file_precision",
+   "n": 1,
+   "p_perm": 1.0
+  },
+  {
+   "a": "inquiry",
+   "b": "graphify",
+   "ci_high": -0.196575,
+   "ci_low": -0.196575,
+   "clustered": true,
+   "mde": 0.0,
+   "mean_diff": -0.196575,
+   "metric": "input_token_ratio_minus_1",
+   "n": 1,
+   "p_perm": 1.0
+  }
+ ],
+ "per_task": {
+  "graphify": {
+   "django__django-12741": {
+    "file_precision": 0.5,
+    "file_recall": 1.0,
+    "fn_hit": 1.0,
+    "input_tokens": 45937,
+    "repo": "django/django",
+    "turns": 4.0
+   },
+   "pydata__xarray-4695": {
+    "file_precision": 0.5,
+    "file_recall": 1.0,
+    "fn_hit": 1.0,
+    "input_tokens": 92382,
+    "repo": "pydata/xarray",
+    "turns": 7.0
+   }
+  },
+  "inquiry": {
+   "pydata__xarray-4695": {
+    "file_precision": 0.3333333333333333,
+    "file_recall": 1.0,
+    "fn_hit": 1.0,
+    "input_tokens": 74222,
+    "repo": "pydata/xarray",
+    "turns": 4.0
+   }
+  }
+ },
+ "provenance": {
+  "dirty": false,
+  "guidance": {
+   "floor": "",
+   "graphify": "This project has a Graphify knowledge graph available through the graphify tools. For codebase questions, first call query_graph with the question; use get_node, get_neighbors and shortest_path to follow relationships. These return a scoped subgraph, usually much smaller than raw grep output.",
+   "inquiry": "This project is indexed by Agentic Inquiry, available through the inquiry search tool. For codebase questions, first call search with the question; read the returned path:line locations to follow up. It returns the best-matching code as scoped blocks, usually much smaller than raw grep output."
+  },
+  "max_cited_files": 5,
+  "max_turns": 14,
+  "model": "claude-sonnet-5",
+  "prompts_sha256": "5a5bff0f7e5db2205fb76fd809ba6da886421b057d13b261ad424117b7f20fa2",
+  "repeats": 1,
+  "seed": 20260926,
+  "sha": "a4890492e533bb8bf0c5a82055994e5a3b0e1141",
+  "started_utc": "2026-09-26T13:57:33+00:00"
+ },
+ "rows": [
+  {
+   "arm": "graphify",
+   "case": "django__django-12741",
+   "cited": [
+    [
+     "django/db/backends/base/operations.py",
+     403
+    ],
+    [
+     "django/db/backends/base/operations.py",
+     405
+    ],
+    [
+     "django/core/management/commands/flush.py",
+     63
+    ],
+    [
+     "tests/backends/base/test_operations.py",
+     175
+    ],
+    [
+     "tests/backends/tests.py",
+     165
+    ]
+   ],
+   "input_tokens": 45937,
+   "is_error": false,
+   "metrics": {
+    "file_precision": 0.5,
+    "file_recall": 1.0,
+    "fn_hit": 1.0
+   },
+   "output_tokens": 761,
+   "repeat": 0,
+   "repo": "django/django",
+   "stderr": "",
+   "suite": "swebench",
+   "tool_calls": {
+    "Grep": 1,
+    "Read": 2
+   },
+   "turns": 4,
+   "valid": true
+  },
+  {
+   "arm": "inquiry",
+   "case": "django__django-12741",
+   "cited": [],
+   "input_tokens": null,
+   "is_error": true,
+   "metrics": {},
+   "output_tokens": null,
+   "repeat": 0,
+   "repo": "django/django",
+   "stderr": "Command '['/Users/sammybasha/projects/agentic-inquiry-core/.venv/bin/python3', '-m', 'evals.inquiry_worker', 'index', '/Users/sammybasha/.cache/agentic-inquiry-evals/snapshots/django__django@537d422942b5', '/Users/sammybasha/.cache/agentic-inquiry-evals/index/inquiry-8a64e6cb419f0b37/django__django@537d422942b53bc0a2b6a51968f379c0de07793c']' timed out after 1800 seconds",
+   "suite": "swebench",
+   "tool_calls": null,
+   "turns": null,
+   "valid": false
+  },
+  {
+   "arm": "graphify",
+   "case": "pydata__xarray-4695",
+   "cited": [
+    [
+     "xarray/core/dataarray.py",
+     199
+    ],
+    [
+     "xarray/core/dataarray.py",
+     1118
+    ],
+    [
+     "xarray/core/dataarray.py",
+     207
+    ],
+    [
+     "xarray/core/coordinates.py",
+     390
+    ]
+   ],
+   "input_tokens": 92382,
+   "is_error": false,
+   "metrics": {
+    "file_precision": 0.5,
+    "file_recall": 1.0,
+    "fn_hit": 1.0
+   },
+   "output_tokens": 1411,
+   "repeat": 0,
+   "repo": "pydata/xarray",
+   "stderr": "",
+   "suite": "swebench",
+   "tool_calls": {
+    "Grep": 2,
+    "Read": 4
+   },
+   "turns": 7,
+   "valid": true
+  },
+  {
+   "arm": "inquiry",
+   "case": "pydata__xarray-4695",
+   "cited": [
+    [
+     "xarray/core/dataarray.py",
+     199
+    ],
+    [
+     "xarray/core/dataarray.py",
+     194
+    ],
+    [
+     "xarray/core/dataarray.py",
+     1118
+    ],
+    [
+     "xarray/core/coordinates.py",
+     371
+    ],
+    [
+     "xarray/core/indexing.py",
+     243
+    ]
+   ],
+   "input_tokens": 74222,
+   "is_error": false,
+   "metrics": {
+    "file_precision": 0.3333333333333333,
+    "file_recall": 1.0,
+    "fn_hit": 1.0
+   },
+   "output_tokens": 985,
+   "repeat": 0,
+   "repo": "pydata/xarray",
+   "stderr": "",
+   "suite": "swebench",
+   "tool_calls": {
+    "Grep": 2,
+    "mcp__inquiry__search": 1
+   },
+   "turns": 4,
+   "valid": true
+  }
+ ],
+ "schema": "InquiryEvalAgent/v1",
+ "split": "dev",
+ "summary": {
+  "graphify": {
+   "file_precision": 0.5,
+   "file_recall": 1.0,
+   "fn_hit": 1.0,
+   "invalid_runs": 0,
+   "mean_turns": 5.5,
+   "median_input_tokens": 92382,
+   "runs": 2,
+   "tasks": 2
+  },
+  "inquiry": {
+   "file_precision": 0.3333,
+   "file_recall": 1.0,
+   "fn_hit": 1.0,
+   "invalid_runs": 1,
+   "mean_turns": 4.0,
+   "median_input_tokens": 74222,
+   "runs": 2,
+   "tasks": 1
+  }
+ }
+}

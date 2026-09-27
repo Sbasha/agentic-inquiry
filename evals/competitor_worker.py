@@ -1,16 +1,19 @@
-"""Build and query one live competitor inside its own virtualenv (RFC-0003 live arms).
+"""Build and query one memory tool inside its own virtualenv (RFC-0004 claim C1).
 
-Runs under the competitor venv's interpreter, so it imports only the standard
+Runs under the tool venv's interpreter, so it imports only the standard
 library at module level. The harness side is ``evals.arms.Competitor``.
 
     python competitor_worker.py index <tool> <corpus dir> <store dir>
     python competitor_worker.py search <tool> <store dir> <k>   < queries.json
 
-``search`` prints one JSON list of ``[context text, milliseconds]`` per query.
-Every LLM call goes to ``claude-haiku-4-5-20251001`` on the Claude
-subscription: Graphify through its own ``claude-cli`` backend, the others
-through the OpenAI-compatible shim at ``EVALS_SHIM_URL``. Embeddings come from
-Ollama ``bge-m3``.
+``index`` writes ``build.json`` only for a healthy build: every session
+ingested and at least one item stored. It records the build's LLM usage from
+the shim. ``search`` prints one JSON list of ``[context, seconds, usage, error]``
+per query; a failed query fails only itself.
+
+Every LLM call goes to ``claude-haiku-4-5-20251001`` through the shim at
+``EVALS_SHIM_URL``; each build and each query has its own URL prefix so its
+calls are counted. Embeddings come from Ollama ``bge-m3``.
 """
 
 from __future__ import annotations
@@ -19,72 +22,96 @@ import asyncio
 import json
 import os
 import re
-import shutil
-import subprocess
 import sys
 import time
+import urllib.request
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
 MODEL = "claude-haiku-4-5-20251001"
-SHIM = os.environ.get("EVALS_SHIM_URL", "http://127.0.0.1:8765/v1")
+SHIM = os.environ.get("EVALS_SHIM_URL", "http://127.0.0.1:8765")
 OLLAMA = "http://localhost:11434"
 EMBED_MODEL = "bge-m3"
 EMBED_DIMS = 1024
 USER = "corpus"
+MEM0_TOP_K = 200
+COGNEE_TOP_K = 20
 
-_LINE = re.compile(r"^\[[^\]]+\]\s*(?P<body>.*)$")
+# "[<marker>] (<date>) <speaker>: <text>"; LongMemEval dates nest parentheses.
+_LINE = re.compile(
+    r"^\[[^\]]+\]\s*\((?P<date>\d{4}/\d{2}/\d{2} \(\w+\) \d{2}:\d{2}|[^()]*)\)"
+    r"\s*(?P<role>[^:]+):\s?(?P<text>.*)$"
+)
 _LME_DATE = re.compile(r"\((\d{4}/\d{2}/\d{2}) \(\w+\) (\d{2}:\d{2})\)")
 
 
 def sessions(root: Path) -> list[Path]:
-    """Session files in conversation order: by LongMemEval date, else by number in the name."""
+    """Session files in date order (LongMemEval dates sort as text), then by name."""
 
-    def key(path: Path) -> tuple[str, int, str]:
+    def key(path: Path) -> tuple[str, str]:
         first = path.read_text(encoding="utf-8").split("\n", 1)[0]
         date = _LME_DATE.search(first)
-        number = re.search(r"(\d+)(?=\.\w+$)", path.name)
-        return (
-            " ".join(date.groups()) if date else "",
-            int(number.group(1)) if number else 0,
-            path.name,
-        )
+        return (" ".join(date.groups()) if date else "", path.name)
 
-    return sorted((p for p in root.rglob("*") if p.is_file()), key=key)
+    return sorted((p for p in root.rglob("*.txt") if p.is_file()), key=key)
 
 
 def turns(path: Path) -> list[dict[str, str]]:
-    """Chat messages for one session; the dialog id tag is dropped, the date kept."""
+    """``{role, content, date}`` per line of a session file."""
     out = []
     for line in path.read_text(encoding="utf-8").splitlines():
         match = _LINE.match(line)
-        body = match.group("body") if match else line
-        if not body.strip():
-            continue
-        role = "assistant" if re.search(r"\)\s*assistant:", body) else "user"
-        out.append({"role": role, "content": body})
+        if match:
+            out.append(
+                {
+                    "role": "assistant" if match["role"] == "assistant" else "user",
+                    "content": match["text"],
+                    "date": match["date"],
+                }
+            )
     return out
 
 
-def _shim_env() -> None:
-    os.environ.update(
-        {
-            "OPENAI_API_KEY": "shim",
-            "OPENAI_BASE_URL": SHIM,
-            "OPENAI_API_BASE": SHIM,
-            # The Agents SDK uploads traces to OpenAI by default; eval data stays local.
-            "OPENAI_AGENTS_DISABLE_TRACING": "1",
-        }
-    )
+def mem0_messages(session: list[dict[str, str]]) -> Iterator[list[dict[str, str]]]:
+    """One ``add`` per user and assistant pair, the session date written into each message
+    (mem0's open-source SDK rejects the benchmark's ``timestamp`` argument)."""
+    for start in range(0, len(session), 2):
+        yield [
+            {"role": turn["role"], "content": f"[{turn['date']}] {turn['content']}"}
+            for turn in session[start : start + 2]
+        ]
+
+
+def cognee_turn_pairs(sid: str, session: list[dict[str, str]]) -> list[str]:
+    """Cognee's BEAM representation: one JSON-list item per turn pair, with its date."""
+    items = []
+    for number, start in enumerate(range(0, len(session), 2), start=1):
+        pair = session[start : start + 2]
+        user = next((t["content"] for t in pair if t["role"] == "user"), "")
+        assistant = next((t["content"] for t in pair if t["role"] == "assistant"), "")
+        items.append(
+            f"Session: {sid}\nTurn: {number}\nTime anchor: {pair[0]['date']}\n\n"
+            f"User:\n{user}\n\nAssistant:\n{assistant}"
+        )
+    return items
+
+
+def _base(prefix: str) -> str:
+    return f"{SHIM}/{prefix}/v1"
+
+
+def shim_stats(prefix: str) -> dict[str, int]:
+    with urllib.request.urlopen(f"{SHIM}/{prefix}/stats", timeout=30) as response:
+        return dict(json.loads(response.read()))
 
 
 # --------------------------------------------------------------------------
-# mem0: one add per session, search over extracted memories
+# mem0
 # --------------------------------------------------------------------------
 
 
-def _mem0(store: Path) -> Any:
+def _mem0(store: Path, prefix: str) -> Any:
     os.environ["MEM0_TELEMETRY"] = "False"
     from mem0 import Memory  # type: ignore[import-not-found]
 
@@ -92,7 +119,11 @@ def _mem0(store: Path) -> Any:
         {
             "llm": {
                 "provider": "openai",
-                "config": {"model": MODEL, "openai_base_url": SHIM, "api_key": "shim"},
+                "config": {
+                    "model": MODEL,
+                    "openai_base_url": _base(prefix),
+                    "api_key": "shim",
+                },
             },
             "embedder": {
                 "provider": "openai",
@@ -117,142 +148,42 @@ def _mem0(store: Path) -> Any:
     )
 
 
-def mem0_index(root: Path, store: Path) -> None:
-    memory = _mem0(store)
+def mem0_index(root: Path, store: Path, prefix: str) -> int:
+    memory = _mem0(store, prefix)
     for path in sessions(root):
-        memory.add(turns(path), user_id=USER)
+        session = turns(path)
+        date = session[0]["date"] if session else ""
+        for messages in mem0_messages(session):
+            memory.add(messages, user_id=USER, metadata={"session_date": date})
+    stored = memory.get_all(filters={"user_id": USER}, top_k=100_000)
+    rows = stored.get("results", stored) if isinstance(stored, dict) else stored
+    return len(rows)
 
 
-def mem0_search(store: Path, queries: list[str], k: int) -> Iterator[str]:
-    memory = _mem0(store)
-    for query in queries:
-        found = memory.search(query, top_k=k, filters={"user_id": USER})
-        rows = found.get("results", found) if isinstance(found, dict) else found
-        yield "\n".join(str(row.get("memory", "")) for row in rows)
+def mem0_open(store: Path, prefix: str) -> Any:
+    return _mem0(store, prefix)
 
 
-# --------------------------------------------------------------------------
-# OpenKB: compiled wiki per corpus, its query agent decides what to read
-# --------------------------------------------------------------------------
-
-OPENKB_MODEL = f"openai/{MODEL}"
-
-
-def _openkb(*args: str, cwd: Path) -> None:
-    binary = Path(sys.executable).parent / "openkb"
-    # init prompts for an API key even with --model; an empty answer skips it.
-    subprocess.run(
-        [str(binary), *args],
-        cwd=cwd,
-        check=True,
-        env=os.environ.copy(),
-        input="\n",
-        text=True,
+def mem0_search(memory: Any, query: str) -> str:
+    found = memory.search(query, top_k=MEM0_TOP_K, filters={"user_id": USER})
+    rows = found.get("results", found) if isinstance(found, dict) else found
+    return "\n".join(
+        f"[{(row.get('metadata') or {}).get('session_date', '')}] {row.get('memory', '')}"
+        for row in rows
     )
 
 
-def openkb_index(root: Path, store: Path) -> None:
-    _shim_env()
-    store.mkdir(parents=True, exist_ok=True)
-    _openkb("init", "--model", OPENKB_MODEL, "--language", "en", cwd=store)
-    _openkb("add", str(root), cwd=store)
-
-
-def _read_rank(call: str) -> int:
-    """Source text first, synthesized pages next, the index listing last."""
-    if "get_page_content" in call or "sources/" in call:
-        return 0
-    if "index.md" in call:
-        return 2
-    return 1
-
-
-def openkb_search(store: Path, queries: list[str], k: int) -> Iterator[str]:
-    _shim_env()
-    from agents import Runner  # type: ignore[import-not-found]
-    from agents.items import ToolCallItem, ToolCallOutputItem  # type: ignore[import-not-found]
-
-    from openkb.agent.query import MAX_TURNS, build_query_agent  # type: ignore[import-not-found]
-
-    agent = build_query_agent(str(store / "wiki"), OPENKB_MODEL, language="en")
-    for query in queries:
-        result = asyncio.run(Runner.run(agent, query, max_turns=MAX_TURNS))
-        calls: dict[str, str] = {}
-        reads: list[tuple[int, int, str]] = []
-        for item in result.new_items:
-            raw = item.raw_item
-            if isinstance(item, ToolCallItem):
-                call_id = str(getattr(raw, "call_id", None) or getattr(raw, "id", ""))
-                calls[call_id] = (
-                    f"{getattr(raw, 'name', '')} {getattr(raw, 'arguments', '')}"
-                )
-            elif isinstance(item, ToolCallOutputItem):
-                call_id = (
-                    raw.get("call_id", "")
-                    if isinstance(raw, dict)
-                    else getattr(raw, "call_id", "")
-                )
-                call = calls.get(call_id, "")
-                reads.append(
-                    (_read_rank(call), len(reads), f"## {call}\n{item.output}")
-                )
-        yield "\n".join(text for _, _, text in sorted(reads))
-
-
 # --------------------------------------------------------------------------
-# Graphify text path: semantic extraction, then its budgeted query
+# Cognee
 # --------------------------------------------------------------------------
 
 
-def _graphify() -> str:
-    return str(Path(sys.executable).parent / "graphify")
-
-
-def _graphify_env() -> dict[str, str]:
-    env = {k: v for k, v in os.environ.items() if not k.endswith("_API_KEY")}
-    env["GRAPHIFY_CLAUDE_CLI_MODEL"] = MODEL
-    return env
-
-
-def graphify_index(root: Path, store: Path) -> None:
-    tree = store / "tree"
-    shutil.rmtree(tree, ignore_errors=True)
-    store.mkdir(parents=True, exist_ok=True)
-    subprocess.run(["cp", "-R", f"{root}/.", str(tree)], check=True)
-    subprocess.run(
-        [_graphify(), "extract", ".", "--backend", "claude-cli"],
-        cwd=tree,
-        env=_graphify_env(),
-        check=True,
-    )
-    shutil.move(str(tree / "graphify-out" / "graph.json"), store / "graph.json")
-    shutil.rmtree(tree)
-
-
-def graphify_search(store: Path, queries: list[str], k: int) -> Iterator[str]:
-    for query in queries:
-        result = subprocess.run(
-            [_graphify(), "query", query, "--budget", "2000", "--graph", "graph.json"],
-            cwd=store,
-            env=_graphify_env(),
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        yield result.stdout
-
-
-# --------------------------------------------------------------------------
-# Cognee: add plus cognify per corpus, default (hybrid) search context
-# --------------------------------------------------------------------------
-
-
-def _cognee(store: Path) -> Any:
+def _cognee(store: Path, prefix: str) -> Any:
     os.environ.update(
         {
             "LLM_PROVIDER": "openai",
             "LLM_MODEL": f"openai/{MODEL}",
-            "LLM_ENDPOINT": SHIM,
+            "LLM_ENDPOINT": _base(prefix),
             "LLM_API_KEY": "shim",
             "EMBEDDING_PROVIDER": "ollama",
             "EMBEDDING_MODEL": EMBED_MODEL,
@@ -264,77 +195,135 @@ def _cognee(store: Path) -> Any:
             "TELEMETRY_DISABLED": "1",
         }
     )
+    # cognee.eval_framework.beam.local_ingest sets these when imported; the
+    # query process sets them too so it reads the memory the way ingest wrote it.
+    for key, value in (
+        ("CACHING", "true"),
+        ("CACHE_BACKEND", "fs"),
+        ("AUTO_FEEDBACK", "true"),
+    ):
+        os.environ.setdefault(key, value)
     import cognee  # type: ignore[import-not-found]
 
     return cognee
 
 
-def cognee_index(root: Path, store: Path) -> None:
-    cognee = _cognee(store)
+def cognee_index(root: Path, store: Path, prefix: str) -> int:
+    _cognee(store, prefix)
+    from cognee.eval_framework.beam import local_ingest  # type: ignore[import-not-found]
 
-    async def build() -> None:
-        await cognee.add([str(p) for p in sessions(root)], dataset_name=USER)
-        await cognee.cognify(datasets=[USER])
+    folder = store / "sessions"
+    folder.mkdir(parents=True, exist_ok=True)
+    for number, path in enumerate(sessions(root), start=1):
+        items = cognee_turn_pairs(path.stem, turns(path))
+        (folder / f"session_{number:04d}_{path.stem}.json").write_text(
+            json.dumps(items)
+        )
+    args = local_ingest.build_parser().parse_args(
+        [str(folder), "--dataset-name", USER, "--run-dir", str(store / "run")]
+    )
+    report = asyncio.run(local_ingest.main_async(args))
+    summary = report["summary"]
+    expected = len(list(folder.glob("*.json")))
+    if summary["session_count"] != expected:
+        raise RuntimeError(
+            f"cognee ingested {summary['session_count']} of {expected} sessions"
+        )
+    return int(summary["turn_count"])
 
-    asyncio.run(build())
 
-
-def _cognee_text(result: Any) -> str:
-    """The context inside a search result, without Cognee's answer-prompt wrapper."""
+def _context(result: Any) -> str:
     payload = getattr(result, "search_result", result)
     if isinstance(payload, dict) and "search_result" in payload:
         payload = payload["search_result"]
     if isinstance(payload, list):
-        return "\n".join(_cognee_text(item) for item in payload)
-    if not isinstance(payload, str):
-        return json.dumps(payload, default=str)
-    _, marker, context = payload.partition("Context:\n")
-    return context.strip().strip("`") if marker else payload
+        return "\n".join(_context(item) for item in payload)
+    return payload if isinstance(payload, str) else json.dumps(payload, default=str)
 
 
-def cognee_search(store: Path, queries: list[str], k: int) -> Iterator[str]:
-    cognee = _cognee(store)
+def cognee_open(store: Path, prefix: str) -> Any:
+    cognee = _cognee(store, prefix)
     from cognee.modules.search.types import SearchType  # type: ignore[import-not-found]
 
-    async def one(query: str) -> str:
+    return cognee, SearchType
+
+
+def cognee_search(client: Any, query: str) -> str:
+    cognee, search_type = client
+
+    async def one() -> str:
         results = await cognee.search(
             query,
-            query_type=SearchType.HYBRID_COMPLETION,
+            query_type=search_type.HYBRID_COMPLETION,
             datasets=[USER],
             only_context=True,
+            retriever_specific_config={
+                "chunks_top_k": COGNEE_TOP_K,
+                "entities_top_k": COGNEE_TOP_K,
+            },
         )
-        return "\n".join(_cognee_text(r) for r in results)
+        return "\n".join(_context(r) for r in results)
 
-    for query in queries:
-        yield asyncio.run(one(query))
+    return asyncio.run(one())
 
 
 TOOLS = {
-    "mem0": (mem0_index, mem0_search),
-    "openkb": (openkb_index, openkb_search),
-    "graphify-text": (graphify_index, graphify_search),
-    "cognee": (cognee_index, cognee_search),
+    "mem0": (mem0_index, mem0_open, mem0_search),
+    "cognee": (cognee_index, cognee_open, cognee_search),
 }
+MAX_UNPARSEABLE_SHARE = 0.01
+
+
+def health_problem(stats: dict[str, int]) -> str | None:
+    """Why a build's LLM calls make it unusable, or None (RFC-0004 build health)."""
+    calls = stats.get("calls", 0)
+    if stats.get("upstream_errors", 0):
+        return f"{stats['upstream_errors']} LLM calls failed"
+    if stats.get("model_mismatch", 0):
+        return f"{stats['model_mismatch']} replies came from another model"
+    if calls and stats.get("unparseable", 0) > MAX_UNPARSEABLE_SHARE * calls:
+        return f"{stats['unparseable']} of {calls} JSON replies were unparseable"
+    return None
+
+
+def _reset(prefix: str) -> None:
+    urllib.request.urlopen(f"{SHIM}/{prefix}/reset", timeout=30).read()
 
 
 def main() -> None:
     command, tool = sys.argv[1], sys.argv[2]
-    build, search = TOOLS[tool]
+    build, open_client, search = TOOLS[tool]
     if command == "index":
         root, store = Path(sys.argv[3]).resolve(), Path(sys.argv[4]).resolve()
+        prefix = f"{tool}-{store.name}"
+        _reset(prefix)
         t0 = time.perf_counter()
-        build(root, store)
+        items = build(root, store, prefix)
+        seconds = round(time.perf_counter() - t0, 2)
+        stats = shim_stats(prefix)
+        problem = health_problem(stats) or (None if items >= 1 else "stored nothing")
+        if problem:
+            raise SystemExit(f"{tool} build for {root.name} refused: {problem}")
         (store / "build.json").write_text(
-            json.dumps({"seconds": round(time.perf_counter() - t0, 2)})
+            json.dumps({"seconds": seconds, "items": items, "llm": stats})
         )
         return
-    store, k = Path(sys.argv[3]).resolve(), int(sys.argv[4])
+    store = Path(sys.argv[3]).resolve()
     queries = json.loads(sys.stdin.read())
     out = []
-    t0 = time.perf_counter()
-    for text in search(store, queries, k):
-        out.append([text, (time.perf_counter() - t0) * 1000])
-        t0 = time.perf_counter()
+    for number, query in enumerate(queries):
+        prefix = f"{tool}-{store.name}-q{number}-{time.time_ns()}"
+        try:
+            # Opened before timing: every arm's query is timed on a warm client.
+            client = open_client(store, prefix)
+            t0 = time.perf_counter()
+            context, error = search(client, query), None
+        except Exception as exc:  # noqa: BLE001 - one failed query fails only its case
+            t0 = time.perf_counter()
+            context, error = "", f"{type(exc).__name__}: {exc}"[-500:]
+        out.append(
+            [context, round(time.perf_counter() - t0, 3), shim_stats(prefix), error]
+        )
     print(json.dumps(out))
 
 

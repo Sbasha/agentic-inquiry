@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-import hashlib
-
-from evals.answer import cohen_kappa, lme_sample, parse_label, stratified, token_f1
+from evals.answer import cohen_kappa, parse_label, stratified, token_f1
 from evals.data import Case
 
 
@@ -47,21 +45,23 @@ def test_stratified_is_proportional_and_seeded() -> None:
     assert [c.id for c in pick] == [c.id for c in stratified(cases, 20, "category")]
 
 
-def test_lme_sample_takes_lowest_question_hashes_per_type() -> None:
-    cases = [
-        Case(
-            id=f"q{i}",
-            suite="longmemeval",
-            corpus=f"q{i}",
-            query="",
-            gold_units={},
-            meta={"type": "a" if i % 3 else "b"},
-        )
-        for i in range(30)
-    ]
-    pick = lme_sample(cases, 4)
-    assert len(pick) == 8
-    for kind in ("a", "b"):
-        ids = [c.id for c in cases if c.meta["type"] == kind]
-        lowest = sorted(ids, key=lambda i: hashlib.sha256(i.encode()).hexdigest())[:4]
-        assert [c.id for c in pick if c.meta["type"] == kind] == lowest
+def test_only_failed_calls_are_retried() -> None:
+    import json
+    import subprocess
+
+    from evals.answer import _transient_failure
+
+    def proc(
+        code: int, payload: dict | None, stderr: str = ""
+    ) -> subprocess.CompletedProcess[str]:
+        out = json.dumps(payload) if payload is not None else ""
+        return subprocess.CompletedProcess([], code, out, stderr)
+
+    assert not _transient_failure(
+        proc(0, {"is_error": False, "result": "HTTP 529 means overloaded"})
+    )
+    assert _transient_failure(
+        proc(0, {"is_error": True, "result": "API Error: 529 overloaded"})
+    )
+    assert _transient_failure(proc(1, None, "rate limit reached"))
+    assert not _transient_failure(proc(1, None, "invalid model"))

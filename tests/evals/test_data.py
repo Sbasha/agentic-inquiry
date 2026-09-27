@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import textwrap
+from pathlib import Path
+
+import pytest
 
 from evals.data import (
     enclosing_defs,
@@ -154,3 +157,39 @@ def test_locomo_cases_split_by_conversation() -> None:
         split_unit="conv-1",
     )
     assert a.split == b.split == split_of("conv-1")
+
+
+def test_longmemeval_hides_dataset_session_ids(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Dataset IDs of evidence sessions start with "answer_"; nothing a tool reads may show them."""
+    import json
+
+    import evals.data as data
+
+    item = {
+        "question_id": "q1",
+        "question_type": "multi-session",
+        "question": "Where did I move?",
+        "question_date": "2023/06/01 (Thu) 10:00",
+        "answer": "Paris",
+        "answer_session_ids": ["answer_abc"],
+        "haystack_session_ids": ["sharegpt_x", "answer_abc"],
+        "haystack_dates": ["2023/05/01 (Mon) 09:00", "2023/05/24 (Wed) 06:42"],
+        "haystack_sessions": [
+            [{"role": "user", "content": "hi"}],
+            [{"role": "user", "content": "I moved to Paris", "has_answer": True}],
+        ],
+    }
+    source = tmp_path / "lme.json"
+    source.write_text(json.dumps([item]))
+    monkeypatch.setattr(data, "fetch", lambda name: source)
+    monkeypatch.setattr(data, "CACHE", tmp_path)
+    suite = data.load_longmemeval()
+    (case,) = suite.cases
+    root = suite.materialize(case.corpus)
+    texts = [p.name + p.read_text() for p in root.iterdir()]
+    assert not any("answer_" in text for text in texts)
+    assert case.gold_units == {"s001#t0": 1.0} and case.meta["gold_sessions"] == [
+        "s001"
+    ]

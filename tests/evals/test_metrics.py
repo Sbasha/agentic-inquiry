@@ -176,3 +176,43 @@ class TestPaired:
     def test_length_mismatch_is_an_error(self) -> None:
         with pytest.raises(ValueError):
             paired([1.0], [1.0, 0.0], seed=1)
+
+
+def test_mcnemar_exact_matches_binomial_tail() -> None:
+    from evals.metrics import mcnemar
+
+    # 6 discordant pairs, all favouring a: p = 2 * (1/2)**6
+    a = [True] * 6 + [True, False] * 3
+    b = [False] * 6 + [True, False] * 3
+    result = mcnemar(a, b)
+    assert (result["a_only"], result["b_only"]) == (6, 0)
+    assert result["p"] == round(2 / 64, 6)
+    assert mcnemar([True, False], [True, False])["p"] == 1.0
+
+
+def test_holm_is_step_down_and_monotone() -> None:
+    from evals.metrics import holm
+
+    assert holm({"x": 0.01, "y": 0.04, "z": 0.03}) == {"x": 0.03, "z": 0.06, "y": 0.06}
+
+
+def test_ratio_interval_is_seeded() -> None:
+    from evals.metrics import ratio_interval
+
+    first = ratio_interval([1.0, 2.0, 3.0], [2.0, 4.0, 6.0], seed=1)
+    assert first["ratio"] == 0.5 and first == ratio_interval(
+        [1.0, 2.0, 3.0], [2.0, 4.0, 6.0], seed=1
+    )
+
+
+def test_mcnemar_two_sided_with_discordance_both_ways() -> None:
+    from evals.metrics import mcnemar
+
+    a = [True] * 7 + [False] * 2 + [True] * 5
+    b = [False] * 7 + [True] * 2 + [True] * 5
+    result = mcnemar(a, b)
+    assert (result["a_only"], result["b_only"]) == (7, 2)
+    assert result["p"] == round(
+        2 * sum(__import__("math").comb(9, k) for k in range(3)) / 2**9, 6
+    )
+    assert abs(result["p"] - 0.1797) < 1e-4

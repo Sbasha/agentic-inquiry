@@ -579,11 +579,18 @@ def load_longmemeval() -> Suite:
             continue
         files: dict[str, str] = {}
         evidence: list[str] = []
-        for sid, date, session in zip(
+        # Dataset session IDs mark the evidence sessions (every one starts with
+        # "answer_"), so tools and answerers see an opaque ordinal instead.
+        opaque = {
+            raw: f"s{number:03d}"
+            for number, raw in enumerate(item["haystack_session_ids"])
+        }
+        for raw_sid, date, session in zip(
             item["haystack_session_ids"],
             item["haystack_dates"],
             item["haystack_sessions"],
         ):
+            sid = opaque[raw_sid]
             rows = []
             for number, turn in enumerate(session):
                 marker = f"{sid}#t{number}"
@@ -593,7 +600,7 @@ def load_longmemeval() -> Suite:
                 if turn.get("has_answer"):
                     evidence.append(marker)
             files[f"{sid}.txt"] = "\n".join(rows) + "\n"
-        by_corpus[qid] = files
+        by_corpus[f"opaque-{qid}"] = files
         if not evidence:
             dropped += 1
             continue
@@ -601,20 +608,25 @@ def load_longmemeval() -> Suite:
             Case(
                 id=qid,
                 suite="longmemeval",
-                corpus=qid,
+                corpus=f"opaque-{qid}",
                 query=item["question"],
                 gold_units={marker: 1.0 for marker in evidence},
                 meta={
                     "type": item["question_type"],
                     "answer": str(item["answer"]),
-                    "gold_sessions": sorted(set(item["answer_session_ids"])),
+                    "gold_sessions": sorted(
+                        opaque[s]
+                        for s in set(item["answer_session_ids"])
+                        if s in opaque
+                    ),
+                    "question_date": str(item.get("question_date", "")),
                 },
             )
         )
 
     def materialize(corpus: str) -> Path:
         return _write_corpus(
-            CACHE / "corpora" / "longmemeval-turns" / corpus, by_corpus[corpus]
+            CACHE / "corpora" / "longmemeval-opaque" / corpus, by_corpus[corpus]
         )
 
     return Suite(

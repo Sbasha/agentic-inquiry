@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from typing import Any
 
 from evals.claude_shim import render_prompt, to_message
 
@@ -61,3 +62,59 @@ def test_tool_results_and_prior_calls_reach_the_prompt() -> None:
     assert (
         "be brief" in prompt and "[called read_file" in prompt and "# Index" in prompt
     )
+
+
+def test_only_a_real_schema_constrains_the_reply() -> None:
+    from evals.claude_shim import reply_schema
+
+    given = {"type": "object", "properties": {"facts": {"type": "array"}}}
+    assert (
+        reply_schema(
+            {
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {"schema": given},
+                }
+            }
+        )
+        == given
+    )
+    assert reply_schema({"response_format": {"type": "json_object"}}) is None
+    assert reply_schema({"tools": TOOLS}) is None
+    assert reply_schema({"messages": []}) is None
+
+
+def test_cached_replies_count_their_original_usage(
+    tmp_path: Any, monkeypatch: Any
+) -> None:
+    import evals.claude_shim as shim
+
+    calls: list[Any] = []
+
+    def fake(model: str, prompt: str, schema: Any = None) -> dict[str, Any]:
+        calls.append(schema)
+        return {
+            "text": '{"facts": []}',
+            "input_tokens": 100,
+            "output_tokens": 10,
+            "api_ms": 50,
+        }
+
+    monkeypatch.setattr(shim, "SHIM_CACHE", tmp_path)
+    monkeypatch.setattr(shim, "SHIM_LOG", tmp_path / "log")
+    monkeypatch.setattr(shim, "_claude", fake)
+    schema = {"type": "object", "properties": {"facts": {"type": "array"}}}
+    body = {
+        "messages": [{"role": "user", "content": "x"}],
+        "response_format": {"type": "json_schema", "json_schema": {"schema": schema}},
+    }
+    shim.complete(body, "build-a")
+    shim.complete(body, "build-a")
+    assert len(calls) == 1 and calls[0] == schema
+    stats = shim.STATS["build-a"]
+    assert (
+        stats["calls"],
+        stats["input_tokens"],
+        stats["api_ms"],
+        stats["unparseable"],
+    ) == (2, 200, 100, 0)
