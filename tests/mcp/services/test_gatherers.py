@@ -1,5 +1,6 @@
 # tests/mcp/services/test_gatherers.py
 """Tests for context gatherer implementations."""
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -123,9 +124,7 @@ class TestCodeGatherer:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_gather_with_empty_results(
-        self, code_gatherer, mock_search_service
-    ):
+    async def test_gather_with_empty_results(self, code_gatherer, mock_search_service):
         """Test gather with empty search results."""
         mock_search_service.hybrid_search.return_value = []
 
@@ -142,9 +141,7 @@ class TestCodeGatherer:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_gather_with_code_results(
-        self, code_gatherer, mock_search_service
-    ):
+    async def test_gather_with_code_results(self, code_gatherer, mock_search_service):
         """Test gather with code search results."""
         # Create mock search results
         mock_result = MagicMock()
@@ -290,9 +287,7 @@ class TestDocsGatherer:
         assert isinstance(docs_gatherer, ContextGathererProtocol)
 
     @pytest.mark.asyncio
-    async def test_gather_filters_code_files(
-        self, docs_gatherer, mock_search_service
-    ):
+    async def test_gather_filters_code_files(self, docs_gatherer, mock_search_service):
         """Test that gather filters out code files."""
         # Create mock results with both doc and code files
         doc_result = MagicMock()
@@ -379,9 +374,7 @@ class TestMemoryGatherer:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_gather_with_memories(
-        self, memory_gatherer, mock_memory_system
-    ):
+    async def test_gather_with_memories(self, memory_gatherer, mock_memory_system):
         """Test gather with memory results."""
         # Create mock memory result
         mock_item = MagicMock()
@@ -421,11 +414,9 @@ class TestGraphGatherer:
     def mock_search_service(self):
         """Create a mock search service."""
         search_service = MagicMock()
-        search_service.traverse_relationships = AsyncMock(return_value={
-            "relationships": [],
-            "entities": {},
-            "entity": {"name": ""}
-        })
+        search_service.traverse_relationships = AsyncMock(
+            return_value={"relationships": [], "entities": {}, "entity": {"name": ""}}
+        )
         return search_service
 
     @pytest.fixture
@@ -488,9 +479,7 @@ class TestGraphGatherer:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_gather_with_relationships(
-        self, graph_gatherer, mock_search_service
-    ):
+    async def test_gather_with_relationships(self, graph_gatherer, mock_search_service):
         """Test gather with relationship results."""
         # Create mock relationship response
         mock_search_service.traverse_relationships.return_value = {
@@ -512,7 +501,7 @@ class TestGraphGatherer:
                     "file_path": "src/helpers.py",
                     "summary": "A helper function",
                 }
-            }
+            },
         }
 
         budget = TokenBudget(max_tokens=1000)

@@ -25,6 +25,7 @@ from agentic_inquiry.indexing.graph_builder import GraphBuilderConfig
 # Validates: Requirements 5.1
 # =============================================================================
 
+
 class TestTimeoutEnforcement:
     """Tests for timeout enforcement during flush operations."""
 
@@ -89,6 +90,7 @@ class TestTimeoutEnforcement:
 # Property 16: Timeout Event Failure
 # Validates: Requirements 5.2
 # =============================================================================
+
 
 class TestTimeoutEventFailure:
     """Tests for event system notification on timeout."""
@@ -165,6 +167,7 @@ class TestTimeoutEventFailure:
 # Property 39: Partial Results on Timeout
 # Validates: Requirements 5.3
 # =============================================================================
+
 
 class TestPartialResultsOnTimeout:
     """Tests for partial result return on timeout."""
@@ -246,6 +249,7 @@ class TestPartialResultsOnTimeout:
 # =============================================================================
 # Additional Timeout Tests
 # =============================================================================
+
 
 class TestTimeoutConfiguration:
     """Tests for timeout configuration handling."""
@@ -354,4 +358,3 @@ class TestTimeoutEdgeCases:
             pass
 
         # Test validates the error handling pattern
-

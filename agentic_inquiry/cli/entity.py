@@ -5,6 +5,7 @@ Usage:
     ai entity deps <name> [--depth N]
     ai entity refs <name>
 """
+
 from __future__ import annotations
 
 import argparse
@@ -34,20 +35,22 @@ def format_entity(entity: dict, verbose: bool = False) -> str:
     lines.append(f"ENTITY: {entity.get('name', 'unknown')}")
     lines.append("=" * 60)
 
-    lines.append(f"Type:       {entity.get('type', entity.get('entity_type', 'unknown'))}")
+    lines.append(
+        f"Type:       {entity.get('type', entity.get('entity_type', 'unknown'))}"
+    )
     lines.append(f"File:       {entity.get('file_path', 'unknown')}")
 
-    line_num = entity.get('line_number', entity.get('start_line'))
+    line_num = entity.get("line_number", entity.get("start_line"))
     if line_num:
         lines.append(f"Line:       {line_num}")
 
     # Signature if available
-    signature = entity.get('signature')
+    signature = entity.get("signature")
     if signature:
         lines.append(f"Signature:  {signature}")
 
     # Docstring if available
-    docstring = entity.get('docstring', entity.get('description'))
+    docstring = entity.get("docstring", entity.get("description"))
     if docstring:
         lines.append("")
         lines.append("Documentation:")
@@ -57,7 +60,7 @@ def format_entity(entity: dict, verbose: bool = False) -> str:
             lines.append(f"  ... ({docstring.count(chr(10)) - 5} more lines)")
 
     # Metadata
-    metadata = entity.get('metadata', {})
+    metadata = entity.get("metadata", {})
     if metadata and verbose:
         lines.append("")
         lines.append("Metadata:")
@@ -82,7 +85,10 @@ async def understand_command(args: argparse.Namespace) -> int:
 
     project_id = args.project or config.storage.default_project_id
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     try:
@@ -138,7 +144,10 @@ async def deps_command(args: argparse.Namespace) -> int:
 
     project_id = args.project or config.storage.default_project_id
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     try:
@@ -167,7 +176,11 @@ async def deps_command(args: argparse.Namespace) -> int:
         )
 
         if args.json:
-            print(json.dumps({"entity": args.name, "dependencies": deps}, indent=2, default=str))
+            print(
+                json.dumps(
+                    {"entity": args.name, "dependencies": deps}, indent=2, default=str
+                )
+            )
         else:
             print(f"Dependencies of '{args.name}':\n")
             if not deps:
@@ -208,7 +221,10 @@ async def refs_command(args: argparse.Namespace) -> int:
 
     project_id = args.project or config.storage.default_project_id
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     try:
@@ -237,7 +253,11 @@ async def refs_command(args: argparse.Namespace) -> int:
         )
 
         if args.json:
-            print(json.dumps({"entity": args.name, "references": refs}, indent=2, default=str))
+            print(
+                json.dumps(
+                    {"entity": args.name, "references": refs}, indent=2, default=str
+                )
+            )
         else:
             print(f"References to '{args.name}':\n")
             if not refs:
@@ -274,16 +294,19 @@ def create_understand_parser() -> argparse.ArgumentParser:
         help="Entity name to understand",
     )
     parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID",
     )
     parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show full details",
     )
@@ -301,17 +324,20 @@ def create_deps_parser() -> argparse.ArgumentParser:
         help="Entity name",
     )
     parser.add_argument(
-        "--depth", "-d",
+        "--depth",
+        "-d",
         type=int,
         default=1,
         help="Traversal depth (default: 1)",
     )
     parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID",
     )
     parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )
@@ -329,11 +355,13 @@ def create_refs_parser() -> argparse.ArgumentParser:
         help="Entity name",
     )
     parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID",
     )
     parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )

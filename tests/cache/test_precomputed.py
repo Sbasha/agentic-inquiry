@@ -1,4 +1,5 @@
 """Tests for PrecomputedCache."""
+
 import pytest
 import tempfile
 from pathlib import Path
@@ -139,9 +140,7 @@ class TestPrecomputedCache:
         assert result is None
 
     @pytest.mark.asyncio
-    async def test_get_miss_custom_default(
-        self, cache: PrecomputedCache
-    ) -> None:
+    async def test_get_miss_custom_default(self, cache: PrecomputedCache) -> None:
         """Test cache miss returns custom default."""
         result = await cache.get(
             query_type="symbol_deps",
@@ -151,9 +150,7 @@ class TestPrecomputedCache:
         assert result == {"empty": True}
 
     @pytest.mark.asyncio
-    async def test_set_and_get_file(
-        self, cache_with_file: PrecomputedCache
-    ) -> None:
+    async def test_set_and_get_file(self, cache_with_file: PrecomputedCache) -> None:
         """Test set and get with file cache."""
         await cache_with_file.set(
             query_type="def_lookup",
@@ -168,9 +165,7 @@ class TestPrecomputedCache:
         assert result == {"file": "test.py", "line": 10}
 
     @pytest.mark.asyncio
-    async def test_invalidate_specific_key(
-        self, cache: PrecomputedCache
-    ) -> None:
+    async def test_invalidate_specific_key(self, cache: PrecomputedCache) -> None:
         """Test invalidating specific key."""
         await cache.set("symbol_deps", "func1", {"deps": ["a"]})
         await cache.set("symbol_deps", "func2", {"deps": ["b"]})
@@ -207,9 +202,7 @@ class TestPrecomputedCache:
         assert await cache.get("def_lookup", "MyClass") is not None
 
     @pytest.mark.asyncio
-    async def test_invalidate_by_file_path(
-        self, cache: PrecomputedCache
-    ) -> None:
+    async def test_invalidate_by_file_path(self, cache: PrecomputedCache) -> None:
         """Test invalidating by file path."""
         await cache.set(
             "symbol_deps",
@@ -231,9 +224,7 @@ class TestPrecomputedCache:
         assert await cache.get("symbol_deps", "func2") is not None
 
     @pytest.mark.asyncio
-    async def test_invalidate_by_entity_id(
-        self, cache: PrecomputedCache
-    ) -> None:
+    async def test_invalidate_by_entity_id(self, cache: PrecomputedCache) -> None:
         """Test invalidating by entity ID."""
         await cache.set(
             "symbol_deps",
@@ -285,9 +276,7 @@ class TestPrecomputedCache:
         assert stats["memory_entries"] == 0
 
     @pytest.mark.asyncio
-    async def test_get_stats_after_operations(
-        self, cache: PrecomputedCache
-    ) -> None:
+    async def test_get_stats_after_operations(self, cache: PrecomputedCache) -> None:
         """Test statistics after operations."""
         await cache.set("symbol_deps", "func1", {"deps": []})
         await cache.get("symbol_deps", "func1")  # Hit

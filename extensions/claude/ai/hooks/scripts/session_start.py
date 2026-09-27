@@ -13,7 +13,9 @@ import sys
 from pathlib import Path
 
 # Add plugin root to path for shared helpers
-_plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT") or str(Path(__file__).parent.parent.parent)
+_plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT") or str(
+    Path(__file__).parent.parent.parent
+)
 if _plugin_root not in sys.path:
     sys.path.insert(0, _plugin_root)
 

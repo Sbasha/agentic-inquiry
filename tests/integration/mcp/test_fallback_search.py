@@ -8,6 +8,7 @@ The fallback search chain is:
 2. python_glob_search() - Pure Python fallback (always available)
 3. ast_grep_search() - Structural code search using AST patterns (optional)
 """
+
 import pytest
 
 pytestmark = pytest.mark.integration
@@ -149,7 +150,7 @@ class TestApplication:
 ''')
 
     # Create a markdown documentation file
-    (tmp_path / "README.md").write_text('''# Sample Project
+    (tmp_path / "README.md").write_text("""# Sample Project
 
 This is a sample project for testing fallback search.
 
@@ -167,7 +168,7 @@ from src.main import Application
 app = Application()
 app.run()
 ```
-''')
+""")
 
     return tmp_path
 
@@ -231,9 +232,7 @@ async def test_ripgrep_search_with_file_patterns(sample_codebase: Path) -> None:
     try:
         # Search only in Python files
         results = await ripgrep_search(
-            "Application",
-            sample_codebase,
-            file_patterns=["*.py"]
+            "Application", sample_codebase, file_patterns=["*.py"]
         )
 
         assert len(results) > 0
@@ -297,7 +296,7 @@ async def test_ripgrep_search_timeout(tmp_path: Path) -> None:
         results = await ripgrep_search(
             "test_function",
             tmp_path,
-            timeout=10.0  # Generous timeout to avoid flaky test
+            timeout=10.0,  # Generous timeout to avoid flaky test
         )
         assert len(results) >= 0  # Just verify it completes
     except FileNotFoundError:
@@ -368,7 +367,9 @@ async def test_ast_grep_finds_functions(sample_codebase: Path) -> None:
     Verifies that ast-grep can find Python function definitions.
     """
     try:
-        results = await ast_grep_search("find functions", sample_codebase, language="python")
+        results = await ast_grep_search(
+            "find functions", sample_codebase, language="python"
+        )
         assert len(results) > 0
         # Verify we found functions
         assert any("def " in r.content for r in results)
@@ -384,7 +385,9 @@ async def test_ast_grep_finds_async_functions(sample_codebase: Path) -> None:
     Verifies that ast-grep can find async function definitions.
     """
     try:
-        results = await ast_grep_search("async functions", sample_codebase, language="python")
+        results = await ast_grep_search(
+            "async functions", sample_codebase, language="python"
+        )
         assert len(results) > 0
         # Verify we found async functions
         assert any("async def" in r.content for r in results)
@@ -400,19 +403,17 @@ async def test_ast_grep_with_direct_pattern(tmp_path: Path) -> None:
     Verifies that ast-grep accepts direct pattern syntax with metavariables.
     """
     test_file = tmp_path / "test.py"
-    test_file.write_text('''def hello():
+    test_file.write_text("""def hello():
     return "Hello"
 
 def world():
     return "World"
-''')
+""")
 
     try:
         # Use direct ast-grep pattern syntax
         results = await ast_grep_search(
-            "def $NAME(): $$$BODY",
-            tmp_path,
-            language="python"
+            "def $NAME(): $$$BODY", tmp_path, language="python"
         )
         assert len(results) > 0
     except FileNotFoundError:
@@ -427,7 +428,9 @@ async def test_ast_grep_returns_metadata(sample_codebase: Path) -> None:
     Verifies that structural search results include pattern metadata.
     """
     try:
-        results = await ast_grep_search("find classes", sample_codebase, language="python")
+        results = await ast_grep_search(
+            "find classes", sample_codebase, language="python"
+        )
 
         if results:
             result = results[0]
@@ -456,7 +459,9 @@ async def test_python_glob_always_available(tmp_path: Path) -> None:
 
     results = await python_glob_search("unique_function_name", tmp_path)
     assert len(results) > 0
-    assert "unique_function_name" in results[0].content or results[0].file_path.endswith("test.py")
+    assert "unique_function_name" in results[0].content or results[
+        0
+    ].file_path.endswith("test.py")
 
 
 @pytest.mark.integration
@@ -512,7 +517,7 @@ async def test_python_glob_respects_file_patterns(sample_codebase: Path) -> None
     results = await python_glob_search(
         "Application",
         sample_codebase,
-        file_patterns=["**/*.md"]  # Only search markdown files
+        file_patterns=["**/*.md"],  # Only search markdown files
     )
 
     # Should find it in README.md
@@ -628,9 +633,7 @@ async def test_execute_fallback_prefers_ripgrep(sample_codebase: Path) -> None:
         pytest.skip("ripgrep not installed")
 
     result = await execute_fallback_search(
-        "Application",
-        sample_codebase,
-        prefer_ripgrep=True
+        "Application", sample_codebase, prefer_ripgrep=True
     )
 
     assert result["source"] == "ripgrep"
@@ -645,9 +648,7 @@ async def test_execute_fallback_can_use_python_glob(sample_codebase: Path) -> No
     Verifies that python_glob is used when prefer_ripgrep=False.
     """
     result = await execute_fallback_search(
-        "Application",
-        sample_codebase,
-        prefer_ripgrep=False
+        "Application", sample_codebase, prefer_ripgrep=False
     )
 
     assert result["source"] == "python_glob"
@@ -657,14 +658,14 @@ async def test_execute_fallback_can_use_python_glob(sample_codebase: Path) -> No
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_fallback_graceful_when_tools_missing(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test graceful fallback when ripgrep not installed.
 
     Verifies that search falls back to python_glob when ripgrep
     is not available.
     """
+
     # Mock shutil.which to return None for rg
     def mock_which(name: str) -> None:
         return None
@@ -684,8 +685,7 @@ async def test_fallback_graceful_when_tools_missing(
 @pytest.mark.integration
 @pytest.mark.asyncio
 async def test_fallback_returns_guidance_on_timeout(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     """Test fallback provides guidance when search times out.
 
@@ -704,6 +704,7 @@ async def test_fallback_returns_guidance_on_timeout(
         raise asyncio.TimeoutError()
 
     import agentic_inquiry.mcp.utils.fallback_search as fallback_module
+
     monkeypatch.setattr(fallback_module, "ripgrep_search", mock_ripgrep_timeout)
     monkeypatch.setattr(fallback_module, "python_glob_search", mock_glob_timeout)
 
@@ -746,8 +747,7 @@ async def test_search_nonexistent_pattern(sample_codebase: Path) -> None:
     find code elements even if the full query doesn't match.
     """
     result = await execute_fallback_search(
-        "xyzzy_zzznotinzzzthezzzcodezzzbase_12345",
-        sample_codebase
+        "xyzzy_zzznotinzzzthezzzcodezzzbase_12345", sample_codebase
     )
 
     assert "results" in result
@@ -762,7 +762,9 @@ async def test_python_glob_handles_unicode(tmp_path: Path) -> None:
     Verifies that files with unicode content are searched correctly.
     """
     test_file = tmp_path / "unicode.py"
-    test_file.write_text('# Unicode test\nmessage = "Hello, World!"\n', encoding="utf-8")
+    test_file.write_text(
+        '# Unicode test\nmessage = "Hello, World!"\n', encoding="utf-8"
+    )
 
     results = await python_glob_search("World", tmp_path)
 
@@ -786,7 +788,10 @@ async def test_python_glob_handles_nested_directories(tmp_path: Path) -> None:
     results = await python_glob_search("deeply_nested_function", tmp_path)
 
     assert len(results) > 0
-    assert "deeply_nested_function" in results[0].content or "deep.py" in results[0].file_path
+    assert (
+        "deeply_nested_function" in results[0].content
+        or "deep.py" in results[0].file_path
+    )
 
 
 @pytest.mark.integration

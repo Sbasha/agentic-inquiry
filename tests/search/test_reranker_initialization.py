@@ -54,41 +54,49 @@ def mock_event_system():
 
 class TestRRFRerankerParameterHandling:
     """Test RRFReranker parameter validation and initialization."""
-    
-    def test_rrf_reranker_creation_with_no_parameters(self, base_config, mock_db_manager):
+
+    def test_rrf_reranker_creation_with_no_parameters(
+        self, base_config, mock_db_manager
+    ):
         """Test RRFReranker can be created with no parameters."""
         from lancedb.rerankers import RRFReranker
-        
+
         # Should succeed with no parameters
         reranker = RRFReranker()
         assert reranker is not None
         assert isinstance(reranker, RRFReranker)
-    
-    def test_rrf_reranker_creation_with_valid_parameters(self, base_config, mock_db_manager):
+
+    def test_rrf_reranker_creation_with_valid_parameters(
+        self, base_config, mock_db_manager
+    ):
         """Test RRFReranker creation with valid parameters."""
         from lancedb.rerankers import RRFReranker
-        
+
         # Get the actual signature
         sig = inspect.signature(RRFReranker.__init__)
-        valid_params = set(sig.parameters.keys()) - {'self'}
-        
+        valid_params = set(sig.parameters.keys()) - {"self"}
+
         # Should have K parameter (uppercase)
-        assert 'K' in valid_params
-        
+        assert "K" in valid_params
+
         # Should succeed with valid parameter
         reranker = RRFReranker(K=60)
         assert reranker is not None
         assert isinstance(reranker, RRFReranker)
-    
-    def test_rrf_reranker_fails_with_invalid_parameter_name(self, base_config, mock_db_manager):
+
+    def test_rrf_reranker_fails_with_invalid_parameter_name(
+        self, base_config, mock_db_manager
+    ):
         """Test RRFReranker fails with invalid parameter name."""
         from lancedb.rerankers import RRFReranker
-        
+
         # Should fail with lowercase 'k' instead of uppercase 'K'
         with pytest.raises(TypeError, match="unexpected keyword argument"):
             RRFReranker(k=60)
-    
-    def test_search_service_creates_reranker_with_valid_params(self, base_config, mock_storage_facade, mock_event_system):
+
+    def test_search_service_creates_reranker_with_valid_params(
+        self, base_config, mock_storage_facade, mock_event_system
+    ):
         """Test SearchService._hybrid_search._create_reranker() uses valid parameters.
 
         Note: For reranker_type 'rrf' and 'linear_combination', the HybridSearchService
@@ -111,7 +119,9 @@ class TestRRFRerankerParameterHandling:
         # May be None if lancedb.rerankers is not installed with cohere support
         # This is expected behavior
 
-    def test_search_service_rejects_invalid_reranker_type(self, base_config, mock_storage_facade, mock_event_system):
+    def test_search_service_rejects_invalid_reranker_type(
+        self, base_config, mock_storage_facade, mock_event_system
+    ):
         """Test SearchService rejects invalid reranker type at startup.
 
         As of the DES-S4-002 implementation, invalid reranker types are validated
@@ -136,7 +146,9 @@ class TestRRFRerankerParameterHandling:
         assert "Valid options:" in error_message
         assert "rrf" in error_message
 
-    def test_search_service_creates_reranker_with_no_params(self, base_config, mock_storage_facade, mock_event_system):
+    def test_search_service_creates_reranker_with_no_params(
+        self, base_config, mock_storage_facade, mock_event_system
+    ):
         """Test SearchService with RRF returns our protocol-based RRFReranker."""
         # Configure with rrf type
         base_config.search.hybrid_search.reranker_type = "rrf"
@@ -151,35 +163,34 @@ class TestRRFRerankerParameterHandling:
         # RRF type returns our protocol-based RRFReranker
         reranker = search_service._hybrid_search._create_reranker()
         assert isinstance(reranker, RRFReranker)
-    
-    def test_parameter_validation_filters_invalid_params(self, base_config, mock_db_manager):
+
+    def test_parameter_validation_filters_invalid_params(
+        self, base_config, mock_db_manager
+    ):
         """Test that parameter validation filters out invalid parameters."""
         from lancedb.rerankers import RRFReranker
-        
+
         # Get valid parameters
         sig = inspect.signature(RRFReranker.__init__)
-        valid_params = set(sig.parameters.keys()) - {'self'}
-        
+        valid_params = set(sig.parameters.keys()) - {"self"}
+
         # Test params with both valid and invalid keys
         test_params = {
             "K": 60,  # valid
             "k": 60,  # invalid (wrong case)
             "invalid_param": "value",  # invalid
-            "return_score": "relevance"  # valid
+            "return_score": "relevance",  # valid
         }
-        
+
         # Filter to only valid params
-        filtered_params = {
-            k: v for k, v in test_params.items()
-            if k in valid_params
-        }
-        
+        filtered_params = {k: v for k, v in test_params.items() if k in valid_params}
+
         # Should only have valid params
         assert "K" in filtered_params
         assert "return_score" in filtered_params
         assert "k" not in filtered_params
         assert "invalid_param" not in filtered_params
-        
+
         # Should create successfully with filtered params
         reranker = RRFReranker(**filtered_params)
         assert reranker is not None
@@ -189,10 +200,15 @@ class TestRRFRerankerParameterHandling:
 class TestOtherRerankerTypes:
     """Test other reranker types still work correctly."""
 
-    def test_linear_combination_reranker(self, base_config, mock_storage_facade, mock_event_system):
+    def test_linear_combination_reranker(
+        self, base_config, mock_storage_facade, mock_event_system
+    ):
         """Test linear_combination returns our protocol-based LinearCombinationReranker."""
         base_config.search.hybrid_search.reranker_type = "linear_combination"
-        base_config.search.hybrid_search.reranker_params = {"vector_weight": 0.7, "fts_weight": 0.3}
+        base_config.search.hybrid_search.reranker_params = {
+            "vector_weight": 0.7,
+            "fts_weight": 0.3,
+        }
 
         search_service = SearchService(
             storage=mock_storage_facade,
@@ -204,7 +220,9 @@ class TestOtherRerankerTypes:
         reranker = search_service._hybrid_search._create_reranker()
         assert isinstance(reranker, LinearCombinationReranker)
 
-    def test_unknown_reranker_type_raises_configuration_error(self, base_config, mock_storage_facade, mock_event_system):
+    def test_unknown_reranker_type_raises_configuration_error(
+        self, base_config, mock_storage_facade, mock_event_system
+    ):
         """Test unknown reranker type raises ConfigurationError at startup.
 
         As of the DES-S4-002 implementation, invalid reranker types are validated

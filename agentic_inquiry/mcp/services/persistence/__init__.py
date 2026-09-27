@@ -9,8 +9,12 @@ Components:
 """
 
 from agentic_inquiry.mcp.services.persistence.protocol import SessionStorageProtocol
-from agentic_inquiry.mcp.services.persistence.lancedb_backend import LanceDBSessionStorage
-from agentic_inquiry.mcp.services.persistence.memory_backend import InMemorySessionStorage
+from agentic_inquiry.mcp.services.persistence.lancedb_backend import (
+    LanceDBSessionStorage,
+)
+from agentic_inquiry.mcp.services.persistence.memory_backend import (
+    InMemorySessionStorage,
+)
 
 __all__ = [
     "SessionStorageProtocol",

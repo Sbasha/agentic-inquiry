@@ -6,6 +6,7 @@ per LongMemEval session or SciFact abstract. Competitors run from isolated
 virtual environments (ADR-0006); ``inquiry`` runs the checked-out package in a
 subprocess so each corpus gets a clean process and configuration.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -51,7 +52,9 @@ class Arm(Protocol):
 
     def index(self, corpus: str, root: Path, suite: Suite) -> Any: ...
 
-    def search(self, handle: Any, queries: list[str], k: int) -> list[tuple[list[Hit], float]]: ...
+    def search(
+        self, handle: Any, queries: list[str], k: int
+    ) -> list[tuple[list[Hit], float]]: ...
 
     def indexed_paths(self, handle: Any) -> set[str]: ...
 
@@ -69,10 +72,22 @@ class Unit:
     text: str
 
     def hit(self) -> Hit:
-        return Hit(self.path, self.start, self.end, f"== {self.path}:{self.start}-{self.end} ==\n{self.text}", 1)
+        return Hit(
+            self.path,
+            self.start,
+            self.end,
+            f"== {self.path}:{self.start}-{self.end} ==\n{self.text}",
+            1,
+        )
 
     def pointer(self) -> Hit:
-        return Hit(self.path, self.start, self.end, f"{self.path}:{self.start}-{self.end}", pointer=True)
+        return Hit(
+            self.path,
+            self.start,
+            self.end,
+            f"{self.path}:{self.start}-{self.end}",
+            pointer=True,
+        )
 
 
 def corpus_files(root: Path) -> Iterator[tuple[str, str]]:
@@ -125,7 +140,12 @@ def _bm25_index(units: tuple[Unit, ...]):  # type: ignore[no-untyped-def]
     import bm25s
 
     retriever = bm25s.BM25()
-    tokens = bm25s.tokenize([f"{u.path}\n{u.text}" for u in units], stopwords="en", stemmer=_stemmer(), show_progress=False)
+    tokens = bm25s.tokenize(
+        [f"{u.path}\n{u.text}" for u in units],
+        stopwords="en",
+        stemmer=_stemmer(),
+        show_progress=False,
+    )
     retriever.index(tokens, show_progress=False)
     return retriever
 
@@ -133,10 +153,14 @@ def _bm25_index(units: tuple[Unit, ...]):  # type: ignore[no-untyped-def]
 def _bm25_rank(retriever, query: str, n_units: int, depth: int) -> list[int]:  # type: ignore[no-untyped-def]
     import bm25s
 
-    tokens = bm25s.tokenize([query], stopwords="en", stemmer=_stemmer(), show_progress=False)
+    tokens = bm25s.tokenize(
+        [query], stopwords="en", stemmer=_stemmer(), show_progress=False
+    )
     if not tokens.ids or not tokens.ids[0]:
         return []
-    ids, scores = retriever.retrieve(tokens, k=min(depth, n_units), show_progress=False, n_threads=1)
+    ids, scores = retriever.retrieve(
+        tokens, k=min(depth, n_units), show_progress=False, n_threads=1
+    )
     return [int(i) for i, s in zip(ids[0], scores[0]) if s > 0]
 
 
@@ -148,21 +172,36 @@ class Bm25:
     def config(self) -> dict[str, Any]:
         import bm25s
 
-        return {"impl": f"bm25s=={bm25s.__version__}", "method": "lucene", "stopwords": "en",
-                "stemmer": "snowball-english", "display": "pointer" if self.pointers else "text"}
+        return {
+            "impl": f"bm25s=={bm25s.__version__}",
+            "method": "lucene",
+            "stopwords": "en",
+            "stemmer": "snowball-english",
+            "display": "pointer" if self.pointers else "text",
+        }
 
     def index(self, corpus: str, root: Path, suite: Suite) -> Any:
         units = build_units(root, suite.window)
         return units, _bm25_index(units)
 
-    def search(self, handle: Any, queries: list[str], k: int) -> list[tuple[list[Hit], float]]:
+    def search(
+        self, handle: Any, queries: list[str], k: int
+    ) -> list[tuple[list[Hit], float]]:
         units, retriever = handle
         out = []
         for query in queries:
             t0 = time.perf_counter()
             order = _bm25_rank(retriever, query, len(units), k)
             elapsed = (time.perf_counter() - t0) * 1000
-            out.append(([units[i].pointer() if self.pointers else units[i].hit() for i in order], elapsed))
+            out.append(
+                (
+                    [
+                        units[i].pointer() if self.pointers else units[i].hit()
+                        for i in order
+                    ],
+                    elapsed,
+                )
+            )
         return out
 
     def indexed_paths(self, handle: Any) -> set[str]:
@@ -187,10 +226,16 @@ class _Embedder:
     def __init__(self) -> None:
         self._model: Any = None
         suffix = "" if DENSE_BACKEND == "torch" else f"-{DENSE_BACKEND}"
-        path = CACHE / "embeddings" / f"{DENSE_MODEL.replace('/', '__')}-{DENSE_MAX_TOKENS}{suffix}.sqlite"
+        path = (
+            CACHE
+            / "embeddings"
+            / f"{DENSE_MODEL.replace('/', '__')}-{DENSE_MAX_TOKENS}{suffix}.sqlite"
+        )
         path.parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(path, check_same_thread=False)
-        self._db.execute("CREATE TABLE IF NOT EXISTS emb (key TEXT PRIMARY KEY, vec BLOB)")
+        self._db.execute(
+            "CREATE TABLE IF NOT EXISTS emb (key TEXT PRIMARY KEY, vec BLOB)"
+        )
 
     def _load(self) -> Any:
         if self._model is None:
@@ -207,19 +252,29 @@ class _Embedder:
         return self._model
 
     def encode(self, texts: list[str]) -> np.ndarray:
-        keys = [hashlib.sha1(t.encode("utf-8", "surrogatepass")).hexdigest() for t in texts]
+        keys = [
+            hashlib.sha1(t.encode("utf-8", "surrogatepass")).hexdigest() for t in texts
+        ]
         found: dict[str, np.ndarray] = {}
         for start in range(0, len(keys), 900):
             batch = keys[start : start + 900]
             marks = ",".join("?" * len(batch))
-            for key, blob in self._db.execute(f"SELECT key, vec FROM emb WHERE key IN ({marks})", batch):  # noqa: S608 - placeholders only
+            for key, blob in self._db.execute(
+                f"SELECT key, vec FROM emb WHERE key IN ({marks})", batch
+            ):  # noqa: S608 - placeholders only
                 found[key] = np.frombuffer(blob, dtype=np.float16).astype(np.float32)
-        missing = sorted({k: t for k, t in zip(keys, texts) if k not in found}.items(), key=lambda kv: len(kv[1]))
+        missing = sorted(
+            {k: t for k, t in zip(keys, texts) if k not in found}.items(),
+            key=lambda kv: len(kv[1]),
+        )
         if missing and DENSE_BACKEND == "ollama":
             for start in range(0, len(missing), 64):
                 chunk = missing[start : start + 64]
                 vectors = _ollama_embed([t for _, t in chunk])
-                rows = [(k, v.astype(np.float16).tobytes()) for (k, _), v in zip(chunk, vectors)]
+                rows = [
+                    (k, v.astype(np.float16).tobytes())
+                    for (k, _), v in zip(chunk, vectors)
+                ]
                 self._db.executemany("INSERT OR REPLACE INTO emb VALUES (?, ?)", rows)
                 self._db.commit()
                 for (k, _), v in zip(chunk, vectors):
@@ -229,34 +284,61 @@ class _Embedder:
             for start in range(0, len(missing), 256):
                 chunk = missing[start : start + 256]
                 try:
-                    vectors = model.encode([t for _, t in chunk], batch_size=32, normalize_embeddings=True,
-                                           show_progress_bar=False, convert_to_numpy=True)
+                    vectors = model.encode(
+                        [t for _, t in chunk],
+                        batch_size=32,
+                        normalize_embeddings=True,
+                        show_progress_bar=False,
+                        convert_to_numpy=True,
+                    )
                 except RuntimeError as exc:
                     # Unified memory runs out when other jobs hold the GPU; the
                     # same model on CPU gives the same vectors, only slower.
                     if "MPS" not in str(exc):
                         raise
                     model = self._model = model.to("cpu")
-                    vectors = model.encode([t for _, t in chunk], batch_size=32, normalize_embeddings=True,
-                                           show_progress_bar=False, convert_to_numpy=True)
-                rows = [(k, v.astype(np.float16).tobytes()) for (k, _), v in zip(chunk, vectors)]
+                    vectors = model.encode(
+                        [t for _, t in chunk],
+                        batch_size=32,
+                        normalize_embeddings=True,
+                        show_progress_bar=False,
+                        convert_to_numpy=True,
+                    )
+                rows = [
+                    (k, v.astype(np.float16).tobytes())
+                    for (k, _), v in zip(chunk, vectors)
+                ]
                 self._db.executemany("INSERT OR REPLACE INTO emb VALUES (?, ?)", rows)
                 self._db.commit()
                 _release_gpu_cache()
                 for (k, _), v in zip(chunk, vectors):
                     found[k] = v.astype(np.float16).astype(np.float32)
-        return np.stack([found[k] for k in keys]) if keys else np.zeros((0, 1024), dtype=np.float32)
+        return (
+            np.stack([found[k] for k in keys])
+            if keys
+            else np.zeros((0, 1024), dtype=np.float32)
+        )
 
 
 def _ollama_embed(texts: list[str]) -> np.ndarray:
     """Normalized BGE-m3 vectors from a local Ollama, truncated at DENSE_MAX_TOKENS."""
     import urllib.request
 
-    body = json.dumps({"model": OLLAMA_MODEL, "input": texts, "truncate": True,
-                       "options": {"num_ctx": DENSE_MAX_TOKENS}}).encode()
-    request = urllib.request.Request(OLLAMA_URL, data=body, headers={"Content-Type": "application/json"})
+    body = json.dumps(
+        {
+            "model": OLLAMA_MODEL,
+            "input": texts,
+            "truncate": True,
+            "options": {"num_ctx": DENSE_MAX_TOKENS},
+        }
+    ).encode()
+    request = urllib.request.Request(
+        OLLAMA_URL, data=body, headers={"Content-Type": "application/json"}
+    )
     with urllib.request.urlopen(request, timeout=600) as response:  # noqa: S310 - local Ollama
-        vectors = np.asarray(json.loads(response.read())["embeddings"], dtype=np.float32)
+        vectors = np.asarray(
+            json.loads(response.read())["embeddings"], dtype=np.float32
+        )
     norms = np.linalg.norm(vectors, axis=1, keepdims=True)
     return vectors / np.where(norms == 0, 1.0, norms)
 
@@ -293,21 +375,33 @@ class Dense:
     def config(self) -> dict[str, Any]:
         import sentence_transformers
 
-        impl = (f"ollama {OLLAMA_MODEL}" if DENSE_BACKEND == "ollama"
-                else f"sentence-transformers=={sentence_transformers.__version__}")
-        return {"model": DENSE_MODEL, "max_tokens": DENSE_MAX_TOKENS, "impl": impl, "similarity": "cosine"}
+        impl = (
+            f"ollama {OLLAMA_MODEL}"
+            if DENSE_BACKEND == "ollama"
+            else f"sentence-transformers=={sentence_transformers.__version__}"
+        )
+        return {
+            "model": DENSE_MODEL,
+            "max_tokens": DENSE_MAX_TOKENS,
+            "impl": impl,
+            "similarity": "cosine",
+        }
 
     def index(self, corpus: str, root: Path, suite: Suite) -> Any:
         units = build_units(root, suite.window)
         return units, _embedder().encode([f"{u.path}\n{u.text}" for u in units])
 
-    def search(self, handle: Any, queries: list[str], k: int) -> list[tuple[list[Hit], float]]:
+    def search(
+        self, handle: Any, queries: list[str], k: int
+    ) -> list[tuple[list[Hit], float]]:
         units, matrix = handle
         out = []
         for query in queries:
             t0 = time.perf_counter()
             order = _dense_rank(matrix, query, k)
-            out.append(([units[i].hit() for i in order], (time.perf_counter() - t0) * 1000))
+            out.append(
+                ([units[i].hit() for i in order], (time.perf_counter() - t0) * 1000)
+            )
         return out
 
     def indexed_paths(self, handle: Any) -> set[str]:
@@ -327,20 +421,35 @@ class Hybrid:
     name = "hybrid"
 
     def config(self) -> dict[str, Any]:
-        return {"fusion": "rrf", "k": RRF_K, "depth": FUSION_DEPTH, "bm25": Bm25().config(), "dense": Dense().config()}
+        return {
+            "fusion": "rrf",
+            "k": RRF_K,
+            "depth": FUSION_DEPTH,
+            "bm25": Bm25().config(),
+            "dense": Dense().config(),
+        }
 
     def index(self, corpus: str, root: Path, suite: Suite) -> Any:
         units, retriever = Bm25().index(corpus, root, suite)
         _, matrix = Dense().index(corpus, root, suite)
         return units, retriever, matrix
 
-    def search(self, handle: Any, queries: list[str], k: int) -> list[tuple[list[Hit], float]]:
+    def search(
+        self, handle: Any, queries: list[str], k: int
+    ) -> list[tuple[list[Hit], float]]:
         units, retriever, matrix = handle
         out = []
         for query in queries:
             t0 = time.perf_counter()
-            fused = rrf([_bm25_rank(retriever, query, len(units), FUSION_DEPTH), _dense_rank(matrix, query, FUSION_DEPTH)])
-            out.append(([units[i].hit() for i in fused[:k]], (time.perf_counter() - t0) * 1000))
+            fused = rrf(
+                [
+                    _bm25_rank(retriever, query, len(units), FUSION_DEPTH),
+                    _dense_rank(matrix, query, FUSION_DEPTH),
+                ]
+            )
+            out.append(
+                ([units[i].hit() for i in fused[:k]], (time.perf_counter() - t0) * 1000)
+            )
         return out
 
     def indexed_paths(self, handle: Any) -> set[str]:
@@ -351,7 +460,9 @@ class Hybrid:
 # Graphify (live, isolated)
 # --------------------------------------------------------------------------
 
-_NODE = re.compile(r"^NODE .*?\[src=(?P<src>[^\]]*?) loc=(?P<loc>[^\]]*?)(?: community=[^\]]*)?\]\s*$")
+_NODE = re.compile(
+    r"^NODE .*?\[src=(?P<src>[^\]]*?) loc=(?P<loc>[^\]]*?)(?: community=[^\]]*)?\]\s*$"
+)
 
 
 def parse_graphify(output: str) -> list[Hit]:
@@ -380,14 +491,32 @@ class Graphify:
         self.venv = CACHE / "venvs" / f"graphifyy-mcp-{self.version}"
 
     def config(self) -> dict[str, Any]:
-        return {"package": GRAPHIFY_SPEC, "build": "graphify update <tree> --no-cluster (AST only, no LLM)",
-                "query": "graphify query <q> --budget 100000", "display": "verbatim output lines"}
+        return {
+            "package": GRAPHIFY_SPEC,
+            "build": "graphify update <tree> --no-cluster (AST only, no LLM)",
+            "query": "graphify query <q> --budget 100000",
+            "display": "verbatim output lines",
+        }
 
     def _binary(self) -> Path:
         binary = self.venv / "bin" / "graphify"
         if not binary.exists():
-            subprocess.run(["uv", "venv", "--quiet", "--python", "3.12", str(self.venv)], check=True)
-            subprocess.run(["uv", "pip", "install", "--quiet", "--python", str(self.venv / "bin" / "python"), GRAPHIFY_SPEC], check=True)
+            subprocess.run(
+                ["uv", "venv", "--quiet", "--python", "3.12", str(self.venv)],
+                check=True,
+            )
+            subprocess.run(
+                [
+                    "uv",
+                    "pip",
+                    "install",
+                    "--quiet",
+                    "--python",
+                    str(self.venv / "bin" / "python"),
+                    GRAPHIFY_SPEC,
+                ],
+                check=True,
+            )
         return binary
 
     def _env(self) -> dict[str, str]:
@@ -406,9 +535,17 @@ class Graphify:
         target.mkdir(parents=True)
         subprocess.run(["cp", "-al", f"{root}/.", str(tree)], check=True)
         t0 = time.perf_counter()
-        subprocess.run([str(binary), "update", ".", "--no-cluster"], cwd=tree, env=self._env(), check=True,
-                       capture_output=True, timeout=INDEX_TIMEOUT_S)
-        (target / "build.json").write_text(json.dumps({"seconds": round(time.perf_counter() - t0, 2)}))
+        subprocess.run(
+            [str(binary), "update", ".", "--no-cluster"],
+            cwd=tree,
+            env=self._env(),
+            check=True,
+            capture_output=True,
+            timeout=INDEX_TIMEOUT_S,
+        )
+        (target / "build.json").write_text(
+            json.dumps({"seconds": round(time.perf_counter() - t0, 2)})
+        )
         shutil.move(str(tree / "graphify-out" / "graph.json"), graph)
         shutil.rmtree(tree)
         return target
@@ -417,22 +554,42 @@ class Graphify:
         path = Path(handle) / "build.json"
         return float(json.loads(path.read_text())["seconds"]) if path.exists() else None
 
-    def search(self, handle: Any, queries: list[str], k: int) -> list[tuple[list[Hit], float]]:
+    def search(
+        self, handle: Any, queries: list[str], k: int
+    ) -> list[tuple[list[Hit], float]]:
         binary = self._binary()
         out = []
         for query in queries:
             t0 = time.perf_counter()
-            result = subprocess.run([str(binary), "query", query, "--budget", "100000", "--graph", "graph.json"],
-                                    cwd=handle, env=self._env(), capture_output=True, text=True, timeout=QUERY_TIMEOUT_S)
+            result = subprocess.run(
+                [
+                    str(binary),
+                    "query",
+                    query,
+                    "--budget",
+                    "100000",
+                    "--graph",
+                    "graph.json",
+                ],
+                cwd=handle,
+                env=self._env(),
+                capture_output=True,
+                text=True,
+                timeout=QUERY_TIMEOUT_S,
+            )
             elapsed = (time.perf_counter() - t0) * 1000
             if result.returncode != 0:
-                raise RuntimeError(f"graphify query failed: {result.stderr.strip()[:300]}")
+                raise RuntimeError(
+                    f"graphify query failed: {result.stderr.strip()[:300]}"
+                )
             out.append((parse_graphify(result.stdout), elapsed))
         return out
 
     def indexed_paths(self, handle: Any) -> set[str]:
         data = json.loads((Path(handle) / "graph.json").read_text())
-        return {n.get("source_file") for n in data.get("nodes", []) if n.get("source_file")}
+        return {
+            n.get("source_file") for n in data.get("nodes", []) if n.get("source_file")
+        }
 
 
 # --------------------------------------------------------------------------
@@ -441,8 +598,13 @@ class Graphify:
 
 
 # Packages that shape queries and answers but not what an index contains.
-_SEARCH_ONLY = ("agentic_inquiry/search/", "agentic_inquiry/mcp/", "agentic_inquiry/cli/",
-                "agentic_inquiry/server/", "agentic_inquiry/integration/")
+_SEARCH_ONLY = (
+    "agentic_inquiry/search/",
+    "agentic_inquiry/mcp/",
+    "agentic_inquiry/cli/",
+    "agentic_inquiry/server/",
+    "agentic_inquiry/integration/",
+)
 
 
 def _inquiry_code_hash(index_only: bool = False) -> str:
@@ -453,11 +615,18 @@ def _inquiry_code_hash(index_only: bool = False) -> str:
     search-only packages, so a ranking change reuses existing indexes.
     """
     paths = ["agentic_inquiry", "config", "evals/inquiry_worker.py"]
-    listed = subprocess.run(["git", "ls-files", "-co", "--exclude-standard", "--", *paths], cwd=REPO_ROOT,
-                            capture_output=True, text=True, check=True).stdout.split()
+    listed = subprocess.run(
+        ["git", "ls-files", "-co", "--exclude-standard", "--", *paths],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.split()
     if index_only:
         # Settings enter the index key as their non-search part (see Inquiry), not as file bytes.
-        listed = [name for name in listed if not name.startswith((*_SEARCH_ONLY, "config/"))]
+        listed = [
+            name for name in listed if not name.startswith((*_SEARCH_ONLY, "config/"))
+        ]
     digest = hashlib.sha256()
     for name in sorted(listed):
         path = REPO_ROOT / name
@@ -474,28 +643,53 @@ class Inquiry:
 
     def __init__(self) -> None:
         override = os.environ.get("EVALS_INQUIRY_CONFIG")
-        self.config_path = Path(override).resolve() if override else REPO_ROOT / "config" / "default.yaml"
+        self.config_path = (
+            Path(override).resolve()
+            if override
+            else REPO_ROOT / "config" / "default.yaml"
+        )
         import yaml
 
         settings = yaml.safe_load(self.config_path.read_text()) or {}
         code = _inquiry_code_hash().encode()
         # The index depends on everything but search-time code and settings, so
         # ranking ablations (per-file cap, graph channel, rerank) reuse one index.
-        index_part = json.dumps({k: v for k, v in settings.items() if k != "search"}, sort_keys=True, default=str)
-        self.index_hash = hashlib.sha256(_inquiry_code_hash(index_only=True).encode() + index_part.encode()).hexdigest()[:16]
-        self.code_hash = hashlib.sha256(code + self.config_path.read_bytes()).hexdigest()[:16]
+        index_part = json.dumps(
+            {k: v for k, v in settings.items() if k != "search"},
+            sort_keys=True,
+            default=str,
+        )
+        self.index_hash = hashlib.sha256(
+            _inquiry_code_hash(index_only=True).encode() + index_part.encode()
+        ).hexdigest()[:16]
+        self.code_hash = hashlib.sha256(
+            code + self.config_path.read_bytes()
+        ).hexdigest()[:16]
 
     def config(self) -> dict[str, Any]:
-        return {"entry": "IndexingPipeline.index_directory + SearchService.hybrid_search",
-                "config": str(self.config_path.relative_to(REPO_ROOT)) if self.config_path.is_relative_to(REPO_ROOT)
-                else str(self.config_path), "code_hash": self.code_hash, "index_hash": self.index_hash}
+        return {
+            "entry": "IndexingPipeline.index_directory + SearchService.hybrid_search",
+            "config": str(self.config_path.relative_to(REPO_ROOT))
+            if self.config_path.is_relative_to(REPO_ROOT)
+            else str(self.config_path),
+            "code_hash": self.code_hash,
+            "index_hash": self.index_hash,
+        }
 
     def _worker(self, *args: str, timeout: int) -> None:
         env = dict(os.environ, INQUIRY_CONFIG=str(self.config_path))
-        result = subprocess.run([sys.executable, "-m", "evals.inquiry_worker", *args], cwd=REPO_ROOT,
-                                capture_output=True, text=True, timeout=timeout, env=env)
+        result = subprocess.run(
+            [sys.executable, "-m", "evals.inquiry_worker", *args],
+            cwd=REPO_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            env=env,
+        )
         if result.returncode != 0:
-            raise RuntimeError(f"inquiry worker {args[0]} failed: {result.stderr.strip()[-600:]}")
+            raise RuntimeError(
+                f"inquiry worker {args[0]} failed: {result.stderr.strip()[-600:]}"
+            )
 
     def index(self, corpus: str, root: Path, suite: Suite) -> Any:
         target = CACHE / "index" / f"inquiry-{self.index_hash}" / _safe(corpus)
@@ -503,20 +697,33 @@ class Inquiry:
             shutil.rmtree(target, ignore_errors=True)
             target.mkdir(parents=True)
             self._worker("index", str(root), str(target), timeout=INDEX_TIMEOUT_S)
-        failed = json.loads((target / "index.json").read_text())["result"].get("files_failed", 0)
+        failed = json.loads((target / "index.json").read_text())["result"].get(
+            "files_failed", 0
+        )
         if failed:
-            print(f"  ! inquiry could not index {failed} file(s) in {corpus}", file=sys.stderr)
+            print(
+                f"  ! inquiry could not index {failed} file(s) in {corpus}",
+                file=sys.stderr,
+            )
         return target, root
 
-    def search(self, handle: Any, queries: list[str], k: int) -> list[tuple[list[Hit], float]]:
+    def search(
+        self, handle: Any, queries: list[str], k: int
+    ) -> list[tuple[list[Hit], float]]:
         target, root = handle
         # Unique names: search-time ablations share one index directory.
         token = uuid.uuid4().hex
         request = target / f"queries-{token}.json"
         response = target / f"results-{token}.json"
         request.write_text(json.dumps({"queries": queries, "k": k}))
-        self._worker("search", str(target), str(root), str(request), str(response),
-                     timeout=QUERY_TIMEOUT_S * max(1, len(queries)))
+        self._worker(
+            "search",
+            str(target),
+            str(root),
+            str(request),
+            str(response),
+            timeout=QUERY_TIMEOUT_S * max(1, len(queries)),
+        )
         rows = json.loads(response.read_text())
         request.unlink(missing_ok=True)
         response.unlink(missing_ok=True)
@@ -525,7 +732,11 @@ class Inquiry:
             hits = []
             for h in row["hits"]:
                 start, end = h["start"], h["end"]
-                header = f"== {h['path']}:{start}-{end} ==" if start > 0 else f"== {h['path']} =="
+                header = (
+                    f"== {h['path']}:{start}-{end} =="
+                    if start > 0
+                    else f"== {h['path']} =="
+                )
                 hits.append(Hit(h["path"], start, end, f"{header}\n{h['text']}", 1))
             out.append((hits, row["latency_ms"]))
         return out
@@ -539,7 +750,13 @@ class Inquiry:
         return float(json.loads((target / "index.json").read_text())["seconds"])
 
 
-ARMS: dict[str, type] = {"bm25": Bm25, "dense": Dense, "hybrid": Hybrid, "graphify": Graphify, "inquiry": Inquiry}
+ARMS: dict[str, type] = {
+    "bm25": Bm25,
+    "dense": Dense,
+    "hybrid": Hybrid,
+    "graphify": Graphify,
+    "inquiry": Inquiry,
+}
 
 
 def make_arm(name: str) -> Arm:

@@ -26,17 +26,16 @@ def mock_storage_facade(mock_db_manager):
 
 
 @pytest.mark.asyncio
-async def test_entity_resolution_comprehensive(mock_db_manager, mock_storage_facade, mock_config):
+async def test_entity_resolution_comprehensive(
+    mock_db_manager, mock_storage_facade, mock_config
+):
     """Test entity resolution with mocked indexed code."""
     project_id = "entity_resolution_test"
 
     from agentic_inquiry.mcp.services.entity_resolver import EntityResolver
 
     # Create entity resolver
-    entity_resolver = EntityResolver(
-        db_manager=mock_storage_facade,
-        config=mock_config
-    )
+    entity_resolver = EntityResolver(db_manager=mock_storage_facade, config=mock_config)
 
     # Define test entities that will be "found" by the resolver
     test_entities_data = [
@@ -46,7 +45,7 @@ async def test_entity_resolution_comprehensive(mock_db_manager, mock_storage_fac
             "type": "class",
             "file_path": "agentic_inquiry/search/service.py",
             "line_start": 10,
-            "line_end": 100
+            "line_end": 100,
         },
         {
             "id": "test_entity_2",
@@ -54,7 +53,7 @@ async def test_entity_resolution_comprehensive(mock_db_manager, mock_storage_fac
             "type": "class",
             "file_path": "agentic_inquiry/search/deduplicator.py",
             "line_start": 5,
-            "line_end": 50
+            "line_end": 50,
         },
         {
             "id": "test_entity_3",
@@ -62,8 +61,8 @@ async def test_entity_resolution_comprehensive(mock_db_manager, mock_storage_fac
             "type": "class",
             "file_path": "agentic_inquiry/search/hybrid.py",
             "line_start": 15,
-            "line_end": 80
-        }
+            "line_end": 80,
+        },
     ]
 
     # Setup mock to return appropriate entity for each name
@@ -86,8 +85,7 @@ async def test_entity_resolution_comprehensive(mock_db_manager, mock_storage_fac
     for entity_name in test_entity_names:
         try:
             result = await entity_resolver.resolve_entity(
-                entity_name=entity_name,
-                project_id=project_id
+                entity_name=entity_name, project_id=project_id
             )
 
             if result:
@@ -106,23 +104,24 @@ async def test_entity_resolution_comprehensive(mock_db_manager, mock_storage_fac
 
     # Calculate success rate
     success_rate = (successful_resolutions / total_tests) * 100
-    print(f"\nSuccess Rate: {success_rate:.1f}% ({successful_resolutions}/{total_tests})")
+    print(
+        f"\nSuccess Rate: {success_rate:.1f}% ({successful_resolutions}/{total_tests})"
+    )
 
     # Requirement: >80% success rate
     assert success_rate >= 80, f"Success rate {success_rate:.1f}% below 80% threshold"
 
 
 @pytest.mark.asyncio
-async def test_entity_resolution_with_dependencies(mock_db_manager, mock_storage_facade, mock_config):
+async def test_entity_resolution_with_dependencies(
+    mock_db_manager, mock_storage_facade, mock_config
+):
     """Test that entity resolution works and dependencies can be queried."""
     project_id = "entity_deps_test"
 
     from agentic_inquiry.mcp.services.entity_resolver import EntityResolver
 
-    resolver = EntityResolver(
-        db_manager=mock_storage_facade,
-        config=mock_config
-    )
+    resolver = EntityResolver(db_manager=mock_storage_facade, config=mock_config)
 
     # Mock entity data
     entity_resolver_entity = {
@@ -131,7 +130,7 @@ async def test_entity_resolution_with_dependencies(mock_db_manager, mock_storage
         "type": "class",
         "file_path": "agentic_inquiry/mcp/services/entity_resolver.py",
         "line_start": 50,
-        "line_end": 300
+        "line_end": 300,
     }
 
     storage_facade_entity = {
@@ -140,7 +139,7 @@ async def test_entity_resolution_with_dependencies(mock_db_manager, mock_storage
         "type": "class",
         "file_path": "agentic_inquiry/storage/facade.py",
         "line_start": 20,
-        "line_end": 200
+        "line_end": 200,
     }
 
     # Setup mock to return the entity
@@ -164,14 +163,19 @@ async def test_entity_resolution_with_dependencies(mock_db_manager, mock_storage
     mock_storage_facade.query_entities = mock_query_entities
 
     # Setup mock for relationships
-    mock_storage_facade.query_relationships = AsyncMock(return_value=[
-        {"source_id": "entity_resolver", "target_id": "storage_facade", "type": "imports"}
-    ])
+    mock_storage_facade.query_relationships = AsyncMock(
+        return_value=[
+            {
+                "source_id": "entity_resolver",
+                "target_id": "storage_facade",
+                "type": "imports",
+            }
+        ]
+    )
 
     # Test entity resolution
     result = await resolver.resolve_entity(
-        entity_name="EntityResolver",
-        project_id=project_id
+        entity_name="EntityResolver", project_id=project_id
     )
 
     # Should find the entity
@@ -180,9 +184,7 @@ async def test_entity_resolution_with_dependencies(mock_db_manager, mock_storage
 
     # Test getting dependencies
     dependencies = await resolver.get_entity_dependencies(
-        entity_id="entity_resolver",
-        project_id=project_id,
-        depth=1
+        entity_id="entity_resolver", project_id=project_id, depth=1
     )
 
     # Should have dependencies structure (may be empty list)
@@ -191,16 +193,15 @@ async def test_entity_resolution_with_dependencies(mock_db_manager, mock_storage
 
 
 @pytest.mark.asyncio
-async def test_entity_resolution_case_insensitive(mock_db_manager, mock_storage_facade, mock_config):
+async def test_entity_resolution_case_insensitive(
+    mock_db_manager, mock_storage_facade, mock_config
+):
     """Test case-insensitive entity matching."""
     project_id = "case_test"
 
     from agentic_inquiry.mcp.services.entity_resolver import EntityResolver
 
-    entity_resolver = EntityResolver(
-        db_manager=mock_storage_facade,
-        config=mock_config
-    )
+    entity_resolver = EntityResolver(db_manager=mock_storage_facade, config=mock_config)
 
     # Mock entity data
     entity_data = {
@@ -209,7 +210,7 @@ async def test_entity_resolution_case_insensitive(mock_db_manager, mock_storage_
         "type": "class",
         "file_path": "agentic_inquiry/search/service.py",
         "line_start": 10,
-        "line_end": 100
+        "line_end": 100,
     }
 
     # Track call count to handle exact match first, then case-insensitive
@@ -232,8 +233,7 @@ async def test_entity_resolution_case_insensitive(mock_db_manager, mock_storage_
 
     # Test with different cases - exact match should work
     result = await entity_resolver.resolve_entity(
-        entity_name="SearchService",
-        project_id=project_id
+        entity_name="SearchService", project_id=project_id
     )
 
     assert result is not None, "Case-insensitive matching not working"
@@ -242,16 +242,18 @@ async def test_entity_resolution_case_insensitive(mock_db_manager, mock_storage_
 
 
 @pytest.mark.asyncio
-async def test_entity_not_found_with_suggestions(mock_db_manager, mock_storage_facade, mock_config):
+async def test_entity_not_found_with_suggestions(
+    mock_db_manager, mock_storage_facade, mock_config
+):
     """Test that entity not found raises error with suggestions."""
     project_id = "suggestions_test"
 
-    from agentic_inquiry.mcp.services.entity_resolver import EntityResolver, EntityNotFoundError
-
-    entity_resolver = EntityResolver(
-        db_manager=mock_storage_facade,
-        config=mock_config
+    from agentic_inquiry.mcp.services.entity_resolver import (
+        EntityResolver,
+        EntityNotFoundError,
     )
+
+    entity_resolver = EntityResolver(db_manager=mock_storage_facade, config=mock_config)
 
     # Mock entity data for suggestions
     entity_data = {
@@ -260,7 +262,7 @@ async def test_entity_not_found_with_suggestions(mock_db_manager, mock_storage_f
         "type": "class",
         "file_path": "agentic_inquiry/search/service.py",
         "line_start": 10,
-        "line_end": 100
+        "line_end": 100,
     }
 
     async def mock_query_entities(project_id, filters=None, limit=None):
@@ -290,8 +292,7 @@ async def test_entity_not_found_with_suggestions(mock_db_manager, mock_storage_f
     # Try to find non-existent entity - should raise EntityNotFoundError with suggestions
     with pytest.raises(EntityNotFoundError) as exc_info:
         await entity_resolver.resolve_entity(
-            entity_name="NonExistentClass",
-            project_id=project_id
+            entity_name="NonExistentClass", project_id=project_id
         )
 
     # Verify error has suggestions

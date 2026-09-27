@@ -156,7 +156,9 @@ class TestGetByIdField:
 
         for special_id in special_ids:
             filter_obj = by_id("id", special_id)
-            assert filter_obj.value == special_id, f"Filter should preserve: {special_id}"
+            assert filter_obj.value == special_id, (
+                f"Filter should preserve: {special_id}"
+            )
 
     def test_filter_construction_with_correct_id(self):
         """Verify filter construction works with 'id' field."""

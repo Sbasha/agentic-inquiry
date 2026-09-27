@@ -7,6 +7,7 @@ Tantivy index as a projection of the table: it is rebuilt from the table
 whenever the table's version changes, so it can never drift from the rows it
 ranks, and deleting it loses nothing.
 """
+
 from __future__ import annotations
 
 import json
@@ -54,11 +55,17 @@ class LexicalIndex:
         index = self._current(table)
         searcher = index.searcher()
         parsed = index.parse_query(" ".join(terms), ["text"])
-        return [(searcher.doc(address)["id"][0], float(score)) for score, address in searcher.search(parsed, limit).hits]
+        return [
+            (searcher.doc(address)["id"][0], float(score))
+            for score, address in searcher.search(parsed, limit).hits
+        ]
 
     def _current(self, table: Any) -> Any:
         version, rows = int(table.version), int(table.count_rows())
-        if self._opened and (self._opened.version, self._opened.rows) == (version, rows):
+        if self._opened and (self._opened.version, self._opened.rows) == (
+            version,
+            rows,
+        ):
             return self._opened.index
         import tantivy
         from filelock import FileLock
@@ -66,7 +73,12 @@ class LexicalIndex:
         self._root.parent.mkdir(parents=True, exist_ok=True)
         with FileLock(str(self._root) + ".lock"):
             meta = self._root / "meta.json"
-            expected = {"format": INDEX_FORMAT, "version": version, "rows": rows, "column": self._column}
+            expected = {
+                "format": INDEX_FORMAT,
+                "version": version,
+                "rows": rows,
+                "column": self._column,
+            }
             if not (meta.exists() and json.loads(meta.read_text()) == expected):
                 self._rebuild(table, expected)
             index = tantivy.Index.open(str(self._root / "index"))
@@ -84,7 +96,9 @@ class LexicalIndex:
         index = tantivy.Index(builder.build(), path=str(staging / "index"))
         writer = index.writer(heap_size=128_000_000)
         for batch in _batches(table, ["id", self._column]):
-            for row_id, text in zip(batch.column("id").to_pylist(), batch.column(self._column).to_pylist()):
+            for row_id, text in zip(
+                batch.column("id").to_pylist(), batch.column(self._column).to_pylist()
+            ):
                 writer.add_document(tantivy.Document(id=str(row_id), text=text or ""))
         writer.commit()
         writer.wait_merging_threads()
@@ -94,7 +108,12 @@ class LexicalIndex:
             self._root.rename(retired)
         staging.rename(self._root)
         shutil.rmtree(retired, ignore_errors=True)
-        logger.info("Rebuilt lexical index for %s at version %s (%s rows)", self._root.name, meta["version"], meta["rows"])
+        logger.info(
+            "Rebuilt lexical index for %s at version %s (%s rows)",
+            self._root.name,
+            meta["version"],
+            meta["rows"],
+        )
 
 
 def _batches(table: Any, columns: List[str]) -> Any:

@@ -10,6 +10,7 @@ Verifies that enterprise components work together end-to-end:
 
 Requirements: enterprise industrialization (v1.5)
 """
+
 from __future__ import annotations
 
 import os
@@ -38,6 +39,7 @@ from agentic_inquiry.config import (
 # Helper: minimal config with auth enabled
 # ---------------------------------------------------------------------------
 
+
 def _make_auth_config(api_key: str = "test-key-123") -> Config:
     """Return a Config with auth.enabled=True and a known API key."""
     mcp_api = MCPAPIConfig(
@@ -65,9 +67,12 @@ async def test_auth_middleware_unauthenticated_returns_401(tmp_path):
     )
 
     from agentic_inquiry.server.app import create_app
+
     app = await create_app(config=config, project_id="test_auth")
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.post(
             "/api/v1/search",
             json={"query": "hello world"},
@@ -88,9 +93,12 @@ async def test_auth_middleware_authenticated_not_401(tmp_path):
     )
 
     from agentic_inquiry.server.app import create_app
+
     app = await create_app(config=config, project_id="test_auth")
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.post(
             "/api/v1/search",
             json={"query": "hello world"},
@@ -111,9 +119,12 @@ async def test_health_endpoint_accessible_without_auth(tmp_path):
     )
 
     from agentic_inquiry.server.app import create_app
+
     app = await create_app(config=config, project_id="test_health")
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.get("/api/v1/health")
 
     assert response.status_code == 200
@@ -138,6 +149,7 @@ async def test_search_with_local_diff_returns_local_changes_summary(tmp_path):
     )
 
     from agentic_inquiry.server.app import create_app
+
     app = await create_app(config=config, project_id="test_diff")
 
     payload = {
@@ -147,7 +159,11 @@ async def test_search_with_local_diff_returns_local_changes_summary(tmp_path):
         "local_diff": {
             "branch": "feature/my-branch",
             "modified_files": [
-                {"path": "src/foo.py", "changed_lines": [10, 11, 12], "status": "modified"},
+                {
+                    "path": "src/foo.py",
+                    "changed_lines": [10, 11, 12],
+                    "status": "modified",
+                },
                 {"path": "src/bar.py", "changed_lines": [5], "status": "added"},
             ],
             "truncated": False,
@@ -155,7 +171,9 @@ async def test_search_with_local_diff_returns_local_changes_summary(tmp_path):
         },
     }
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.post("/api/v1/search", json=payload)
 
     # Schema validation must pass (not 422)
@@ -184,11 +202,16 @@ async def test_search_with_local_diff_annotates_results(tmp_path):
     )
 
     from agentic_inquiry.server.app import create_app
+
     app = await create_app(config=config, project_id="test_annotation")
 
     # Inject a mock search service that returns a predictable result
     mock_result = MagicMock()
-    mock_result.data = {"file_path": "src/foo.py", "content": "def foo(): pass", "chunk_type": "code"}
+    mock_result.data = {
+        "file_path": "src/foo.py",
+        "content": "def foo(): pass",
+        "chunk_type": "code",
+    }
     mock_result.relevance_score = 0.95
 
     mock_search_svc = AsyncMock()
@@ -200,12 +223,18 @@ async def test_search_with_local_diff_annotates_results(tmp_path):
         "local_diff": {
             "branch": "feature/x",
             "modified_files": [
-                {"path": "src/foo.py", "changed_lines": [1, 2, 3], "status": "modified"},
+                {
+                    "path": "src/foo.py",
+                    "changed_lines": [1, 2, 3],
+                    "status": "modified",
+                },
             ],
         },
     }
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.post("/api/v1/search", json=payload)
 
     assert response.status_code == 200
@@ -220,7 +249,6 @@ async def test_search_with_local_diff_annotates_results(tmp_path):
 # ---------------------------------------------------------------------------
 
 
-
 def test_env_resolver_falls_back_to_default_when_no_cloud(tmp_path):
     """When IMDS probes all fail, resolve_environment must return source='default'."""
     env_overrides = {
@@ -232,13 +260,16 @@ def test_env_resolver_falls_back_to_default_when_no_cloud(tmp_path):
     def _all_fail(req, timeout=None):
         raise OSError("Connection refused")
 
-    with patch.dict(os.environ, {k: v or "" for k, v in env_overrides.items()}, clear=False):
+    with patch.dict(
+        os.environ, {k: v or "" for k, v in env_overrides.items()}, clear=False
+    ):
         for k, v in env_overrides.items():
             if v is None and k in os.environ:
                 del os.environ[k]
 
         with patch("urllib.request.urlopen", side_effect=_all_fail):
             from agentic_inquiry.cli.env_resolver import resolve_environment
+
             resolved = resolve_environment(workspace=tmp_path)
 
     assert resolved.source == "default"
@@ -255,32 +286,47 @@ def _init_git_repo(repo_path: Path) -> None:
     subprocess.run(["git", "init", str(repo_path)], check=True, capture_output=True)
     subprocess.run(
         ["git", "config", "user.email", "test@test.com"],
-        cwd=str(repo_path), check=True, capture_output=True,
+        cwd=str(repo_path),
+        check=True,
+        capture_output=True,
     )
     subprocess.run(
         ["git", "config", "user.name", "Test"],
-        cwd=str(repo_path), check=True, capture_output=True,
+        cwd=str(repo_path),
+        check=True,
+        capture_output=True,
     )
 
 
-def _make_commit(repo_path: Path, filename: str = "file.txt", message: str = "commit") -> str:
+def _make_commit(
+    repo_path: Path, filename: str = "file.txt", message: str = "commit"
+) -> str:
     """Create a commit in the repo and return its SHA."""
     (repo_path / filename).write_text(message)
-    subprocess.run(["git", "add", "."], cwd=str(repo_path), check=True, capture_output=True)
+    subprocess.run(
+        ["git", "add", "."], cwd=str(repo_path), check=True, capture_output=True
+    )
     subprocess.run(
         ["git", "commit", "-m", message],
-        cwd=str(repo_path), check=True, capture_output=True,
+        cwd=str(repo_path),
+        check=True,
+        capture_output=True,
     )
     result = subprocess.run(
         ["git", "rev-parse", "--short", "HEAD"],
-        cwd=str(repo_path), capture_output=True, text=True,
+        cwd=str(repo_path),
+        capture_output=True,
+        text=True,
     )
     return result.stdout.strip()
 
 
 def test_branch_discovery_filters_stale_branches(tmp_path):
     """discover_branches must only return branches within age cutoff (plus default)."""
-    from agentic_inquiry.indexing.branch_discovery import discover_branches, DiscoveredBranch
+    from agentic_inquiry.indexing.branch_discovery import (
+        discover_branches,
+        DiscoveredBranch,
+    )
 
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -296,14 +342,17 @@ def test_branch_discovery_filters_stale_branches(tmp_path):
     clone = tmp_path / "clone"
     subprocess.run(
         ["git", "clone", str(repo), str(clone)],
-        check=True, capture_output=True,
+        check=True,
+        capture_output=True,
     )
 
     # Make a second commit on clone (recent branch already at origin/main)
     _make_commit(clone, "feature.txt", "feature work")
     subprocess.run(
         ["git", "push", "origin", "HEAD:refs/heads/feature/recent"],
-        cwd=str(clone), check=True, capture_output=True,
+        cwd=str(clone),
+        check=True,
+        capture_output=True,
     )
 
     # Branches: origin/main (recent), origin/feature/recent (recent)
@@ -325,16 +374,30 @@ async def test_expire_stale_branches_soft_deletes_stale_and_exempts_default(tmp_
     # Build a mock storage facade with a LanceDB-style vector provider
     # that tracks advanced_filter calls and records update calls.
     stale_chunks = [
-        {"id": "chunk-1", "project_id": "proj", "branch": "feature/stale", "is_active": True},
+        {
+            "id": "chunk-1",
+            "project_id": "proj",
+            "branch": "feature/stale",
+            "is_active": True,
+        },
         {"id": "chunk-2", "project_id": "proj", "branch": "main", "is_active": True},
-        {"id": "chunk-3", "project_id": "proj", "branch": "feature/active", "is_active": True},
+        {
+            "id": "chunk-3",
+            "project_id": "proj",
+            "branch": "feature/active",
+            "is_active": True,
+        },
     ]
 
     updated_branches: list[str] = []
 
     class _FakeLanceDBManager:
         async def advanced_filter(self, table_name, filters, limit):
-            return [c for c in stale_chunks if c.get("is_active") == filters.get("is_active")]
+            return [
+                c
+                for c in stale_chunks
+                if c.get("is_active") == filters.get("is_active")
+            ]
 
         async def get_or_create_table(self, table_name):
             class _FakeTable:
@@ -523,10 +586,16 @@ def test_truncation_overlay_annotation_consistent_with_truncated_file_list():
         for i in range(10)
     ]
     # Insert two files that sort before z_
-    files.extend([
-        LocalDiffFile(path="src/alpha_01.py", changed_lines=list(range(50)), status="modified"),
-        LocalDiffFile(path="src/alpha_02.py", changed_lines=list(range(50)), status="modified"),
-    ])
+    files.extend(
+        [
+            LocalDiffFile(
+                path="src/alpha_01.py", changed_lines=list(range(50)), status="modified"
+            ),
+            LocalDiffFile(
+                path="src/alpha_02.py", changed_lines=list(range(50)), status="modified"
+            ),
+        ]
+    )
 
     original = LocalDiff(branch="feature/test", modified_files=files)
     # max_total=100 means at most 2 files of 50 lines each survive

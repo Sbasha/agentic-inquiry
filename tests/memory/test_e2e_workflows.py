@@ -37,8 +37,12 @@ async def memory_system(test_config: Config, db_manager: LanceDBManager):
 
     # Create adapters for persistent memory tiers
     # Note: working memory is in-memory only, no adapter needed
-    episodic_adapter = LanceDBMemoryAdapter(db_manager, table_name="memory_episodic_medium")
-    semantic_adapter = LanceDBMemoryAdapter(db_manager, table_name="memory_semantic_high")
+    episodic_adapter = LanceDBMemoryAdapter(
+        db_manager, table_name="memory_episodic_medium"
+    )
+    semantic_adapter = LanceDBMemoryAdapter(
+        db_manager, table_name="memory_semantic_high"
+    )
 
     system = MemorySystem(
         config=test_config,
@@ -68,9 +72,7 @@ class TestCompleteMemoryLifecycle:
     """Test complete memory lifecycle from creation to deletion."""
 
     @pytest.mark.asyncio
-    async def test_store_retrieve_update_delete(
-        self, memory_system, test_context
-    ):
+    async def test_store_retrieve_update_delete(self, memory_system, test_context):
         """Test complete lifecycle: store → retrieve → update → delete."""
         # Store a memory
         content = "User prefers Python for data analysis"
@@ -111,9 +113,7 @@ class TestCompleteMemoryLifecycle:
         assert deleted_item is None
 
     @pytest.mark.asyncio
-    async def test_working_to_episodic_to_semantic(
-        self, memory_system, test_context
-    ):
+    async def test_working_to_episodic_to_semantic(self, memory_system, test_context):
         """Test memory promotion through all tiers."""
         # Store in working memory (low importance)
         item1 = await memory_system.store(
@@ -148,15 +148,9 @@ class TestCompleteMemoryLifecycle:
         assert promoted is True
 
         # Verify all tiers have content
-        working_items = await memory_system.working_memory.get_all_items(
-            test_context
-        )
-        episodic_items = await memory_system.episodic_memory.get_all_items(
-            test_context
-        )
-        semantic_items = await memory_system.semantic_memory.get_all_items(
-            test_context
-        )
+        working_items = await memory_system.working_memory.get_all_items(test_context)
+        episodic_items = await memory_system.episodic_memory.get_all_items(test_context)
+        semantic_items = await memory_system.semantic_memory.get_all_items(test_context)
 
         assert len(working_items) > 0
         assert len(episodic_items) > 0
@@ -183,14 +177,10 @@ class TestCompleteMemoryLifecycle:
             )
 
         # Clear working memory
-        await memory_system.working_memory.clear_session(
-            test_context.session_id
-        )
+        await memory_system.working_memory.clear_session(test_context.session_id)
 
         # Load conversation into working memory
-        loaded = await memory_system.load_conversation(
-            context=test_context, limit=3
-        )
+        loaded = await memory_system.load_conversation(context=test_context, limit=3)
 
         # Should load most recent 3 events
         assert len(loaded) == 3
@@ -316,12 +306,8 @@ class TestMultiAgentScenarios:
         )
 
         # Verify session isolation in working memory
-        working_items1 = await memory_system.working_memory.get_all_items(
-            context1
-        )
-        working_items2 = await memory_system.working_memory.get_all_items(
-            context2
-        )
+        working_items1 = await memory_system.working_memory.get_all_items(context1)
+        working_items2 = await memory_system.working_memory.get_all_items(context2)
 
         ids1 = {item.id for item in working_items1}
         ids2 = {item.id for item in working_items2}
@@ -361,13 +347,13 @@ class TestConsolidationWorkflows:
         assert result.context == test_context, "Result should reference the context"
         assert result.items_promoted >= 0, "Promoted items should be non-negative"
         assert result.items_demoted >= 0, "Demoted items should be non-negative"
-        assert result.concepts_extracted >= 0, "Concepts extracted should be non-negative"
+        assert result.concepts_extracted >= 0, (
+            "Concepts extracted should be non-negative"
+        )
         assert result.duration_ms > 0, "Consolidation should take some time"
 
     @pytest.mark.asyncio
-    async def test_session_end_consolidation(
-        self, memory_system, test_context
-    ):
+    async def test_session_end_consolidation(self, memory_system, test_context):
         """Test consolidation at session end."""
         # Store items in working memory (importance < 0.7)
         for i in range(3):
@@ -377,7 +363,7 @@ class TestConsolidationWorkflows:
                 importance=0.5,  # Working memory tier
                 summary=f"Event {i}",
             )
-        
+
         # Manually update importance to trigger promotion during consolidation
         working_items = await memory_system.working_memory.get_all_items(test_context)
         for item in working_items:
@@ -398,7 +384,9 @@ class TestConsolidationWorkflows:
         assert result.items_demoted >= 0, "Demoted items should be non-negative"
 
         # Verify the consolidation result has valid structure
-        assert hasattr(result, 'concepts_extracted'), "Result should track concepts extracted"
+        assert hasattr(result, "concepts_extracted"), (
+            "Result should track concepts extracted"
+        )
 
     @pytest.mark.asyncio
     async def test_concept_extraction(self, memory_system, test_context):
@@ -429,16 +417,18 @@ class TestConsolidationWorkflows:
 
         # Concept extraction is pattern-based - with 4 related Python events,
         # we may or may not extract concepts depending on implementation
-        assert hasattr(result, 'concepts_extracted'), "Result should track concepts"
-        assert result.concepts_extracted >= 0, "Concepts extracted should be non-negative"
+        assert hasattr(result, "concepts_extracted"), "Result should track concepts"
+        assert result.concepts_extracted >= 0, (
+            "Concepts extracted should be non-negative"
+        )
 
         # Verify the stored items are still accessible after consolidation
         retrieved = await memory_system.retrieve(
-            query="Python",
-            context=test_context,
-            limit=10
+            query="Python", context=test_context, limit=10
         )
-        assert len(retrieved) > 0, "Should retrieve Python-related memories after consolidation"
+        assert len(retrieved) > 0, (
+            "Should retrieve Python-related memories after consolidation"
+        )
 
 
 class TestRetrievalStrategies:
@@ -573,8 +563,8 @@ class TestRetrievalStrategies:
         # Should balance relevance, recency, and importance
         assert len(results) > 0
         # Verify all results have valid retrieval metadata
-        assert all(hasattr(r, 'relevance_score') for r in results)
-        assert all(hasattr(r, 'retrieval_tier') for r in results)
+        assert all(hasattr(r, "relevance_score") for r in results)
+        assert all(hasattr(r, "retrieval_tier") for r in results)
         # Verify both items were retrieved
         assert len(results) >= 2
 
@@ -594,10 +584,7 @@ class TestBatchOperations:
         # Store in batch - batch_store expects list of tuples
         # (content, context, importance, summary, metadata)
         items = await memory_system.batch_store(
-            items=[
-                (content, test_context, 0.7, None, None)
-                for content in contents
-            ]
+            items=[(content, test_context, 0.7, None, None) for content in contents]
         )
 
         # Verify all stored
@@ -630,8 +617,7 @@ class TestBatchOperations:
         # Batch retrieve - expects list of (query, context) tuples
         queries = ["Python", "JavaScript", "machine learning"]
         results_list = await memory_system.batch_retrieve(
-            queries=[(query, test_context) for query in queries],
-            limit=5
+            queries=[(query, test_context) for query in queries], limit=5
         )
 
         # Verify results for each query
@@ -651,7 +637,7 @@ class TestErrorHandling:
             session_id="test_session",
             conversation_id="test_conversation",
         )
-        
+
         # Importance too high
         with pytest.raises(ValueError, match="importance must be between"):
             await memory_system.store(
@@ -660,7 +646,7 @@ class TestErrorHandling:
                 importance=1.5,  # Invalid: > 1.0
                 summary="Test",
             )
-        
+
         # Importance too low
         with pytest.raises(ValueError, match="importance must be between"):
             await memory_system.store(

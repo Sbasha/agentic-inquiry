@@ -8,7 +8,11 @@ import logging
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from agentic_inquiry.constants import CURRENT_PROJECT_ID
-from agentic_inquiry.database.filters import Filter, translate_filter, translate_dict_filters
+from agentic_inquiry.database.filters import (
+    Filter,
+    translate_filter,
+    translate_dict_filters,
+)
 from agentic_inquiry.search.query_sanitizer import QuerySanitizer
 from agentic_inquiry.database.lexical import LexicalIndex
 from agentic_inquiry.storage.similarity import lancedb_metric
@@ -138,7 +142,9 @@ class LanceDBQueryBuilder:
         approximate IVF probe of a few partitions loses recall that a brute
         force scan of that many rows returns in well under a second.
         """
-        query = table.search(query_vector, vector_column_name=vector_column_name).distance_type(self._distance_type)
+        query = table.search(
+            query_vector, vector_column_name=vector_column_name
+        ).distance_type(self._distance_type)
         if table.count_rows() <= EXACT_SEARCH_MAX_ROWS:
             query = query.bypass_vector_index()
         else:
@@ -179,7 +185,9 @@ class LanceDBQueryBuilder:
         filter_expression = self._filters_to_expression(filters)
 
         def _run_search() -> List[Dict[str, Any]]:
-            return self._vector_query(table, query_vector, vector_column_name, filter_expression, limit)
+            return self._vector_query(
+                table, query_vector, vector_column_name, filter_expression, limit
+            )
 
         try:
             return await self._run_sync(_run_search)
@@ -196,7 +204,13 @@ class LanceDBQueryBuilder:
                     return []
 
                 def _retry_search() -> List[Dict[str, Any]]:
-                    return self._vector_query(table, query_vector, vector_column_name, filter_expression, limit)
+                    return self._vector_query(
+                        table,
+                        query_vector,
+                        vector_column_name,
+                        filter_expression,
+                        limit,
+                    )
 
                 return await self._run_sync(_retry_search)
             raise
@@ -214,15 +228,22 @@ class LanceDBQueryBuilder:
         BM25 ranks more candidates than ``limit`` because the filter (project,
         content type) is applied when the rows are read back.
         """
-        lexical = self._lexical.setdefault(table_name, LexicalIndex(self._lexical_root or "", table_name))
+        lexical = self._lexical.setdefault(
+            table_name, LexicalIndex(self._lexical_root or "", table_name)
+        )
         ranked = lexical.search(table, query, max(limit * LEXICAL_OVERFETCH, limit))
         if not ranked:
             return []
-        quoted = ", ".join("'" + row_id.replace("'", "''") + "'" for row_id, _ in ranked)
+        quoted = ", ".join(
+            "'" + row_id.replace("'", "''") + "'" for row_id, _ in ranked
+        )
         where = f"id IN ({quoted})"
         if filter_expression:
             where = f"({where}) AND ({filter_expression})"
-        rows = {row["id"]: row for row in table.search().where(where).limit(len(ranked)).to_list()}
+        rows = {
+            row["id"]: row
+            for row in table.search().where(where).limit(len(ranked)).to_list()
+        }
         ordered = []
         for row_id, score in ranked:
             row = rows.get(row_id)
@@ -262,7 +283,9 @@ class LanceDBQueryBuilder:
 
         def _run_search() -> List[Dict[str, Any]]:
             if self._lexical_root is not None:
-                return self._lexical_query(table, table_name, query, filter_expression, limit)
+                return self._lexical_query(
+                    table, table_name, query, filter_expression, limit
+                )
             safe_query = _fts_sanitizer.sanitize(query)
             query_builder = table.search(
                 safe_query,
@@ -287,7 +310,9 @@ class LanceDBQueryBuilder:
 
                 def _retry_search() -> List[Dict[str, Any]]:
                     if self._lexical_root is not None:
-                        return self._lexical_query(table, table_name, query, filter_expression, limit)
+                        return self._lexical_query(
+                            table, table_name, query, filter_expression, limit
+                        )
                     qb = table.search(_fts_sanitizer.sanitize(query), query_type="fts")
                     if filter_expression:
                         qb = qb.where(filter_expression)
@@ -430,12 +455,12 @@ class LanceDBQueryBuilder:
         project_id: Optional[str] = CURRENT_PROJECT_ID,
     ) -> List[Dict[str, Any]]:
         """Query graph entities.
-        
+
         Args:
             filters: Optional filter conditions
             limit: Maximum number of results
             project_id: Project ID to filter by
-            
+
         Returns:
             List of matching graph entities
         """
@@ -453,12 +478,12 @@ class LanceDBQueryBuilder:
         project_id: Optional[str] = CURRENT_PROJECT_ID,
     ) -> List[Dict[str, Any]]:
         """Query graph relationships.
-        
+
         Args:
             filters: Optional filter conditions
             limit: Maximum number of results
             project_id: Project ID to filter by
-            
+
         Returns:
             List of matching graph relationships
         """
@@ -476,12 +501,12 @@ class LanceDBQueryBuilder:
         limit: int = 100,
     ) -> List[Dict[str, Any]]:
         """Query across all projects without project filtering.
-        
+
         Args:
             table_name: Name of the table to query
             filters: Filter conditions
             limit: Maximum number of results
-            
+
         Returns:
             List of matching records
         """
@@ -501,14 +526,14 @@ class LanceDBQueryBuilder:
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Perform vector search across all projects.
-        
+
         Args:
             table_name: Name of the table to search
             query_vector: Query embedding vector
             vector_column_name: Name of the vector column
             limit: Maximum number of results
             filters: Optional filters to apply
-            
+
         Returns:
             List of matching records
         """
@@ -529,13 +554,13 @@ class LanceDBQueryBuilder:
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[Dict[str, Any]]:
         """Perform FTS search across all projects.
-        
+
         Args:
             table_name: Name of the table to search
             query: Search query string
             limit: Maximum number of results
             filters: Optional filters to apply
-            
+
         Returns:
             List of matching records
         """

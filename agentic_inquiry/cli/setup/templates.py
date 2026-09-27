@@ -39,7 +39,10 @@ LANCEDB_TEMPLATE: dict[str, Any] = {
     },
 }
 
-def render_template(template: dict[str, Any], variables: dict[str, str]) -> dict[str, Any]:
+
+def render_template(
+    template: dict[str, Any], variables: dict[str, str]
+) -> dict[str, Any]:
     """Render a template by substituting variables.
 
     Args:

@@ -67,7 +67,6 @@ async def expire_stale_branches(
     return []
 
 
-
 async def _expire_lancedb(
     vp: Any,
     project_id: str,
@@ -77,7 +76,9 @@ async def _expire_lancedb(
 ) -> list[str]:
     """Expire stale branches on a LanceDB vector provider."""
     try:
-        from agentic_inquiry.storage.providers.lancedb.vector import DOCUMENT_CHUNKS_TABLE
+        from agentic_inquiry.storage.providers.lancedb.vector import (
+            DOCUMENT_CHUNKS_TABLE,
+        )
 
         records = await vp._db_manager.advanced_filter(
             table_name=DOCUMENT_CHUNKS_TABLE,
@@ -163,7 +164,6 @@ async def prune_expired_branches(
     return 0
 
 
-
 async def _prune_lancedb(
     vp: Any,
     project_id: str,
@@ -171,7 +171,9 @@ async def _prune_lancedb(
 ) -> int:
     """Hard-delete prunable chunks on LanceDB."""
     try:
-        from agentic_inquiry.storage.providers.lancedb.vector import DOCUMENT_CHUNKS_TABLE
+        from agentic_inquiry.storage.providers.lancedb.vector import (
+            DOCUMENT_CHUNKS_TABLE,
+        )
 
         records = await vp._db_manager.advanced_filter(
             table_name=DOCUMENT_CHUNKS_TABLE,

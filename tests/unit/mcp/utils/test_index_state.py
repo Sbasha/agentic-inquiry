@@ -468,9 +468,7 @@ class TestDetectIndexState:
         assert "stuck" in result.message.lower()
 
     @pytest.mark.asyncio
-    async def test_not_stale_within_threshold(
-        self, mock_db_manager, mock_event_store
-    ):
+    async def test_not_stale_within_threshold(self, mock_db_manager, mock_event_store):
         """Should return INDEXING when within max_stale_seconds."""
         started_event = MagicMock()
         started_event.operation_id = "op_123"
@@ -523,9 +521,7 @@ class TestDetectIndexState:
         assert result.status == IndexState.READY
 
     @pytest.mark.asyncio
-    async def test_handles_completed_operation(
-        self, mock_db_manager, mock_event_store
-    ):
+    async def test_handles_completed_operation(self, mock_db_manager, mock_event_store):
         """Should not return INDEXING for completed operations."""
         started_event = MagicMock()
         started_event.operation_id = "op_123"
@@ -548,9 +544,7 @@ class TestDetectIndexState:
         assert result.status == IndexState.READY
 
     @pytest.mark.asyncio
-    async def test_handles_failed_operation(
-        self, mock_db_manager, mock_event_store
-    ):
+    async def test_handles_failed_operation(self, mock_db_manager, mock_event_store):
         """Should not return INDEXING for failed operations."""
         started_event = MagicMock()
         started_event.operation_id = "op_123"
@@ -711,9 +705,7 @@ class TestDetectIndexState:
         assert result.status == IndexState.INDEXING
 
     @pytest.mark.asyncio
-    async def test_calculates_progress_and_eta(
-        self, mock_db_manager, mock_event_store
-    ):
+    async def test_calculates_progress_and_eta(self, mock_db_manager, mock_event_store):
         """Should calculate progress_percent and eta_seconds correctly."""
         # Start time 20 seconds ago, 50% complete = 20 seconds remaining
         start_time = datetime.now(timezone.utc) - timedelta(seconds=20)
@@ -823,9 +815,7 @@ class TestDetectIndexState:
         assert "ETA" in result.message
 
     @pytest.mark.asyncio
-    async def test_default_sparse_threshold(
-        self, mock_db_manager, mock_event_store
-    ):
+    async def test_default_sparse_threshold(self, mock_db_manager, mock_event_store):
         """Should use default sparse_threshold of 50."""
         mock_event_store.get_events_by_type = AsyncMock(return_value=[])
         mock_db_manager.count_records = AsyncMock(return_value=49)
@@ -840,9 +830,7 @@ class TestDetectIndexState:
         assert result.status == IndexState.SPARSE
 
     @pytest.mark.asyncio
-    async def test_default_max_stale_seconds(
-        self, mock_db_manager, mock_event_store
-    ):
+    async def test_default_max_stale_seconds(self, mock_db_manager, mock_event_store):
         """Should use default max_stale_seconds of 300."""
         started_event = MagicMock()
         started_event.operation_id = "op_123"
@@ -1029,8 +1017,12 @@ class TestIsIndexingStale:
     def test_handles_naive_datetime(self):
         """Should handle naive datetime (assumed UTC)."""
         # Create naive datetime representing "now" in UTC
-        naive_utc_recent = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(seconds=100)
-        naive_utc_start = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(seconds=600)
+        naive_utc_recent = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(
+            seconds=100
+        )
+        naive_utc_start = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(
+            seconds=600
+        )
 
         result = is_indexing_stale(
             last_progress_time=naive_utc_recent,
@@ -1175,15 +1167,13 @@ class TestDetectIndexStateEdgeCases:
         assert result.status == IndexState.INDEXING
 
     @pytest.mark.asyncio
-    async def test_handles_z_suffix_iso_format(
-        self, mock_db_manager, mock_event_store
-    ):
+    async def test_handles_z_suffix_iso_format(self, mock_db_manager, mock_event_store):
         """Should handle ISO format with Z suffix."""
         started_event = MagicMock()
         started_event.operation_id = "op_123"
         # Use Z suffix ISO format
-        started_event.timestamp = (
-            datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ")
+        started_event.timestamp = datetime.now(timezone.utc).strftime(
+            "%Y-%m-%dT%H:%M:%S.%fZ"
         )
         started_event.metadata = {"file_count": 100, "files_processed": 50}
 
@@ -1193,7 +1183,9 @@ class TestDetectIndexStateEdgeCases:
         mock_event_store.get_operation_status = AsyncMock(
             return_value={
                 "status": "started",
-                "end_time": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "end_time": datetime.now(timezone.utc).strftime(
+                    "%Y-%m-%dT%H:%M:%S.%fZ"
+                ),
             }
         )
 
@@ -1213,7 +1205,9 @@ class TestDetectIndexStateEdgeCases:
         started_event = MagicMock()
         started_event.operation_id = "op_123"
         # Naive datetime object (no timezone)
-        naive_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(seconds=10)
+        naive_time = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(
+            seconds=10
+        )
         started_event.timestamp = naive_time
         started_event.metadata = {"file_count": 100, "files_processed": 50}
 
@@ -1267,9 +1261,7 @@ class TestDetectIndexStateEdgeCases:
         assert result.status == IndexState.INDEXING
 
     @pytest.mark.asyncio
-    async def test_empty_metadata(
-        self, mock_db_manager, mock_event_store
-    ):
+    async def test_empty_metadata(self, mock_db_manager, mock_event_store):
         """Should handle events with None or empty metadata."""
         started_event = MagicMock()
         started_event.operation_id = "op_123"

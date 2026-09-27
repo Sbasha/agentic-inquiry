@@ -5,6 +5,7 @@ Each result is a header, ``path:line_start-line_end`` plus the enclosing scope
 budget on a line boundary, so the output is exactly what fits, and says how
 many results it left out.
 """
+
 from __future__ import annotations
 
 import json
@@ -16,7 +17,11 @@ from typing import Any, Iterable, Mapping, Optional
 def _relative(path: str, root: Optional[Path]) -> str:
     if root is not None:
         try:
-            return Path(os.path.realpath(path)).relative_to(os.path.realpath(root)).as_posix()
+            return (
+                Path(os.path.realpath(path))
+                .relative_to(os.path.realpath(root))
+                .as_posix()
+            )
         except ValueError:
             pass
     return path
@@ -53,7 +58,9 @@ def header(row: Mapping[str, Any], root: Optional[Path] = None) -> str:
     return f"{location}  {label}" if label else location
 
 
-def render_context_pack(rows: Iterable[Mapping[str, Any]], max_chars: int, root: Optional[Path] = None) -> str:
+def render_context_pack(
+    rows: Iterable[Mapping[str, Any]], max_chars: int, root: Optional[Path] = None
+) -> str:
     """Headers and text for ``rows`` in order, cut at ``max_chars`` on a line boundary."""
     rows = list(rows)
     if not rows:

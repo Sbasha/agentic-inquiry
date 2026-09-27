@@ -85,7 +85,9 @@ async def hooks_post_bash(request: Request, body: PostBashRequest) -> dict:
 async def hooks_post_task_update(request: Request, body: PostTaskUpdateRequest) -> dict:
     """Handle post-task-update hook - generate transition prompt."""
     analyzer = request.app.state.signal_analyzer
-    prompt = analyzer.get_task_transition_prompt(body.task_id, body.status, body.subject)
+    prompt = analyzer.get_task_transition_prompt(
+        body.task_id, body.status, body.subject
+    )
     return {"prompt": prompt}
 
 
@@ -162,7 +164,8 @@ async def cache_prefetch(request: Request, body: CachePrefetchRequest) -> dict:
         if search_service:
             try:
                 results = await search_service.hybrid_search(
-                    query_fts=query, limit=5,
+                    query_fts=query,
+                    limit=5,
                 )
                 cache_manager.put_context(cache_key, {"results": len(results)})
                 prefetched += 1

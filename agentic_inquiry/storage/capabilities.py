@@ -96,11 +96,6 @@ LANCEDB_CAPABILITIES = ProviderCapabilities(
 )
 
 
-
-
-
-
-
 def get_capabilities_for_backend(backend_type: str) -> ProviderCapabilities:
     """Get default capabilities for a backend type string.
 

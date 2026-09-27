@@ -50,14 +50,18 @@ def mock_storage_facade():
     storage.fts_search = AsyncMock(return_value=[])
     storage.get_entity = AsyncMock(return_value=None)
     storage.get_relationships = AsyncMock(return_value=[])
-    storage.query_raw = AsyncMock(return_value=[{
-        "id": "ent_1",
-        "name": "Module.Class",
-        "type": "class",
-        "doc_id": "doc_1",
-        "file_path": "path/to/file.py",
-        "project_id": "test_project",
-    }])
+    storage.query_raw = AsyncMock(
+        return_value=[
+            {
+                "id": "ent_1",
+                "name": "Module.Class",
+                "type": "class",
+                "doc_id": "doc_1",
+                "file_path": "path/to/file.py",
+                "project_id": "test_project",
+            }
+        ]
+    )
     storage.vector_search_raw = AsyncMock(return_value=[])
     return storage
 
@@ -131,7 +135,7 @@ class TestParserChainConstructor:
         self, test_config, mock_event_system
     ):
         """Test ParserChain with event_system parameter.
-        
+
         Validates: Requirement 4.4
         """
         # Create ParserChain with event_system
@@ -139,10 +143,10 @@ class TestParserChainConstructor:
             event_system=mock_event_system,
             config=test_config,
         )
-        
+
         # Verify event_system is stored
         assert chain.event_system is mock_event_system
-        
+
         # Verify other attributes are initialized
         assert chain.config is test_config
         assert chain.parser_names == [
@@ -157,17 +161,17 @@ class TestParserChainConstructor:
         self, test_config, mock_event_system
     ):
         """Test ParserChain with custom parser names and event_system.
-        
+
         Validates: Requirement 4.4
         """
         custom_parsers = ["unified_code", "document"]
-        
+
         chain = ParserChain(
             event_system=mock_event_system,
             parser_names=custom_parsers,
             config=test_config,
         )
-        
+
         assert chain.event_system is mock_event_system
         assert chain.parser_names == custom_parsers
 
@@ -180,7 +184,7 @@ class TestFileWatcherConstructor:
         self, test_config, mock_event_system
     ):
         """Test FileWatcher with event_system parameter.
-        
+
         Validates: Requirement 4.5
         """
         # Create FileWatcher with event_system
@@ -189,10 +193,10 @@ class TestFileWatcherConstructor:
             config=test_config,
             project_id="test_project",
         )
-        
+
         # Verify event_system is stored
         assert watcher.event_system is mock_event_system
-        
+
         # Verify other attributes are initialized
         assert watcher.file_tracker is not None
         assert watcher.debounce_seconds == 0.5
@@ -202,7 +206,7 @@ class TestFileWatcherConstructor:
         self, test_config, mock_event_system
     ):
         """Test FileWatcher with custom debounce and event_system.
-        
+
         Validates: Requirement 4.5
         """
         watcher = FileWatcher(
@@ -211,7 +215,7 @@ class TestFileWatcherConstructor:
             config=test_config,
             project_id="test_project",
         )
-        
+
         assert watcher.event_system is mock_event_system
         assert watcher.debounce_seconds == 1.0
 
@@ -224,7 +228,7 @@ class TestIndexingPipelineConstructor:
         self, mock_db_manager, test_config, mock_event_system
     ):
         """Test IndexingPipeline requires event_system parameter.
-        
+
         Validates: Requirement 4.2
         """
         # Create IndexingPipeline with event_system
@@ -234,10 +238,10 @@ class TestIndexingPipelineConstructor:
             project_id="test_project",
             event_system=mock_event_system,
         )
-        
+
         # Verify event_system is stored
         assert pipeline.event_system is mock_event_system
-        
+
         # Verify other attributes are initialized
         assert pipeline.db_manager is mock_db_manager
         assert pipeline.config is test_config

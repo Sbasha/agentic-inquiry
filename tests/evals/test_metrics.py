@@ -1,4 +1,5 @@
 """Ranking metrics, budgeted rendering and paired statistics for evals/."""
+
 from __future__ import annotations
 
 import math
@@ -52,8 +53,16 @@ class TestRanking:
 class TestRender:
     def test_budget_cuts_line_by_line_and_maps_source_lines(self) -> None:
         hits = [
-            Hit(path="f.py", start=10, end=12, text="== f.py:10-12 ==\none two\nthree\nfour", body_offset=1),
-            Hit(path="g.py", start=1, end=1, text="== g.py:1-1 ==\nfive", body_offset=1),
+            Hit(
+                path="f.py",
+                start=10,
+                end=12,
+                text="== f.py:10-12 ==\none two\nthree\nfour",
+                body_offset=1,
+            ),
+            Hit(
+                path="g.py", start=1, end=1, text="== g.py:1-1 ==\nfive", body_offset=1
+            ),
         ]
         # header(3 words) + "one two"(2) + "three"(1) = 6; "four" would make 7.
         out = render(hits, budget=6, count=words)
@@ -63,9 +72,17 @@ class TestRender:
 
     def test_whole_budget_covers_everything_and_orders_paths(self) -> None:
         hits = [
-            Hit(path="f.py", start=10, end=12, text="== f.py:10-12 ==\na\nb\nc", body_offset=1),
+            Hit(
+                path="f.py",
+                start=10,
+                end=12,
+                text="== f.py:10-12 ==\na\nb\nc",
+                body_offset=1,
+            ),
             Hit(path="g.py", start=1, end=1, text="== g.py:1-1 ==\nd", body_offset=1),
-            Hit(path="f.py", start=30, end=30, text="== f.py:30-30 ==\ne", body_offset=1),
+            Hit(
+                path="f.py", start=30, end=30, text="== f.py:30-30 ==\ne", body_offset=1
+            ),
         ]
         out = render(hits, budget=10_000, count=words)
         assert out.lines == {"f.py": {10, 11, 12, 30}, "g.py": {1}}
@@ -73,7 +90,13 @@ class TestRender:
 
     def test_pointer_hit_points_without_rendering_evidence(self) -> None:
         hits = [
-            Hit(path="s.py", start=395, end=395, text="NODE Session [src=s.py loc=L395]", pointer=True),
+            Hit(
+                path="s.py",
+                start=395,
+                end=395,
+                text="NODE Session [src=s.py loc=L395]",
+                pointer=True,
+            ),
             Hit(path="", start=0, end=0, text="EDGE a --calls--> b"),
         ]
         out = render(hits, budget=100, count=words)
@@ -84,13 +107,29 @@ class TestRender:
         assert not out.touches("s.py", 396, 400)
 
     def test_touches_counts_rendered_lines(self) -> None:
-        hits = [Hit(path="f.py", start=10, end=11, text="== f.py:10-11 ==\na\nb", body_offset=1)]
+        hits = [
+            Hit(
+                path="f.py",
+                start=10,
+                end=11,
+                text="== f.py:10-11 ==\na\nb",
+                body_offset=1,
+            )
+        ]
         out = render(hits, budget=100, count=words)
         assert out.touches("f.py", 11, 20)
         assert not out.touches("f.py", 12, 20)
 
     def test_unit_markers_extracted_from_rendered_lines_only(self) -> None:
-        hits = [Hit(path="s1", start=0, end=0, text="[D1:1] hi there\n[D1:2] bye now", body_offset=0)]
+        hits = [
+            Hit(
+                path="s1",
+                start=0,
+                end=0,
+                text="[D1:1] hi there\n[D1:2] bye now",
+                body_offset=0,
+            )
+        ]
         out = render(hits, budget=3, count=words, unit_pattern=r"\[(D\d+:\d+)\]")
         assert out.units == ["D1:1"]
 

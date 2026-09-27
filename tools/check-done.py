@@ -77,9 +77,7 @@ def evaluate(state: dict, phase: str) -> int:
         DEFAULTS["consecutive_same_error_threshold"],
     )
     if same_err >= same_err_threshold:
-        return stop(
-            f"stuck on same error ({same_err} consecutive iterations)"
-        )
+        return stop(f"stuck on same error ({same_err} consecutive iterations)")
 
     if phase == "review":
         current = sorted(state.get("finding_fingerprints", []))

@@ -58,7 +58,9 @@ def is_minified(path: str) -> bool:
         return False
     if len(sample) < _MINIFIED_MIN_BYTES:
         return False
-    long_lines = [line for line in sample.split(b"\n") if len(line) > _MINIFIED_LONG_LINE]
+    long_lines = [
+        line for line in sample.split(b"\n") if len(line) > _MINIFIED_LONG_LINE
+    ]
     packed = sum(len(line) for line in long_lines)
     if packed * 2 < len(sample):
         return False
@@ -249,9 +251,9 @@ class ParserChain:
                 for name in self.parser_names:
                     try:
                         # Get the full parser instance from registry
-                        parser_instance = self._bound_parsers.get(name) or get_parser_instance(
+                        parser_instance = self._bound_parsers.get(
                             name
-                        )
+                        ) or get_parser_instance(name)
 
                         # Check if parser can handle this file (if can_parse is implemented)
                         if isinstance(parser_instance, ParserProtocol):

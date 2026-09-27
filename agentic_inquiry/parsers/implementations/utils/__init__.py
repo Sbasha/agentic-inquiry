@@ -27,19 +27,19 @@ from .chunking import pack_lines
 
 __all__ = [
     # Languages
-    'LanguageRegistry',
-    'get_language_registry',
-    'detect_language',
+    "LanguageRegistry",
+    "get_language_registry",
+    "detect_language",
     # Tree-sitter
-    'TreeSitterNode',
-    'TreeSitterParser',
-    'FUNCTION_QUERY_TEMPLATES',
-    'CLASS_QUERY_TEMPLATES',
-    'IMPORT_QUERY_TEMPLATES',
+    "TreeSitterNode",
+    "TreeSitterParser",
+    "FUNCTION_QUERY_TEMPLATES",
+    "CLASS_QUERY_TEMPLATES",
+    "IMPORT_QUERY_TEMPLATES",
     # Query loader
-    'QueryLoader',
-    'get_query_loader',
-    'load_query',
+    "QueryLoader",
+    "get_query_loader",
+    "load_query",
     # Chunking
-    'pack_lines',
+    "pack_lines",
 ]

@@ -5,6 +5,7 @@ Subclasses customize ignore patterns, binary filtering, and backend-specific beh
 
 See: docs/design/connector-architecture.md
 """
+
 from __future__ import annotations
 
 import asyncio

@@ -6,7 +6,6 @@ import pytest
 import pytest_asyncio
 
 
-
 def generate_project_id() -> str:
     """Generate a unique project ID for test isolation."""
     return f"test_{uuid.uuid4().hex[:8]}"

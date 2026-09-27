@@ -76,24 +76,21 @@ class RateLimitConfig:
 
         if category == TOOL_CATEGORY_SEARCH:
             return ToolRateLimitConfig(
-                calls_per_minute=self.search_calls_per_minute,
-                window_seconds=60
+                calls_per_minute=self.search_calls_per_minute, window_seconds=60
             )
         elif category == TOOL_CATEGORY_ANALYSIS:
             return ToolRateLimitConfig(
                 calls_per_minute=5,  # ~5/min to not exceed 20/hour
                 window_seconds=60,
-                calls_per_hour=self.analysis_calls_per_hour
+                calls_per_hour=self.analysis_calls_per_hour,
             )
         elif category == TOOL_CATEGORY_INFO:
             return ToolRateLimitConfig(
-                calls_per_minute=self.info_calls_per_minute,
-                window_seconds=60
+                calls_per_minute=self.info_calls_per_minute, window_seconds=60
             )
         else:
             return ToolRateLimitConfig(
-                calls_per_minute=self.default_calls_per_minute,
-                window_seconds=60
+                calls_per_minute=self.default_calls_per_minute, window_seconds=60
             )
 
 
@@ -180,9 +177,7 @@ class RateLimiter:
         self._global_lock = asyncio.Lock()
 
     async def check_rate_limit(
-        self,
-        session_id: str,
-        tool_name: Optional[str] = None
+        self, session_id: str, tool_name: Optional[str] = None
     ) -> RateLimitResult:
         """Check if a call is allowed under rate limits.
 
@@ -233,7 +228,7 @@ class RateLimiter:
                         f"Try again in {retry_after:.0f}s"
                     ),
                     retry_after_seconds=retry_after,
-                    limit_type="session_hourly"
+                    limit_type="session_hourly",
                 )
 
         return RateLimitResult(allowed=True)
@@ -256,15 +251,13 @@ class RateLimiter:
                         f"calls/minute. Try again in {retry_after:.1f}s"
                     ),
                     retry_after_seconds=retry_after,
-                    limit_type="session"
+                    limit_type="session",
                 )
 
         return RateLimitResult(allowed=True)
 
     async def _check_tool_limit(
-        self,
-        session_id: str,
-        tool_name: str
+        self, session_id: str, tool_name: str
     ) -> RateLimitResult:
         """Check tool-specific rate limit."""
         tool_config = self.config.get_tool_config(tool_name)
@@ -275,7 +268,9 @@ class RateLimiter:
             calls_in_minute = tracker.count_calls_in_window(tool_config.window_seconds)
 
             if calls_in_minute >= tool_config.calls_per_minute:
-                retry_after = tracker.get_retry_after_seconds(tool_config.window_seconds)
+                retry_after = tracker.get_retry_after_seconds(
+                    tool_config.window_seconds
+                )
                 return RateLimitResult(
                     allowed=False,
                     error_message=(
@@ -284,7 +279,7 @@ class RateLimiter:
                         f"calls/minute. Try again in {retry_after:.1f}s"
                     ),
                     retry_after_seconds=retry_after,
-                    limit_type="tool"
+                    limit_type="tool",
                 )
 
             # Check hourly limit if configured
@@ -300,15 +295,13 @@ class RateLimiter:
                             f"calls/hour. Try again in {retry_after:.0f}s"
                         ),
                         retry_after_seconds=retry_after,
-                        limit_type="tool_hourly"
+                        limit_type="tool_hourly",
                     )
 
         return RateLimitResult(allowed=True)
 
     async def _record_call(
-        self,
-        session_id: str,
-        tool_name: Optional[str] = None
+        self, session_id: str, tool_name: Optional[str] = None
     ) -> None:
         """Record a call for rate limiting."""
         # Record in session tracker
@@ -348,7 +341,7 @@ class RateLimiter:
                 "remaining_per_hour": self.config.session_calls_per_hour,
                 "limit_per_hour": self.config.session_calls_per_hour,
             },
-            "tools": {}
+            "tools": {},
         }
 
         if session_tracker:
@@ -433,8 +426,7 @@ def rate_limited(
 
             # Check rate limit with tool name
             result = await rate_limiter.check_rate_limit(
-                session_id,
-                tool_name=func.__name__
+                session_id, tool_name=func.__name__
             )
 
             if not result.allowed:

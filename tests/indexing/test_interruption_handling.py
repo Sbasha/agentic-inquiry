@@ -23,6 +23,7 @@ from agentic_inquiry.parsers.models import ParserRelationship
 # Helpers for creating test data
 # =============================================================================
 
+
 def create_mock_relationship(
     source_name: str,
     target_name: str,
@@ -48,6 +49,7 @@ def create_mock_relationship(
 # Property 14: Partial Commit on Interruption
 # Validates: Requirements 5.3
 # =============================================================================
+
 
 class TestPartialCommitOnInterruption:
     """Tests for partial commit tracking on interruption."""
@@ -99,7 +101,9 @@ class TestPartialCommitOnInterruption:
 
     def test_generate_relationship_id_deterministic(self):
         """Relationship IDs should be deterministic."""
-        rel = create_mock_relationship("my_func", "other_func", "calls", "function", "function")
+        rel = create_mock_relationship(
+            "my_func", "other_func", "calls", "function", "function"
+        )
         source_file = "src/module.py"
 
         id1 = GraphBuilder._generate_relationship_id(rel, source_file)
@@ -119,9 +123,19 @@ class TestPartialCommitOnInterruption:
         assert id1 != id2
 
     @given(
-        source_name=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=('L', 'N'))),
-        target_name=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=('L', 'N'))),
-        relationship_type=st.sampled_from(["calls", "imports", "extends", "implements"]),
+        source_name=st.text(
+            min_size=1,
+            max_size=20,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
+        target_name=st.text(
+            min_size=1,
+            max_size=20,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
+        relationship_type=st.sampled_from(
+            ["calls", "imports", "extends", "implements"]
+        ),
     )
     @settings(max_examples=50)
     def test_property_14_relationship_id_uniqueness(
@@ -174,6 +188,7 @@ class TestPartialCommitOnInterruption:
 # Validates: Requirements 5.4
 # =============================================================================
 
+
 class TestIdempotentResume:
     """Tests for idempotent resume after interruption."""
 
@@ -208,7 +223,9 @@ class TestIdempotentResume:
         builder._mark_relationships_committed([(rel1, "file1.py")])
 
         # Filter
-        uncommitted, skipped = builder._filter_uncommitted_relationships(all_relationships)
+        uncommitted, skipped = builder._filter_uncommitted_relationships(
+            all_relationships
+        )
 
         assert skipped == 1
         assert len(uncommitted) == 2
@@ -334,10 +351,14 @@ class TestIdempotentResume:
         builder._mark_relationships_committed([(rel1, "file1.py")])
 
         # First filter
-        uncommitted1, skipped1 = builder._filter_uncommitted_relationships(relationships)
+        uncommitted1, skipped1 = builder._filter_uncommitted_relationships(
+            relationships
+        )
 
         # Second filter (simulating resume attempt)
-        uncommitted2, skipped2 = builder._filter_uncommitted_relationships(relationships)
+        uncommitted2, skipped2 = builder._filter_uncommitted_relationships(
+            relationships
+        )
 
         # Results should be identical
         assert len(uncommitted1) == len(uncommitted2)
@@ -347,6 +368,7 @@ class TestIdempotentResume:
 # =============================================================================
 # Additional Tests for Resume Statistics
 # =============================================================================
+
 
 class TestResumeStatistics:
     """Tests for statistics during resume operations."""
@@ -360,7 +382,10 @@ class TestResumeStatistics:
         }
 
         assert stats["skipped_already_committed"] == 5
-        assert stats["original_total"] - stats["skipped_already_committed"] == stats["total_relationships"]
+        assert (
+            stats["original_total"] - stats["skipped_already_committed"]
+            == stats["total_relationships"]
+        )
 
     def test_config_preserves_committed_ids_across_calls(self):
         """Committed IDs should persist across filter calls."""
@@ -427,7 +452,9 @@ class TestEdgeCases:
 
     def test_relationship_id_includes_source_type(self):
         """Relationship ID should include source type for uniqueness."""
-        rel1 = create_mock_relationship("func", "target", "calls", source_type="function")
+        rel1 = create_mock_relationship(
+            "func", "target", "calls", source_type="function"
+        )
         rel2 = create_mock_relationship("func", "target", "calls", source_type="method")
 
         id1 = GraphBuilder._generate_relationship_id(rel1, "file.py")
@@ -437,11 +464,12 @@ class TestEdgeCases:
 
     def test_relationship_id_includes_target_type(self):
         """Relationship ID should include target type for uniqueness."""
-        rel1 = create_mock_relationship("func", "target", "calls", target_type="function")
+        rel1 = create_mock_relationship(
+            "func", "target", "calls", target_type="function"
+        )
         rel2 = create_mock_relationship("func", "target", "calls", target_type="class")
 
         id1 = GraphBuilder._generate_relationship_id(rel1, "file.py")
         id2 = GraphBuilder._generate_relationship_id(rel2, "file.py")
 
         assert id1 != id2
-

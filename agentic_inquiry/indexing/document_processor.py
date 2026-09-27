@@ -32,17 +32,17 @@ def _camel_words(text: str) -> str:
 
 class DocumentProcessor:
     """Provides utility methods for document processing.
-    
+
     This is a lightweight helper class that provides methods for:
     - Resolving embedding text from parser chunks
     - Validating embedding vectors
-    
+
     The main chunk transformation logic has been moved to SchemaProcessor.
     """
 
     def __init__(self, project_hash: str, project_id: str):
         """Initialize the document processor.
-        
+
         Args:
             project_hash: Hash identifier for the project
             project_id: Human-readable project identifier
@@ -80,13 +80,13 @@ class DocumentProcessor:
         expected_dims: int,
     ) -> None:
         """Validate that a vector has the expected dimensions.
-        
+
         Args:
             table_name: Name of the table (for error messages)
             column_name: Name of the column (for error messages)
             vector: Vector to validate
             expected_dims: Expected number of dimensions
-            
+
         Raises:
             StorageError: If vector dimensions don't match expected
         """

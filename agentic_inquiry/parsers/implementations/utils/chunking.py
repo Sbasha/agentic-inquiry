@@ -1,10 +1,13 @@
 """Line-aligned chunk packing shared by the text and code parsers."""
+
 from __future__ import annotations
 
 from typing import List, Sequence, Tuple
 
 
-def pack_lines(lines: Sequence[str], first_line: int, budget: int) -> List[Tuple[int, int]]:
+def pack_lines(
+    lines: Sequence[str], first_line: int, budget: int
+) -> List[Tuple[int, int]]:
     """Partition consecutive lines into ``(start, end)`` spans of at most ``budget`` characters.
 
     Every line lands in exactly one span and spans never overlap, so a chunk's
@@ -24,7 +27,9 @@ def pack_lines(lines: Sequence[str], first_line: int, budget: int) -> List[Tuple
             cut = blanks[-1] + 1 if blanks else index
             spans.append((first_line + start, first_line + cut - 1))
             start = cut
-            size = sum(len(lines[i]) + 1 for i in range(start, index))  # the carried-over tail only
+            size = sum(
+                len(lines[i]) + 1 for i in range(start, index)
+            )  # the carried-over tail only
             if index > start and size + cost > budget:
                 spans.append((first_line + start, first_line + index - 1))
                 start, size = index, 0

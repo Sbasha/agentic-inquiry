@@ -5,6 +5,7 @@
 same call the ``ai search`` CLI makes. One process per corpus keeps
 configuration, singletons and model state from leaking between corpora.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -55,7 +56,9 @@ async def _index(root: Path, store: Path) -> None:
     paths = table.to_arrow().column("file_path").to_pylist()
     files = sorted({_relative(p, root) for p in paths if p})
     summary = {k: v for k, v in result.items() if isinstance(v, (int, float, str))}
-    (store / "index.json").write_text(json.dumps({"seconds": round(seconds, 2), "result": summary, "files": files}))
+    (store / "index.json").write_text(
+        json.dumps({"seconds": round(seconds, 2), "result": summary, "files": files})
+    )
 
 
 def _relative(path: str, root: Path) -> str:
@@ -94,7 +97,10 @@ async def _search(store: Path, root: Path, request: Path, response: Path) -> Non
             t0 = time.perf_counter()
             vector = await embeddings.embed_async(query)
             results = await search.hybrid_search(
-                query_vector=[float(x) for x in vector], query_fts=query, project_id=PROJECT_ID, limit=payload["k"]
+                query_vector=[float(x) for x in vector],
+                query_fts=query,
+                project_id=PROJECT_ID,
+                limit=payload["k"],
             )
             latency = (time.perf_counter() - t0) * 1000
             hits = []
@@ -103,12 +109,14 @@ async def _search(store: Path, root: Path, request: Path, response: Path) -> Non
                 if not isinstance(data, dict):
                     continue
                 start, end = _line(data.get("line_start")), _line(data.get("line_end"))
-                hits.append({
-                    "path": _relative(str(data.get("file_path", "")), root),
-                    "start": start,
-                    "end": max(end, start),
-                    "text": str(data.get("content") or ""),
-                })
+                hits.append(
+                    {
+                        "path": _relative(str(data.get("file_path", "")), root),
+                        "start": start,
+                        "end": max(end, start),
+                        "text": str(data.get("content") or ""),
+                    }
+                )
             rows.append({"hits": hits, "latency_ms": round(latency, 2)})
     finally:
         await storage.close()

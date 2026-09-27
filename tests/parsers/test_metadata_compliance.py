@@ -16,24 +16,26 @@ from agentic_inquiry.parsers.implementations.document import DocumentParser
 from agentic_inquiry.parsers.models import ParserChunk
 
 
-def validate_metadata_primitives(metadata: Dict[str, Any], path: str = "metadata") -> None:
+def validate_metadata_primitives(
+    metadata: Dict[str, Any], path: str = "metadata"
+) -> None:
     """Validate that metadata dict only contains primitive types.
-    
+
     Args:
         metadata: Metadata dict to validate
         path: Path for error messages (for nested validation)
-        
+
     Raises:
         AssertionError: If metadata contains non-primitive types
     """
     if metadata is None:
         return
-    
+
     assert isinstance(metadata, dict), f"{path} must be a dict, got {type(metadata)}"
-    
+
     for key, value in metadata.items():
         field_path = f"{path}.{key}"
-        
+
         # Check that value is a primitive type
         if value is not None:
             assert isinstance(value, (str, int, float, bool)), (
@@ -44,22 +46,22 @@ def validate_metadata_primitives(metadata: Dict[str, Any], path: str = "metadata
 
 def validate_chunk_schema(chunk: ParserChunk) -> None:
     """Validate that a ParserChunk complies with schema constraints.
-    
+
     Args:
         chunk: ParserChunk to validate
-        
+
     Raises:
         AssertionError: If chunk violates schema constraints
     """
     # Validate metadata contains only primitives
     validate_metadata_primitives(chunk.metadata, "chunk.metadata")
-    
+
     # Validate ranking_signals is a dict (if present)
     if chunk.ranking_signals is not None:
         assert isinstance(chunk.ranking_signals, dict), (
             f"ranking_signals must be a dict, got {type(chunk.ranking_signals)}"
         )
-    
+
     # Validate symbols is a list of strings (if present)
     if chunk.symbols:
         assert isinstance(chunk.symbols, list), (
@@ -95,7 +97,7 @@ class TestClass:
 def simple_function():
     return 42
 """)
-    
+
     # Parse the file
     parser = UnifiedCodeParser()
     doc = await parser.parse(str(test_file))
@@ -103,20 +105,21 @@ def simple_function():
     # Validate all chunks
     assert len(doc.chunks) > 0, "Should have parsed some chunks"
     # Verify chunks have content
-    assert all(chunk.content and len(chunk.content.strip()) > 0 for chunk in doc.chunks), \
-        "All chunks should have non-empty content"
+    assert all(
+        chunk.content and len(chunk.content.strip()) > 0 for chunk in doc.chunks
+    ), "All chunks should have non-empty content"
 
     for i, chunk in enumerate(doc.chunks):
         # Validate schema compliance
         validate_chunk_schema(chunk)
-        
+
         # Ensure metadata doesn't contain import_names (should be import_names_str)
         if chunk.metadata:
             assert "import_names" not in chunk.metadata, (
                 f"Chunk {i}: metadata should not contain 'import_names' list, "
                 f"use 'import_names_str' instead"
             )
-            
+
             # If import_names_str is present, it should be a string
             if "import_names_str" in chunk.metadata:
                 assert isinstance(chunk.metadata["import_names_str"], str), (
@@ -138,23 +141,27 @@ def complex_function(x):
                     i -= 1
     return x
 """)
-    
+
     # Parse the file
     parser = UnifiedCodeParser()
     doc = await parser.parse(str(test_file))
-    
+
     # Find chunks with complexity
     chunks_with_complexity = [
-        chunk for chunk in doc.chunks
+        chunk
+        for chunk in doc.chunks
         if chunk.ranking_signals and "complexity" in chunk.ranking_signals
     ]
 
     assert len(chunks_with_complexity) > 0, "Should have chunks with complexity"
     # Verify complexity values are numeric and positive
-    complexity_values = [chunk.ranking_signals["complexity"] for chunk in chunks_with_complexity]
-    assert all(isinstance(val, (int, float)) and val >= 0 for val in complexity_values), \
-        f"All complexity values should be non-negative numbers, got: {complexity_values}"
-    
+    complexity_values = [
+        chunk.ranking_signals["complexity"] for chunk in chunks_with_complexity
+    ]
+    assert all(
+        isinstance(val, (int, float)) and val >= 0 for val in complexity_values
+    ), f"All complexity values should be non-negative numbers, got: {complexity_values}"
+
     for chunk in chunks_with_complexity:
         # Complexity should be in ranking_signals
         assert "complexity" in chunk.ranking_signals, (
@@ -163,7 +170,7 @@ def complex_function(x):
         assert isinstance(chunk.ranking_signals["complexity"], (int, float)), (
             "Complexity should be a number"
         )
-        
+
         # Complexity should NOT be in metadata
         if chunk.metadata:
             assert "complexity" not in chunk.metadata, (
@@ -186,23 +193,23 @@ def my_function():
 
 MY_CONSTANT = 42
 """)
-    
+
     # Parse the file
     parser = UnifiedCodeParser()
     doc = await parser.parse(str(test_file))
-    
+
     # Check that chunks use symbols field
     chunks_with_symbols = [chunk for chunk in doc.chunks if chunk.symbols]
-    
+
     assert len(chunks_with_symbols) > 0, "Should have chunks with symbols"
-    
+
     for chunk in chunks_with_symbols:
         # Should have symbols field populated
         assert isinstance(chunk.symbols, list), "symbols should be a list"
         assert all(isinstance(s, str) for s in chunk.symbols), (
             "All symbols should be strings"
         )
-        
+
         # Verify ParserChunk has symbols attribute (not code_symbols)
         assert hasattr(chunk, "symbols"), "ParserChunk should have 'symbols' attribute"
         assert not hasattr(chunk, "code_symbols"), (
@@ -227,14 +234,14 @@ More content here.
 - List item 1
 - List item 2
 """)
-    
+
     # Parse the file
     parser = DocumentParser()
     doc = await parser.parse(str(test_file))
-    
+
     # Validate all chunks
     assert len(doc.chunks) > 0, "Should have parsed some chunks"
-    
+
     for i, chunk in enumerate(doc.chunks):
         # Validate schema compliance
         validate_chunk_schema(chunk)
@@ -244,7 +251,7 @@ More content here.
 async def test_parser_chunk_normalization_handles_code_symbols(tmp_path: Path) -> None:
     """Test that ParserChunk normalization handles code_symbols -> symbols mapping."""
     from agentic_inquiry.parsers.models import ParsedDocument
-    
+
     # Create a document with chunks using old code_symbols field
     doc = ParsedDocument(
         doc_id="test",
@@ -257,7 +264,7 @@ async def test_parser_chunk_normalization_handles_code_symbols(tmp_path: Path) -
             }
         ],
     )
-    
+
     # Check that it was normalized to symbols
     assert len(doc.chunks) == 1
     chunk = doc.chunks[0]
@@ -269,7 +276,7 @@ async def test_parser_chunk_normalization_handles_code_symbols(tmp_path: Path) -
 @pytest.mark.asyncio
 async def test_actual_indexing_succeeds(tmp_path: Path) -> None:
     """Test that actual indexing succeeds without schema errors.
-    
+
     This is an integration test that verifies the parsers work with the
     actual indexing pipeline and database.
     """
@@ -288,7 +295,7 @@ class TestClass:
     def method(self):
         pass
 """)
-    
+
     md_file = tmp_path / "test.md"
     md_file.write_text("""
 # Test Document
@@ -299,20 +306,20 @@ This is a test document.
 
 Content here.
 """)
-    
+
     # Parse both files
     code_parser = UnifiedCodeParser()
     doc_parser = DocumentParser()
-    
+
     py_doc = await code_parser.parse(str(py_file))
     md_doc = await doc_parser.parse(str(md_file))
-    
+
     # Validate all chunks from both parsers
     for doc in [py_doc, md_doc]:
         assert len(doc.chunks) > 0, f"Should have chunks for {doc.file_path}"
         for chunk in doc.chunks:
             validate_chunk_schema(chunk)
-    
+
     # If we get here without exceptions, the parsers are compliant
     assert True, "All parsers produce schema-compliant chunks"
 

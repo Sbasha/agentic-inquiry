@@ -13,7 +13,9 @@ sys.path.insert(
     os.path.dirname(
         os.path.dirname(
             os.path.dirname(
-                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                )
             )
         )
     ),
@@ -84,15 +86,11 @@ class TestEntityExtraction:
         assert "EMBEDDING_DIM" in signals["entities"]
 
     def test_file_path_entities(self, context_manager):
-        signals = context_manager.analyze_signals(
-            "Look at storage/config.py"
-        )
+        signals = context_manager.analyze_signals("Look at storage/config.py")
         assert any("config.py" in p for p in signals["file_paths"])
 
     def test_quoted_string_entities(self, context_manager):
-        signals = context_manager.analyze_signals(
-            "What is the 'hybrid_search' method?"
-        )
+        signals = context_manager.analyze_signals("What is the 'hybrid_search' method?")
         assert "hybrid_search" in signals["entities"]
 
     def test_no_entities(self, context_manager):
@@ -153,9 +151,7 @@ class TestInjectionTierScoring:
         # First set some keywords to make pivot possible
         context_manager.analyze_signals("Working on database configuration")
         # Now a recall-type question with topic pivot
-        signals = context_manager.analyze_signals(
-            "Why did we make that decision?"
-        )
+        signals = context_manager.analyze_signals("Why did we make that decision?")
         assert signals["has_recall"]
         assert signals["score"] >= 20
 
@@ -184,9 +180,7 @@ class TestTopicPivot:
 
     def test_detects_continuation(self, context_manager):
         # First prompt
-        context_manager.analyze_signals(
-            "How does LanceDB embedding work?"
-        )
+        context_manager.analyze_signals("How does LanceDB embedding work?")
         # Second prompt is related
         signals = context_manager.analyze_signals(
             "Show me the LanceDB embedding configuration code"
@@ -247,9 +241,7 @@ class TestBashClassification:
         assert "failed" in result["prompt"].lower()
 
     def test_git_command(self, orchestrator):
-        result = orchestrator.classify_bash_command(
-            "git commit -m 'fix bug'", 0, ""
-        )
+        result = orchestrator.classify_bash_command("git commit -m 'fix bug'", 0, "")
         assert result["category"] == "git"
         assert result["should_capture"] is True
 
@@ -293,7 +285,5 @@ class TestTaskTransitions:
         assert "Add caching" in prompt
 
     def test_no_prompt_for_unknown_status(self, orchestrator):
-        prompt = orchestrator.get_task_transition_prompt(
-            "3", "deleted", "Old task"
-        )
+        prompt = orchestrator.get_task_transition_prompt("3", "deleted", "Old task")
         assert prompt is None

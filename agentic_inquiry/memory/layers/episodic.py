@@ -24,7 +24,12 @@ from typing import cast
 
 import numpy as np
 
-from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier, RetrievalResult
+from agentic_inquiry.memory.models import (
+    MemoryContext,
+    MemoryItem,
+    MemoryTier,
+    RetrievalResult,
+)
 from agentic_inquiry.memory.protocols import (
     MemoryStorageProtocol,
     MemoryScoredRetrievalCapability,
@@ -117,7 +122,9 @@ class EpisodicMemory:
             )
             for old_item in oldest:
                 await self._storage.delete(old_item.id)
-            logger.debug("Evicted %d oldest items (capacity: %d)", len(oldest), self.limit)
+            logger.debug(
+                "Evicted %d oldest items (capacity: %d)", len(oldest), self.limit
+            )
 
         # Get embedding vector from item
         vector = item.embedding.tolist() if item.embedding is not None else []
@@ -132,7 +139,9 @@ class EpisodicMemory:
             item.context.session_id,
         )
 
-    async def get_by_id(self, item_id: str, update_access: bool = True) -> MemoryItem | None:
+    async def get_by_id(
+        self, item_id: str, update_access: bool = True
+    ) -> MemoryItem | None:
         """
         Retrieve a single memory item by ID.
 
@@ -239,7 +248,7 @@ class EpisodicMemory:
         # Check if storage supports server-side embedding and we have query text
         use_server_side = (
             query_text is not None
-            and hasattr(self._storage, 'supports_server_side_embedding')
+            and hasattr(self._storage, "supports_server_side_embedding")
             and self._storage.supports_server_side_embedding
         )
 
@@ -247,7 +256,9 @@ class EpisodicMemory:
         if self._has_scored_retrieval:
             scored_storage = cast(MemoryScoredRetrievalCapability, self._storage)
 
-            if use_server_side and hasattr(scored_storage, 'retrieve_with_scores_by_text'):
+            if use_server_side and hasattr(
+                scored_storage, "retrieve_with_scores_by_text"
+            ):
                 results = await scored_storage.retrieve_with_scores_by_text(
                     query_text=query_text,
                     limit=limit * 2,
@@ -281,7 +292,7 @@ class EpisodicMemory:
                 asyncio.create_task(self._update_access_stats(ids_to_update))
         else:
             # Fall back to basic retrieve (no scores)
-            if use_server_side and hasattr(self._storage, 'retrieve_by_text'):
+            if use_server_side and hasattr(self._storage, "retrieve_by_text"):
                 items = await self._storage.retrieve_by_text(
                     query_text=query_text,
                     limit=limit * 2,
@@ -318,6 +329,7 @@ class EpisodicMemory:
         # Pure recency sorting overrides semantic relevance; pure similarity
         # ignores temporal context. Blend gives best of both.
         import math
+
         now = retrieval_time
 
         def blended_score(r: RetrievalResult) -> float:
@@ -356,6 +368,7 @@ class EpisodicMemory:
         Args:
             item_ids: IDs of items to refresh and persist access stats for.
         """
+
         async def _update_one(item_id: str) -> None:
             try:
                 fresh_item = await self._storage.get_by_id(item_id)

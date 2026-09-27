@@ -125,10 +125,7 @@ class TestLanceDBFilterAdapter:
         crafted tuple operator was interpolated verbatim into SQL.
         """
         with pytest.raises(ValueError):
-            LanceDBFilterAdapter().translate(
-                {"status": ("= 1) OR TRUE --", "active")}
-            )
-
+            LanceDBFilterAdapter().translate({"status": ("= 1) OR TRUE --", "active")})
 
 
 # ---------------------------------------------------------------------------
@@ -176,9 +173,7 @@ class TestMemoryFilterAdapter:
         assert pred({"deleted_at": "2026-01-01"}) is False
 
     def test_or(self):
-        pred = MemoryFilterAdapter().translate(
-            or_(eq("x", 1), eq("x", 2))
-        )
+        pred = MemoryFilterAdapter().translate(or_(eq("x", 1), eq("x", 2)))
         assert pred is not None
         assert pred({"x": 1}) is True
         assert pred({"x": 2}) is True
@@ -226,13 +221,14 @@ class TestMemoryIncomparableLogging:
     def test_lt_logs_on_type_mismatch(self, caplog):
         import logging
 
-        caplog.set_level(logging.DEBUG, logger="agentic_inquiry.database.filters.memory_adapter")
+        caplog.set_level(
+            logging.DEBUG, logger="agentic_inquiry.database.filters.memory_adapter"
+        )
         pred = MemoryFilterAdapter().translate(lt("x", 5))
         assert pred is not None
         assert pred({"x": "not-a-number"}) is False
         assert any(
-            "Incomparable operand types" in record.message
-            for record in caplog.records
+            "Incomparable operand types" in record.message for record in caplog.records
         )
 
 
@@ -254,5 +250,3 @@ class TestLanceDBProjectIDEscaping:
         # Escaped (doubled) single quote; no unescaped apostrophe breaking
         # the quoted literal.
         assert "'alice''s-proj'" in expr
-
-

@@ -43,7 +43,9 @@ def load_sessions(path: Path) -> list[dict[str, Any]]:
 
 def _check_question(session_id: str, turn: dict[str, Any], known: list[str]) -> None:
     relevant = turn.get("relevant")
-    if not isinstance(relevant, list) or not all(isinstance(item, str) for item in relevant):
+    if not isinstance(relevant, list) or not all(
+        isinstance(item, str) for item in relevant
+    ):
         raise ValueError(f"{session_id} question needs a relevant id list")
     if turn.get("abstain"):
         if relevant:
@@ -53,7 +55,11 @@ def _check_question(session_id: str, turn: dict[str, Any], known: list[str]) -> 
         raise ValueError(f"{session_id} question has no relevant id")
     missing = [item for item in relevant if item not in known]
     if missing:
-        raise ValueError(f"{session_id} question names unknown ids: {', '.join(missing)}")
+        raise ValueError(
+            f"{session_id} question names unknown ids: {', '.join(missing)}"
+        )
     omit = turn.get("must_omit") or []
-    if not isinstance(omit, list) or not all(isinstance(item, str) and item in known for item in omit):
+    if not isinstance(omit, list) or not all(
+        isinstance(item, str) and item in known for item in omit
+    ):
         raise ValueError(f"{session_id} must_omit names an unknown id")

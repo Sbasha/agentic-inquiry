@@ -98,6 +98,7 @@ async def test_storage_facade(test_config):
 async def test_embedding_registry():
     """Create embedding registry with dummy embedder."""
     from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+
     return EmbeddingRegistry(default_embedder=_DummyEmbedder())
 
 
@@ -122,7 +123,7 @@ async def populated_database(test_db_manager):
             doc_id=f"doc-{i}",
             project_id="test_perf",
             vector=[0.1] * 384,  # Dummy 384-dim vector
-            domain="code"
+            domain="code",
         )
         entities.append(entity.to_dict())
 
@@ -139,7 +140,7 @@ async def populated_database(test_db_manager):
             type="depends_on",
             project_id="test_perf",
             vector=[0.1] * 384,  # Dummy 384-dim vector
-            metadata=None
+            metadata=None,
         )
         relationships.append(asdict(rel))
 
@@ -153,7 +154,7 @@ async def populated_database(test_db_manager):
     return {
         "entity_count": len(entities),
         "relationship_count": len(relationships),
-        "hub_entity_id": hub_entity_id
+        "hub_entity_id": hub_entity_id,
     }
 
 
@@ -169,8 +170,7 @@ class TestCountRecordsPerformance:
         """
         # Warm up
         await test_db_manager.count_records(
-            table_name="graph_relationships",
-            project_id="test_perf"
+            table_name="graph_relationships", project_id="test_perf"
         )
         await asyncio.sleep(0.1)
 
@@ -181,8 +181,7 @@ class TestCountRecordsPerformance:
         for _ in range(num_queries):
             start = time.perf_counter()
             count = await test_db_manager.count_records(
-                table_name="graph_relationships",
-                project_id="test_perf"
+                table_name="graph_relationships", project_id="test_perf"
             )
             end = time.perf_counter()
             query_times.append((end - start) * 1000)  # Convert to ms
@@ -202,8 +201,9 @@ class TestCountRecordsPerformance:
         print(f"  Max: {max_query_time:.2f}ms")
 
         # Verify target: < 100ms p95
-        assert p95_query_time < 100.0, \
+        assert p95_query_time < 100.0, (
             f"P95 query time {p95_query_time:.2f}ms exceeds 100ms target (NFR-1.1)"
+        )
 
 
 class TestBatchLookupPerformance:
@@ -228,12 +228,12 @@ class TestBatchLookupPerformance:
             results = await test_db_manager.advanced_filter(
                 table_name="graph_entities",
                 filters={"id": entity_id},
-                project_id="test_perf"
+                project_id="test_perf",
             )
             if results:
                 seq_results.extend(results)
         seq_time = time.perf_counter() - seq_start
-        print(f"   Time: {seq_time*1000:.2f}ms")
+        print(f"   Time: {seq_time * 1000:.2f}ms")
         print(f"   Results: {len(seq_results)} entities")
 
         # Test 2: Batch lookup (new approach)
@@ -244,54 +244,56 @@ class TestBatchLookupPerformance:
             table_name="graph_entities",
             filters={"id": ("IN", entity_ids)},
             project_id="test_perf",
-            limit=batch_size
+            limit=batch_size,
         )
         batch_time = time.perf_counter() - batch_start
-        print(f"   Time: {batch_time*1000:.2f}ms")
+        print(f"   Time: {batch_time * 1000:.2f}ms")
         print(f"   Results: {len(batch_results)} entities")
 
         # Calculate performance improvement
-        speedup = seq_time / batch_time if batch_time > 0 else float('inf')
+        speedup = seq_time / batch_time if batch_time > 0 else float("inf")
         percentage = (batch_time / seq_time * 100) if seq_time > 0 else 0
 
         print("\nPerformance Comparison:")
-        print(f"  Sequential time: {seq_time*1000:.2f}ms")
-        print(f"  Batch time:      {batch_time*1000:.2f}ms")
+        print(f"  Sequential time: {seq_time * 1000:.2f}ms")
+        print(f"  Batch time:      {batch_time * 1000:.2f}ms")
         print(f"  Speedup:         {speedup:.1f}x")
         print(f"  Batch is {percentage:.1f}% of sequential time")
 
         # Verify acceptance criteria: Batch is ≥5x faster (i.e., ≤20% of sequential time)
-        assert speedup >= 5.0, \
+        assert speedup >= 5.0, (
             f"Batch speedup {speedup:.1f}x is less than 5x target (NFR-1.4)"
-        assert percentage <= 20.0, \
+        )
+        assert percentage <= 20.0, (
             f"Batch is {percentage:.1f}% of sequential time, should be ≤20% (AC-2.4)"
+        )
 
 
 class TestAnalyzeImpactPerformance:
     """Test analyze_impact performance (NFR-1.3)."""
 
     @pytest_asyncio.fixture
-    async def test_services(self, test_storage_facade, test_config, test_embedding_registry):
+    async def test_services(
+        self, test_storage_facade, test_config, test_embedding_registry
+    ):
         """Create MCP services for testing."""
         mock_event_system = _create_mock_event_system()
         session_manager = SessionManager(test_storage_facade, test_config)
 
         # Create entity resolver
         entity_resolver = EntityResolver(
-            db_manager=test_storage_facade,
-            config=test_config
+            db_manager=test_storage_facade, config=test_config
         )
 
         # Create impact analyzer
         impact_analyzer = ImpactAnalyzer(
             db_manager=test_storage_facade,
             entity_resolver=entity_resolver,
-            config=test_config
+            config=test_config,
         )
 
         session_id = await session_manager.create_session(
-            project_id="test_perf",
-            description="Performance test session"
+            project_id="test_perf", description="Performance test session"
         )
 
         return {
@@ -320,7 +322,7 @@ class TestAnalyzeImpactPerformance:
                 session_id=test_services["session_id"],
                 entity="entity-999",  # Non-hub entity for warmup
                 max_depth=1,
-                timeout_ms=5000
+                timeout_ms=5000,
             )
         except Exception:
             pass  # Warmup may fail, that's okay
@@ -339,16 +341,16 @@ class TestAnalyzeImpactPerformance:
                     session_id=test_services["session_id"],
                     entity=f"TestEntity{hub_entity_id.split('-')[1]}",  # Use entity name
                     max_depth=2,
-                    timeout_ms=None  # No timeout for measurement
+                    timeout_ms=None,  # No timeout for measurement
                 )
                 end = time.perf_counter()
                 analyze_times.append((end - start))
 
                 # Verify we got results (not partial)
                 if "partial" in result:
-                    print(f"  Warning: Run {i+1} returned partial results")
+                    print(f"  Warning: Run {i + 1} returned partial results")
             except Exception as e:
-                print(f"  Warning: Run {i+1} failed: {e}")
+                print(f"  Warning: Run {i + 1} failed: {e}")
                 # Still record the time
                 end = time.perf_counter()
                 analyze_times.append((end - start))
@@ -365,15 +367,18 @@ class TestAnalyzeImpactPerformance:
         print(f"  Max: {max_time:.2f}s")
 
         # Verify target: < 30s p95
-        assert p95_time < 30.0, \
+        assert p95_time < 30.0, (
             f"P95 analyze_impact time {p95_time:.2f}s exceeds 30s target (NFR-1.3)"
+        )
 
 
 class TestMaintenanceDiskReduction:
     """Test maintenance disk reduction (AC-3.2)."""
 
     @pytest.mark.asyncio
-    async def test_maintenance_disk_reduction(self, test_db_manager, temp_test_database):
+    async def test_maintenance_disk_reduction(
+        self, test_db_manager, temp_test_database
+    ):
         """Test that maintenance achieves ≥20% disk reduction when bloat exists.
 
         Requirement: AC-3.2
@@ -386,34 +391,32 @@ class TestMaintenanceDiskReduction:
 
         initial_data = []
         for i in range(100):
-            initial_data.append({
-                "id": f"item-{i}",
-                "content": f"Initial content {i}",
-                "vector": [0.1] * 384,
-                "project_id": "test_perf"
-            })
+            initial_data.append(
+                {
+                    "id": f"item-{i}",
+                    "content": f"Initial content {i}",
+                    "vector": [0.1] * 384,
+                    "project_id": "test_perf",
+                }
+            )
 
-        await test_db_manager.upsert(
-            table_name=table_name,
-            data=initial_data
-        )
+        await test_db_manager.upsert(table_name=table_name, data=initial_data)
 
         # Create bloat by updating all rows multiple times (creates MVCC versions)
         print("\nCreating artificial bloat via multiple updates...")
         for version in range(15):  # 15 versions > 10 threshold
             update_data = []
             for i in range(100):
-                update_data.append({
-                    "id": f"item-{i}",
-                    "content": f"Updated content {i} v{version}",
-                    "vector": [0.1 + version * 0.01] * 384,
-                    "project_id": "test_perf"
-                })
+                update_data.append(
+                    {
+                        "id": f"item-{i}",
+                        "content": f"Updated content {i} v{version}",
+                        "vector": [0.1 + version * 0.01] * 384,
+                        "project_id": "test_perf",
+                    }
+                )
 
-            await test_db_manager.upsert(
-                table_name=table_name,
-                data=update_data
-            )
+            await test_db_manager.upsert(table_name=table_name, data=update_data)
 
         print("  Bloat created (15 versions)")
 
@@ -422,7 +425,9 @@ class TestMaintenanceDiskReduction:
         lance_dir = storage_path / ".lance"
 
         if not lance_dir.exists():
-            pytest.skip("LanceDB storage directory not found, skipping disk measurement")
+            pytest.skip(
+                "LanceDB storage directory not found, skipping disk measurement"
+            )
 
         def get_dir_size(path: Path) -> int:
             """Calculate total size of directory in bytes."""
@@ -433,50 +438,54 @@ class TestMaintenanceDiskReduction:
             return total
 
         size_before = get_dir_size(lance_dir)
-        print(f"  Disk usage before: {size_before / (1024*1024):.2f}MB")
+        print(f"  Disk usage before: {size_before / (1024 * 1024):.2f}MB")
 
         # Run maintenance
         print("\nRunning maintenance...")
         result = await test_db_manager.run_maintenance(
             table_names=[table_name],
-            cleanup_older_than=timedelta(minutes=0)  # Clean all old versions
+            cleanup_older_than=timedelta(minutes=0),  # Clean all old versions
         )
 
         print(f"  Maintenance result: {result}")
 
         # Measure disk usage after maintenance
         size_after = get_dir_size(lance_dir)
-        print(f"  Disk usage after: {size_after / (1024*1024):.2f}MB")
+        print(f"  Disk usage after: {size_after / (1024 * 1024):.2f}MB")
 
         # Calculate reduction
         bytes_freed = size_before - size_after
-        reduction_percentage = (bytes_freed / size_before * 100) if size_before > 0 else 0
+        reduction_percentage = (
+            (bytes_freed / size_before * 100) if size_before > 0 else 0
+        )
 
         print("\nDisk Reduction:")
-        print(f"  Before: {size_before / (1024*1024):.2f}MB")
-        print(f"  After:  {size_after / (1024*1024):.2f}MB")
-        print(f"  Freed:  {bytes_freed / (1024*1024):.2f}MB")
+        print(f"  Before: {size_before / (1024 * 1024):.2f}MB")
+        print(f"  After:  {size_after / (1024 * 1024):.2f}MB")
+        print(f"  Freed:  {bytes_freed / (1024 * 1024):.2f}MB")
         print(f"  Reduction: {reduction_percentage:.1f}%")
 
         # Verify acceptance criteria: ≥20% reduction when bloat exists
         # Note: With 15 versions, we expect significant reduction
-        assert reduction_percentage >= 20.0, \
+        assert reduction_percentage >= 20.0, (
             f"Disk reduction {reduction_percentage:.1f}% is less than 20% target (AC-3.2)"
+        )
 
 
 class TestPerformanceRegression:
     """Additional performance regression tests."""
 
     @pytest.mark.asyncio
-    async def test_multiple_count_records_no_degradation(self, test_db_manager, populated_database):
+    async def test_multiple_count_records_no_degradation(
+        self, test_db_manager, populated_database
+    ):
         """Test that repeated count_records calls don't degrade performance."""
         times = []
 
         for i in range(100):
             start = time.perf_counter()
             await test_db_manager.count_records(
-                table_name="graph_relationships",
-                project_id="test_perf"
+                table_name="graph_relationships", project_id="test_perf"
             )
             elapsed = (time.perf_counter() - start) * 1000
             times.append(elapsed)
@@ -492,5 +501,6 @@ class TestPerformanceRegression:
         print(f"  Degradation:  {degradation:.1f}%")
 
         # Allow up to 50% degradation (caching may improve performance)
-        assert degradation < 50.0, \
+        assert degradation < 50.0, (
             f"Performance degraded by {degradation:.1f}% over 100 calls"
+        )

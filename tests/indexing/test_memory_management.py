@@ -26,6 +26,7 @@ from agentic_inquiry.parsers.models import ParserRelationship
 # Helpers for creating test data
 # =============================================================================
 
+
 def create_mock_relationship(
     source_name: str,
     target_name: str,
@@ -63,6 +64,7 @@ def create_mock_builder() -> GraphBuilder:
 # Property 30: Automatic Flush Threshold
 # Validates: Requirements 10.1
 # =============================================================================
+
 
 class TestAutomaticFlushThreshold:
     """Tests for automatic flush when pending relationships exceed threshold."""
@@ -127,6 +129,7 @@ class TestAutomaticFlushThreshold:
 # Validates: Requirements 7.5
 # =============================================================================
 
+
 class TestAutomaticExternalEntityFlush:
     """Tests for automatic external entity flush when threshold exceeded."""
 
@@ -178,6 +181,7 @@ class TestAutomaticExternalEntityFlush:
 # Property 31: Memory Cleanup After Commit
 # Validates: Requirements 10.3
 # =============================================================================
+
 
 class TestMemoryCleanupAfterCommit:
     """Tests for memory cleanup after batch commits."""
@@ -245,6 +249,7 @@ class TestMemoryCleanupAfterCommit:
 # Validates: Requirements 10.4
 # =============================================================================
 
+
 class TestQueueCleanupOnCompletion:
     """Tests for queue cleanup on flush completion."""
 
@@ -309,6 +314,7 @@ class TestQueueCleanupOnCompletion:
 # Property 33: Adaptive Batch Size
 # Validates: Requirements 10.5
 # =============================================================================
+
 
 class TestAdaptiveBatchSize:
     """Tests for adaptive batch sizing under memory pressure."""
@@ -393,6 +399,7 @@ class TestAdaptiveBatchSize:
 # Additional Tests
 # =============================================================================
 
+
 class TestMemoryPressureLogging:
     """Tests for memory pressure logging."""
 
@@ -426,4 +433,3 @@ class TestDefaultConfiguration:
         """Default external entity threshold should be 10000."""
         config = GraphBuilderConfig()
         assert config.external_entity_flush_threshold == 10000
-

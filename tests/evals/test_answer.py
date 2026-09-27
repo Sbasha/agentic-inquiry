@@ -1,4 +1,5 @@
 """Level B scoring helpers."""
+
 from __future__ import annotations
 
 import pytest
@@ -26,8 +27,17 @@ def test_parse_label() -> None:
 
 
 def test_stratified_is_proportional_and_seeded() -> None:
-    cases = [Case(id=f"c{i}", suite="locomo", corpus="x", query="", gold_units={}, meta={"category": i % 2 + 1})
-             for i in range(100)]
+    cases = [
+        Case(
+            id=f"c{i}",
+            suite="locomo",
+            corpus="x",
+            query="",
+            gold_units={},
+            meta={"category": i % 2 + 1},
+        )
+        for i in range(100)
+    ]
     pick = stratified(cases, 20, "category")
     assert len(pick) == 20
     assert sum(c.meta["category"] == 1 for c in pick) == 10

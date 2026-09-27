@@ -1,4 +1,5 @@
 """Hybrid search service combining vector and full-text search with RRF."""
+
 from __future__ import annotations
 
 import asyncio
@@ -40,7 +41,11 @@ def _passage(row: Dict[str, Any]) -> str:
     from agentic_inquiry.search.context_pack import scope_of
 
     scope = scope_of(row)
-    head = f"{row.get('file_path', '')}\n{scope}\n" if scope else f"{row.get('file_path', '')}\n"
+    head = (
+        f"{row.get('file_path', '')}\n{scope}\n"
+        if scope
+        else f"{row.get('file_path', '')}\n"
+    )
     return (head + str(row.get("content") or ""))[:_PASSAGE_CHARS]
 
 
@@ -58,13 +63,15 @@ MIN_CANDIDATES = 100
 
 # Valid reranker types for configuration validation
 # These are the officially supported reranker implementations
-VALID_RERANKER_TYPES: FrozenSet[str] = frozenset({
-    "rrf",                   # Reciprocal Rank Fusion (default, lightweight)
-    "linear_combination",    # Weighted score combination (lightweight)
-    "cross_encoder",         # Joint query-document encoding (requires model)
-    "colbert",               # Late interaction reranking (requires model)
-    "cohere",                # Cohere API reranking (requires API key)
-})
+VALID_RERANKER_TYPES: FrozenSet[str] = frozenset(
+    {
+        "rrf",  # Reciprocal Rank Fusion (default, lightweight)
+        "linear_combination",  # Weighted score combination (lightweight)
+        "cross_encoder",  # Joint query-document encoding (requires model)
+        "colbert",  # Late interaction reranking (requires model)
+        "cohere",  # Cohere API reranking (requires API key)
+    }
+)
 
 
 class HybridSearchService:
@@ -228,7 +235,9 @@ class HybridSearchService:
         )
         return RRFReranker()
 
-    def _apply_deduplication(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _apply_deduplication(
+        self, results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Apply deduplication to search results."""
         return self.deduplicator.deduplicate_results(results)
 
@@ -293,25 +302,36 @@ class HybridSearchService:
 
         return boosted_results
 
-    async def _rerank_head(self, query: str, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def _rerank_head(
+        self, query: str, results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Reorder the fused top ``rerank_top_n`` by a cross-encoder, when one is configured.
 
         The reordered results take over the fused scores in descending order,
         so scores stay monotone with rank and on the fusion scale.
         """
         settings = self.config.search.hybrid_search
-        if not isinstance(settings.rerank_model, str) or not settings.rerank_model or len(results) < 2:
+        if (
+            not isinstance(settings.rerank_model, str)
+            or not settings.rerank_model
+            or len(results) < 2
+        ):
             return results
         head = results[: settings.rerank_top_n]
         pairs = [(query, _passage(r)) for r in head]
         loop = asyncio.get_running_loop()
-        scores = await loop.run_in_executor(None, _cross_encoder(settings.rerank_model).predict, pairs)
+        scores = await loop.run_in_executor(
+            None, _cross_encoder(settings.rerank_model).predict, pairs
+        )
         order = sorted(range(len(head)), key=lambda i: -float(scores[i]))
         if settings.rerank_mode != "replace":
             # RRF of the fused order (index i) and the cross-encoder order.
             k = DEFAULT_K
             ce_rank = {index: rank for rank, index in enumerate(order)}
-            order = sorted(range(len(head)), key=lambda i: -(1 / (k + i + 1) + 1 / (k + ce_rank[i] + 1)))
+            order = sorted(
+                range(len(head)),
+                key=lambda i: -(1 / (k + i + 1) + 1 / (k + ce_rank[i] + 1)),
+            )
         fused_scores = sorted((r.get("score", 0.0) for r in head), reverse=True)
         reordered = []
         for rank, index in enumerate(order):
@@ -319,7 +339,7 @@ class HybridSearchService:
             row["score"] = fused_scores[rank]
             row["_rerank_score"] = float(scores[index])
             reordered.append(row)
-        return reordered + results[settings.rerank_top_n:]
+        return reordered + results[settings.rerank_top_n :]
 
     async def hybrid_search(
         self,
@@ -402,17 +422,29 @@ class HybridSearchService:
                 },
             )
             seeds = self.config.search.hybrid_search.graph_seeds
-            if isinstance(seeds, int) and seeds > 0 and isinstance(reranker, RRFReranker) and fused:
+            if (
+                isinstance(seeds, int)
+                and seeds > 0
+                and isinstance(reranker, RRFReranker)
+                and fused
+            ):
                 neighbours = await graph_candidates(
-                    self._storage_facade, [r.data for r in fused[:seeds]],
-                    self._resolve_project_id(project_id), limit=depth // 3,
+                    self._storage_facade,
+                    [r.data for r in fused[:seeds]],
+                    self._resolve_project_id(project_id),
+                    limit=depth // 3,
                 )
                 if neighbours:
-                    graph_list = [self._dict_to_search_result(dict(row, score=0.5)) for row in neighbours]
+                    graph_list = [
+                        self._dict_to_search_result(dict(row, score=0.5))
+                        for row in neighbours
+                    ]
                     fused = reranker.fuse([vector_results, fts_results, graph_list])
             results = [self._search_result_to_dict(r) for r in fused]
             results = await self._rerank_head(query_fts, results)
-            results = self._apply_content_preference(results, content_preference, content_preference_weight)
+            results = self._apply_content_preference(
+                results, content_preference, content_preference_weight
+            )
             results = self._apply_deduplication(results)[:limit]
 
             elapsed = time.perf_counter() - started

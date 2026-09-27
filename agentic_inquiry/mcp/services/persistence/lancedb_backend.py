@@ -39,14 +39,20 @@ class LanceDBSessionStorage(SessionStorageProtocol):
             ValueError: If the storage backend is not LanceDB.
         """
         # Guard: this backend is LanceDB-specific; reject non-LanceDB backends early
-        backend_type = db_manager.get_backend_type() if hasattr(db_manager, "get_backend_type") else "lancedb"
+        backend_type = (
+            db_manager.get_backend_type()
+            if hasattr(db_manager, "get_backend_type")
+            else "lancedb"
+        )
         if backend_type != "lancedb":
             raise ValueError(
                 f"LanceDBSessionStorage requires lancedb backend, got {backend_type!r}"
             )
         # Lazy import only when we know it is LanceDB (acceptable use per architecture doc)
         self.db_manager = db_manager.get_db_manager()
-        logger.debug("LanceDBSessionStorage obtained LanceDBManager via get_db_manager()")
+        logger.debug(
+            "LanceDBSessionStorage obtained LanceDBManager via get_db_manager()"
+        )
 
     async def persist_session(self, session: Session) -> None:
         """Persist session to LanceDB.
@@ -63,16 +69,13 @@ class LanceDBSessionStorage(SessionStorageProtocol):
         try:
             record = session.to_db_record()
             await self.db_manager.upsert(
-                table_name=self.TABLE_NAME,
-                data=[record],
-                key_field="session_id"
+                table_name=self.TABLE_NAME, data=[record], key_field="session_id"
             )
             logger.debug("Persisted session %s to database", session.session_id)
         except Exception as e:
             logger.error("Error persisting session %s: %s", session.session_id, e)
             raise StorageError(
-                f"Failed to persist session {session.session_id}",
-                cause=e
+                f"Failed to persist session {session.session_id}", cause=e
             ) from e
 
     async def load_session(self, session_id: str) -> Optional[Session]:
@@ -92,7 +95,7 @@ class LanceDBSessionStorage(SessionStorageProtocol):
                 table_name=self.TABLE_NAME,
                 filters=eq("session_id", session_id),
                 limit=1,
-                project_id=None  # Search across all projects
+                project_id=None,  # Search across all projects
             )
 
             if results:
@@ -100,14 +103,8 @@ class LanceDBSessionStorage(SessionStorageProtocol):
             return None
 
         except Exception as e:
-            logger.error(
-                "Error loading session %s from database: %s",
-                session_id, e
-            )
-            raise StorageError(
-                f"Failed to load session {session_id}",
-                cause=e
-            ) from e
+            logger.error("Error loading session %s from database: %s", session_id, e)
+            raise StorageError(f"Failed to load session {session_id}", cause=e) from e
 
     async def delete_session(self, session_id: str) -> bool:
         """Delete session from LanceDB.
@@ -132,16 +129,13 @@ class LanceDBSessionStorage(SessionStorageProtocol):
             return False
         except Exception as e:
             logger.error("Error deleting session %s: %s", session_id, e)
-            raise StorageError(
-                f"Failed to delete session {session_id}",
-                cause=e
-            ) from e
+            raise StorageError(f"Failed to delete session {session_id}", cause=e) from e
 
     async def list_sessions(
         self,
         project_id: Optional[str] = None,
         include_expired: bool = False,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[Dict[str, Any]]:
         """List sessions with optional filtering.
 
@@ -160,24 +154,24 @@ class LanceDBSessionStorage(SessionStorageProtocol):
             )
 
             results = await self.db_manager.advanced_filter(
-                table_name=self.TABLE_NAME,
-                filters=filter_ast,
-                limit=limit
+                table_name=self.TABLE_NAME, filters=filter_ast, limit=limit
             )
 
             sessions = []
             for record in results:
                 session = Session.from_db_record(record)
-                sessions.append({
-                    "session_id": session.session_id,
-                    "project_id": session.project_id,
-                    "created_at": session.created_at.isoformat(),
-                    "last_active": session.last_active.isoformat(),
-                    "description": session.description,
-                    "is_expired": session.is_expired,
-                    "age_hours": session.get_age_hours(),
-                    "inactive_hours": session.get_inactive_hours()
-                })
+                sessions.append(
+                    {
+                        "session_id": session.session_id,
+                        "project_id": session.project_id,
+                        "created_at": session.created_at.isoformat(),
+                        "last_active": session.last_active.isoformat(),
+                        "description": session.description,
+                        "is_expired": session.is_expired,
+                        "age_hours": session.get_age_hours(),
+                        "inactive_hours": session.get_inactive_hours(),
+                    }
+                )
 
             # Sort by last_active (most recent first)
             sessions.sort(key=lambda s: str(s["last_active"]), reverse=True)
@@ -189,9 +183,7 @@ class LanceDBSessionStorage(SessionStorageProtocol):
             raise StorageError("Failed to list sessions", cause=e) from e
 
     async def find_expired_sessions(
-        self,
-        ttl_hours: float,
-        limit: int = 1000
+        self, ttl_hours: float, limit: int = 1000
     ) -> List[Dict[str, Any]]:
         """Find sessions that have exceeded TTL.
 
@@ -205,9 +197,7 @@ class LanceDBSessionStorage(SessionStorageProtocol):
         try:
             # Get all non-expired sessions
             results = await self.db_manager.advanced_filter(
-                table_name=self.TABLE_NAME,
-                filters=eq("is_expired", False),
-                limit=limit
+                table_name=self.TABLE_NAME, filters=eq("is_expired", False), limit=limit
             )
 
             # Check each for expiry
@@ -227,12 +217,14 @@ class LanceDBSessionStorage(SessionStorageProtocol):
 
                 if last_active < cutoff_time:
                     session = Session.from_db_record(record)
-                    expired.append({
-                        "session_id": session.session_id,
-                        "project_id": session.project_id,
-                        "age_hours": session.get_age_hours(),
-                        "inactive_hours": session.get_inactive_hours()
-                    })
+                    expired.append(
+                        {
+                            "session_id": session.session_id,
+                            "project_id": session.project_id,
+                            "age_hours": session.get_age_hours(),
+                            "inactive_hours": session.get_inactive_hours(),
+                        }
+                    )
 
             return expired
 
@@ -260,11 +252,7 @@ class LanceDBSessionStorage(SessionStorageProtocol):
         except StorageError:
             return False
         except Exception as e:
-            logger.error(
-                "Error marking session %s as expired: %s",
-                session_id, e
-            )
+            logger.error("Error marking session %s as expired: %s", session_id, e)
             raise StorageError(
-                f"Failed to mark session {session_id} as expired",
-                cause=e
+                f"Failed to mark session {session_id} as expired", cause=e
             ) from e

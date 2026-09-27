@@ -125,9 +125,7 @@ def _values_to_filter(field: str, values: list[Any]) -> Filter:
     return is_in(field, values)
 
 
-def project_scoped(
-    project_id: str, additional: Optional[Filter] = None
-) -> Filter:
+def project_scoped(project_id: str, additional: Optional[Filter] = None) -> Filter:
     """Create a project-scoped filter.
 
     Common pattern for filtering by project_id, optionally combined
@@ -196,6 +194,7 @@ def by_type(type_value: str, field: str = "type") -> Filter:
         Filter(operator=FilterOperator.EQ, field="entity_type", value="class")
     """
     from agentic_inquiry.models.graph_entity import EntityType
+
     normalized_type = EntityType.normalize(type_value)
     return eq(field, normalized_type)
 

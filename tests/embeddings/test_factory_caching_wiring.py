@@ -9,6 +9,7 @@ pinning that with a test so a future refactor can't accidentally
 wrap only one path. Uses ``patch`` on each provider constructor so
 no models are actually downloaded / loaded.
 """
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock, patch

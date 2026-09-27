@@ -13,7 +13,9 @@ import pytest
 
 from agentic_inquiry.cli.index import exit_code_for_index_result
 from agentic_inquiry.exceptions import StorageError
-from agentic_inquiry.indexing.relationship_batch_processor import RelationshipBatchProcessor
+from agentic_inquiry.indexing.relationship_batch_processor import (
+    RelationshipBatchProcessor,
+)
 from agentic_inquiry.models.graph_relationship import GraphRelationship
 
 pytestmark = pytest.mark.unit

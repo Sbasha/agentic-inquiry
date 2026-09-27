@@ -12,6 +12,7 @@ class RollbackError(Exception):
         super().__init__(message)
         self.failures = failures
 
+
 class Transaction:
     def __init__(self, db_manager: Any) -> None:
         self.db_manager = db_manager
@@ -26,7 +27,7 @@ class Transaction:
         self,
         exc_type: Optional[type],
         exc_val: Optional[BaseException],
-        exc_tb: Optional[Any]
+        exc_tb: Optional[Any],
     ) -> Optional[bool]:
         if exc_type:
             logger.warning(
@@ -111,7 +112,9 @@ class Transaction:
 
     async def rollback(self) -> None:
         if not self.rollback_operations:
-            logger.info("Rollback requested but no compensating operations were registered")
+            logger.info(
+                "Rollback requested but no compensating operations were registered"
+            )
             return
 
         total_rollback_operations = len(self.rollback_operations)
@@ -144,7 +147,9 @@ class Transaction:
                     "failure_count": len(exceptions),
                 },
             )
-            raise RollbackError(f"{len(exceptions)} rollback operation(s) failed", exceptions)
+            raise RollbackError(
+                f"{len(exceptions)} rollback operation(s) failed", exceptions
+            )
 
         logger.info(
             "Transaction rollback completed after executing %d compensating operation(s)",

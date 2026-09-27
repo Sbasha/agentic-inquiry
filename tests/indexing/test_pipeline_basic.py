@@ -37,11 +37,10 @@ class _DummyEmbedder(Embedder):
         return self._ndims
 
 
-
-
 def test_pipeline_skips_chunks_without_text(caplog):
     async def run():
         import uuid
+
         config = Config.load()
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test")
@@ -50,7 +49,13 @@ def test_pipeline_skips_chunks_without_text(caplog):
 
         project_id = f"test_{uuid.uuid4().hex[:8]}"
         mock_event_system = _create_mock_event_system()
-        pipeline = IndexingPipeline(db_manager=mock_db_manager, config=config, project_id=project_id, event_system=mock_event_system, registry=registry)
+        pipeline = IndexingPipeline(
+            db_manager=mock_db_manager,
+            config=config,
+            project_id=project_id,
+            event_system=mock_event_system,
+            registry=registry,
+        )
 
         doc = ParsedDocument(
             doc_id="doc-1",
@@ -64,7 +69,9 @@ def test_pipeline_skips_chunks_without_text(caplog):
         caplog.set_level(logging.WARNING)
         await pipeline.process_document(doc)
 
-        rows = await mock_db_manager.advanced_filter("document_chunks", {"doc_id": "doc-1"})
+        rows = await mock_db_manager.advanced_filter(
+            "document_chunks", {"doc_id": "doc-1"}
+        )
         assert len(rows) == 1
         assert rows[0]["content"] == "valid chunk"
         assert rows[0]["project_id"] == pipeline.project_hash
@@ -73,5 +80,3 @@ def test_pipeline_skips_chunks_without_text(caplog):
         assert any("Skipping chunk" in record.message for record in caplog.records)
 
     asyncio.run(run())
-
-

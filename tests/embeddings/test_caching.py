@@ -6,6 +6,7 @@ thread safety under contention, and the ``max_entries=0`` pass-through.
 No torch / sentence-transformers needed — uses a ``SpyEmbedder`` that
 records calls and returns deterministic vectors.
 """
+
 from __future__ import annotations
 
 import threading
@@ -325,7 +326,10 @@ class TestPersistentStore:
 
         store = tmp_path / "cache.sqlite"
         first = Counting()
-        assert CachingEmbedder(first, persist_path=store).generate(["a", "bb"]) == [[1.0, 1.0], [2.0, 1.0]]
+        assert CachingEmbedder(first, persist_path=store).generate(["a", "bb"]) == [
+            [1.0, 1.0],
+            [2.0, 1.0],
+        ]
         second = Counting()
         again = CachingEmbedder(second, persist_path=store)
         assert again.generate(["bb", "ccc"]) == [[2.0, 1.0], [3.0, 1.0]]

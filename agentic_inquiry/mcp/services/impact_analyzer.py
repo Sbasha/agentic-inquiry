@@ -17,7 +17,7 @@ from agentic_inquiry.utils import get_attr as _get_attr
 from agentic_inquiry.mcp.services.entity_resolver import (
     EntityResolver,
     EntityReference,
-    EntityNotFoundError
+    EntityNotFoundError,
 )
 
 logger = logging.getLogger(__name__)
@@ -30,10 +30,13 @@ class PartialResultsException(Exception):
         partial_results: Dictionary containing partial analysis results
         elapsed_ms: Time elapsed before timeout in milliseconds
     """
+
     def __init__(self, partial_results: dict, elapsed_ms: int):
         self.partial_results = partial_results
         self.elapsed_ms = elapsed_ms
-        super().__init__(f"Analysis timed out after {elapsed_ms}ms with partial results")
+        super().__init__(
+            f"Analysis timed out after {elapsed_ms}ms with partial results"
+        )
 
 
 @dataclass
@@ -47,6 +50,7 @@ class DependencyNode:
         relationship: Relationship type to parent (e.g., "imports", "calls")
         children: Child nodes (entities that this entity affects/depends on)
     """
+
     name: str
     entity_type: str
     file_path: str
@@ -81,6 +85,7 @@ class ImpactAnalysis:
         dependency_tree: Optional tree structure of dependencies
         incoming_tree: Optional tree of entities that depend on this (reverse impact)
     """
+
     entity_name: str
     impact_radius: int
     affected_files: Dict[str, int]
@@ -100,10 +105,7 @@ class ImpactAnalyzer:
     """
 
     def __init__(
-        self,
-        db_manager: StorageFacade,
-        entity_resolver: EntityResolver,
-        config: Config
+        self, db_manager: StorageFacade, entity_resolver: EntityResolver, config: Config
     ):
         """Initialize impact analyzer.
 
@@ -119,14 +121,14 @@ class ImpactAnalyzer:
 
         self.entity_resolver = entity_resolver
         self.config = config
-    
+
     async def analyze_impact(
         self,
         entity_name: str,
         project_id: str,
         depth: Optional[int] = None,
         include_indirect: Optional[bool] = None,
-        deadline: Optional[float] = None
+        deadline: Optional[float] = None,
     ) -> ImpactAnalysis:
         """Analyze impact of changing an entity.
 
@@ -155,22 +157,21 @@ class ImpactAnalyzer:
             depth = self.config.indexing.impact_default_depth
         if include_indirect is None:
             include_indirect = self.config.indexing.impact_include_indirect
-        
+
         # Enforce max depth
         depth = min(depth, self.config.indexing.impact_max_depth)
-        
+
         logger.debug(
             "Analyzing impact: entity=%s, project_id=%s, depth=%d, include_indirect=%s",
             entity_name,
             project_id,
             depth,
-            include_indirect
+            include_indirect,
         )
-        
+
         # Resolve the entity first
         entity = await self.entity_resolver.resolve_entity(
-            entity_name=entity_name,
-            project_id=project_id
+            entity_name=entity_name, project_id=project_id
         )
 
         if not entity:
@@ -186,7 +187,9 @@ class ImpactAnalyzer:
             parts = entity.entity_id.split("::")
             if len(parts) >= 2:
                 project_hash = parts[1]
-                file_id = f"file::{project_hash}::{entity.file_path}::{entity.file_path}"
+                file_id = (
+                    f"file::{project_hash}::{entity.file_path}::{entity.file_path}"
+                )
                 traversal_ids.add(file_id)
                 # Also try module-level ID
                 module_name = Path(entity.file_path).stem
@@ -195,7 +198,9 @@ class ImpactAnalyzer:
 
         logger.debug(
             "Impact analysis: entity=%s, entity_id=%s, traversal_ids=%s",
-            entity_name, entity.entity_id, traversal_ids,
+            entity_name,
+            entity.entity_id,
+            traversal_ids,
         )
 
         # Track visited entities to prevent cycles
@@ -207,7 +212,7 @@ class ImpactAnalyzer:
         relationship_types: Dict[str, int] = {}
         completed_depth = 0
         incoming_completed = False
-        
+
         # Traverse incoming relationships (who depends on this entity)
         if include_indirect:
             # Check deadline before starting incoming traversal
@@ -220,9 +225,9 @@ class ImpactAnalyzer:
                         "relationship_types": {},
                         "completed_depth": 0,
                         "incoming_completed": False,
-                        "outgoing_completed": False
+                        "outgoing_completed": False,
                     },
-                    elapsed_ms=elapsed_ms
+                    elapsed_ms=elapsed_ms,
                 )
 
             try:
@@ -246,10 +251,12 @@ class ImpactAnalyzer:
                     entity_refs = await self._get_entity_references(
                         entity_ids=[affected_id],
                         project_id=project_id,
-                        relationship_type="depends_on"
+                        relationship_type="depends_on",
                     )
                     affected_entities.extend(entity_refs)
-                    relationship_types["depends_on"] = relationship_types.get("depends_on", 0) + len(entity_refs)
+                    relationship_types["depends_on"] = relationship_types.get(
+                        "depends_on", 0
+                    ) + len(entity_refs)
 
                 incoming_completed = True
                 completed_depth = max(completed_depth, incoming_depth)
@@ -263,9 +270,9 @@ class ImpactAnalyzer:
                         "relationship_types": relationship_types,
                         "completed_depth": e.partial_results.get("completed_depth", 0),
                         "incoming_completed": False,
-                        "outgoing_completed": False
+                        "outgoing_completed": False,
                     },
-                    elapsed_ms=e.elapsed_ms
+                    elapsed_ms=e.elapsed_ms,
                 )
 
         # Check deadline before outgoing traversal
@@ -278,9 +285,9 @@ class ImpactAnalyzer:
                     "relationship_types": relationship_types,
                     "completed_depth": completed_depth,
                     "incoming_completed": incoming_completed,
-                    "outgoing_completed": False
+                    "outgoing_completed": False,
                 },
-                elapsed_ms=elapsed_ms
+                elapsed_ms=elapsed_ms,
             )
 
         # Traverse outgoing relationships (what this entity depends on)
@@ -304,10 +311,12 @@ class ImpactAnalyzer:
                 entity_refs = await self._get_entity_references(
                     entity_ids=[dep_id],
                     project_id=project_id,
-                    relationship_type="dependency"
+                    relationship_type="dependency",
                 )
                 affected_entities.extend(entity_refs)
-                relationship_types["dependency"] = relationship_types.get("dependency", 0) + len(entity_refs)
+                relationship_types["dependency"] = relationship_types.get(
+                    "dependency", 0
+                ) + len(entity_refs)
 
             completed_depth = max(completed_depth, outgoing_depth)
 
@@ -320,17 +329,17 @@ class ImpactAnalyzer:
                     "relationship_types": relationship_types,
                     "completed_depth": e.partial_results.get("completed_depth", 0),
                     "incoming_completed": incoming_completed,
-                    "outgoing_completed": False
+                    "outgoing_completed": False,
                 },
-                elapsed_ms=e.elapsed_ms
+                elapsed_ms=e.elapsed_ms,
             )
-        
+
         # Calculate affected files
         affected_files: Dict[str, int] = {}
         for ref in affected_entities:
             file_path = ref.file_path
             affected_files[file_path] = affected_files.get(file_path, 0) + 1
-        
+
         impact_radius = len(affected_entities)
 
         # Build dependency trees for visualization (optional, expensive)
@@ -347,7 +356,7 @@ class ImpactAnalyzer:
                 file_path=entity.file_path,
                 project_id=project_id,
                 direction="outgoing",
-                depth=depth
+                depth=depth,
             )
 
             remaining_budget = (deadline - time.time()) if deadline else float("inf")
@@ -359,7 +368,7 @@ class ImpactAnalyzer:
                     file_path=entity.file_path,
                     project_id=project_id,
                     direction="incoming",
-                    depth=depth
+                    depth=depth,
                 )
 
         logger.debug(
@@ -367,7 +376,7 @@ class ImpactAnalyzer:
             entity_name,
             impact_radius,
             len(affected_files),
-            depth
+            depth,
         )
 
         return ImpactAnalysis(
@@ -378,9 +387,9 @@ class ImpactAnalyzer:
             relationship_types=relationship_types,
             traversal_depth=depth,
             dependency_tree=dependency_tree,
-            incoming_tree=incoming_tree
+            incoming_tree=incoming_tree,
         )
-    
+
     async def traverse_relationships(
         self,
         entity_id: str,
@@ -388,7 +397,7 @@ class ImpactAnalyzer:
         direction: str,
         depth: int,
         visited: Set[str],
-        deadline: Optional[float] = None
+        deadline: Optional[float] = None,
     ) -> tuple[Set[str], int]:
         """Recursively traverse relationships with cycle detection.
 
@@ -418,7 +427,7 @@ class ImpactAnalyzer:
             entity_id,
             direction,
             depth,
-            len(visited)
+            len(visited),
         )
 
         # Use database-level CTE traversal when available (single SQL round-trip).
@@ -429,8 +438,8 @@ class ImpactAnalyzer:
         use_bfs = True  # Fall back to BFS if CTE returns 0 or fails
 
         # Use graph provider's CTE directly (bypasses facade's hardcoded project_id)
-        graph_provider = getattr(self.db, '_graph_provider', None)
-        if graph_provider and hasattr(graph_provider, 'get_neighbors'):
+        graph_provider = getattr(self.db, "_graph_provider", None)
+        if graph_provider and hasattr(graph_provider, "get_neighbors"):
             # Try single recursive CTE query (replaces N+1 BFS round-trips)
             try:
                 neighbors = await graph_provider.get_neighbors(
@@ -440,7 +449,11 @@ class ImpactAnalyzer:
                     project_id=project_id,
                 )
                 for entity_obj in neighbors[:MAX_TOTAL_ENTITIES]:
-                    eid = entity_obj.id if hasattr(entity_obj, 'id') else _get_attr(entity_obj, 'id')
+                    eid = (
+                        entity_obj.id
+                        if hasattr(entity_obj, "id")
+                        else _get_attr(entity_obj, "id")
+                    )
                     if eid and eid not in visited:
                         visited.add(eid)
                         result.add(eid)
@@ -448,7 +461,10 @@ class ImpactAnalyzer:
                     use_bfs = False
                     logger.debug(
                         "CTE traversal: entity_id=%s, direction=%s, depth=%d, found=%d",
-                        entity_id, direction, depth, len(result),
+                        entity_id,
+                        direction,
+                        depth,
+                        len(result),
                     )
                 else:
                     logger.debug(
@@ -468,7 +484,10 @@ class ImpactAnalyzer:
                 if deadline and time.time() >= deadline:
                     elapsed_ms = int((time.time() - start_time) * 1000)
                     raise PartialResultsException(
-                        partial_results={"entities": result, "completed_depth": completed_depth},
+                        partial_results={
+                            "entities": result,
+                            "completed_depth": completed_depth,
+                        },
                         elapsed_ms=elapsed_ms,
                     )
 
@@ -505,29 +524,32 @@ class ImpactAnalyzer:
                     elif direction == "outgoing":
                         next_id = _get_attr(rel, "target_id")
                     else:
-                        next_id = _get_attr(rel, "source_id") if _get_attr(rel, "target_id") == current_id else _get_attr(rel, "target_id")
+                        next_id = (
+                            _get_attr(rel, "source_id")
+                            if _get_attr(rel, "target_id") == current_id
+                            else _get_attr(rel, "target_id")
+                        )
                     if not next_id or next_id in visited:
                         continue
                     visited.add(next_id)
                     result.add(next_id)
                     queue.append((next_id, current_depth + 1))
 
-            completed_depth = min(depth, max((d for _, d in [(entity_id, 0)] if result), default=0))
+            completed_depth = min(
+                depth, max((d for _, d in [(entity_id, 0)] if result), default=0)
+            )
 
         logger.debug(
             "Traversal complete: entity_id=%s, found=%d entities, completed_depth=%d",
             entity_id,
             len(result),
-            completed_depth
+            completed_depth,
         )
 
         return result, completed_depth
-    
+
     async def _get_entity_references(
-        self,
-        entity_ids: List[str],
-        project_id: str,
-        relationship_type: str
+        self, entity_ids: List[str], project_id: str, relationship_type: str
     ) -> List[EntityReference]:
         """Get entity references for a list of entity IDs using batched queries.
 
@@ -552,24 +574,24 @@ class ImpactAnalyzer:
 
         # Process entity_ids in chunks to prevent OOM
         for i in range(0, len(entity_ids), batch_size):
-            chunk = entity_ids[i:i + batch_size]
+            chunk = entity_ids[i : i + batch_size]
 
             # Use IN filter for batch lookup
             entities = await self.db.query_entities(
-                project_id=project_id,
-                filters={"id": ("IN", chunk)},
-                limit=len(chunk)
+                project_id=project_id, filters={"id": ("IN", chunk)}, limit=len(chunk)
             )
 
             # Convert to EntityReference objects
             for entity_data in entities:
-                references.append(EntityReference(
-                    entity_id=_get_attr(entity_data, "id", ""),
-                    name=_get_attr(entity_data, "name", ""),
-                    entity_type=_get_attr(entity_data, "type", ""),
-                    file_path=_get_attr(entity_data, "file_path", ""),
-                    relationship_type=relationship_type
-                ))
+                references.append(
+                    EntityReference(
+                        entity_id=_get_attr(entity_data, "id", ""),
+                        name=_get_attr(entity_data, "name", ""),
+                        entity_type=_get_attr(entity_data, "type", ""),
+                        file_path=_get_attr(entity_data, "file_path", ""),
+                        relationship_type=relationship_type,
+                    )
+                )
 
         return references
 
@@ -582,7 +604,7 @@ class ImpactAnalyzer:
         project_id: str,
         direction: str,
         depth: int,
-        visited: Optional[Set[str]] = None
+        visited: Optional[Set[str]] = None,
     ) -> DependencyNode:
         """Build a tree structure of dependencies.
 
@@ -606,10 +628,7 @@ class ImpactAnalyzer:
 
         # Create root node
         root = DependencyNode(
-            name=entity_name,
-            entity_type=entity_type,
-            file_path=file_path,
-            children=[]
+            name=entity_name, entity_type=entity_type, file_path=file_path, children=[]
         )
 
         # Stop if depth exhausted or already visited
@@ -626,7 +645,7 @@ class ImpactAnalyzer:
             incoming_rels = await self.db.query_relationships(
                 project_id=project_id,
                 filters={"target_id": entity_id},
-                limit=self.config.mcp.query.tree_limit
+                limit=self.config.mcp.query.tree_limit,
             )
             relationships.extend(incoming_rels)
         else:  # outgoing
@@ -634,7 +653,7 @@ class ImpactAnalyzer:
             outgoing_rels = await self.db.query_relationships(
                 project_id=project_id,
                 filters={"source_id": entity_id},
-                limit=self.config.mcp.query.tree_limit
+                limit=self.config.mcp.query.tree_limit,
             )
             relationships.extend(outgoing_rels)
 
@@ -651,9 +670,7 @@ class ImpactAnalyzer:
 
             # Get entity details
             entities = await self.db.query_entities(
-                project_id=project_id,
-                filters={"id": related_id},
-                limit=1
+                project_id=project_id, filters={"id": related_id}, limit=1
             )
 
             if entities:
@@ -667,7 +684,7 @@ class ImpactAnalyzer:
                     project_id=project_id,
                     direction=direction,
                     depth=depth - 1,
-                    visited=visited.copy()  # Copy to allow sibling exploration
+                    visited=visited.copy(),  # Copy to allow sibling exploration
                 )
                 child_node.relationship = _get_attr(rel, "type", "uses")
                 # root.children is initialized as [] in DependencyNode constructor

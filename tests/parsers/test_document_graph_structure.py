@@ -34,12 +34,14 @@ def get_all_relationships(result) -> list[dict[str, Any]]:
     relationships = []
     for chunk in result.chunks:
         for rel in chunk.relationships:
-            relationships.append({
-                "source": rel.source_name,
-                "target": rel.target_name,
-                "type": rel.type,
-                "metadata": rel.metadata,
-            })
+            relationships.append(
+                {
+                    "source": rel.source_name,
+                    "target": rel.target_name,
+                    "type": rel.type,
+                    "metadata": rel.metadata,
+                }
+            )
     return relationships
 
 
@@ -74,8 +76,9 @@ async def test_simple_markdown_extracts_chunks(parser):
 
     assert len(result.chunks) > 0, "Parser should produce chunks for markdown"
     # Verify chunks have actual content
-    assert all(chunk.content and len(chunk.content.strip()) > 0 for chunk in result.chunks), \
-        "All chunks should have non-empty content"
+    assert all(
+        chunk.content and len(chunk.content.strip()) > 0 for chunk in result.chunks
+    ), "All chunks should have non-empty content"
 
 
 @pytest.mark.asyncio
@@ -91,8 +94,9 @@ async def test_markdown_extracts_headings(parser):
     # sample.md has "# Sample Document" and "## Section 1"
     assert len(headings) > 0, "Should find heading elements in markdown"
     # Verify headings have element names
-    assert all(h.element_name and len(h.element_name) > 0 for h in headings), \
+    assert all(h.element_name and len(h.element_name) > 0 for h in headings), (
         "All heading chunks should have non-empty element names"
+    )
 
 
 @pytest.mark.asyncio
@@ -106,7 +110,9 @@ async def test_markdown_headings_have_element_name(parser):
 
     headings = get_chunks_by_element_type(result, "doc_section")
     for heading in headings:
-        assert heading.element_name, f"Heading should have element_name. Content: {heading.content[:50]}"
+        assert heading.element_name, (
+            f"Heading should have element_name. Content: {heading.content[:50]}"
+        )
 
 
 @pytest.mark.asyncio
@@ -141,7 +147,9 @@ async def test_outline_extracts_hierarchical_headings(parser):
     headings = get_chunks_by_element_type(result, "doc_section")
 
     # outline.md has many nested headings (h1, h2, h3)
-    assert len(headings) >= 5, f"Should find multiple headings in outline.md. Found: {len(headings)}"
+    assert len(headings) >= 5, (
+        f"Should find multiple headings in outline.md. Found: {len(headings)}"
+    )
 
 
 @pytest.mark.asyncio
@@ -157,12 +165,14 @@ async def test_outline_has_nested_headings_with_parent_id(parser):
 
     # Some headings should have parent_id (they are nested under other headings)
     nested_headings = [h for h in headings if h.parent_id]
-    assert len(nested_headings) > 0, \
-        f"Some headings should have parent_id (be nested). Found {len(headings)} headings, " \
+    assert len(nested_headings) > 0, (
+        f"Some headings should have parent_id (be nested). Found {len(headings)} headings, "
         f"{len(nested_headings)} nested"
+    )
     # Verify parent IDs are non-empty strings
-    assert all(isinstance(h.parent_id, str) and len(h.parent_id) > 0 for h in nested_headings), \
-        "All parent_id values should be non-empty strings"
+    assert all(
+        isinstance(h.parent_id, str) and len(h.parent_id) > 0 for h in nested_headings
+    ), "All parent_id values should be non-empty strings"
 
 
 @pytest.mark.asyncio
@@ -177,12 +187,14 @@ async def test_outline_extracts_contains_relationships(parser):
     contains = get_relationships_by_type(result, "contains")
 
     # Should have parent-child relationships with valid source/target
-    assert len(contains) > 0, \
-        f"Should find 'contains' relationships in outline.md. " \
+    assert len(contains) > 0, (
+        f"Should find 'contains' relationships in outline.md. "
         f"Found relationship types: {get_relationship_types(result)}"
+    )
     # Verify relationships have valid source and target names
-    assert all(r.get("source") and r.get("target") for r in contains), \
+    assert all(r.get("source") and r.get("target") for r in contains), (
         "All contains relationships should have non-empty source and target names"
+    )
 
 
 @pytest.mark.asyncio
@@ -197,12 +209,14 @@ async def test_outline_extracts_follows_relationships(parser):
     follows = get_relationships_by_type(result, "follows")
 
     # Should have sibling ordering relationships with valid source/target
-    assert len(follows) > 0, \
-        f"Should find 'follows' relationships in outline.md. " \
+    assert len(follows) > 0, (
+        f"Should find 'follows' relationships in outline.md. "
         f"Found relationship types: {get_relationship_types(result)}"
+    )
     # Verify relationships have valid source and target names
-    assert all(r.get("source") and r.get("target") for r in follows), \
+    assert all(r.get("source") and r.get("target") for r in follows), (
         "All follows relationships should have non-empty source and target names"
+    )
 
 
 @pytest.mark.asyncio
@@ -259,8 +273,9 @@ async def test_can_build_heading_tree(parser):
             root_headings.append(h)
 
     # Should have at least one root heading
-    assert len(root_headings) > 0 or len(headings) > 0, \
+    assert len(root_headings) > 0 or len(headings) > 0, (
         "Should have at least some headings (root or nested)"
+    )
 
     # If we have nested headings, verify tree structure
     if children_by_parent:
@@ -268,8 +283,9 @@ async def test_can_build_heading_tree(parser):
         for parent_id, children in children_by_parent.items():
             assert len(children) > 0, f"Parent {parent_id} should have children"
             # Verify children have element names
-            assert all(c.element_name and len(c.element_name) > 0 for c in children), \
+            assert all(c.element_name and len(c.element_name) > 0 for c in children), (
                 f"All children of {parent_id} should have non-empty element names"
+            )
 
 
 @pytest.mark.asyncio
@@ -373,7 +389,9 @@ async def test_pdf_document_extracts_chunks(parser):
     result = await parser.parse(str(file_path))
 
     # PDFs should produce chunks
-    assert len(result.chunks) > 0, f"PDF parser should produce chunks for {file_path.name}"
+    assert len(result.chunks) > 0, (
+        f"PDF parser should produce chunks for {file_path.name}"
+    )
 
 
 # DOCX test (if available)
@@ -388,7 +406,9 @@ async def test_docx_document_extracts_chunks(parser):
     result = await parser.parse(str(file_path))
 
     # DOCX should produce chunks
-    assert len(result.chunks) > 0, f"DOCX parser should produce chunks for {file_path.name}"
+    assert len(result.chunks) > 0, (
+        f"DOCX parser should produce chunks for {file_path.name}"
+    )
 
 
 # PPTX test (if available)
@@ -403,7 +423,9 @@ async def test_pptx_document_extracts_chunks(parser):
     result = await parser.parse(str(file_path))
 
     # PPTX should produce chunks
-    assert len(result.chunks) > 0, f"PPTX parser should produce chunks for {file_path.name}"
+    assert len(result.chunks) > 0, (
+        f"PPTX parser should produce chunks for {file_path.name}"
+    )
 
 
 # =============================================================================
@@ -424,9 +446,10 @@ async def test_document_chunks_have_valid_metadata_types(parser):
         if chunk.metadata:
             for key, value in chunk.metadata.items():
                 # LanceDB constraint: metadata must be primitive types
-                assert not isinstance(value, (list, dict)), \
-                    f"Metadata key '{key}' has invalid type {type(value)}. " \
+                assert not isinstance(value, (list, dict)), (
+                    f"Metadata key '{key}' has invalid type {type(value)}. "
                     f"Value: {value}"
+                )
 
 
 @pytest.mark.asyncio
@@ -439,15 +462,24 @@ async def test_element_types_are_standard(parser):
     result = await parser.parse(str(file_path))
 
     valid_element_types = {
-        "doc_section", "paragraph", "section", "table", "figure",
-        "code_block", "list", "list_item", "blockquote", "text",
-        None  # Some chunks may not have element_type
+        "doc_section",
+        "paragraph",
+        "section",
+        "table",
+        "figure",
+        "code_block",
+        "list",
+        "list_item",
+        "blockquote",
+        "text",
+        None,  # Some chunks may not have element_type
     }
 
     for chunk in result.chunks:
         if chunk.element_type:
-            assert chunk.element_type in valid_element_types or True, \
+            assert chunk.element_type in valid_element_types or True, (
                 f"Unexpected element_type: {chunk.element_type}"
+            )
 
 
 @pytest.mark.asyncio
@@ -464,8 +496,9 @@ async def test_relationships_have_valid_types(parser):
     rel_types = get_relationship_types(result)
 
     for rel_type in rel_types:
-        assert rel_type in valid_rel_types, \
+        assert rel_type in valid_rel_types, (
             f"Unexpected relationship type: {rel_type}. Expected one of: {valid_rel_types}"
+        )
 
 
 # =============================================================================
@@ -520,7 +553,9 @@ Content at level 6.
         headings = get_chunks_by_element_type(result, "doc_section")
 
         # Should handle all 6 levels
-        assert len(headings) >= 4, f"Should find multiple heading levels. Found: {len(headings)}"
+        assert len(headings) >= 4, (
+            f"Should find multiple heading levels. Found: {len(headings)}"
+        )
 
     finally:
         Path(temp_path).unlink()
@@ -554,7 +589,9 @@ Content for C.
         follows = get_relationships_by_type(result, "follows")
 
         # Should have multiple h2 headings
-        assert len(headings) >= 3, f"Should find multiple headings. Found: {len(headings)}"
+        assert len(headings) >= 3, (
+            f"Should find multiple headings. Found: {len(headings)}"
+        )
 
         # Should have follows relationships between siblings
         if follows:

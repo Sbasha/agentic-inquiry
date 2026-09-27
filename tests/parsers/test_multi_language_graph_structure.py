@@ -33,12 +33,14 @@ def get_all_relationships(result) -> list[dict[str, Any]]:
     relationships = []
     for chunk in result.chunks:
         for rel in chunk.relationships:
-            relationships.append({
-                "source": rel.source_name,
-                "target": rel.target_name,
-                "type": rel.type,
-                "metadata": rel.metadata,
-            })
+            relationships.append(
+                {
+                    "source": rel.source_name,
+                    "target": rel.target_name,
+                    "type": rel.type,
+                    "metadata": rel.metadata,
+                }
+            )
     return relationships
 
 
@@ -93,8 +95,9 @@ async def test_python_complex_extracts_methods(parser):
 
     # ComplexAnalyzer should define distance and root_mean_square
     defined_methods = [r["target"] for r in defines if r["source"] == "ComplexAnalyzer"]
-    assert "distance" in defined_methods or any("distance" in m for m in defined_methods), \
-        f"ComplexAnalyzer should define distance method. Found: {defined_methods}"
+    assert "distance" in defined_methods or any(
+        "distance" in m for m in defined_methods
+    ), f"ComplexAnalyzer should define distance method. Found: {defined_methods}"
 
 
 @pytest.mark.asyncio
@@ -125,8 +128,9 @@ async def test_python_complex_extracts_imports(parser):
 
     # Should import math.sqrt
     import_names = [r["target"] for r in imports]
-    assert any("sqrt" in str(i) or "math" in str(i) for i in import_names), \
+    assert any("sqrt" in str(i) or "math" in str(i) for i in import_names), (
         f"Should import sqrt from math. Found imports: {import_names}"
+    )
 
 
 # =============================================================================
@@ -190,7 +194,9 @@ async def test_typescript_complex_extracts_functions(parser):
 
     # Should find describeMetrics and buildDefaultAnalyzer functions
     has_describe = any("describeMetrics" in str(s) for s in symbols)
-    has_builder = any("buildDefaultAnalyzer" in str(s) or "buildDefault" in str(s) for s in symbols)
+    has_builder = any(
+        "buildDefaultAnalyzer" in str(s) or "buildDefault" in str(s) for s in symbols
+    )
     assert has_describe or has_builder, "Should find exported functions in TypeScript"
 
 
@@ -227,7 +233,9 @@ async def test_java_complex_extracts_methods(parser):
     # Should find method definitions
     method_names = [r["target"] for r in defines]
     # Java has distance, rootMeanSquare, buildDefault methods
-    assert len(defines) > 0, f"Should find method definitions in Java. Found: {method_names}"
+    assert len(defines) > 0, (
+        f"Should find method definitions in Java. Found: {method_names}"
+    )
 
 
 @pytest.mark.asyncio
@@ -242,7 +250,9 @@ async def test_java_complex_extracts_imports(parser):
 
     # Should import java.util classes
     import_names = [r["target"] for r in imports]
-    has_java_imports = any("Arrays" in str(i) or "List" in str(i) or "java" in str(i) for i in import_names)
+    has_java_imports = any(
+        "Arrays" in str(i) or "List" in str(i) or "java" in str(i) for i in import_names
+    )
     assert has_java_imports, f"Should handle Java imports. Found: {import_names}"
 
 
@@ -376,19 +386,19 @@ FULL_SUPPORT_LANGUAGES = [
 # Languages with PARTIAL graph support (chunks but limited/no symbols/relationships)
 # TODO: These should be improved to extract full graph structure
 PARTIAL_SUPPORT_LANGUAGES = [
-    ("ts", "complex.ts"),      # Tree-sitter query error
+    ("ts", "complex.ts"),  # Tree-sitter query error
     ("java", "ComplexExample.java"),  # Class found, methods need work
-    ("go", "complex.go"),      # Struct/functions found, methods not linked
-    ("js", "complex.js"),      # Chunks only
-    ("rs", "complex.rs"),      # Chunks with some symbols
-    ("rb", "complex.rb"),      # Chunks only
-    ("cpp", "complex.cpp"),    # Chunks only
-    ("c", "complex.c"),        # Chunks only
-    ("cs", "complex.cs"),      # Chunks only
-    ("kt", "complex.kt"),      # Chunks only
+    ("go", "complex.go"),  # Struct/functions found, methods not linked
+    ("js", "complex.js"),  # Chunks only
+    ("rs", "complex.rs"),  # Chunks with some symbols
+    ("rb", "complex.rb"),  # Chunks only
+    ("cpp", "complex.cpp"),  # Chunks only
+    ("c", "complex.c"),  # Chunks only
+    ("cs", "complex.cs"),  # Chunks only
+    ("kt", "complex.kt"),  # Chunks only
     ("swift", "ComplexMetrics.swift"),  # Chunks only
     ("scala", "complex.scala"),  # Chunks only
-    ("php", "complex.php"),    # Chunks only
+    ("php", "complex.php"),  # Chunks only
 ]
 
 # All languages combined for basic tests
@@ -405,12 +415,16 @@ async def test_language_produces_chunks(parser, lang_dir: str, filename: str):
 
     result = await parser.parse(str(file_path))
 
-    assert len(result.chunks) > 0, f"Parser should produce chunks for {lang_dir}/{filename}"
+    assert len(result.chunks) > 0, (
+        f"Parser should produce chunks for {lang_dir}/{filename}"
+    )
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("lang_dir,filename", FULL_SUPPORT_LANGUAGES)
-async def test_full_support_language_extracts_symbols_and_relationships(parser, lang_dir: str, filename: str):
+async def test_full_support_language_extracts_symbols_and_relationships(
+    parser, lang_dir: str, filename: str
+):
     """Test that FULL_SUPPORT languages extract both symbols and relationships."""
     file_path = SAMPLES_DIR / lang_dir / filename
     if not file_path.exists():
@@ -422,15 +436,19 @@ async def test_full_support_language_extracts_symbols_and_relationships(parser, 
     relationships = get_all_relationships(result)
 
     # Full support languages should have BOTH symbols AND relationships
-    assert len(symbols) > 0, \
+    assert len(symbols) > 0, (
         f"Full support language {lang_dir}/{filename} should extract symbols. Found: {len(symbols)}"
-    assert len(relationships) > 0, \
+    )
+    assert len(relationships) > 0, (
         f"Full support language {lang_dir}/{filename} should extract relationships. Found: {len(relationships)}"
+    )
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("lang_dir,filename", PARTIAL_SUPPORT_LANGUAGES)
-async def test_partial_support_language_produces_chunks(parser, lang_dir: str, filename: str):
+async def test_partial_support_language_produces_chunks(
+    parser, lang_dir: str, filename: str
+):
     """Test that PARTIAL_SUPPORT languages at least produce chunks.
 
     NOTE: These languages should be improved to extract full graph structure.
@@ -443,8 +461,9 @@ async def test_partial_support_language_produces_chunks(parser, lang_dir: str, f
     result = await parser.parse(str(file_path))
 
     # Partial support languages should at least produce chunks
-    assert len(result.chunks) > 0, \
+    assert len(result.chunks) > 0, (
         f"Partial support language {lang_dir}/{filename} should produce chunks"
+    )
 
     # Document what's extracted for visibility
     symbols = get_all_symbols(result)
@@ -459,7 +478,14 @@ async def test_partial_support_language_produces_chunks(parser, lang_dir: str, f
 @pytest.mark.asyncio
 async def test_all_languages_consistent_relationship_types(parser):
     """Test that relationship types are consistent across languages."""
-    valid_relationship_types = {"imports", "calls", "inherits", "defines", "uses", "contains"}
+    valid_relationship_types = {
+        "imports",
+        "calls",
+        "inherits",
+        "defines",
+        "uses",
+        "contains",
+    }
 
     for lang_dir, filename in LANGUAGE_SAMPLES:
         file_path = SAMPLES_DIR / lang_dir / filename
@@ -471,8 +497,9 @@ async def test_all_languages_consistent_relationship_types(parser):
 
         # All relationship types should be from the valid set
         invalid_types = rel_types - valid_relationship_types
-        assert len(invalid_types) == 0, \
+        assert len(invalid_types) == 0, (
             f"Invalid relationship types in {lang_dir}/{filename}: {invalid_types}"
+        )
 
 
 # =============================================================================
@@ -513,7 +540,7 @@ async def test_inheritance_relationships_valid(parser):
     # Create a test file with inheritance
     import tempfile
 
-    code = '''
+    code = """
 class Animal:
     def speak(self):
         pass
@@ -529,7 +556,7 @@ class Cat(Animal):
 class Labrador(Dog):
     def fetch(self):
         pass
-'''
+"""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write(code)
         temp_path = f.name
@@ -560,7 +587,7 @@ async def test_call_relationships_have_source_and_target(parser):
     """Test that call relationships have valid source and target."""
     import tempfile
 
-    code = '''
+    code = """
 def helper():
     return 42
 
@@ -568,7 +595,7 @@ def main():
     result = helper()
     print(result)
     return result
-'''
+"""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write(code)
         temp_path = f.name
@@ -584,8 +611,9 @@ def main():
 
         # Should find the helper() and print() calls
         call_targets = [c["target"] for c in calls]
-        assert "helper" in call_targets or "print" in call_targets, \
+        assert "helper" in call_targets or "print" in call_targets, (
             f"Should find helper or print calls. Found: {call_targets}"
+        )
 
     finally:
         Path(temp_path).unlink()
@@ -615,7 +643,9 @@ async def test_chunks_have_required_fields(parser, lang_dir: str, filename: str)
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("lang_dir,filename", FULL_SUPPORT_LANGUAGES)
-async def test_metadata_has_valid_types_for_lancedb(parser, lang_dir: str, filename: str):
+async def test_metadata_has_valid_types_for_lancedb(
+    parser, lang_dir: str, filename: str
+):
     """Test that metadata values are primitive types (LanceDB constraint).
 
     LanceDB requires metadata values to be str, int, float, bool, or None.
@@ -630,9 +660,10 @@ async def test_metadata_has_valid_types_for_lancedb(parser, lang_dir: str, filen
     for chunk in result.chunks:
         if chunk.metadata:
             for key, value in chunk.metadata.items():
-                assert not isinstance(value, (list, dict)), \
-                    f"Metadata value for '{key}' should not be list/dict in {lang_dir}/{filename}. " \
+                assert not isinstance(value, (list, dict)), (
+                    f"Metadata value for '{key}' should not be list/dict in {lang_dir}/{filename}. "
                     f"Got: {type(value).__name__} = {value}"
+                )
 
 
 @pytest.mark.asyncio
@@ -648,9 +679,12 @@ async def test_relationships_have_consistent_structure(parser):
         for chunk in result.chunks:
             for rel in chunk.relationships:
                 # Required relationship fields
-                assert rel.type, f"Relationship should have type in {lang_dir}/{filename}"
-                assert rel.source_name or rel.target_name, \
+                assert rel.type, (
+                    f"Relationship should have type in {lang_dir}/{filename}"
+                )
+                assert rel.source_name or rel.target_name, (
                     f"Relationship should have source or target in {lang_dir}/{filename}"
+                )
 
 
 if __name__ == "__main__":

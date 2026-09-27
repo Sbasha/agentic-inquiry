@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+
 @dataclass(slots=True)
 class ParserRelationship:
     source_type: str
@@ -61,14 +62,15 @@ def _normalise_relationships(
 
 class ParserChunk(BaseModel):
     """A chunk of parsed content with metadata.
-    
+
     The `metadata` dict supports standard JSON-serializable types (str, int, float, bool, None, list, dict).
     These are serialized to JSON strings during storage to ensure compatibility across backends.
-    
+
     Prefer using top-level fields (symbols, language, line_start, etc.) over metadata where possible.
     Use ranking_signals for metrics and scores.
     Use symbol_metadata/symbol_rankings for per-symbol information.
     """
+
     content: Optional[str]
     fts_text: Optional[str] = None
     content_type: Optional[str] = None
@@ -96,15 +98,17 @@ class ParserChunk(BaseModel):
 
     @field_validator("metadata")
     @classmethod
-    def validate_metadata_types(cls, v: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    def validate_metadata_types(
+        cls, v: Optional[Dict[str, Any]]
+    ) -> Optional[Dict[str, Any]]:
         """Ensure metadata contains valid JSON-serializable types.
-        
+
         Allows str, int, float, bool, None, list, and dict.
         Complex objects that are not JSON-serializable will cause issues during storage.
         """
         if v is None:
             return v
-            
+
         # We allow complex types now, relying on the storage layer to handle serialization.
         # Basic validation to ensure keys are strings is sufficient for Pydantic.
         return v

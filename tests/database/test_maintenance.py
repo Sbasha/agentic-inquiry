@@ -2,6 +2,7 @@
 
 Tests compact_tables(), cleanup_old_versions(), and run_maintenance().
 """
+
 import asyncio
 from collections import defaultdict
 from datetime import timedelta
@@ -17,11 +18,13 @@ from agentic_inquiry.database.lancedb_manager import _NO_VERSION_CLEANUP, LanceD
 
 class MockFragment:
     """Mock fragment for testing."""
+
     pass
 
 
 class MockVersion:
     """Mock version for testing."""
+
     pass
 
 
@@ -94,8 +97,12 @@ def mock_manager():
     async def compact_tables_impl(table_names=None):
         return await LanceDBManager.compact_tables(manager, table_names)
 
-    async def cleanup_old_versions_impl(table_names=None, older_than=timedelta(hours=1)):
-        return await LanceDBManager.cleanup_old_versions(manager, table_names, older_than)
+    async def cleanup_old_versions_impl(
+        table_names=None, older_than=timedelta(hours=1)
+    ):
+        return await LanceDBManager.cleanup_old_versions(
+            manager, table_names, older_than
+        )
 
     manager.compact_tables = compact_tables_impl
     manager.cleanup_old_versions = cleanup_old_versions_impl
@@ -106,6 +113,7 @@ def mock_manager():
 # ============================================================================
 # compact_tables() Tests
 # ============================================================================
+
 
 class TestCompactTables:
     """Tests for LanceDBManager.compact_tables()."""
@@ -128,7 +136,9 @@ class TestCompactTables:
     async def test_compact_nonexistent_table_skipped(self, mock_manager):
         """Test that non-existent tables are skipped."""
         # No tables added to mock
-        result = await LanceDBManager.compact_tables(mock_manager, ["nonexistent_table"])
+        result = await LanceDBManager.compact_tables(
+            mock_manager, ["nonexistent_table"]
+        )
 
         assert "nonexistent_table" in result
         assert result["nonexistent_table"]["status"] == "skipped"
@@ -153,8 +163,7 @@ class TestCompactTables:
         mock_manager._tables["graph_relationships"] = MockTable(fragments=3)
 
         result = await LanceDBManager.compact_tables(
-            mock_manager,
-            ["document_chunks", "graph_entities", "graph_relationships"]
+            mock_manager, ["document_chunks", "graph_entities", "graph_relationships"]
         )
 
         assert len(result) == 3
@@ -164,12 +173,13 @@ class TestCompactTables:
     async def test_compact_mixed_results(self, mock_manager):
         """Test compaction with mixed success/failure/skip."""
         mock_manager._tables["document_chunks"] = MockTable(fragments=5)
-        mock_manager._tables["graph_entities"] = MockTable(fragments=3, compact_error=True)
+        mock_manager._tables["graph_entities"] = MockTable(
+            fragments=3, compact_error=True
+        )
         # graph_relationships not added (will be skipped)
 
         result = await LanceDBManager.compact_tables(
-            mock_manager,
-            ["document_chunks", "graph_entities", "graph_relationships"]
+            mock_manager, ["document_chunks", "graph_entities", "graph_relationships"]
         )
 
         assert result["document_chunks"]["status"] == "success"
@@ -193,6 +203,7 @@ class TestCompactTables:
 # cleanup_old_versions() Tests
 # ============================================================================
 
+
 class TestCleanupOldVersions:
     """Tests for LanceDBManager.cleanup_old_versions()."""
 
@@ -203,9 +214,7 @@ class TestCleanupOldVersions:
         mock_manager._tables["document_chunks"] = mock_table
 
         result = await LanceDBManager.cleanup_old_versions(
-            mock_manager,
-            ["document_chunks"],
-            older_than=timedelta(hours=1)
+            mock_manager, ["document_chunks"], older_than=timedelta(hours=1)
         )
 
         assert "document_chunks" in result
@@ -217,9 +226,7 @@ class TestCleanupOldVersions:
     async def test_cleanup_nonexistent_table_skipped(self, mock_manager):
         """Test that non-existent tables are skipped during cleanup."""
         result = await LanceDBManager.cleanup_old_versions(
-            mock_manager,
-            ["nonexistent_table"],
-            older_than=timedelta(hours=1)
+            mock_manager, ["nonexistent_table"], older_than=timedelta(hours=1)
         )
 
         assert "nonexistent_table" in result
@@ -233,9 +240,7 @@ class TestCleanupOldVersions:
         mock_manager._tables["document_chunks"] = mock_table
 
         result = await LanceDBManager.cleanup_old_versions(
-            mock_manager,
-            ["document_chunks"],
-            older_than=timedelta(hours=1)
+            mock_manager, ["document_chunks"], older_than=timedelta(hours=1)
         )
 
         assert result["document_chunks"]["status"] == "error"
@@ -249,9 +254,7 @@ class TestCleanupOldVersions:
 
         # Use a longer retention period
         result = await LanceDBManager.cleanup_old_versions(
-            mock_manager,
-            ["document_chunks"],
-            older_than=timedelta(days=7)
+            mock_manager, ["document_chunks"], older_than=timedelta(days=7)
         )
 
         assert result["document_chunks"]["status"] == "success"
@@ -265,7 +268,7 @@ class TestCleanupOldVersions:
         result = await LanceDBManager.cleanup_old_versions(
             mock_manager,
             ["document_chunks", "graph_entities"],
-            older_than=timedelta(hours=2)
+            older_than=timedelta(hours=2),
         )
 
         assert len(result) == 2
@@ -275,12 +278,14 @@ class TestCleanupOldVersions:
     async def test_cleanup_mixed_results(self, mock_manager):
         """Test cleanup with mixed success/failure/skip."""
         mock_manager._tables["document_chunks"] = MockTable(versions=5)
-        mock_manager._tables["graph_entities"] = MockTable(versions=3, cleanup_error=True)
+        mock_manager._tables["graph_entities"] = MockTable(
+            versions=3, cleanup_error=True
+        )
 
         result = await LanceDBManager.cleanup_old_versions(
             mock_manager,
             ["document_chunks", "graph_entities", "graph_relationships"],
-            older_than=timedelta(hours=1)
+            older_than=timedelta(hours=1),
         )
 
         assert result["document_chunks"]["status"] == "success"
@@ -294,9 +299,7 @@ class TestCleanupOldVersions:
         mock_manager._tables["document_chunks"] = mock_table
 
         result = await LanceDBManager.cleanup_old_versions(
-            mock_manager,
-            ["document_chunks"],
-            older_than=timedelta(hours=1)
+            mock_manager, ["document_chunks"], older_than=timedelta(hours=1)
         )
 
         assert result["document_chunks"]["status"] == "success"
@@ -306,6 +309,7 @@ class TestCleanupOldVersions:
 # ============================================================================
 # run_maintenance() Tests
 # ============================================================================
+
 
 class TestRunMaintenance:
     """Tests for LanceDBManager.run_maintenance()."""
@@ -320,7 +324,7 @@ class TestRunMaintenance:
         result = await LanceDBManager.run_maintenance(
             mock_manager,
             ["document_chunks", "graph_entities", "graph_relationships"],
-            cleanup_older_than=timedelta(hours=1)
+            cleanup_older_than=timedelta(hours=1),
         )
 
         assert "compaction" in result
@@ -347,7 +351,7 @@ class TestRunMaintenance:
         result = await LanceDBManager.run_maintenance(
             mock_manager,
             ["document_chunks", "graph_entities"],
-            cleanup_older_than=timedelta(hours=1)
+            cleanup_older_than=timedelta(hours=1),
         )
 
         # Should still have results for both
@@ -363,7 +367,7 @@ class TestRunMaintenance:
         result = await LanceDBManager.run_maintenance(
             mock_manager,
             ["nonexistent1", "nonexistent2"],
-            cleanup_older_than=timedelta(hours=1)
+            cleanup_older_than=timedelta(hours=1),
         )
 
         assert all(r["status"] == "skipped" for r in result["compaction"].values())
@@ -377,9 +381,7 @@ class TestRunMaintenance:
         mock_manager._tables["document_chunks"] = MockTable(fragments=5, versions=10)
 
         result = await LanceDBManager.run_maintenance(
-            mock_manager,
-            ["document_chunks"],
-            cleanup_older_than=timedelta(days=30)
+            mock_manager, ["document_chunks"], cleanup_older_than=timedelta(days=30)
         )
 
         assert result["compaction"]["document_chunks"]["status"] == "success"
@@ -394,9 +396,7 @@ class TestRunMaintenance:
         mock_manager._tables["table2"] = MockTable(fragments=8, versions=3)
 
         result = await LanceDBManager.run_maintenance(
-            mock_manager,
-            ["table1", "table2"],
-            cleanup_older_than=timedelta(hours=1)
+            mock_manager, ["table1", "table2"], cleanup_older_than=timedelta(hours=1)
         )
 
         # Expected: (10-1) + (8-1) = 16 fragments reduced
@@ -415,7 +415,7 @@ class TestRunMaintenance:
         result = await LanceDBManager.run_maintenance(
             mock_manager,
             ["good_table", "bad_table"],
-            cleanup_older_than=timedelta(hours=1)
+            cleanup_older_than=timedelta(hours=1),
         )
 
         # Only good_table should contribute
@@ -430,9 +430,7 @@ class TestRunMaintenance:
         mock_manager._tables["empty_table"] = MockTable(fragments=0, versions=0)
 
         result = await LanceDBManager.run_maintenance(
-            mock_manager,
-            ["empty_table"],
-            cleanup_older_than=timedelta(hours=1)
+            mock_manager, ["empty_table"], cleanup_older_than=timedelta(hours=1)
         )
 
         assert result["compaction"]["empty_table"]["status"] == "success"

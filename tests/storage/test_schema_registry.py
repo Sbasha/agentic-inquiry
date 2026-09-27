@@ -160,7 +160,9 @@ class TestSchemaMerging:
     @pytest.fixture
     def base_schema(self):
         """Load the base configuration schema."""
-        schema_path = Path(__file__).parent.parent.parent / "config" / "config.schema.json"
+        schema_path = (
+            Path(__file__).parent.parent.parent / "config" / "config.schema.json"
+        )
         with open(schema_path, "r") as f:
             return json.load(f)
 
@@ -227,7 +229,9 @@ class TestSchemaValidation:
     @pytest.fixture
     def merged_schema(self):
         """Get merged schema for validation tests."""
-        schema_path = Path(__file__).parent.parent.parent / "config" / "config.schema.json"
+        schema_path = (
+            Path(__file__).parent.parent.parent / "config" / "config.schema.json"
+        )
         with open(schema_path, "r") as f:
             base = json.load(f)
         return get_merged_storage_schema(base)
@@ -251,17 +255,10 @@ class TestSchemaValidation:
                 },
                 "vector_backend": "primary_pg",
             },
-            "cache": {
-                "document_cache": {"max_size": 1000}
-            },
-            "search": {
-                "default_limit": 10,
-                "max_limit": 100
-            },
-            "embeddings": {
-                "default_provider": "sentence_transformer"
-            },
-            "parsers": {}
+            "cache": {"document_cache": {"max_size": 1000}},
+            "search": {"default_limit": 10, "max_limit": 100},
+            "embeddings": {"default_provider": "sentence_transformer"},
+            "parsers": {},
         }
 
         # Should not raise
@@ -299,15 +296,19 @@ class TestSchemaMergingPropertyBased:
     @pytest.fixture
     def real_base_schema(self):
         """Load the actual base configuration schema."""
-        schema_path = Path(__file__).parent.parent.parent / "config" / "config.schema.json"
+        schema_path = (
+            Path(__file__).parent.parent.parent / "config" / "config.schema.json"
+        )
         with open(schema_path, "r") as f:
             return json.load(f)
 
-    @given(extra_props=st.dictionaries(
-        st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"),
-        json_value,
-        max_size=5
-    ))
+    @given(
+        extra_props=st.dictionaries(
+            st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"),
+            json_value,
+            max_size=5,
+        )
+    )
     @settings(max_examples=50, deadline=None)
     def test_merging_never_modifies_original_schema(self, extra_props):
         """Property: get_merged_storage_schema should never modify the input schema."""
@@ -317,13 +318,10 @@ class TestSchemaMergingPropertyBased:
             "properties": {
                 "storage": {
                     "type": "object",
-                    "properties": {
-                        "root": {"type": "string"},
-                        **extra_props
-                    },
+                    "properties": {"root": {"type": "string"}, **extra_props},
                     "additionalProperties": False,
                 }
-            }
+            },
         }
 
         # Deep copy before merging to compare
@@ -335,14 +333,27 @@ class TestSchemaMergingPropertyBased:
         # Original should be unchanged
         assert base_schema == original, "Merging modified the original schema"
 
-    @given(prop_name=st.text(min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"))
+    @given(
+        prop_name=st.text(
+            min_size=1, max_size=20, alphabet="abcdefghijklmnopqrstuvwxyz_"
+        )
+    )
     @settings(max_examples=30, deadline=None)
     def test_merging_preserves_arbitrary_storage_properties(self, prop_name):
         """Property: Existing storage properties should be preserved after merging."""
         # Skip reserved property names that get modified
-        assume(prop_name not in {"backends", "vector_backend", "graph_backend",
-                                  "events_backend", "file_tracker_backend_v2",
-                                  "table_prefix", "additionalProperties"})
+        assume(
+            prop_name
+            not in {
+                "backends",
+                "vector_backend",
+                "graph_backend",
+                "events_backend",
+                "file_tracker_backend_v2",
+                "table_prefix",
+                "additionalProperties",
+            }
+        )
 
         base_schema = {
             "properties": {
@@ -350,7 +361,7 @@ class TestSchemaMergingPropertyBased:
                     "type": "object",
                     "properties": {
                         prop_name: {"type": "string", "description": "test property"}
-                    }
+                    },
                 }
             }
         }
@@ -358,15 +369,19 @@ class TestSchemaMergingPropertyBased:
         merged = get_merged_storage_schema(base_schema)
         storage_props = merged["properties"]["storage"]["properties"]
 
-        assert prop_name in storage_props, f"Property '{prop_name}' was lost during merging"
+        assert prop_name in storage_props, (
+            f"Property '{prop_name}' was lost during merging"
+        )
         assert storage_props[prop_name]["type"] == "string"
 
-    @given(backend_names=st.lists(
-        st.text(min_size=1, max_size=15, alphabet="abcdefghijklmnopqrstuvwxyz"),
-        min_size=0,
-        max_size=3,
-        unique=True
-    ))
+    @given(
+        backend_names=st.lists(
+            st.text(min_size=1, max_size=15, alphabet="abcdefghijklmnopqrstuvwxyz"),
+            min_size=0,
+            max_size=3,
+            unique=True,
+        )
+    )
     @settings(max_examples=30, deadline=None)
     def test_merged_schema_always_has_required_role_properties(self, backend_names):
         """Property: Merged schema always has role assignment properties."""
@@ -376,7 +391,7 @@ class TestSchemaMergingPropertyBased:
                     "type": "object",
                     "properties": {
                         "root": {"type": "string"},
-                    }
+                    },
                 }
             }
         }
@@ -385,18 +400,26 @@ class TestSchemaMergingPropertyBased:
         storage_props = merged["properties"]["storage"]["properties"]
 
         # These role properties should always be present
-        required_roles = ["vector_backend", "graph_backend", "events_backend",
-                         "file_tracker_backend_v2"]
+        required_roles = [
+            "vector_backend",
+            "graph_backend",
+            "events_backend",
+            "file_tracker_backend_v2",
+        ]
 
         for role in required_roles:
-            assert role in storage_props, f"Role property '{role}' missing from merged schema"
+            assert role in storage_props, (
+                f"Role property '{role}' missing from merged schema"
+            )
             assert storage_props[role]["type"] == "string"
 
-    @given(extra_top_level=st.dictionaries(
-        st.text(min_size=1, max_size=15, alphabet="abcdefghijklmnopqrstuvwxyz"),
-        st.fixed_dictionaries({"type": st.just("object")}),
-        max_size=3
-    ))
+    @given(
+        extra_top_level=st.dictionaries(
+            st.text(min_size=1, max_size=15, alphabet="abcdefghijklmnopqrstuvwxyz"),
+            st.fixed_dictionaries({"type": st.just("object")}),
+            max_size=3,
+        )
+    )
     @settings(max_examples=30, deadline=None)
     def test_merging_preserves_non_storage_properties(self, extra_top_level):
         """Property: Non-storage properties in the schema are preserved."""
@@ -404,19 +427,22 @@ class TestSchemaMergingPropertyBased:
             "properties": {
                 "storage": {
                     "type": "object",
-                    "properties": {"root": {"type": "string"}}
+                    "properties": {"root": {"type": "string"}},
                 },
-                **extra_top_level
+                **extra_top_level,
             }
         }
 
         merged = get_merged_storage_schema(base_schema)
 
         for prop_name in extra_top_level:
-            assert prop_name in merged["properties"], \
+            assert prop_name in merged["properties"], (
                 f"Top-level property '{prop_name}' was lost during merging"
+            )
 
-    def test_merging_always_produces_valid_json_schema_structure(self, real_base_schema):
+    def test_merging_always_produces_valid_json_schema_structure(
+        self, real_base_schema
+    ):
         """Property: Merged schema should always have valid JSON schema structure."""
         merged = get_merged_storage_schema(real_base_schema)
 
@@ -450,14 +476,15 @@ class TestSchemaMergingPropertyBased:
 
             registered = get_registered_backends()
             for backend in registered:
-                assert backend in backend_types_in_schema, \
+                assert backend in backend_types_in_schema, (
                     f"Registered backend '{backend}' not found in merged schema"
+                )
 
     @given(iterations=st.integers(min_value=1, max_value=5))
     @settings(
         max_examples=10,
         deadline=None,
-        suppress_health_check=[HealthCheck.function_scoped_fixture]
+        suppress_health_check=[HealthCheck.function_scoped_fixture],
     )
     def test_merging_is_idempotent(self, real_base_schema, iterations):
         """Property: Merging multiple times should produce equivalent results.

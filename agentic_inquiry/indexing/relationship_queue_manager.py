@@ -60,8 +60,7 @@ class RelationshipQueueManager:
 
     @staticmethod
     def generate_relationship_id(
-        relationship: "ParserRelationship",
-        source_file_path: str
+        relationship: "ParserRelationship", source_file_path: str
     ) -> str:
         """Generate a unique ID for a relationship for deduplication.
 
@@ -89,9 +88,7 @@ class RelationshipQueueManager:
         return hashlib.sha256(id_string.encode()).hexdigest()[:16]
 
     def add_pending_relationship(
-        self,
-        relationship: "ParserRelationship",
-        source_file_path: str
+        self, relationship: "ParserRelationship", source_file_path: str
     ) -> None:
         """Add a relationship to the pending queue for later resolution.
 
@@ -164,7 +161,8 @@ class RelationshipQueueManager:
         """
         original_count = len(self._pending_relationships)
         self._pending_relationships = [
-            (rel, source_file) for rel, source_file in self._pending_relationships
+            (rel, source_file)
+            for rel, source_file in self._pending_relationships
             if source_file != file_path
         ]
         removed_count = original_count - len(self._pending_relationships)
@@ -172,7 +170,8 @@ class RelationshipQueueManager:
         if removed_count > 0:
             logger.debug(
                 "Removed %d pending relationships for file: %s",
-                removed_count, file_path
+                removed_count,
+                file_path,
             )
 
         return removed_count
@@ -222,9 +221,7 @@ class RelationshipQueueManager:
         return removed
 
     def is_relationship_committed(
-        self,
-        relationship: "ParserRelationship",
-        source_file_path: str
+        self, relationship: "ParserRelationship", source_file_path: str
     ) -> bool:
         """Check if a specific relationship has been committed.
 

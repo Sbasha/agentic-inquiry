@@ -25,7 +25,10 @@ def mock_embedding_service():
         return_value=[np.random.rand(384).astype(np.float32) for _ in range(10)]
     )
     service.get_embedder_configuration = MagicMock(
-        return_value=(MagicMock(generate=lambda x: [np.random.rand(384).astype(np.float32)]), 384)
+        return_value=(
+            MagicMock(generate=lambda x: [np.random.rand(384).astype(np.float32)]),
+            384,
+        )
     )
     return service
 
@@ -37,7 +40,9 @@ def mock_external_resolver():
 
     resolver = MagicMock()
 
-    def mock_resolve(target_name, target_type, language="", source_file="", metadata=None):
+    def mock_resolve(
+        target_name, target_type, language="", source_file="", metadata=None
+    ):
         info = MagicMock()
         info.entity_id = f"ext_{target_name}_{language}"
         info.name = target_name
@@ -52,7 +57,9 @@ def mock_external_resolver():
 
 
 @pytest.fixture
-def external_entity_manager(mock_db_manager, mock_embedding_service, mock_external_resolver):
+def external_entity_manager(
+    mock_db_manager, mock_embedding_service, mock_external_resolver
+):
     """Create an ExternalEntityManager instance."""
     return ExternalEntityManager(
         project_id="test_project",
@@ -157,7 +164,9 @@ class TestExternalEntityManager:
         assert external_entity_manager.pending_count == 1  # Not cleared
 
     @pytest.mark.asyncio
-    async def test_flush_if_needed_above_threshold(self, external_entity_manager, mock_db_manager):
+    async def test_flush_if_needed_above_threshold(
+        self, external_entity_manager, mock_db_manager
+    ):
         """Test that flush happens above threshold."""
         # Queue 5 entities
         for i in range(5):
@@ -205,16 +214,14 @@ class TestDetectLanguage:
     def test_detect_language_from_metadata_language(self):
         """Test detecting language from metadata 'language' key."""
         result = ExternalEntityManager.detect_language(
-            "test.txt",
-            metadata={"language": "Python"}
+            "test.txt", metadata={"language": "Python"}
         )
         assert result == "python"
 
     def test_detect_language_from_metadata_lang(self):
         """Test detecting language from metadata 'lang' key."""
         result = ExternalEntityManager.detect_language(
-            "test.txt",
-            metadata={"lang": "JavaScript"}
+            "test.txt", metadata={"lang": "JavaScript"}
         )
         assert result == "javascript"
 
@@ -252,8 +259,7 @@ class TestDetectLanguage:
     def test_detect_language_metadata_takes_precedence(self):
         """Test that metadata takes precedence over extension."""
         result = ExternalEntityManager.detect_language(
-            "test.py",
-            metadata={"language": "TypeScript"}
+            "test.py", metadata={"language": "TypeScript"}
         )
         assert result == "typescript"
 

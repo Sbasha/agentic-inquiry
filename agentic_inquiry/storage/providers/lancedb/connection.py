@@ -171,7 +171,9 @@ class LanceDBConnectionManager:
         await self._db_manager.create_tables_and_indexes()
 
         self._initialized = True
-        logger.info("LanceDB connection manager initialized for project %s", self._project_id)
+        logger.info(
+            "LanceDB connection manager initialized for project %s", self._project_id
+        )
 
     async def close(self) -> None:
         """Close database connections and release resources.

@@ -27,6 +27,7 @@ Usage:
 
 See: docs/design/database-abstraction-revised.md (Integration Glue)
 """
+
 from __future__ import annotations
 
 import logging
@@ -66,9 +67,9 @@ async def create_vector_adapter(config: Config) -> LanceDBManager:
     from agentic_inquiry.database.lancedb_manager import LanceDBManager
 
     # Get backend from config (defaults to "lancedb")
-    backend = getattr(config.storage, 'backend', 'lancedb')
+    backend = getattr(config.storage, "backend", "lancedb")
 
-    if backend != 'lancedb':
+    if backend != "lancedb":
         raise ValueError(
             f"Unsupported vector storage backend: {backend}. "
             f"Currently only 'lancedb' is supported."
@@ -108,9 +109,9 @@ async def create_event_store(config: Config) -> EventStore:
     from agentic_inquiry.events.store import EventStore
 
     # Get backend from config (defaults to "sqlite")
-    backend = getattr(config.storage, 'event_store_backend', 'sqlite')
+    backend = getattr(config.storage, "event_store_backend", "sqlite")
 
-    if backend != 'sqlite':
+    if backend != "sqlite":
         raise ValueError(
             f"Unsupported event store backend: {backend}. "
             f"Currently only 'sqlite' is supported."
@@ -150,9 +151,9 @@ async def create_file_tracker(config: Config) -> FileTracker:
     from agentic_inquiry.watching.file_tracker import FileTracker
 
     # Get backend from config (defaults to "sqlite")
-    backend = getattr(config.storage, 'file_tracker_backend', 'sqlite')
+    backend = getattr(config.storage, "file_tracker_backend", "sqlite")
 
-    if backend != 'sqlite':
+    if backend != "sqlite":
         raise ValueError(
             f"Unsupported file tracker backend: {backend}. "
             f"Currently only 'sqlite' is supported."

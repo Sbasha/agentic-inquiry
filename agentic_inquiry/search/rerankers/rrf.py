@@ -7,6 +7,7 @@ fusing ranks is what makes them comparable.
 
 Reference: https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf
 """
+
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
@@ -45,8 +46,13 @@ class RRFReranker(RerankerProtocol):
         first: Dict[str, SearchResult] = {}
         for ranking in rankings:
             for rank, result in enumerate(ranking):
-                scores[result.id] = scores.get(result.id, 0.0) + 1.0 / (self.k + rank + 1)
+                scores[result.id] = scores.get(result.id, 0.0) + 1.0 / (
+                    self.k + rank + 1
+                )
                 first.setdefault(result.id, result)
         best = max(1, len(rankings)) / (self.k + 1)
         ordered = sorted(scores, key=lambda rid: -scores[rid])
-        return [first[rid].with_score(min(1.0, scores[rid] / best), source="hybrid_rrf") for rid in ordered]
+        return [
+            first[rid].with_score(min(1.0, scores[rid] / best), source="hybrid_rrf")
+            for rid in ordered
+        ]

@@ -8,6 +8,7 @@ Test coverage:
 - Test 2: Branch-scoped search returns different results per branch
 - Test 3: Truncation applies before annotation when diff exceeds 500 total lines
 """
+
 from __future__ import annotations
 
 import uuid
@@ -64,14 +65,10 @@ def _write_python_files(base_path: Any) -> list[str]:
     file_b = base_path / "beta.py"
 
     file_a.write_text(
-        "def alpha_function():\n"
-        "    '''Alpha module function.'''\n"
-        "    return 'alpha'\n"
+        "def alpha_function():\n    '''Alpha module function.'''\n    return 'alpha'\n"
     )
     file_b.write_text(
-        "def beta_function():\n"
-        "    '''Beta module function.'''\n"
-        "    return 'beta'\n"
+        "def beta_function():\n    '''Beta module function.'''\n    return 'beta'\n"
     )
     return [str(file_a), str(file_b)]
 
@@ -103,9 +100,15 @@ async def test_search_with_local_diff_annotates_modified_file(tmp_path):
 
     # Inject a mock search service returning one result per file so the
     # annotation logic gets exercised with two distinct file paths.
-    result_alpha = _make_search_result(str(src_dir / "alpha.py"), "def alpha_function(): ...")
-    result_beta = _make_search_result(str(src_dir / "beta.py"), "def beta_function(): ...")
-    app.state.services = {"search_service": _mock_search_service(result_alpha, result_beta)}
+    result_alpha = _make_search_result(
+        str(src_dir / "alpha.py"), "def alpha_function(): ..."
+    )
+    result_beta = _make_search_result(
+        str(src_dir / "beta.py"), "def beta_function(): ..."
+    )
+    app.state.services = {
+        "search_service": _mock_search_service(result_alpha, result_beta)
+    }
 
     payload = {
         "query": "find function",
@@ -124,10 +127,14 @@ async def test_search_with_local_diff_annotates_modified_file(tmp_path):
         },
     }
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.post("/api/v1/search", json=payload)
 
-    assert response.status_code == 200, f"Unexpected status {response.status_code}: {response.text}"
+    assert response.status_code == 200, (
+        f"Unexpected status {response.status_code}: {response.text}"
+    )
     body = response.json()
 
     assert body["count"] == 2, f"Expected 2 results, got {body['count']}"
@@ -146,7 +153,9 @@ async def test_search_with_local_diff_annotates_modified_file(tmp_path):
     )
 
     # Verify local_changes_summary is present and correct
-    assert "local_changes_summary" in body, "Response must include local_changes_summary"
+    assert "local_changes_summary" in body, (
+        "Response must include local_changes_summary"
+    )
     summary = body["local_changes_summary"]
     assert summary["branch"] == "feature/my-work"
     assert summary["modified_file_count"] == 1
@@ -183,14 +192,18 @@ async def test_branch_scoped_search_routes_to_correct_content(tmp_path):
         if branch == "main":
             return [_make_search_result("main/service.py", "class MainService: pass")]
         elif branch == "feature/x":
-            return [_make_search_result("feature/service.py", "class FeatureService: pass")]
+            return [
+                _make_search_result("feature/service.py", "class FeatureService: pass")
+            ]
         return []
 
     svc = AsyncMock()
     svc.hybrid_search = _branch_aware_search
     app.state.services = {"search_service": svc}
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         # Search on main
         resp_main = await client.post(
             "/api/v1/search",
@@ -209,8 +222,12 @@ async def test_branch_scoped_search_routes_to_correct_content(tmp_path):
     body_feature = resp_feature.json()
 
     # Verify correct branch was forwarded on each call
-    assert "main" in received_branches, "hybrid_search was not called with branch='main'"
-    assert "feature/x" in received_branches, "hybrid_search was not called with branch='feature/x'"
+    assert "main" in received_branches, (
+        "hybrid_search was not called with branch='main'"
+    )
+    assert "feature/x" in received_branches, (
+        "hybrid_search was not called with branch='feature/x'"
+    )
 
     # Verify results reflect the requested branch
     assert body_main["count"] == 1
@@ -276,14 +293,20 @@ async def test_large_local_diff_is_truncated_before_annotation(tmp_path):
         },
     }
 
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as client:
         response = await client.post("/api/v1/search", json=payload)
 
-    assert response.status_code == 200, f"Unexpected status {response.status_code}: {response.text}"
+    assert response.status_code == 200, (
+        f"Unexpected status {response.status_code}: {response.text}"
+    )
     body = response.json()
 
     # Truncation must have been applied — local_changes_summary should reflect this
-    assert "local_changes_summary" in body, "Response must include local_changes_summary"
+    assert "local_changes_summary" in body, (
+        "Response must include local_changes_summary"
+    )
     summary = body["local_changes_summary"]
 
     assert summary["truncated"] is True, (

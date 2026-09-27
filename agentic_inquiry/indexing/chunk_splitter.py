@@ -42,9 +42,7 @@ def split_parser_chunks(
         Chunks within the limit are returned unchanged.
     """
     if max_size < MIN_CHUNK_SIZE:
-        raise ValueError(
-            f"max_size must be >= {MIN_CHUNK_SIZE}, got {max_size}"
-        )
+        raise ValueError(f"max_size must be >= {MIN_CHUNK_SIZE}, got {max_size}")
 
     result: List[ParserChunk] = []
     split_count = 0

@@ -6,6 +6,7 @@ and row conversion logic.
 
 Design reference: DES-S2-002 in .sessions/deep-architecture-review/009-design.md
 """
+
 from __future__ import annotations
 
 import json
@@ -17,7 +18,12 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 import numpy as np
 import pyarrow as pa
 
-from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier, MemoryStatus
+from agentic_inquiry.memory.models import (
+    MemoryContext,
+    MemoryItem,
+    MemoryTier,
+    MemoryStatus,
+)
 
 
 class _MetadataJSONEncoder(json.JSONEncoder):
@@ -41,6 +47,7 @@ class _MetadataJSONEncoder(json.JSONEncoder):
         if hasattr(obj, "dict"):
             return obj.dict()
         return super().default(obj)
+
 
 if TYPE_CHECKING:
     from agentic_inquiry.database.lancedb_manager import LanceDBManager
@@ -149,7 +156,9 @@ class LanceDBMemoryAdapter:
         try:
             row = self._memory_item_to_row(item, vector)
             await self._manager.add_rows(self._table_name, [row])
-            logger.debug("Stored memory item: id=%s, table=%s", item.id, self._table_name)
+            logger.debug(
+                "Stored memory item: id=%s, table=%s", item.id, self._table_name
+            )
             return item.id
         except Exception as e:
             logger.error("Failed to store memory item %s: %s", item.id, e)

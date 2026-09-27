@@ -1,4 +1,5 @@
 """Line packing shared by text and code chunking (docs/specs/retrieval-core)."""
+
 from __future__ import annotations
 
 import pytest
@@ -32,7 +33,11 @@ def test_prefers_breaking_after_a_blank_line() -> None:
 
 def test_single_long_line_stands_alone() -> None:
     lines = ["short", "y" * 500, "short"]
-    assert pack_lines(lines, first_line=10, budget=100) == [(10, 10), (11, 11), (12, 12)]
+    assert pack_lines(lines, first_line=10, budget=100) == [
+        (10, 10),
+        (11, 11),
+        (12, 12),
+    ]
 
 
 def test_offsets_by_first_line() -> None:

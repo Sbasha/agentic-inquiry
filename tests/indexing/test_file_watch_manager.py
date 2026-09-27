@@ -82,6 +82,7 @@ def mock_watcher(request):
     yield watcher
     # Cleanup
     from agentic_inquiry.watching import _watcher_registry
+
     try:
         _watcher_registry.unregister(watcher_name)
     except (KeyError, AttributeError):
@@ -90,10 +91,7 @@ def mock_watcher(request):
 
 def test_file_watch_manager_init_without_cache(tmp_path):
     """Test FileWatchManager initialization without cache."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     assert manager.project_root == str(tmp_path)
     assert manager.cache is None
@@ -103,10 +101,7 @@ def test_file_watch_manager_init_without_cache(tmp_path):
 
 def test_file_watch_manager_init_with_cache(tmp_path, mock_cache):
     """Test FileWatchManager initialization with cache."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=mock_cache
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=mock_cache)
 
     assert manager.project_root == str(tmp_path)
     assert manager.cache is mock_cache
@@ -115,10 +110,7 @@ def test_file_watch_manager_init_with_cache(tmp_path, mock_cache):
 
 def test_setup_file_watching(tmp_path, mock_watcher):
     """Test setting up file watching."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     # Setup file watching
     manager.setup_file_watching(mock_watcher._test_watcher_name)
@@ -141,10 +133,7 @@ def test_setup_file_watching(tmp_path, mock_watcher):
 
 def test_setup_file_watching_with_invalid_watcher(tmp_path):
     """Test setup with invalid watcher name."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     # Setup with non-existent watcher should not raise
     manager.setup_file_watching("nonexistent_watcher")
@@ -155,10 +144,7 @@ def test_setup_file_watching_with_invalid_watcher(tmp_path):
 
 def test_stop_watching_with_active_watcher(tmp_path, mock_watcher):
     """Test stopping an active watcher."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     # Setup and verify watcher is running
     manager.setup_file_watching(mock_watcher._test_watcher_name)
@@ -175,10 +161,7 @@ def test_stop_watching_with_active_watcher(tmp_path, mock_watcher):
 
 def test_stop_watching_without_watcher(tmp_path):
     """Test that stop_watching is safe to call without a watcher."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     # Should not raise an error
     manager.stop_watching()
@@ -187,10 +170,7 @@ def test_stop_watching_without_watcher(tmp_path):
 
 def test_is_watching_returns_true_when_active(tmp_path, mock_watcher):
     """Test is_watching returns True when watcher is active."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     # Setup file watching
     manager.setup_file_watching(mock_watcher._test_watcher_name)
@@ -201,10 +181,7 @@ def test_is_watching_returns_true_when_active(tmp_path, mock_watcher):
 
 def test_is_watching_returns_false_when_inactive(tmp_path):
     """Test is_watching returns False when no watcher is active."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     # Should return False
     assert manager.is_watching() is False
@@ -212,10 +189,7 @@ def test_is_watching_returns_false_when_inactive(tmp_path):
 
 def test_is_watching_returns_false_after_stop(tmp_path, mock_watcher):
     """Test is_watching returns False after stopping."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     # Setup and stop
     manager.setup_file_watching(mock_watcher._test_watcher_name)
@@ -226,12 +200,11 @@ def test_is_watching_returns_false_after_stop(tmp_path, mock_watcher):
 
 
 @pytest.mark.asyncio
-async def test_file_change_callback_invalidates_cache(tmp_path, mock_watcher, mock_cache):
+async def test_file_change_callback_invalidates_cache(
+    tmp_path, mock_watcher, mock_cache
+):
     """Test file change callback invalidates cache."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=mock_cache
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=mock_cache)
 
     # Setup file watching
     manager.setup_file_watching(mock_watcher._test_watcher_name)
@@ -244,8 +217,7 @@ async def test_file_change_callback_invalidates_cache(tmp_path, mock_watcher, mo
 
     # Wait for cache to be invalidated
     success = await AsyncTestHelper.wait_for_condition(
-        lambda: len(mock_cache.invalidate_calls) == 1,
-        timeout=1.0
+        lambda: len(mock_cache.invalidate_calls) == 1, timeout=1.0
     )
 
     # Cache should be invalidated
@@ -257,10 +229,7 @@ async def test_file_change_callback_invalidates_cache(tmp_path, mock_watcher, mo
 @pytest.mark.asyncio
 async def test_file_change_callback_created_event(tmp_path, mock_watcher, mock_cache):
     """Test file change callback for created events."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=mock_cache
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=mock_cache)
 
     # Setup file watching
     manager.setup_file_watching(mock_watcher._test_watcher_name)
@@ -270,8 +239,7 @@ async def test_file_change_callback_created_event(tmp_path, mock_watcher, mock_c
 
     # Wait for cache invalidation attempt
     success = await AsyncTestHelper.wait_for_condition(
-        lambda: len(mock_cache.invalidate_calls) == 1,
-        timeout=1.0
+        lambda: len(mock_cache.invalidate_calls) == 1, timeout=1.0
     )
 
     # Cache invalidation should be called
@@ -282,10 +250,7 @@ async def test_file_change_callback_created_event(tmp_path, mock_watcher, mock_c
 @pytest.mark.asyncio
 async def test_file_change_callback_deleted_event(tmp_path, mock_watcher, mock_cache):
     """Test file change callback for deleted events."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=mock_cache
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=mock_cache)
 
     # Setup file watching
     manager.setup_file_watching(mock_watcher._test_watcher_name)
@@ -298,8 +263,7 @@ async def test_file_change_callback_deleted_event(tmp_path, mock_watcher, mock_c
 
     # Wait for cache to be invalidated
     success = await AsyncTestHelper.wait_for_condition(
-        lambda: len(mock_cache.invalidate_calls) == 1,
-        timeout=1.0
+        lambda: len(mock_cache.invalidate_calls) == 1, timeout=1.0
     )
 
     # Cache should be invalidated
@@ -311,10 +275,7 @@ async def test_file_change_callback_deleted_event(tmp_path, mock_watcher, mock_c
 @pytest.mark.asyncio
 async def test_file_change_callback_without_cache(tmp_path, mock_watcher):
     """Test file change callback without cache (should not raise)."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     # Setup file watching
     manager.setup_file_watching(mock_watcher._test_watcher_name)
@@ -323,10 +284,7 @@ async def test_file_change_callback_without_cache(tmp_path, mock_watcher):
     mock_watcher.trigger_event("/test/file.py", "modified")
 
     # Give it a moment to process
-    await AsyncTestHelper.wait_for_condition(
-        lambda: True,
-        timeout=0.1
-    )
+    await AsyncTestHelper.wait_for_condition(lambda: True, timeout=0.1)
 
 
 @pytest.mark.asyncio
@@ -336,10 +294,7 @@ async def test_invalidate_cache_handles_errors(tmp_path):
     error_cache = AsyncMock()
     error_cache.invalidate = AsyncMock(side_effect=Exception("Test error"))
 
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=error_cache
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=error_cache)
 
     # Should not raise
     await manager._invalidate_cache("/test/file.py")
@@ -350,10 +305,7 @@ async def test_invalidate_cache_handles_errors(tmp_path):
 
 def test_multiple_callbacks_registered(tmp_path, mock_watcher):
     """Test that multiple setups don't duplicate callbacks."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     # Setup file watching twice
     manager.setup_file_watching(mock_watcher._test_watcher_name)
@@ -369,10 +321,7 @@ def test_multiple_callbacks_registered(tmp_path, mock_watcher):
 
 def test_watcher_lifecycle(tmp_path, mock_watcher):
     """Test complete watcher lifecycle."""
-    manager = FileWatchManager(
-        project_root=str(tmp_path),
-        cache=None
-    )
+    manager = FileWatchManager(project_root=str(tmp_path), cache=None)
 
     # Initial state
     assert not manager.is_watching()

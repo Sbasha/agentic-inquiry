@@ -11,6 +11,7 @@ classes). The graph data on the parser's chunks (symbols, symbol metadata,
 relationships, rankings) moves onto the partition chunk that contains the
 original chunk's first line, so the graph built from the document is unchanged.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -38,7 +39,11 @@ def _definitions(chunks: Sequence[ParserChunk], line_count: int) -> List[_Defini
     for chunk in chunks:
         for name, meta in (chunk.symbol_metadata or {}).items():
             start, end = meta.get("start_line"), meta.get("end_line")
-            if not isinstance(start, int) or not isinstance(end, int) or not 1 <= start <= end <= line_count:
+            if (
+                not isinstance(start, int)
+                or not isinstance(end, int)
+                or not 1 <= start <= end <= line_count
+            ):
                 continue
             kind = str(meta.get("type") or "definition").removeprefix("code_")
             seen.setdefault((start, end), _Definition(start, end, name, kind))
@@ -54,7 +59,9 @@ def _definitions(chunks: Sequence[ParserChunk], line_count: int) -> List[_Defini
     return roots
 
 
-def partition_lines(lines: Sequence[str], roots: Sequence[_Definition], max_chars: int) -> List[Tuple[int, int]]:
+def partition_lines(
+    lines: Sequence[str], roots: Sequence[_Definition], max_chars: int
+) -> List[Tuple[int, int]]:
     """Split the file top-down on definitions until pieces fit, then merge small neighbours."""
     # prefix[i] is the character count of lines 1..i, so any span's size is O(1).
     prefix = [0]
@@ -64,14 +71,18 @@ def partition_lines(lines: Sequence[str], roots: Sequence[_Definition], max_char
     def size(start: int, end: int) -> int:
         return prefix[end] - prefix[start - 1]
 
-    def split(start: int, end: int, children: Sequence[_Definition]) -> List[Tuple[int, int]]:
+    def split(
+        start: int, end: int, children: Sequence[_Definition]
+    ) -> List[Tuple[int, int]]:
         if size(start, end) <= max_chars:
             return [(start, end)]
         atoms: List[Tuple[int, int]] = []
         cursor = start
         for child in children:
             if child.start > cursor:
-                atoms += pack_lines(lines[cursor - 1 : child.start - 1], cursor, max_chars)
+                atoms += pack_lines(
+                    lines[cursor - 1 : child.start - 1], cursor, max_chars
+                )
             atoms += split(child.start, child.end, child.children)
             cursor = child.end + 1
         if cursor <= end:
@@ -102,7 +113,9 @@ def _enclosing(roots: Sequence[_Definition], start: int, end: int) -> List[_Defi
         level = inner.children
 
 
-def _first_inside(roots: Sequence[_Definition], start: int, end: int) -> Optional[_Definition]:
+def _first_inside(
+    roots: Sequence[_Definition], start: int, end: int
+) -> Optional[_Definition]:
     for definition in roots:
         if start <= definition.start <= end:
             return definition
@@ -130,7 +143,11 @@ def partition_code_document(document: ParsedDocument, max_chars: int) -> ParsedD
     source = list(document.chunks)
     language = next((c.language for c in source if c.language), None)
     roots = _definitions(source, len(lines))
-    spans = [s for s in partition_lines(lines, roots, max_chars) if any(lines[i - 1].strip() for i in range(s[0], s[1] + 1))]
+    spans = [
+        s
+        for s in partition_lines(lines, roots, max_chars)
+        if any(lines[i - 1].strip() for i in range(s[0], s[1] + 1))
+    ]
     if not spans:
         return document
 
@@ -138,17 +155,22 @@ def partition_code_document(document: ParsedDocument, max_chars: int) -> ParsedD
     for start, end in spans:
         chain = _enclosing(roots, start, end)
         owner = chain[-1] if chain else _first_inside(roots, start, end)
-        chunks.append(ParserChunk(
-            content="\n".join(lines[start - 1 : end]),
-            content_type="CODE",
-            language=language,
-            line_start=start,
-            line_end=end,
-            element_type=owner.kind if owner else "code_block",
-            element_name=owner.name if owner else "",
-            parent_id=chain[-2].name if len(chain) > 1 else "",
-            metadata={"scope": " > ".join(f"{d.kind} {d.name}" for d in chain), "chunker": CHUNKER_VERSION},
-        ))
+        chunks.append(
+            ParserChunk(
+                content="\n".join(lines[start - 1 : end]),
+                content_type="CODE",
+                language=language,
+                line_start=start,
+                line_end=end,
+                element_type=owner.kind if owner else "code_block",
+                element_name=owner.name if owner else "",
+                parent_id=chain[-2].name if len(chain) > 1 else "",
+                metadata={
+                    "scope": " > ".join(f"{d.kind} {d.name}" for d in chain),
+                    "chunker": CHUNKER_VERSION,
+                },
+            )
+        )
 
     def home(line: Optional[int]) -> ParserChunk:
         if line is None or line < 1:
@@ -156,7 +178,11 @@ def partition_code_document(document: ParsedDocument, max_chars: int) -> ParsedD
         for chunk, (start, end) in zip(chunks, spans):
             if start <= line <= end:
                 return chunk
-        return chunks[-1] if line > spans[-1][1] else next(c for c, s in zip(chunks, spans) if s[0] > line)
+        return (
+            chunks[-1]
+            if line > spans[-1][1]
+            else next(c for c, s in zip(chunks, spans) if s[0] > line)
+        )
 
     # Definition chunks place their symbols first; the whole-file chunk repeats
     # every symbol and only contributes ones no definition chunk carried.
@@ -177,4 +203,9 @@ def partition_code_document(document: ParsedDocument, max_chars: int) -> ParsedD
 
     metadata = dict(document.metadata or {})
     metadata["chunker"] = CHUNKER_VERSION
-    return ParsedDocument(doc_id=document.doc_id, file_path=document.file_path, chunks=chunks, metadata=metadata)
+    return ParsedDocument(
+        doc_id=document.doc_id,
+        file_path=document.file_path,
+        chunks=chunks,
+        metadata=metadata,
+    )

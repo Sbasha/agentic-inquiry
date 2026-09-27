@@ -125,7 +125,9 @@ async def create_mcp_services(
     if not embedding_registry._default_configured:
         # Use SentenceTransformerEmbedder with config settings for semantic search
         model_name = getattr(
-            config.embeddings.sentence_transformer, "model_name", "BAAI/bge-small-en-v1.5"
+            config.embeddings.sentence_transformer,
+            "model_name",
+            "BAAI/bge-small-en-v1.5",
         )
         ndims = getattr(config.embeddings, "default_dimensions", 384)
         embedder = SentenceTransformerEmbedder(model_name=model_name)

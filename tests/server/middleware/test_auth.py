@@ -17,12 +17,17 @@ import pytest
 from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 
-from agentic_inquiry.server.middleware.auth import APIKeyAuthMiddleware, EXEMPT_PATHS, EXEMPT_PREFIXES
+from agentic_inquiry.server.middleware.auth import (
+    APIKeyAuthMiddleware,
+    EXEMPT_PATHS,
+    EXEMPT_PREFIXES,
+)
 
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def _build_app(auth_config: dict) -> FastAPI:
     """Create a minimal FastAPI app with the auth middleware attached."""
@@ -68,6 +73,7 @@ _AUTH_CONFIG_ENABLED = {"enabled": True, "api_key": "secret-key-123"}
 # T40-1: Auth disabled — all requests pass through
 # ---------------------------------------------------------------------------
 
+
 class TestAuthDisabled:
     """When auth is disabled the middleware must never reject a request."""
 
@@ -90,6 +96,7 @@ class TestAuthDisabled:
 # ---------------------------------------------------------------------------
 # T40-2: Auth enabled — valid bearer token
 # ---------------------------------------------------------------------------
+
 
 class TestValidBearer:
     """Requests carrying the correct API key must be allowed through."""
@@ -119,6 +126,7 @@ class TestValidBearer:
 # T40-3: Missing token → 401
 # ---------------------------------------------------------------------------
 
+
 class TestMissingToken:
     """Requests without an Authorization header must be rejected with 401."""
 
@@ -146,6 +154,7 @@ class TestMissingToken:
 # ---------------------------------------------------------------------------
 # T40-4: Invalid token → 401
 # ---------------------------------------------------------------------------
+
 
 class TestInvalidToken:
     """Requests with a wrong API key must be rejected with 401."""
@@ -180,6 +189,7 @@ class TestInvalidToken:
 # ---------------------------------------------------------------------------
 # T40-5: Exempt paths bypass auth
 # ---------------------------------------------------------------------------
+
 
 class TestExemptPaths:
     """Exact-match exempt paths must bypass auth even when enabled."""
@@ -217,6 +227,7 @@ class TestExemptPaths:
 # T40-6: Exempt prefixes bypass auth
 # ---------------------------------------------------------------------------
 
+
 class TestExemptPrefixes:
     """Paths starting with exempt prefixes must bypass auth."""
 
@@ -241,6 +252,7 @@ class TestExemptPrefixes:
 # ---------------------------------------------------------------------------
 # T40-7: request_id is always set on request.state
 # ---------------------------------------------------------------------------
+
 
 class TestRequestIdState:
     """The middleware must set request.state.request_id on every request."""
@@ -285,6 +297,7 @@ class TestRequestIdState:
 # ---------------------------------------------------------------------------
 # T40-8: Middleware constants sanity checks
 # ---------------------------------------------------------------------------
+
 
 class TestMiddlewareConstants:
     """EXEMPT_PATHS and EXEMPT_PREFIXES must cover expected values."""

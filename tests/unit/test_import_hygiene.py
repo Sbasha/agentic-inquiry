@@ -14,7 +14,16 @@ import subprocess
 import sys
 from pathlib import Path
 
-HEAVY = ["lancedb", "pyarrow", "pandas", "torch", "sentence_transformers", "fastmcp", "fastapi", "fsspec"]
+HEAVY = [
+    "lancedb",
+    "pyarrow",
+    "pandas",
+    "torch",
+    "sentence_transformers",
+    "fastmcp",
+    "fastapi",
+    "fsspec",
+]
 
 
 def _run(code: str, tmp_path: Path) -> subprocess.CompletedProcess[str]:

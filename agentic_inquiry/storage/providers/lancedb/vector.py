@@ -348,7 +348,11 @@ class LanceDBVectorProvider:
             if effective_project_id:
                 query_filters["project_id"] = effective_project_id
         else:
-            query_filters = and_(filters, eq("project_id", effective_project_id)) if effective_project_id else filters
+            query_filters = (
+                and_(filters, eq("project_id", effective_project_id))
+                if effective_project_id
+                else filters
+            )
 
         results = await self._db_manager.advanced_filter(
             table_name=DOCUMENT_CHUNKS_TABLE,
@@ -572,7 +576,9 @@ class LanceDBVectorProvider:
 
         return results
 
-    def _dict_to_document_chunk(self, record: Dict[str, Any]) -> Optional[DocumentChunk]:
+    def _dict_to_document_chunk(
+        self, record: Dict[str, Any]
+    ) -> Optional[DocumentChunk]:
         """Convert a dict record to DocumentChunk.
 
         Args:

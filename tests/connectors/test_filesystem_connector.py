@@ -8,6 +8,7 @@ Tests cover:
 - Change detection
 - Registry integration
 """
+
 from __future__ import annotations
 
 import tempfile

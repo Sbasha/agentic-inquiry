@@ -17,7 +17,9 @@ def mock_storage_facade():
     mock_storage.query_raw = AsyncMock(return_value=[])
     mock_storage.vector_search_raw = AsyncMock(return_value=[])
     mock_storage.query_across_projects = AsyncMock(return_value=[])
-    mock_storage.list_tables = AsyncMock(return_value=["graph_entities", "graph_relationships"])
+    mock_storage.list_tables = AsyncMock(
+        return_value=["graph_entities", "graph_relationships"]
+    )
     return mock_storage
 
 
@@ -48,7 +50,9 @@ class TestGraphSearchService:
     """Tests for GraphSearchService."""
 
     @pytest.mark.unit
-    async def test_traverse_relationships_basic(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_basic(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test basic relationship traversal."""
         # Setup mock data
         start_entity = {
@@ -78,22 +82,24 @@ class TestGraphSearchService:
         # Verify correct query construction
         # First call: get entity by ID
         first_call = mock_storage_facade.query_raw.call_args_list[0]
-        assert first_call.kwargs['table_name'] == "graph_entities"
-        assert first_call.kwargs['filters'] == {'id': 'entity_1'}
+        assert first_call.kwargs["table_name"] == "graph_entities"
+        assert first_call.kwargs["filters"] == {"id": "entity_1"}
 
         # Second call: get relationships (outgoing = source_id is entity)
         rel_call = mock_storage_facade.query_raw.call_args_list[1]
-        assert rel_call.kwargs['table_name'] == "graph_relationships"
+        assert rel_call.kwargs["table_name"] == "graph_relationships"
 
         # Check that we are filtering for the entity as source (outgoing)
-        filters = rel_call.kwargs['filters']
-        assert 'source_id' in filters
+        filters = rel_call.kwargs["filters"]
+        assert "source_id" in filters
         # The source_id filter should contain entity_1
-        val = filters['source_id']
-        assert 'entity_1' in str(val)
+        val = filters["source_id"]
+        assert "entity_1" in str(val)
 
     @pytest.mark.unit
-    async def test_traverse_relationships_not_found(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_not_found(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test traversal when entity is not found."""
         # Setup mock to return empty list
         mock_storage_facade.query_raw.return_value = []
@@ -119,7 +125,9 @@ class TestGraphSearchService:
             )
 
     @pytest.mark.unit
-    async def test_resolve_entity_exact_match(self, graph_search_service, mock_storage_facade):
+    async def test_resolve_entity_exact_match(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test entity resolution with exact match."""
         # Setup mock data
         entity = {
@@ -144,7 +152,9 @@ class TestGraphSearchService:
         assert result["disambiguation_needed"] is False
 
     @pytest.mark.unit
-    async def test_resolve_entity_no_matches(self, graph_search_service, mock_storage_facade):
+    async def test_resolve_entity_no_matches(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test entity resolution with no matches."""
         import numpy as np
 
@@ -154,7 +164,9 @@ class TestGraphSearchService:
 
         # Mock the embedding service at the module level
         mock_embed_service = AsyncMock()
-        mock_embed_service.embed_async = AsyncMock(return_value=np.array([0.1, 0.2, 0.3]))
+        mock_embed_service.embed_async = AsyncMock(
+            return_value=np.array([0.1, 0.2, 0.3])
+        )
         graph_search_service._embedding_service = mock_embed_service
 
         # Execute
@@ -168,7 +180,9 @@ class TestGraphSearchService:
         assert len(result["suggestions"]) == 0
 
     @pytest.mark.unit
-    async def test_enrich_with_graph_context(self, graph_search_service, mock_storage_facade):
+    async def test_enrich_with_graph_context(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test enriching search results with graph context."""
         # Setup mock data
         search_results = [
@@ -188,7 +202,9 @@ class TestGraphSearchService:
         assert len(result[0]["graph_context"]) == 1
 
     @pytest.mark.unit
-    async def test_graph_ranking_supported(self, graph_search_service, mock_storage_facade):
+    async def test_graph_ranking_supported(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test checking if graph ranking is supported."""
         # Execute
         result = await graph_search_service._graph_ranking_supported()
@@ -198,7 +214,9 @@ class TestGraphSearchService:
         mock_storage_facade.list_tables.assert_called_once()
 
     @pytest.mark.unit
-    async def test_graph_ranking_not_supported(self, graph_search_service, mock_storage_facade):
+    async def test_graph_ranking_not_supported(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test when graph ranking is not supported."""
         # Setup mock to return tables without graph tables
         mock_storage_facade.list_tables.return_value = ["document_chunks"]
@@ -214,7 +232,9 @@ class TestGraphTraversalEdgeCases:
     """Edge case tests for graph traversal operations."""
 
     @pytest.mark.unit
-    async def test_traverse_relationships_with_cycle(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_with_cycle(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test traversal with cycles in the graph (A -> B -> C -> A)."""
         # Setup entities
         entity_a = {
@@ -288,7 +308,9 @@ class TestGraphTraversalEdgeCases:
         assert "rel_3" in relationship_ids  # C -> A relationship should exist
 
     @pytest.mark.unit
-    async def test_traverse_relationships_disconnected_node(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_disconnected_node(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test traversal from a node with no relationships (isolated node)."""
         # Setup an isolated entity with no relationships
         isolated_entity = {
@@ -316,10 +338,14 @@ class TestGraphTraversalEdgeCases:
         assert result["total_relationships"] == 0
         assert result["total_entities"] == 1  # Only the starting entity
         assert len(result["relationships"]) == 0
-        assert result["depth_reached"] == 1  # Stopped at depth 1 due to no relationships
+        assert (
+            result["depth_reached"] == 1
+        )  # Stopped at depth 1 due to no relationships
 
     @pytest.mark.unit
-    async def test_traverse_relationships_bidirectional_disconnected(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_bidirectional_disconnected(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test bidirectional traversal from an isolated node."""
         isolated_entity = {
             "id": "isolated_2",
@@ -349,16 +375,28 @@ class TestGraphTraversalEdgeCases:
         assert result["depth_reached"] == 1
 
     @pytest.mark.unit
-    async def test_traverse_relationships_max_depth_limit(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_max_depth_limit(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test that max_depth properly limits traversal depth."""
         # Create a deep chain: A -> B -> C -> D -> E
         entities = [
-            {"id": f"entity_{i}", "name": f"Entity{i}", "type": "function", "doc_id": f"doc_{i}"}
+            {
+                "id": f"entity_{i}",
+                "name": f"Entity{i}",
+                "type": "function",
+                "doc_id": f"doc_{i}",
+            }
             for i in range(5)
         ]
 
         relationships = [
-            {"id": f"rel_{i}", "source_id": f"entity_{i}", "target_id": f"entity_{i+1}", "type": "calls"}
+            {
+                "id": f"rel_{i}",
+                "source_id": f"entity_{i}",
+                "target_id": f"entity_{i + 1}",
+                "type": "calls",
+            }
             for i in range(4)
         ]
 
@@ -393,7 +431,9 @@ class TestGraphTraversalEdgeCases:
         assert min(depths) == 1
 
     @pytest.mark.unit
-    async def test_traverse_relationships_very_deep_chain(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_very_deep_chain(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test traversal of a very deep chain to ensure depth limiting works."""
         # Create a 10-level deep chain but only traverse to depth 5
         start_entity = {
@@ -409,19 +449,29 @@ class TestGraphTraversalEdgeCases:
 
         for depth in range(1, 6):  # Depths 1-5
             # Add relationship at this depth
-            side_effects.append([{
-                "id": f"rel_depth_{depth}",
-                "source_id": f"entity_depth_{depth-1}" if depth > 1 else "entity_start",
-                "target_id": f"entity_depth_{depth}",
-                "type": "calls",
-            }])
+            side_effects.append(
+                [
+                    {
+                        "id": f"rel_depth_{depth}",
+                        "source_id": f"entity_depth_{depth - 1}"
+                        if depth > 1
+                        else "entity_start",
+                        "target_id": f"entity_depth_{depth}",
+                        "type": "calls",
+                    }
+                ]
+            )
             # Add the target entity
-            side_effects.append([{
-                "id": f"entity_depth_{depth}",
-                "name": f"EntityDepth{depth}",
-                "type": "function",
-                "doc_id": f"doc_depth_{depth}",
-            }])
+            side_effects.append(
+                [
+                    {
+                        "id": f"entity_depth_{depth}",
+                        "name": f"EntityDepth{depth}",
+                        "type": "function",
+                        "doc_id": f"doc_depth_{depth}",
+                    }
+                ]
+            )
 
         mock_storage_facade.query_raw.side_effect = side_effects
 
@@ -438,7 +488,9 @@ class TestGraphTraversalEdgeCases:
         assert result["total_entities"] == 6  # start + 5 more
 
     @pytest.mark.unit
-    async def test_traverse_relationships_empty_graph(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_empty_graph(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test traversal when the graph has no entities."""
         # Configure mock to return empty list for entity lookup
         mock_storage_facade.query_raw.return_value = []
@@ -459,7 +511,9 @@ class TestGraphTraversalEdgeCases:
         assert result["entities"] == {}
 
     @pytest.mark.unit
-    async def test_traverse_relationships_single_node_graph(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_single_node_graph(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test graph with only one node and no relationships."""
         single_entity = {
             "id": "single_1",
@@ -488,7 +542,9 @@ class TestGraphTraversalEdgeCases:
         assert result["depth_reached"] == 1  # Stops early due to no relationships
 
     @pytest.mark.unit
-    async def test_traverse_relationships_self_loop(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_self_loop(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test entity with a self-referential relationship (A -> A)."""
         self_loop_entity = {
             "id": "self_loop",
@@ -526,7 +582,9 @@ class TestGraphTraversalEdgeCases:
         assert result["relationships"][0]["target_id"] == "self_loop"
 
     @pytest.mark.unit
-    async def test_traverse_relationships_multiple_paths_to_same_node(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_multiple_paths_to_same_node(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test diamond pattern: A -> B -> D and A -> C -> D."""
         # Setup entities
         entities = {
@@ -540,13 +598,33 @@ class TestGraphTraversalEdgeCases:
         mock_storage_facade.query_raw.side_effect = [
             [entities["a"]],  # Get starting entity A
             [  # Depth 1: outgoing from A
-                {"id": "rel_ab", "source_id": "entity_a", "target_id": "entity_b", "type": "calls"},
-                {"id": "rel_ac", "source_id": "entity_a", "target_id": "entity_c", "type": "calls"},
+                {
+                    "id": "rel_ab",
+                    "source_id": "entity_a",
+                    "target_id": "entity_b",
+                    "type": "calls",
+                },
+                {
+                    "id": "rel_ac",
+                    "source_id": "entity_a",
+                    "target_id": "entity_c",
+                    "type": "calls",
+                },
             ],
             [entities["b"], entities["c"]],  # Fetch entities B and C
             [  # Depth 2: outgoing from B and C
-                {"id": "rel_bd", "source_id": "entity_b", "target_id": "entity_d", "type": "calls"},
-                {"id": "rel_cd", "source_id": "entity_c", "target_id": "entity_d", "type": "calls"},
+                {
+                    "id": "rel_bd",
+                    "source_id": "entity_b",
+                    "target_id": "entity_d",
+                    "type": "calls",
+                },
+                {
+                    "id": "rel_cd",
+                    "source_id": "entity_c",
+                    "target_id": "entity_d",
+                    "type": "calls",
+                },
             ],
             [entities["d"]],  # Fetch entity D (only once despite two paths)
         ]
@@ -569,7 +647,9 @@ class TestGraphTraversalEdgeCases:
         assert entity_ids.count("entity_d") == 1
 
     @pytest.mark.unit
-    async def test_traverse_relationships_complex_cycle_detection(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_complex_cycle_detection(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test complex graph with multiple interconnected cycles."""
         # Graph: A -> B -> C -> A (cycle 1)
         #        B -> D -> E -> B (cycle 2)
@@ -583,16 +663,43 @@ class TestGraphTraversalEdgeCases:
 
         mock_storage_facade.query_raw.side_effect = [
             [entities["a"]],  # Get starting entity A
-            [{"id": "rel_ab", "source_id": "entity_a", "target_id": "entity_b", "type": "calls"}],  # Depth 1: A->B
+            [
+                {
+                    "id": "rel_ab",
+                    "source_id": "entity_a",
+                    "target_id": "entity_b",
+                    "type": "calls",
+                }
+            ],  # Depth 1: A->B
             [entities["b"]],  # Fetch B
             [  # Depth 2: B->C and B->D
-                {"id": "rel_bc", "source_id": "entity_b", "target_id": "entity_c", "type": "calls"},
-                {"id": "rel_bd", "source_id": "entity_b", "target_id": "entity_d", "type": "calls"},
+                {
+                    "id": "rel_bc",
+                    "source_id": "entity_b",
+                    "target_id": "entity_c",
+                    "type": "calls",
+                },
+                {
+                    "id": "rel_bd",
+                    "source_id": "entity_b",
+                    "target_id": "entity_d",
+                    "type": "calls",
+                },
             ],
             [entities["c"], entities["d"]],  # Fetch C and D
             [  # Depth 3: C->A (back to visited) and D->E
-                {"id": "rel_ca", "source_id": "entity_c", "target_id": "entity_a", "type": "calls"},
-                {"id": "rel_de", "source_id": "entity_d", "target_id": "entity_e", "type": "calls"},
+                {
+                    "id": "rel_ca",
+                    "source_id": "entity_c",
+                    "target_id": "entity_a",
+                    "type": "calls",
+                },
+                {
+                    "id": "rel_de",
+                    "source_id": "entity_d",
+                    "target_id": "entity_e",
+                    "type": "calls",
+                },
             ],
             [entities["e"]],  # Fetch E (A already visited)
         ]
@@ -606,7 +713,9 @@ class TestGraphTraversalEdgeCases:
 
         # Verify
         assert result["total_entities"] == 5  # A, B, C, D, E (no duplicates)
-        assert result["total_relationships"] == 5  # All relationships including back-edges
+        assert (
+            result["total_relationships"] == 5
+        )  # All relationships including back-edges
 
         # Verify no duplicate entities
         for entity_id in result["entities"].keys():
@@ -614,7 +723,9 @@ class TestGraphTraversalEdgeCases:
             assert entity_ids.count(entity_id) == 1
 
     @pytest.mark.unit
-    async def test_traverse_relationships_zero_depth(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_zero_depth(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test traversal with max_depth=0 (should return only the starting entity)."""
         start_entity = {
             "id": "entity_zero",
@@ -641,7 +752,9 @@ class TestGraphTraversalEdgeCases:
         assert result["depth_reached"] == 0
 
     @pytest.mark.unit
-    async def test_traverse_relationships_fully_connected_subgraph(self, graph_search_service, mock_storage_facade):
+    async def test_traverse_relationships_fully_connected_subgraph(
+        self, graph_search_service, mock_storage_facade
+    ):
         """Test a fully connected subgraph where every node connects to every other node."""
         # Triangle: A <-> B <-> C <-> A (bidirectional)
         entities = {
@@ -654,15 +767,45 @@ class TestGraphTraversalEdgeCases:
         mock_storage_facade.query_raw.side_effect = [
             [entities["a"]],  # Get starting entity A
             [  # Depth 1: A connects to B and C
-                {"id": "rel_ab", "source_id": "entity_a", "target_id": "entity_b", "type": "calls"},
-                {"id": "rel_ac", "source_id": "entity_a", "target_id": "entity_c", "type": "calls"},
+                {
+                    "id": "rel_ab",
+                    "source_id": "entity_a",
+                    "target_id": "entity_b",
+                    "type": "calls",
+                },
+                {
+                    "id": "rel_ac",
+                    "source_id": "entity_a",
+                    "target_id": "entity_c",
+                    "type": "calls",
+                },
             ],
             [entities["b"], entities["c"]],  # Fetch B and C
             [  # Depth 2: B->C, B->A, C->B, C->A (but A already visited)
-                {"id": "rel_bc", "source_id": "entity_b", "target_id": "entity_c", "type": "calls"},
-                {"id": "rel_ba", "source_id": "entity_b", "target_id": "entity_a", "type": "calls"},
-                {"id": "rel_cb", "source_id": "entity_c", "target_id": "entity_b", "type": "calls"},
-                {"id": "rel_ca", "source_id": "entity_c", "target_id": "entity_a", "type": "calls"},
+                {
+                    "id": "rel_bc",
+                    "source_id": "entity_b",
+                    "target_id": "entity_c",
+                    "type": "calls",
+                },
+                {
+                    "id": "rel_ba",
+                    "source_id": "entity_b",
+                    "target_id": "entity_a",
+                    "type": "calls",
+                },
+                {
+                    "id": "rel_cb",
+                    "source_id": "entity_c",
+                    "target_id": "entity_b",
+                    "type": "calls",
+                },
+                {
+                    "id": "rel_ca",
+                    "source_id": "entity_c",
+                    "target_id": "entity_a",
+                    "type": "calls",
+                },
             ],
             [],  # No new entities (all visited)
         ]

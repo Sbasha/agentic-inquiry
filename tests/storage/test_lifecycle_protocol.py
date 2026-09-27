@@ -1,5 +1,6 @@
 # tests/storage/test_lifecycle_protocol.py
 """Tests for BackendLifecycle protocol and has_lifecycle_support helper."""
+
 import pytest
 from typing import Any, ClassVar, Dict
 

@@ -116,6 +116,7 @@ class MockEventSystem:
 
 # Fixtures
 
+
 @pytest.fixture
 def mock_pipeline(tmp_path):
     """Create a mock indexing pipeline."""
@@ -172,6 +173,7 @@ def handler(
 
 # Unit Tests
 
+
 class TestFileChangeHandlerInit:
     """Tests for FileChangeHandler initialization."""
 
@@ -212,7 +214,9 @@ class TestFileChangeHandlerInit:
         assert "build/*" in handler._ignore_patterns
 
     @pytest.mark.asyncio
-    async def test_initialize_creates_dependencies(self, mock_pipeline, mock_db, tmp_path):
+    async def test_initialize_creates_dependencies(
+        self, mock_pipeline, mock_db, tmp_path
+    ):
         """Test that initialize creates FileTracker and ParserChain."""
         handler = FileChangeHandler(
             pipeline=mock_pipeline,
@@ -222,11 +226,14 @@ class TestFileChangeHandlerInit:
         )
 
         # Patch at the source module level since imports happen inside initialize()
-        with patch(
-            "agentic_inquiry.watching.file_tracker.FileTracker.from_config"
-        ) as mock_ft_factory, patch(
-            "agentic_inquiry.parsers.chain.ParserChain.from_config"
-        ) as mock_pc_factory:
+        with (
+            patch(
+                "agentic_inquiry.watching.file_tracker.FileTracker.from_config"
+            ) as mock_ft_factory,
+            patch(
+                "agentic_inquiry.parsers.chain.ParserChain.from_config"
+            ) as mock_pc_factory,
+        ):
             mock_ft = MockFileTracker()
             mock_pc = MockParserChain()
             mock_ft_factory.return_value = mock_ft
@@ -250,11 +257,12 @@ class TestFileChangeHandlerInit:
         )
 
         # Patch at the source module level since imports happen inside initialize()
-        with patch(
-            "agentic_inquiry.watching.file_tracker.FileTracker.from_config"
-        ) as mock_ft, patch(
-            "agentic_inquiry.parsers.chain.ParserChain.from_config"
-        ) as mock_pc:
+        with (
+            patch(
+                "agentic_inquiry.watching.file_tracker.FileTracker.from_config"
+            ) as mock_ft,
+            patch("agentic_inquiry.parsers.chain.ParserChain.from_config") as mock_pc,
+        ):
             mock_ft.return_value = MockFileTracker()
             mock_pc.return_value = MockParserChain()
 
@@ -309,9 +317,7 @@ class TestFileChangeHandlerEvents:
     """Tests for file change event handling."""
 
     @pytest.mark.asyncio
-    async def test_on_file_change_not_initialized(
-        self, mock_pipeline, mock_db, caplog
-    ):
+    async def test_on_file_change_not_initialized(self, mock_pipeline, mock_db, caplog):
         """Test that events are ignored when not initialized."""
         handler = FileChangeHandler(
             pipeline=mock_pipeline,
@@ -543,7 +549,9 @@ class TestFileChangeHandlerIntegration:
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(5)
-    @pytest.mark.skip(reason="Flaky integration test - debouncing verified by unit tests")
+    @pytest.mark.skip(
+        reason="Flaky integration test - debouncing verified by unit tests"
+    )
     async def test_debounce_prevents_duplicate_processing(
         self, handler, mock_pipeline, mock_parser_chain, tmp_path
     ):
@@ -569,9 +577,7 @@ class TestFileChangeHandlerIntegration:
         assert len(mock_parser_chain.parse_calls) == 1
 
     @pytest.mark.asyncio
-    async def test_cancel_pending_stops_processing(
-        self, handler, tmp_path
-    ):
+    async def test_cancel_pending_stops_processing(self, handler, tmp_path):
         """Test that cancel_pending stops all pending operations."""
         test_file = tmp_path / "cancel_test.py"
         test_file.write_text("print('test')")
@@ -590,9 +596,7 @@ class TestFileChangeHandlerStats:
     """Tests for statistics tracking."""
 
     @pytest.mark.asyncio
-    async def test_stats_tracking(
-        self, handler, mock_db, mock_parser_chain, tmp_path
-    ):
+    async def test_stats_tracking(self, handler, mock_db, mock_parser_chain, tmp_path):
         """Test that all stats are properly tracked."""
         # Create and process a file
         test_file = tmp_path / "stats_test.py"
@@ -622,9 +626,7 @@ class TestFileChangeHandlerWithFileWatchManager:
     """Tests for FileWatchManager integration."""
 
     @pytest.mark.asyncio
-    async def test_integration_with_file_watch_manager(
-        self, handler, tmp_path
-    ):
+    async def test_integration_with_file_watch_manager(self, handler, tmp_path):
         """Test that FileWatchManager can use FileChangeHandler."""
         from agentic_inquiry.indexing.file_watch_manager import FileWatchManager
 

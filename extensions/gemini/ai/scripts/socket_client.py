@@ -18,11 +18,13 @@ def get_socket_path(workspace: str | None = None) -> str:
 
     Uses workspace-hashed path for project isolation.
     """
-    socket_dir = os.environ.get("INQUIRY_HOME", os.path.expanduser("~/.agentic-inquiry"))
+    socket_dir = os.environ.get(
+        "INQUIRY_HOME", os.path.expanduser("~/.agentic-inquiry")
+    )
     if workspace:
-        project_hash = hashlib.sha256(
-            os.path.abspath(workspace).encode()
-        ).hexdigest()[:16]
+        project_hash = hashlib.sha256(os.path.abspath(workspace).encode()).hexdigest()[
+            :16
+        ]
         return os.path.join(socket_dir, f"daemon-{project_hash}.sock")
     return os.path.join(socket_dir, "daemon.sock")
 
@@ -211,9 +213,7 @@ def start_daemon_if_needed(workspace: str) -> bool:
         for _ in range(30):
             time.sleep(0.1)
             if os.path.exists(sock_path):
-                result = daemon_request(
-                    "/health", workspace=workspace, timeout=0.5
-                )
+                result = daemon_request("/health", workspace=workspace, timeout=0.5)
                 if result is not None:
                     return True
         return False

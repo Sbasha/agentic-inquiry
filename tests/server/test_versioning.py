@@ -43,7 +43,9 @@ class TestGitVersionManager:
     def test_calculate_decay_with_commits(self, version_manager):
         decay = version_manager.calculate_decay(
             memory_file_paths=["src/auth.py"],
-            commits=[{"files_changed": ["src/auth.py", "src/other.py"], "is_bulk": False}],
+            commits=[
+                {"files_changed": ["src/auth.py", "src/other.py"], "is_bulk": False}
+            ],
         )
         assert 0.0 < decay <= 1.0
 

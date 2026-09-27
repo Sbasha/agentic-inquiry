@@ -24,7 +24,12 @@ from typing import cast
 
 import numpy as np
 
-from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier, RetrievalResult
+from agentic_inquiry.memory.models import (
+    MemoryContext,
+    MemoryItem,
+    MemoryTier,
+    RetrievalResult,
+)
 from agentic_inquiry.memory.protocols import (
     MemoryStorageProtocol,
     MemoryScoredRetrievalCapability,
@@ -118,7 +123,9 @@ class SemanticMemory:
             # Get all items to find lowest confidence (no sorted query in protocol)
             all_items = await self.get_all_items()
             if all_items:
-                lowest_confidence_item = min(all_items, key=lambda x: x.confidence or 0.0)
+                lowest_confidence_item = min(
+                    all_items, key=lambda x: x.confidence or 0.0
+                )
                 await self.delete(lowest_confidence_item.id)
                 logger.debug(
                     "Evicted lowest confidence item: id=%s, confidence=%.3f",
@@ -141,7 +148,9 @@ class SemanticMemory:
             item.object,
         )
 
-    async def get_by_id(self, item_id: str, update_access: bool = True) -> MemoryItem | None:
+    async def get_by_id(
+        self, item_id: str, update_access: bool = True
+    ) -> MemoryItem | None:
         """
         Retrieve a single memory item (fact) by ID.
 
@@ -245,7 +254,7 @@ class SemanticMemory:
 
         use_server_side = (
             query_text is not None
-            and hasattr(self._storage, 'supports_server_side_embedding')
+            and hasattr(self._storage, "supports_server_side_embedding")
             and self._storage.supports_server_side_embedding
         )
 
@@ -253,7 +262,9 @@ class SemanticMemory:
         if self._has_scored_retrieval:
             scored_storage = cast(MemoryScoredRetrievalCapability, self._storage)
 
-            if use_server_side and hasattr(scored_storage, 'retrieve_with_scores_by_text'):
+            if use_server_side and hasattr(
+                scored_storage, "retrieve_with_scores_by_text"
+            ):
                 results = await scored_storage.retrieve_with_scores_by_text(
                     query_text=query_text,
                     limit=limit * 2,
@@ -291,7 +302,7 @@ class SemanticMemory:
                 asyncio.create_task(self._update_access_stats(ids_to_update))
         else:
             # Fall back to basic retrieve (no scores)
-            if use_server_side and hasattr(self._storage, 'retrieve_by_text'):
+            if use_server_side and hasattr(self._storage, "retrieve_by_text"):
                 items = await self._storage.retrieve_by_text(
                     query_text=query_text,
                     limit=limit * 2,
@@ -352,6 +363,7 @@ class SemanticMemory:
         Args:
             item_ids: IDs of items to refresh and persist access stats for.
         """
+
         async def _update_one(item_id: str) -> None:
             try:
                 fresh_item = await self._storage.get_by_id(item_id)

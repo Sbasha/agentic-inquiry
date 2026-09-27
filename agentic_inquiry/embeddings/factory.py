@@ -55,14 +55,10 @@ def _per_backend_setting(config: "Config", key: str):
     embedding_model, embedding_dim}`` overrides ahead of the capability
     profile's defaults.
     """
-    if not (
-        hasattr(config.storage, "backends") and config.storage.backends
-    ):
+    if not (hasattr(config.storage, "backends") and config.storage.backends):
         return None
     vector_backend_name = getattr(config.storage, "vector_backend", None)
-    if not (
-        vector_backend_name and vector_backend_name in config.storage.backends
-    ):
+    if not (vector_backend_name and vector_backend_name in config.storage.backends):
         return None
     return config.storage.backends[vector_backend_name].get(key)
 
@@ -99,9 +95,7 @@ def resolve_embedding_strategy(
     return capability_default
 
 
-def resolve_embedding_dimensions(
-    config: "Config", capability_default: int
-) -> int:
+def resolve_embedding_dimensions(config: "Config", capability_default: int) -> int:
     """Resolve the effective embedding dim from configuration.
 
     Honors per-backend ``embedding_dim`` from ``BackendConfig`` when
@@ -159,7 +153,10 @@ def embedder_identity(config: "Config") -> str:
     instead of mixing vectors from two models in one table.
     """
     caps = get_capabilities_for_backend(resolve_backend_type(config))
-    if resolve_embedding_strategy(config, caps.embedding_strategy) == EmbeddingStrategy.SERVER_SIDE:
+    if (
+        resolve_embedding_strategy(config, caps.embedding_strategy)
+        == EmbeddingStrategy.SERVER_SIDE
+    ):
         model = resolve_embedding_model(config, caps.embedding_model) or "server-side"
         return f"server:{model}:{resolve_embedding_dimensions(config, caps.embedding_dimensions)}"
     embeddings = config.embeddings
@@ -169,7 +166,10 @@ def embedder_identity(config: "Config") -> str:
     elif provider in ("local", "local_model"):
         model = embeddings.local_model.model_path
     else:
-        provider, model = "sentence_transformer", embeddings.sentence_transformer.model_name
+        provider, model = (
+            "sentence_transformer",
+            embeddings.sentence_transformer.model_name,
+        )
     return f"{provider}:{model}:{embeddings.default_dimensions}"
 
 
@@ -198,9 +198,7 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
     # this, ``type: azure`` + ``embedding_strategy: local`` (and the
     # symmetric AlloyDB-with-LOCAL case) silently lands on
     # ``NoOpEmbedder``.
-    effective_strategy = resolve_embedding_strategy(
-        config, caps.embedding_strategy
-    )
+    effective_strategy = resolve_embedding_strategy(config, caps.embedding_strategy)
 
     if effective_strategy == EmbeddingStrategy.SERVER_SIDE:
         from agentic_inquiry.embeddings.noop import NoOpEmbedder
@@ -213,7 +211,9 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
         # ``NoOpEmbedder(1536)`` and the schema-creation pass would
         # size the vector column at the wrong width.
         ndims = resolve_embedding_dimensions(config, caps.embedding_dimensions)
-        model_name = resolve_embedding_model(config, caps.embedding_model) or "server-side"
+        model_name = (
+            resolve_embedding_model(config, caps.embedding_model) or "server-side"
+        )
         # Server-side embedding (AlloyDB ``embedding()``, RDS Bedrock,
         # Azure OpenAI) — model runs in-database, so there's no local
         # forward pass to cache. Skip the CachingEmbedder wrap here
@@ -241,7 +241,7 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
                 cache_dir=fe_config.cache_dir,
                 threads=fe_config.threads,
                 batch_size=fe_config.batch_size,
-                parallel=fe_config.parallel
+                parallel=fe_config.parallel,
             )
             model_display_name = fe_config.model_name
         elif provider in ("local", "local_model"):
@@ -257,7 +257,7 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
                 normalize=lm_config.normalize,
                 batch_size=lm_config.batch_size,
                 ndims=lm_config.ndims or ndims,
-                config=config
+                config=config,
             )
             model_display_name = lm_config.model_path
         else:
@@ -269,8 +269,7 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
             st_config = config.embeddings.sentence_transformer
             model_name = st_config.model_name
             embedder = SentenceTransformerEmbedder(
-                model_name=model_name,
-                ndims=st_config.ndims or ndims
+                model_name=model_name, ndims=st_config.ndims or ndims
             )
             model_display_name = model_name
             provider = "sentence_transformer"
@@ -291,8 +290,15 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
                 from agentic_inquiry.integration.state import inquiry_home
 
                 safe_name = model_display_name.replace("/", "__")
-                persist_path = inquiry_home() / "cache" / "embeddings" / f"{safe_name}-{ndims}.sqlite"
-            embedder = CachingEmbedder(embedder, max_entries=cache_cfg.max_entries, persist_path=persist_path)
+                persist_path = (
+                    inquiry_home()
+                    / "cache"
+                    / "embeddings"
+                    / f"{safe_name}-{ndims}.sqlite"
+                )
+            embedder = CachingEmbedder(
+                embedder, max_entries=cache_cfg.max_entries, persist_path=persist_path
+            )
 
         embedding_registry.configure_default_embedder(embedder, ndims=ndims)
         if not quiet:
@@ -308,4 +314,3 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
                 ndims,
                 cache_suffix,
             )
-

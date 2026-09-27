@@ -99,10 +99,14 @@ async def create_memory_system(config, project_id: str):
     # the model into a process that asked for the deterministic embedder.
     provider = getattr(config.embeddings, "default_provider", "")
     if provider != "hashing" and not embedding_registry._default_configured:
-        from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
+        from agentic_inquiry.embeddings.sentence_transformer import (
+            SentenceTransformerEmbedder,
+        )
 
         model_name = getattr(
-            config.embeddings.sentence_transformer, "model_name", "BAAI/bge-small-en-v1.5"
+            config.embeddings.sentence_transformer,
+            "model_name",
+            "BAAI/bge-small-en-v1.5",
         )
         ndims = getattr(config.embeddings, "default_dimensions", 384)
         embedder = SentenceTransformerEmbedder(model_name=model_name)
@@ -140,7 +144,9 @@ async def create_memory_system(config, project_id: str):
         await semantic_storage.initialize()
     else:
         # Unknown backend - use in-memory adapter as last resort
-        from agentic_inquiry.memory.adapters.inmemory_adapter import InMemoryMemoryAdapter
+        from agentic_inquiry.memory.adapters.inmemory_adapter import (
+            InMemoryMemoryAdapter,
+        )
 
         episodic_storage = InMemoryMemoryAdapter(embedding_dims=embedding_dims)
         semantic_storage = InMemoryMemoryAdapter(embedding_dims=embedding_dims)
@@ -187,7 +193,9 @@ async def save_command(args: argparse.Namespace) -> int:
     try:
         memory_system, storage = await create_memory_system(config, project_id)
 
-        from agentic_inquiry.memory.adapters.inmemory_adapter import InMemoryMemoryAdapter
+        from agentic_inquiry.memory.adapters.inmemory_adapter import (
+            InMemoryMemoryAdapter,
+        )
         from agentic_inquiry.memory.models import MemoryTier
 
         if isinstance(

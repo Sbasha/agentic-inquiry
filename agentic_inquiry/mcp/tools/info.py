@@ -20,13 +20,13 @@ MAX_REGEX_PATTERN_LENGTH = 200
 # Patterns that could cause catastrophic backtracking (ReDoS)
 # These detect nested quantifiers and other dangerous constructs
 _REDOS_DANGEROUS_PATTERNS = [
-    re.compile(r'\(\.\*\)\+'),           # (.*)+
-    re.compile(r'\(\.\+\)\+'),           # (.+)+
-    re.compile(r'\([^)]*\+[^)]*\)\+'),   # (...+...)+
-    re.compile(r'\([^)]*\*[^)]*\)\+'),   # (...*...)+
-    re.compile(r'\([^)]*\+[^)]*\)\*'),   # (...+...)*
-    re.compile(r'\([^)]*\*[^)]*\)\*'),   # (...*...)*
-    re.compile(r'\(\?:.*\)\{.*,\}'),     # Non-capturing with repetition
+    re.compile(r"\(\.\*\)\+"),  # (.*)+
+    re.compile(r"\(\.\+\)\+"),  # (.+)+
+    re.compile(r"\([^)]*\+[^)]*\)\+"),  # (...+...)+
+    re.compile(r"\([^)]*\*[^)]*\)\+"),  # (...*...)+
+    re.compile(r"\([^)]*\+[^)]*\)\*"),  # (...+...)*
+    re.compile(r"\([^)]*\*[^)]*\)\*"),  # (...*...)*
+    re.compile(r"\(\?:.*\)\{.*,\}"),  # Non-capturing with repetition
 ]
 
 # Maximum time allowed for a single regex.search() call in seconds
@@ -34,9 +34,7 @@ REGEX_SEARCH_TIMEOUT_SECONDS = 0.1  # 100ms
 
 
 def _safe_regex_search(
-    pattern: Pattern[str],
-    text: str,
-    timeout: float = REGEX_SEARCH_TIMEOUT_SECONDS
+    pattern: Pattern[str], text: str, timeout: float = REGEX_SEARCH_TIMEOUT_SECONDS
 ) -> bool:
     """Execute regex.search() with a timeout to prevent ReDoS attacks.
 
@@ -48,6 +46,7 @@ def _safe_regex_search(
     Returns:
         True if pattern matches, False if no match or timeout
     """
+
     def _search():
         return pattern.search(text) is not None
 
@@ -59,7 +58,7 @@ def _safe_regex_search(
         logger.warning(
             "Regex search timed out after %sms for pattern: %s",
             int(timeout * 1000),
-            pattern.pattern[:50]
+            pattern.pattern[:50],
         )
         return False
     except Exception as e:
@@ -74,20 +73,23 @@ def _is_safe_regex_pattern(pattern: str) -> tuple[bool, str]:
         Tuple of (is_safe, error_message). If safe, error_message is empty.
     """
     if len(pattern) > MAX_REGEX_PATTERN_LENGTH:
-        return False, f"Pattern too long ({len(pattern)} chars, max {MAX_REGEX_PATTERN_LENGTH})"
+        return (
+            False,
+            f"Pattern too long ({len(pattern)} chars, max {MAX_REGEX_PATTERN_LENGTH})",
+        )
 
     for dangerous in _REDOS_DANGEROUS_PATTERNS:
         if dangerous.search(pattern):
-            return False, "Pattern contains constructs that could cause catastrophic backtracking"
+            return (
+                False,
+                "Pattern contains constructs that could cause catastrophic backtracking",
+            )
 
     return True, ""
 
 
 async def get_events(
-    services: dict,
-    session_id: str,
-    event_types: Optional[list] = None,
-    limit: int = 50
+    services: dict, session_id: str, event_types: Optional[list] = None, limit: int = 50
 ) -> dict:
     """Retrieve event log for a session.
 
@@ -119,7 +121,7 @@ async def get_events(
     if not await session_manager.validate_session(session_id):
         return {
             "error": f"Session '{session_id}' not found or expired",
-            "suggestion": "Use a valid session_id or create a new session"
+            "suggestion": "Use a valid session_id or create a new session",
         }
 
     try:
@@ -128,26 +130,30 @@ async def get_events(
 
         # Extract events from history and session events
         events = []
-        
+
         # Add history items (tool calls)
         for item in session.history or []:
             if event_types is None or item.get("event_type") in event_types:
-                events.append({
-                    "timestamp": item.get("timestamp"),
-                    "event_type": item.get("event_type", "tool_call"),
-                    "tool_name": item.get("tool"),
-                    "details": item.get("params", {})
-                })
-        
+                events.append(
+                    {
+                        "timestamp": item.get("timestamp"),
+                        "event_type": item.get("event_type", "tool_call"),
+                        "tool_name": item.get("tool"),
+                        "details": item.get("params", {}),
+                    }
+                )
+
         # Add session lifecycle/async events
         for item in session.events or []:
             if event_types is None or item.get("event_type") in event_types:
-                events.append({
-                    "timestamp": item.get("timestamp"),
-                    "event_type": item.get("event_type"),
-                    "details": item.get("data", {})
-                })
-        
+                events.append(
+                    {
+                        "timestamp": item.get("timestamp"),
+                        "event_type": item.get("event_type"),
+                        "details": item.get("data", {}),
+                    }
+                )
+
         # Sort by timestamp
         events.sort(key=lambda x: x.get("timestamp", ""), reverse=False)
 
@@ -155,24 +161,14 @@ async def get_events(
         if limit > 0:
             events = events[-limit:]
 
-        return {
-            "events": events,
-            "total": len(events),
-            "session_id": session_id
-        }
+        return {"events": events, "total": len(events), "session_id": session_id}
 
     except Exception as e:
         logger.error("Failed to get events: %s", e, exc_info=True)
-        return {
-            "error": str(e),
-            "suggestion": "Ensure session_id is valid"
-        }
+        return {"error": str(e), "suggestion": "Ensure session_id is valid"}
 
 
-async def get_project_info(
-    services: dict,
-    session_id: str
-) -> dict:
+async def get_project_info(services: dict, session_id: str) -> dict:
     """Get comprehensive project information and statistics.
 
     Returns project metadata, indexing statistics, file counts, entity counts,
@@ -220,7 +216,7 @@ async def get_project_info(
     if not await session_manager.validate_session(session_id):
         return {
             "error": f"Session '{session_id}' not found or expired",
-            "suggestion": "Use a valid session_id or create a new session"
+            "suggestion": "Use a valid session_id or create a new session",
         }
 
     try:
@@ -235,19 +231,27 @@ async def get_project_info(
 
         # Get recent indexing events (let caller interpret state)
         recent_indexing_events = []
-        if event_system and hasattr(event_system, 'store'):
+        if event_system and hasattr(event_system, "store"):
             try:
                 events = await event_system.store.query_events(
                     project_id=project_id,
-                    event_types=["indexing_started", "indexing_completed", "indexing_failed"],
+                    event_types=[
+                        "indexing_started",
+                        "indexing_completed",
+                        "indexing_failed",
+                    ],
                     limit=5,
                 )
                 for evt in events:
-                    recent_indexing_events.append({
-                        "event_type": evt.event_type,
-                        "timestamp": evt.timestamp.isoformat() if hasattr(evt.timestamp, 'isoformat') else str(evt.timestamp),
-                        "data": evt.metadata or {}
-                    })
+                    recent_indexing_events.append(
+                        {
+                            "event_type": evt.event_type,
+                            "timestamp": evt.timestamp.isoformat()
+                            if hasattr(evt.timestamp, "isoformat")
+                            else str(evt.timestamp),
+                            "data": evt.metadata or {},
+                        }
+                    )
             except Exception as e:
                 logger.debug("Could not fetch indexing events: %s", e)
 
@@ -266,16 +270,17 @@ async def get_project_info(
             try:
                 # Get DB manager for direct access to table statistics
                 # Note: db_manager is StorageFacade, need to get underlying LanceDB manager
-                if hasattr(db_manager, 'get_db_manager'):
+                if hasattr(db_manager, "get_db_manager"):
                     lance_manager = db_manager.get_db_manager()
-                    if hasattr(lance_manager, 'get_table_statistics'):
+                    if hasattr(lance_manager, "get_table_statistics"):
                         table_stats = await lance_manager.get_table_statistics()
 
                         # Calculate total size from tables that have size info
                         total_size = sum(
                             stats.get("size_bytes", 0)
                             for stats in table_stats.values()
-                            if stats.get("status") == "success" and stats.get("size_bytes")
+                            if stats.get("status") == "success"
+                            and stats.get("size_bytes")
                         )
 
                         # Build storage metrics response
@@ -290,10 +295,16 @@ async def get_project_info(
 
                         logger.debug(
                             "Collected storage metrics for project %s: %d tables, total_size=%s",
-                            project_id, len(table_stats), total_size if total_size > 0 else "unknown"
+                            project_id,
+                            len(table_stats),
+                            total_size if total_size > 0 else "unknown",
                         )
             except Exception as e:
-                logger.warning("Failed to collect storage metrics for project %s: %s", project_id, e)
+                logger.warning(
+                    "Failed to collect storage metrics for project %s: %s",
+                    project_id,
+                    e,
+                )
                 storage_metrics = None
 
         # Count relationships for this project (with breakdown by type)
@@ -301,7 +312,7 @@ async def get_project_info(
         relationships_count = 0
         try:
             # Get relationship counts grouped by type
-            if hasattr(db_manager, 'count_relationships_by_type'):
+            if hasattr(db_manager, "count_relationships_by_type"):
                 relationships_by_type = await db_manager.count_relationships_by_type(
                     project_id=project_id
                 )
@@ -309,16 +320,24 @@ async def get_project_info(
             else:
                 # Fallback: Use count_records for total count only
                 relationships_count = await db_manager.count_records(
-                    table_name="graph_relationships",
-                    project_id=project_id
+                    table_name="graph_relationships", project_id=project_id
                 )
 
             logger.debug(
                 "Project statistics for %s: chunks=%d, entities=%d, relationships=%d, by_type=%s",
-                project_id, chunks_count, entities_count, relationships_count, relationships_by_type
+                project_id,
+                chunks_count,
+                entities_count,
+                relationships_count,
+                relationships_by_type,
             )
         except Exception as e:
-            logger.error("Failed to get relationship count for project %s: %s", project_id, e, exc_info=True)
+            logger.error(
+                "Failed to get relationship count for project %s: %s",
+                project_id,
+                e,
+                exc_info=True,
+            )
             relationships_count = 0
 
         # Extract top keywords from indexed content (with caching)
@@ -328,31 +347,37 @@ async def get_project_info(
                 # Check cache first
                 cache_manager = services.get("cache_manager")
                 cache_key = f"keywords:{project_id}"
-                
+
                 if cache_manager:
                     top_keywords = cache_manager.get(cache_key)
-                
+
                 if not top_keywords:
                     # Extract keywords if not cached
-                    from agentic_inquiry.mcp.utils.keyword_extractor import KeywordExtractor
-                    
+                    from agentic_inquiry.mcp.utils.keyword_extractor import (
+                        KeywordExtractor,
+                    )
+
                     keyword_extractor = KeywordExtractor()
                     top_keywords = await keyword_extractor.extract_top_keywords(
-                        db_manager=db_manager,
-                        project_id=project_id,
-                        limit=50
+                        db_manager=db_manager, project_id=project_id, limit=50
                     )
-                    
+
                     # Cache the results (5 minute TTL)
                     if cache_manager:
                         cache_manager.set(cache_key, top_keywords)
-                    
+
                     logger.debug(
                         "Extracted %d keywords for project %s",
-                        len(top_keywords), project_id
+                        len(top_keywords),
+                        project_id,
                     )
             except Exception as e:
-                logger.error("Failed to extract keywords for project %s: %s", project_id, e, exc_info=True)
+                logger.error(
+                    "Failed to extract keywords for project %s: %s",
+                    project_id,
+                    e,
+                    exc_info=True,
+                )
                 top_keywords = []
 
         response = {
@@ -364,35 +389,44 @@ async def get_project_info(
                 "relationships_created": relationships_count,
                 "relationships_by_type": relationships_by_type,
                 "memories_stored": (
-                    memory_stats.get("working_memory", {}).get("size", 0) +
-                    memory_stats.get("episodic_memory", {}).get("size", 0) +
-                    memory_stats.get("semantic_memory", {}).get("size", 0)
+                    memory_stats.get("working_memory", {}).get("size", 0)
+                    + memory_stats.get("episodic_memory", {}).get("size", 0)
+                    + memory_stats.get("semantic_memory", {}).get("size", 0)
                 ),
-                "working_memories": memory_stats.get("working_memory", {}).get("size", 0),
-                "episodic_memories": memory_stats.get("episodic_memory", {}).get("size", 0),
-                "semantic_memories": memory_stats.get("semantic_memory", {}).get("size", 0)
+                "working_memories": memory_stats.get("working_memory", {}).get(
+                    "size", 0
+                ),
+                "episodic_memories": memory_stats.get("episodic_memory", {}).get(
+                    "size", 0
+                ),
+                "semantic_memories": memory_stats.get("semantic_memory", {}).get(
+                    "size", 0
+                ),
             },
             "status": {
                 "indexed": chunks_count > 0,
                 "has_entities": entities_count > 0,
                 "has_relationships": relationships_count > 0,
                 "has_memories": (
-                    memory_stats.get("working_memory", {}).get("size", 0) +
-                    memory_stats.get("episodic_memory", {}).get("size", 0) +
-                    memory_stats.get("semantic_memory", {}).get("size", 0)
-                ) > 0
+                    memory_stats.get("working_memory", {}).get("size", 0)
+                    + memory_stats.get("episodic_memory", {}).get("size", 0)
+                    + memory_stats.get("semantic_memory", {}).get("size", 0)
+                )
+                > 0,
             },
             "recent_indexing_events": recent_indexing_events,
             "top_keywords": top_keywords,
             "guidance": {
-                "next_steps": _generate_guidance(chunks_count, entities_count, memory_stats)
-            }
+                "next_steps": _generate_guidance(
+                    chunks_count, entities_count, memory_stats
+                )
+            },
         }
 
         # Add storage metrics if available
         if storage_metrics:
             response["storage_metrics"] = storage_metrics
-        
+
         # Add warnings if project is empty or incomplete
         if project_state["warnings"]:
             response["warnings"] = project_state["warnings"]
@@ -401,19 +435,14 @@ async def get_project_info(
 
     except Exception as e:
         logger.error("Failed to get project info: %s", e, exc_info=True)
-        return {
-            "error": str(e),
-            "suggestion": "Ensure project is initialized"
-        }
+        return {"error": str(e), "suggestion": "Ensure project is initialized"}
 
 
 async def get_server_info(
-    services: dict,
-    limit: int = 50,
-    sort_by: str = "last_indexed"
+    services: dict, limit: int = 50, sort_by: str = "last_indexed"
 ) -> dict:
     """Get comprehensive server configuration and available projects.
-    
+
     This tool provides discovery information about the MCP server including:
     - Server metadata (name, version, description)
     - Default project_id configured at startup
@@ -421,15 +450,15 @@ async def get_server_info(
     - Project_id format requirements and normalization rules
     - Enabled tool categories
     - Usage guidelines
-    
+
     No session_id required - this is server-level information accessible
     immediately for discovery purposes.
-    
+
     Args:
         services: Service dependency dict
         limit: Maximum number of projects to return (default: 50)
         sort_by: Sort order for projects - "last_indexed" (default) or "name"
-        
+
     Returns:
         Server information dictionary with:
         - server: Server metadata
@@ -438,14 +467,14 @@ async def get_server_info(
         - project_id_rules: Format requirements
         - tools: Enabled tool categories
         - usage_guidelines: Getting started tips
-        
+
     Example:
         >>> info = await get_server_info(services, limit=10)
         >>> print(info["default_project"]["project_id"])
         'agentic-inquiry'
         >>> print(info["available_projects"])
         [{'project_id': 'agentic-inquiry', 'chunks': 1234, ...}, ...]
-        
+
     Performance:
         - Results are cached for 60 seconds
         - Cache key: "server_info:v1:{limit}:{sort_by}"
@@ -453,41 +482,45 @@ async def get_server_info(
         - Limit prevents performance issues with large deployments
     """
     from time import time
-    
+
     # Simple time-based cache
     cache_key = f"server_info:v1:{limit}:{sort_by}"
     now = time()
-    
+
     # Check cache
     if hasattr(get_server_info, "_cache"):
         if cache_key in get_server_info._cache:
             cached_data, cached_time = get_server_info._cache[cache_key]
             if now - cached_time < 60:  # 60 second TTL
-                logger.debug("Returning cached server info (age: %.1fs)", now - cached_time)
+                logger.debug(
+                    "Returning cached server info (age: %.1fs)", now - cached_time
+                )
                 return cached_data
     else:
         get_server_info._cache = {}  # type: ignore[attr-defined]
-    
+
     try:
         # Get server configuration
         server_config = services.get("server_config", {})
         db_manager = services["storage"]
         session_manager = services["session_manager"]
-        
+
         # Build server metadata
         server_metadata = {
             "name": server_config.get("server_name", "Agentic Inquiry MCP Server"),
             "version": server_config.get("server_version", "1.0.0"),
-            "description": server_config.get("server_description", "Intelligent search and knowledge management")
+            "description": server_config.get(
+                "server_description", "Intelligent search and knowledge management"
+            ),
         }
-        
+
         # Get default project
         default_project_id = server_config.get("default_project_id", "agentic-inquiry")
         default_project = {
             "project_id": default_project_id,
-            "description": "Default project configured at server startup"
+            "description": "Default project configured at server startup",
         }
-        
+
         # Discover available projects from database
         available_projects = []
         try:
@@ -497,9 +530,9 @@ async def get_server_info(
             all_chunks = await db_manager.advanced_filter(
                 table_name="document_chunks",
                 filters={},
-                limit=None  # Get all to find unique projects
+                limit=None,  # Get all to find unique projects
             )
-            
+
             # Extract unique project_ids with their last indexed timestamp
             project_data = {}
             for chunk in all_chunks:
@@ -508,64 +541,83 @@ async def get_server_info(
                     created_at = chunk.get("created_at")
                     if project_id not in project_data:
                         project_data[project_id] = created_at
-                    elif created_at and (not project_data[project_id] or created_at > project_data[project_id]):
+                    elif created_at and (
+                        not project_data[project_id]
+                        or created_at > project_data[project_id]
+                    ):
                         project_data[project_id] = created_at
-            
+
             # Convert to list of tuples for sorting
-            project_list = [(pid, last_indexed) for pid, last_indexed in project_data.items()]
-            
+            project_list = [
+                (pid, last_indexed) for pid, last_indexed in project_data.items()
+            ]
+
             # Sort projects
             if sort_by == "name":
-                project_list.sort(key=lambda x: x[0])  # Sort by project_id alphabetically
+                project_list.sort(
+                    key=lambda x: x[0]
+                )  # Sort by project_id alphabetically
             else:  # "last_indexed" (default)
-                project_list.sort(key=lambda x: x[1] or "", reverse=True)  # Most recent first
-            
+                project_list.sort(
+                    key=lambda x: x[1] or "", reverse=True
+                )  # Most recent first
+
             # Limit results
             project_list = project_list[:limit]
-            
+
             # Gather statistics for each project
             for project_id, last_indexed in project_list:
                 try:
                     stats = await session_manager.get_project_statistics(project_id)
-                    
+
                     project_info = {
                         "project_id": project_id,
                         "total_chunks": stats.total_chunks,
                         "total_files": stats.total_files,
-                        "total_entities": sum(stats.entity_counts.values()) if stats.entity_counts else 0,
-                        "last_indexed": last_indexed.isoformat() if last_indexed else None,
+                        "total_entities": sum(stats.entity_counts.values())
+                        if stats.entity_counts
+                        else 0,
+                        "last_indexed": last_indexed.isoformat()
+                        if last_indexed
+                        else None,
                         "index_health": stats.index_health,
-                        "languages": stats.languages if stats.languages else {}
+                        "languages": stats.languages if stats.languages else {},
                     }
                     available_projects.append(project_info)
-                    
+
                 except Exception as e:
-                    logger.warning("Failed to get statistics for project %s: %s", project_id, e)
+                    logger.warning(
+                        "Failed to get statistics for project %s: %s", project_id, e
+                    )
                     # Add basic info even if stats fail
-                    available_projects.append({
-                        "project_id": project_id,
-                        "total_chunks": 0,
-                        "total_files": 0,
-                        "total_entities": 0,
-                        "last_indexed": last_indexed.isoformat() if last_indexed else None,
-                        "index_health": "unknown",
-                        "languages": {}
-                    })
-                    
+                    available_projects.append(
+                        {
+                            "project_id": project_id,
+                            "total_chunks": 0,
+                            "total_files": 0,
+                            "total_entities": 0,
+                            "last_indexed": last_indexed.isoformat()
+                            if last_indexed
+                            else None,
+                            "index_health": "unknown",
+                            "languages": {},
+                        }
+                    )
+
         except Exception as e:
             logger.warning("Failed to discover projects: %s", e)
             # Return empty list if discovery fails
             available_projects = []
-        
+
         # Project ID format rules
         project_id_rules = {
             "format": "alphanumeric with hyphens and underscores",
             "pattern": "^[a-zA-Z0-9_-]+$",
             "length": "1-64 characters",
             "normalization": "converted to lowercase",
-            "examples": ["my-project", "project_123", "my_project"]
+            "examples": ["my-project", "project_123", "my_project"],
         }
-        
+
         # Enabled tool categories
         tools = {
             "cognitive_tools": [
@@ -575,22 +627,22 @@ async def get_server_info(
                 "analysis",
                 "context",
                 "knowledge",
-                "info"
+                "info",
             ],
-            "direct_access_tools": []  # Empty if disabled
+            "direct_access_tools": [],  # Empty if disabled
         }
-        
+
         # Usage guidelines
         usage_guidelines = {
             "getting_started": [
                 "1. Create a session with create_session(project_id='...')",
                 "2. Index content with add_knowledge(...)",
-                "3. Search with search_knowledge(...)"
+                "3. Search with search_knowledge(...)",
             ],
             "project_discovery": "Use available_projects to see what's indexed",
-            "project_mismatch": "If using different project_id than default, ensure it exists"
+            "project_mismatch": "If using different project_id than default, ensure it exists",
         }
-        
+
         # Build response
         result = {
             "server": server_metadata,
@@ -598,47 +650,55 @@ async def get_server_info(
             "available_projects": available_projects,
             "project_id_rules": project_id_rules,
             "tools": tools,
-            "usage_guidelines": usage_guidelines
+            "usage_guidelines": usage_guidelines,
         }
-        
+
         # Cache result
         get_server_info._cache[cache_key] = (result, now)  # type: ignore[attr-defined]
-        
+
         logger.info(
             "Generated server info with %d projects (limit=%d, sort_by=%s)",
-            len(available_projects), limit, sort_by
+            len(available_projects),
+            limit,
+            sort_by,
         )
-        
+
         return result
-        
+
     except Exception as e:
         logger.error("Failed to get server info: %s", e, exc_info=True)
         return {
             "error": str(e),
-            "suggestion": "Check server configuration and database connectivity"
+            "suggestion": "Check server configuration and database connectivity",
         }
 
 
-def _generate_guidance(chunks_count: int, entities_count: int, memory_stats: dict) -> list:
+def _generate_guidance(
+    chunks_count: int, entities_count: int, memory_stats: dict
+) -> list:
     """Generate guidance based on project state."""
     guidance = []
 
     if chunks_count == 0:
         guidance.append("Project not yet indexed. Use add_knowledge to index files.")
     elif chunks_count < 100:
-        guidance.append("Small project indexed. Consider indexing more files for better search results.")
+        guidance.append(
+            "Small project indexed. Consider indexing more files for better search results."
+        )
     else:
         guidance.append("Project indexed and ready for semantic search.")
 
     if entities_count == 0:
-        guidance.append("No code entities found. Index code files to enable entity analysis.")
+        guidance.append(
+            "No code entities found. Index code files to enable entity analysis."
+        )
     else:
         guidance.append(f"{entities_count} code entities available for analysis.")
 
     total_memories = (
-        memory_stats.get("working_memory", {}).get("size", 0) +
-        memory_stats.get("episodic_memory", {}).get("size", 0) +
-        memory_stats.get("semantic_memory", {}).get("size", 0)
+        memory_stats.get("working_memory", {}).get("size", 0)
+        + memory_stats.get("episodic_memory", {}).get("size", 0)
+        + memory_stats.get("semantic_memory", {}).get("size", 0)
     )
     if total_memories == 0:
         guidance.append("No memories saved yet. Use save_memory to capture insights.")
@@ -700,7 +760,7 @@ async def list_entities(
     file_path: Optional[str] = None,
     pattern: Optional[str] = None,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
 ) -> dict:
     """List indexed entities with optional filtering.
 
@@ -762,7 +822,7 @@ async def list_entities(
     if not await session_manager.validate_session(session_id):
         return {
             "error": f"Session '{session_id}' not found or expired",
-            "suggestion": "Use a valid session_id or create a new session"
+            "suggestion": "Use a valid session_id or create a new session",
         }
 
     # Validate limit
@@ -776,6 +836,7 @@ async def list_entities(
         # Build Filter AST for optional type filter
         # Schema uses "type" field, not "entity_type"
         from agentic_inquiry.models.graph_entity import EntityType
+
         normalized_type = EntityType.normalize(entity_type) if entity_type else None
         type_filter = by_type(normalized_type) if normalized_type else None
 
@@ -796,10 +857,12 @@ async def list_entities(
         # Filter by file_path with flexible matching
         if file_path:
             import os
+
             if "*" in file_path or "?" in file_path:
                 # Glob pattern
                 filtered_entities = [
-                    e for e in filtered_entities
+                    e
+                    for e in filtered_entities
                     if fnmatch.fnmatch(_get_attr(e, "file_path", ""), file_path)
                 ]
             else:
@@ -810,8 +873,11 @@ async def list_entities(
                 # 4. Normalized path comparison (handle ./ and ../)
                 normalized_filter = os.path.normpath(file_path)
                 filtered_entities = [
-                    e for e in filtered_entities
-                    if _path_matches(_get_attr(e, "file_path", ""), file_path, normalized_filter)
+                    e
+                    for e in filtered_entities
+                    if _path_matches(
+                        _get_attr(e, "file_path", ""), file_path, normalized_filter
+                    )
                 ]
 
         # Filter by name pattern
@@ -822,32 +888,39 @@ async def list_entities(
                 if not is_safe:
                     return {
                         "error": f"Unsafe regex pattern: {error_msg}",
-                        "suggestion": "Use a simpler pattern or glob syntax like '*Service*'"
+                        "suggestion": "Use a simpler pattern or glob syntax like '*Service*'",
                     }
                 try:
                     regex = re.compile(pattern, re.IGNORECASE)
                     # Use safe regex search with timeout to prevent ReDoS
                     filtered_entities = [
-                        e for e in filtered_entities
+                        e
+                        for e in filtered_entities
                         if _safe_regex_search(regex, _get_attr(e, "name", ""))
                     ]
                 except re.error:
                     return {
                         "error": f"Invalid regex pattern: {pattern}",
-                        "suggestion": "Use a valid regex or glob pattern like '*Service*'"
+                        "suggestion": "Use a valid regex or glob pattern like '*Service*'",
                     }
-            elif any(c in pattern for c in '*?[]'):
+            elif any(c in pattern for c in "*?[]"):
                 # Explicit glob pattern - respect as-is, but make case-insensitive
                 filtered_entities = [
-                    e for e in filtered_entities
-                    if fnmatch.fnmatch(_get_attr(e, "name", "").lower(), pattern.lower())
+                    e
+                    for e in filtered_entities
+                    if fnmatch.fnmatch(
+                        _get_attr(e, "name", "").lower(), pattern.lower()
+                    )
                 ]
             else:
                 # No glob chars - treat as substring match (auto-wrap)
                 pattern_glob = f"*{pattern}*"
                 filtered_entities = [
-                    e for e in filtered_entities
-                    if fnmatch.fnmatch(_get_attr(e, "name", "").lower(), pattern_glob.lower())
+                    e
+                    for e in filtered_entities
+                    if fnmatch.fnmatch(
+                        _get_attr(e, "name", "").lower(), pattern_glob.lower()
+                    )
                 ]
 
         # Deduplicate by id to prevent duplicate results
@@ -864,20 +937,22 @@ async def list_entities(
         total_count = len(filtered_entities)
 
         # Apply pagination
-        paginated_entities = filtered_entities[offset:offset + limit]
+        paginated_entities = filtered_entities[offset : offset + limit]
 
         # Format entities for response
         formatted_entities: List[Dict[str, Any]] = []
         for entity in paginated_entities:
-            formatted_entities.append({
-                "name": _get_attr(entity, "name", ""),
-                "type": _get_attr(entity, "type", ""),  # Schema uses "type" field
-                "file_path": _get_attr(entity, "file_path", ""),
-                "line_start": _get_attr(entity, "line_start"),
-                "line_end": _get_attr(entity, "line_end"),
-                "id": _get_attr(entity, "id", ""),  # Use canonical 'id' field
-                "metadata": _get_attr(entity, "metadata", {})
-            })
+            formatted_entities.append(
+                {
+                    "name": _get_attr(entity, "name", ""),
+                    "type": _get_attr(entity, "type", ""),  # Schema uses "type" field
+                    "file_path": _get_attr(entity, "file_path", ""),
+                    "line_start": _get_attr(entity, "line_start"),
+                    "line_end": _get_attr(entity, "line_end"),
+                    "id": _get_attr(entity, "id", ""),  # Use canonical 'id' field
+                    "metadata": _get_attr(entity, "metadata", {}),
+                }
+            )
 
         # Build filters summary
         filters_applied = {}
@@ -896,21 +971,19 @@ async def list_entities(
             "offset": offset,
             "limit": limit,
             "filters_applied": filters_applied,
-            "project_id": project_id
+            "project_id": project_id,
         }
 
     except Exception as e:
         logger.error("Failed to list entities: %s", e, exc_info=True)
         return {
             "error": str(e),
-            "suggestion": "Ensure project is indexed with add_knowledge"
+            "suggestion": "Ensure project is indexed with add_knowledge",
         }
 
 
 async def run_maintenance(
-    services: dict,
-    session_id: str,
-    cleanup_hours: float = 1.0
+    services: dict, session_id: str, cleanup_hours: float = 1.0
 ) -> dict:
     """Run database maintenance to compact files and reclaim disk space.
 
@@ -952,15 +1025,13 @@ async def run_maintenance(
     if not await session_manager.validate_session(session_id):
         return {
             "error": f"Session '{session_id}' not found or expired",
-            "suggestion": "Use a valid session_id or create a new session"
+            "suggestion": "Use a valid session_id or create a new session",
         }
 
     try:
         # Run maintenance
         cleanup_older_than = timedelta(hours=cleanup_hours)
-        result = await db_manager.run_maintenance(
-            cleanup_older_than=cleanup_older_than
-        )
+        result = await db_manager.run_maintenance(cleanup_older_than=cleanup_older_than)
 
         return {
             "status": "success",
@@ -971,14 +1042,14 @@ async def run_maintenance(
             "message": (
                 f"Maintenance complete: reduced {result['summary']['fragments_reduced']} fragments, "
                 f"removed {result['summary']['versions_removed']} old versions"
-            )
+            ),
         }
 
     except Exception as e:
         logger.error("Database maintenance failed: %s", e, exc_info=True)
         return {
             "error": str(e),
-            "suggestion": "Check database connection and permissions"
+            "suggestion": "Check database connection and permissions",
         }
 
 
@@ -987,5 +1058,5 @@ __all__ = [
     "get_project_info",
     "get_server_info",
     "list_entities",
-    "run_maintenance"
+    "run_maintenance",
 ]

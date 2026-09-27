@@ -53,7 +53,9 @@ class TestSearchServiceDelegation:
     """Tests for SearchService delegation to specialized services."""
 
     @pytest.mark.unit
-    async def test_traverse_relationships_delegates_to_graph_search(self, search_service):
+    async def test_traverse_relationships_delegates_to_graph_search(
+        self, search_service
+    ):
         """Test that traverse_relationships delegates to GraphSearchService."""
         # Setup mock
         search_service._graph_search.traverse_relationships = AsyncMock(
@@ -101,7 +103,9 @@ class TestSearchServiceDelegation:
         assert result == {"matches": [], "found": False}
 
     @pytest.mark.unit
-    async def test_enrich_with_graph_context_delegates_to_graph_search(self, search_service):
+    async def test_enrich_with_graph_context_delegates_to_graph_search(
+        self, search_service
+    ):
         """Test that enrich_with_graph_context delegates to GraphSearchService."""
         # Setup mock
         search_results = [{"doc_id": "doc_1"}]
@@ -120,7 +124,9 @@ class TestSearchServiceDelegation:
         assert result == search_results
 
     @pytest.mark.unit
-    async def test_graph_filtered_search_delegates_to_graph_search(self, search_service):
+    async def test_graph_filtered_search_delegates_to_graph_search(
+        self, search_service
+    ):
         """Test that graph_filtered_search delegates to GraphSearchService."""
         # Setup mock
         search_service._graph_search.graph_filtered_search = AsyncMock(return_value=[])
@@ -136,7 +142,9 @@ class TestSearchServiceDelegation:
         assert result == []
 
     @pytest.mark.unit
-    async def test_hybrid_search_delegates_to_hybrid_search_service(self, search_service):
+    async def test_hybrid_search_delegates_to_hybrid_search_service(
+        self, search_service
+    ):
         """Test that hybrid_search delegates to HybridSearchService."""
         # Setup mock
         search_service._hybrid_search.hybrid_search = AsyncMock(return_value=[])
@@ -151,4 +159,3 @@ class TestSearchServiceDelegation:
         # Verify delegation
         search_service._hybrid_search.hybrid_search.assert_called_once()
         assert result == []
-

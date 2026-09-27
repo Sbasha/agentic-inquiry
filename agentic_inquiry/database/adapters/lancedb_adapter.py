@@ -13,6 +13,7 @@ All search methods return SearchResult with normalized scores (0.0-1.0).
 See: docs/design/database-abstraction-revised.md
      .sessions/deep-architecture-review/009-design.md (DES-S2-001)
 """
+
 from __future__ import annotations
 
 import logging
@@ -848,9 +849,7 @@ class LanceDBAdapter:
 
         return self._convert_to_search_results(raw_results, source="filter")
 
-    async def _get_pagerank_scores(
-        self, ids: List[str]
-    ) -> Dict[str, float]:
+    async def _get_pagerank_scores(self, ids: List[str]) -> Dict[str, float]:
         """Get PageRank scores for a list of entity IDs."""
         if not ids:
             return {}
@@ -1025,7 +1024,9 @@ class LanceDBAdapter:
                     await self._manager.delete_graph_relationships(rel_ids)
                     total_deleted += len(rel_ids)
         except Exception as e:
-            logger.warning("Failed to delete relationships for file %s: %s", file_path, e)
+            logger.warning(
+                "Failed to delete relationships for file %s: %s", file_path, e
+            )
 
         logger.debug(
             "Deleted %d records for file %s in project %s",

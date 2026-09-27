@@ -1,4 +1,5 @@
 """Tantivy BM25 projection over a real LanceDB table."""
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -17,7 +18,13 @@ def table(tmp_path: Path, rows: list[dict]) -> object:
 
 
 def test_query_terms_are_lowercase_words() -> None:
-    assert query_terms("Why does NOT parse_config() fail?") == ["why", "does", "not", "parse_config", "fail"]
+    assert query_terms("Why does NOT parse_config() fail?") == [
+        "why",
+        "does",
+        "not",
+        "parse_config",
+        "fail",
+    ]
 
 
 def test_ranks_by_bm25_and_rebuilds_when_table_changes(tmp_path: Path) -> None:
@@ -46,4 +53,7 @@ def test_projection_survives_deletion_of_its_directory(tmp_path: Path) -> None:
     import shutil
 
     shutil.rmtree(tmp_path / "db" / "_lexical")
-    assert LexicalIndex(str(tmp_path / "db"), "chunks").search(tbl, "alpha", 5)[0][0] == "a"
+    assert (
+        LexicalIndex(str(tmp_path / "db"), "chunks").search(tbl, "alpha", 5)[0][0]
+        == "a"
+    )

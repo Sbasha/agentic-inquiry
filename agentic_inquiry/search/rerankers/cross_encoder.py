@@ -3,6 +3,7 @@
 Wraps lancedb.rerankers.CrossEncoderReranker for use with the RerankerProtocol.
 Cross-encoders jointly encode query and document for more accurate relevance scoring.
 """
+
 from __future__ import annotations
 
 import logging
@@ -109,8 +110,11 @@ class CrossEncoderReranker(RerankerProtocol):
             )
             # Fallback: merge by original scores
             scored_results = [
-                (r.id, r.score) for r in sorted(unique_results, key=lambda x: x.score, reverse=True)
+                (r.id, r.score)
+                for r in sorted(unique_results, key=lambda x: x.score, reverse=True)
             ]
 
         # Normalize scores to 0.0-1.0 using shared utility
-        return normalize_scored_tuples(scored_results, result_map, source="hybrid_cross_encoder")
+        return normalize_scored_tuples(
+            scored_results, result_map, source="hybrid_cross_encoder"
+        )

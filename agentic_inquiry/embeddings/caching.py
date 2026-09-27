@@ -47,6 +47,7 @@ Design notes:
 - **Pass-through on empty input**: returns ``[]`` without touching the
   cache or underlying embedder.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -94,7 +95,12 @@ class CachingEmbedder(Embedder):
         misses: Total cache misses (computed by underlying embedder).
     """
 
-    def __init__(self, wrapped: Embedder, max_entries: int = 10_000, persist_path: Optional[Path] = None) -> None:
+    def __init__(
+        self,
+        wrapped: Embedder,
+        max_entries: int = 10_000,
+        persist_path: Optional[Path] = None,
+    ) -> None:
         """Wrap ``wrapped`` with a bounded LRU cache.
 
         Args:
@@ -192,17 +198,25 @@ class CachingEmbedder(Embedder):
         # unrelated cache accesses.
         stored = self._disk.get(unique_miss_keys) if self._disk is not None else {}
         compute = [i for i, key in enumerate(unique_miss_keys) if key not in stored]
-        computed = self._wrapped.generate([unique_miss_texts[i] for i in compute]) if compute else []
+        computed = (
+            self._wrapped.generate([unique_miss_texts[i] for i in compute])
+            if compute
+            else []
+        )
         if len(computed) != len(compute):
             raise RuntimeError(
                 f"Wrapped embedder returned {len(computed)} vectors for "
                 f"{len(compute)} inputs; cannot safely cache."
             )
         if self._disk is not None and compute:
-            self._disk.put([(unique_miss_keys[i], vec) for i, vec in zip(compute, computed)])
+            self._disk.put(
+                [(unique_miss_keys[i], vec) for i, vec in zip(compute, computed)]
+            )
         by_position = dict(zip(compute, computed))
-        new_vectors = [by_position[i] if i in by_position else stored[key].tolist()
-                       for i, key in enumerate(unique_miss_keys)]
+        new_vectors = [
+            by_position[i] if i in by_position else stored[key].tolist()
+            for i, key in enumerate(unique_miss_keys)
+        ]
 
         if len(new_vectors) != len(unique_miss_texts):
             # Defensive: the underlying contract is one vector per
@@ -275,7 +289,9 @@ class _DiskStore:
         self._lock = threading.Lock()
         self._db = sqlite3.connect(str(path), check_same_thread=False, timeout=60)
         self._db.execute("PRAGMA journal_mode=WAL")
-        self._db.execute("CREATE TABLE IF NOT EXISTS vectors (key TEXT PRIMARY KEY, vec BLOB NOT NULL)")
+        self._db.execute(
+            "CREATE TABLE IF NOT EXISTS vectors (key TEXT PRIMARY KEY, vec BLOB NOT NULL)"
+        )
 
     def get(self, keys: List[str]) -> "Dict[str, np.ndarray]":
         found: Dict[str, np.ndarray] = {}
@@ -283,13 +299,17 @@ class _DiskStore:
             for start in range(0, len(keys), 900):
                 batch = keys[start : start + 900]
                 marks = ",".join("?" * len(batch))
-                rows = self._db.execute(f"SELECT key, vec FROM vectors WHERE key IN ({marks})", batch)  # noqa: S608 - placeholders only
+                rows = self._db.execute(
+                    f"SELECT key, vec FROM vectors WHERE key IN ({marks})", batch
+                )  # noqa: S608 - placeholders only
                 for key, blob in rows:
                     found[key] = np.frombuffer(blob, dtype=np.float32)
         return found
 
     def put(self, items: "List[tuple[str, List[float]]]") -> None:
-        rows = [(key, np.asarray(vec, dtype=np.float32).tobytes()) for key, vec in items]
+        rows = [
+            (key, np.asarray(vec, dtype=np.float32).tobytes()) for key, vec in items
+        ]
         with self._lock:
             self._db.executemany("INSERT OR IGNORE INTO vectors VALUES (?, ?)", rows)
             self._db.commit()

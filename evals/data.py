@@ -5,6 +5,7 @@ patches, LOCOMO evidence dialog IDs, LongMemEval answer sessions, BEIR SciFact
 qrels, and the AFP ERPNext rubrics' evidence spans (read in place from the AFP
 checkout so its sealed rubrics are not copied into this repository).
 """
+
 from __future__ import annotations
 
 import ast
@@ -23,8 +24,16 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-CACHE = Path(os.environ.get("INQUIRY_EVAL_CACHE", Path.home() / ".cache" / "agentic-inquiry-evals"))
-AFP_ROOT = Path(os.environ.get("AFP_BENCH_ROOT", Path.home() / "projects" / "afp" / "benchmarks" / "afp"))
+CACHE = Path(
+    os.environ.get(
+        "INQUIRY_EVAL_CACHE", Path.home() / ".cache" / "agentic-inquiry-evals"
+    )
+)
+AFP_ROOT = Path(
+    os.environ.get(
+        "AFP_BENCH_ROOT", Path.home() / "projects" / "afp" / "benchmarks" / "afp"
+    )
+)
 SEED = 20260926
 
 # URL and pinned sha256 per dataset; a mismatch refuses to run (RFC-0003).
@@ -51,10 +60,17 @@ LABELS_VERSION = 2
 
 # Per-repo caps for the SWE-bench Verified sample (150 tasks, all 12 repos).
 SWEBENCH_CAPS = {
-    "django/django": 42, "sympy/sympy": 20, "sphinx-doc/sphinx": 15,
-    "matplotlib/matplotlib": 15, "scikit-learn/scikit-learn": 15,
-    "astropy/astropy": 10, "pydata/xarray": 10, "pytest-dev/pytest": 10,
-    "pylint-dev/pylint": 5, "psf/requests": 5, "mwaskom/seaborn": 2,
+    "django/django": 42,
+    "sympy/sympy": 20,
+    "sphinx-doc/sphinx": 15,
+    "matplotlib/matplotlib": 15,
+    "scikit-learn/scikit-learn": 15,
+    "astropy/astropy": 10,
+    "pydata/xarray": 10,
+    "pytest-dev/pytest": 10,
+    "pylint-dev/pylint": 5,
+    "psf/requests": 5,
+    "mwaskom/seaborn": 2,
     "pallets/flask": 1,
 }
 
@@ -217,7 +233,11 @@ def enclosing_defs(
 
 def split_of(case_id: str) -> str:
     """Stable assignment: one third dev, two thirds test."""
-    return "dev" if int(hashlib.sha256(case_id.encode()).hexdigest(), 16) % 3 == 0 else "test"
+    return (
+        "dev"
+        if int(hashlib.sha256(case_id.encode()).hexdigest(), 16) % 3 == 0
+        else "test"
+    )
 
 
 _EVIDENCE = re.compile(r"D(\d+):(\d+)", re.IGNORECASE)
@@ -238,6 +258,7 @@ def stratified_sample(
     rows: list[dict[str, Any]], key: str, id_field: str, caps: dict[str, int], seed: int
 ) -> list[dict[str, Any]]:
     """Take up to ``caps[group]`` rows per group, ordered by a seeded hash."""
+
     def rank(row: dict[str, Any]) -> str:
         return hashlib.sha256(f"{seed}:{row[id_field]}".encode()).hexdigest()
 
@@ -268,12 +289,17 @@ def fetch(name: str) -> Path:
     if not target.exists():
         target.parent.mkdir(parents=True, exist_ok=True)
         partial = target.with_suffix(target.suffix + ".part")
-        with urllib.request.urlopen(url, timeout=600) as response, partial.open("wb") as out:  # noqa: S310 - fixed https URLs
+        with (
+            urllib.request.urlopen(url, timeout=600) as response,
+            partial.open("wb") as out,
+        ):  # noqa: S310 - fixed https URLs
             shutil.copyfileobj(response, out)
         partial.rename(target)
     actual = _sha256(target)
     if actual != expected:
-        raise RuntimeError(f"{name} dataset changed upstream: sha256 {actual} != pinned {expected}")
+        raise RuntimeError(
+            f"{name} dataset changed upstream: sha256 {actual} != pinned {expected}"
+        )
     return target
 
 
@@ -288,7 +314,15 @@ def ensure_clone(repo: str) -> Path:
     target = CACHE / "repos" / (repo.replace("/", "__") + ".git")
     if not target.exists():
         target.parent.mkdir(parents=True, exist_ok=True)
-        _git(["clone", "--bare", "--quiet", f"https://github.com/{repo}.git", str(target)])
+        _git(
+            [
+                "clone",
+                "--bare",
+                "--quiet",
+                f"https://github.com/{repo}.git",
+                str(target),
+            ]
+        )
     return target
 
 
@@ -306,7 +340,10 @@ def snapshot(repo: str, commit: str) -> Path:
     shutil.rmtree(partial, ignore_errors=True)
     partial.mkdir(parents=True)
     archive = subprocess.run(
-        ["git", "archive", "--format=tar", commit], cwd=clone, check=True, capture_output=True
+        ["git", "archive", "--format=tar", commit],
+        cwd=clone,
+        check=True,
+        capture_output=True,
     ).stdout
     tar_path = partial.with_suffix(".tar")
     tar_path.write_bytes(archive)
@@ -341,9 +378,15 @@ def load_swebench() -> Suite:
     source = fetch("swebench")
     frame = pd.read_parquet(source)
     rows = frame.to_dict("records")
-    sample = stratified_sample(rows, key="repo", id_field="instance_id", caps=SWEBENCH_CAPS, seed=SEED)
-    labels_path = CACHE / "cases" / f"swebench-{_sha256(source)[:12]}-v{LABELS_VERSION}.json"
-    labels: dict[str, Any] = json.loads(labels_path.read_text()) if labels_path.exists() else {}
+    sample = stratified_sample(
+        rows, key="repo", id_field="instance_id", caps=SWEBENCH_CAPS, seed=SEED
+    )
+    labels_path = (
+        CACHE / "cases" / f"swebench-{_sha256(source)[:12]}-v{LABELS_VERSION}.json"
+    )
+    labels: dict[str, Any] = (
+        json.loads(labels_path.read_text()) if labels_path.exists() else {}
+    )
     cases: list[Case] = []
     dropped = 0
     for row in sample:
@@ -359,14 +402,22 @@ def load_swebench() -> Suite:
                         text = _git(["show", f"{row['base_commit']}:{path}"], cwd=clone)
                     except subprocess.CalledProcessError:
                         try:
-                            _git(["fetch", "--quiet", "origin", row["base_commit"]], cwd=clone)
-                            text = _git(["show", f"{row['base_commit']}:{path}"], cwd=clone)
+                            _git(
+                                ["fetch", "--quiet", "origin", row["base_commit"]],
+                                cwd=clone,
+                            )
+                            text = _git(
+                                ["show", f"{row['base_commit']}:{path}"], cwd=clone
+                            )
                         except subprocess.CalledProcessError:
                             continue
                     deleted = lines - {a for a, _ in pairs.get(path, [])}
                     spans = enclosing_defs(text, deleted, pairs.get(path, []))
                     functions += [(path, s, e) for s, e in sorted(spans)]
-            labels[iid] = {"lines": {p: sorted(v) for p, v in gold.items()}, "functions": functions}
+            labels[iid] = {
+                "lines": {p: sorted(v) for p, v in gold.items()},
+                "functions": functions,
+            }
         entry = labels[iid]
         if not entry["lines"]:
             dropped += 1
@@ -390,12 +441,21 @@ def load_swebench() -> Suite:
         repo, commit = corpus.split("@")
         return snapshot(repo, commit)
 
-    return Suite("swebench", cases, materialize, window=50, code=True,
-                 data_sha256={"swebench": _sha256(source)}, dropped={"no_preimage_gold": dropped})
+    return Suite(
+        "swebench",
+        cases,
+        materialize,
+        window=50,
+        code=True,
+        data_sha256={"swebench": _sha256(source)},
+        dropped={"no_preimage_gold": dropped},
+    )
 
 
 def load_erpnext() -> Suite:
-    tasks = json.loads((AFP_ROOT / "manifests" / "retrieval-tasks.json").read_text())["tasks"]
+    tasks = json.loads((AFP_ROOT / "manifests" / "retrieval-tasks.json").read_text())[
+        "tasks"
+    ]
     cases: list[Case] = []
     hashes: dict[str, str] = {}
     for task in tasks:
@@ -407,16 +467,24 @@ def load_erpnext() -> Suite:
             for ev in fact.get("evidence", []):
                 lines[ev["path"]].update(range(ev["start_line"], ev["end_line"] + 1))
         cases.append(
-            Case(id=task["id"], suite="erpnext", corpus=f"{ERPNEXT_REPO}@{ERPNEXT_REVISION}",
-                 query=task["prompt"], gold_units={p: 1.0 for p in lines}, gold_lines=dict(lines),
-                 fixed_split="test")
+            Case(
+                id=task["id"],
+                suite="erpnext",
+                corpus=f"{ERPNEXT_REPO}@{ERPNEXT_REVISION}",
+                query=task["prompt"],
+                gold_units={p: 1.0 for p in lines},
+                gold_lines=dict(lines),
+                fixed_split="test",
+            )
         )
 
     def materialize(corpus: str) -> Path:
         repo, commit = corpus.split("@")
         return snapshot(repo, commit)
 
-    return Suite("erpnext", cases, materialize, window=50, code=True, data_sha256=hashes)
+    return Suite(
+        "erpnext", cases, materialize, window=50, code=True, data_sha256=hashes
+    )
 
 
 def _locomo_line(turn: dict[str, Any], date: str) -> str:
@@ -442,7 +510,9 @@ def load_locomo() -> Suite:
         while f"session_{index}" in conversation:
             date = conversation.get(f"session_{index}_date_time", "")
             turns = conversation[f"session_{index}"]
-            files[f"session_{index}.txt"] = "\n".join(_locomo_line(t, date) for t in turns) + "\n"
+            files[f"session_{index}.txt"] = (
+                "\n".join(_locomo_line(t, date) for t in turns) + "\n"
+            )
             present.update(t["dia_id"] for t in turns)
             index += 1
         corpora[sample] = files
@@ -455,15 +525,25 @@ def load_locomo() -> Suite:
                 dropped["no_evidence_in_corpus"] += 1
                 continue
             cases.append(
-                Case(id=f"{sample}-q{number}", suite="locomo", corpus=sample, query=str(qa["question"]),
-                     gold_units={e: 1.0 for e in evidence},
-                     meta={"category": qa["category"], "answer": str(qa.get("answer", ""))},
-                     split_unit=sample)
+                Case(
+                    id=f"{sample}-q{number}",
+                    suite="locomo",
+                    corpus=sample,
+                    query=str(qa["question"]),
+                    gold_units={e: 1.0 for e in evidence},
+                    meta={
+                        "category": qa["category"],
+                        "answer": str(qa.get("answer", "")),
+                    },
+                    split_unit=sample,
+                )
             )
 
     # Ten conversations are too few for a hashed third: the three with the
     # lowest seeded hash are dev, the other seven test (RFC-0003).
-    ranked = sorted(corpora, key=lambda s: hashlib.sha256(f"{SEED}:{s}".encode()).hexdigest())
+    ranked = sorted(
+        corpora, key=lambda s: hashlib.sha256(f"{SEED}:{s}".encode()).hexdigest()
+    )
     dev = set(ranked[:3])
     for case in cases:
         case.fixed_split = "dev" if case.corpus in dev else "test"
@@ -471,8 +551,15 @@ def load_locomo() -> Suite:
     def materialize(corpus: str) -> Path:
         return _write_corpus(CACHE / "corpora" / "locomo" / corpus, corpora[corpus])
 
-    return Suite("locomo", cases, materialize, window=1, unit_pattern=r"\[(D\d+:\d+)\]",
-                 data_sha256={"locomo": _sha256(source)}, dropped=dict(dropped))
+    return Suite(
+        "locomo",
+        cases,
+        materialize,
+        window=1,
+        unit_pattern=r"\[(D\d+:\d+)\]",
+        data_sha256={"locomo": _sha256(source)},
+        dropped=dict(dropped),
+    )
 
 
 def load_longmemeval() -> Suite:
@@ -494,11 +581,17 @@ def load_longmemeval() -> Suite:
             continue
         files: dict[str, str] = {}
         evidence: list[str] = []
-        for sid, date, session in zip(item["haystack_session_ids"], item["haystack_dates"], item["haystack_sessions"]):
+        for sid, date, session in zip(
+            item["haystack_session_ids"],
+            item["haystack_dates"],
+            item["haystack_sessions"],
+        ):
             rows = []
             for number, turn in enumerate(session):
                 marker = f"{sid}#t{number}"
-                rows.append(f"[{marker}] ({date}) {turn['role']}: {' '.join(str(turn['content']).split())}")
+                rows.append(
+                    f"[{marker}] ({date}) {turn['role']}: {' '.join(str(turn['content']).split())}"
+                )
                 if turn.get("has_answer"):
                     evidence.append(marker)
             files[f"{sid}.txt"] = "\n".join(rows) + "\n"
@@ -507,17 +600,34 @@ def load_longmemeval() -> Suite:
             dropped += 1
             continue
         cases.append(
-            Case(id=qid, suite="longmemeval", corpus=qid, query=item["question"],
-                 gold_units={marker: 1.0 for marker in evidence},
-                 meta={"type": item["question_type"], "answer": str(item["answer"]),
-                       "gold_sessions": sorted(set(item["answer_session_ids"]))})
+            Case(
+                id=qid,
+                suite="longmemeval",
+                corpus=qid,
+                query=item["question"],
+                gold_units={marker: 1.0 for marker in evidence},
+                meta={
+                    "type": item["question_type"],
+                    "answer": str(item["answer"]),
+                    "gold_sessions": sorted(set(item["answer_session_ids"])),
+                },
+            )
         )
 
     def materialize(corpus: str) -> Path:
-        return _write_corpus(CACHE / "corpora" / "longmemeval-turns" / corpus, by_corpus[corpus])
+        return _write_corpus(
+            CACHE / "corpora" / "longmemeval-turns" / corpus, by_corpus[corpus]
+        )
 
-    return Suite("longmemeval", cases, materialize, window=1, unit_pattern=r"\[([^\]\s]+#t\d+)\]",
-                 data_sha256={"longmemeval": _sha256(source)}, dropped={"abstention_or_no_evidence": dropped})
+    return Suite(
+        "longmemeval",
+        cases,
+        materialize,
+        window=1,
+        unit_pattern=r"\[([^\]\s]+#t\d+)\]",
+        data_sha256={"longmemeval": _sha256(source)},
+        dropped={"abstention_or_no_evidence": dropped},
+    )
 
 
 def load_scifact() -> Suite:
@@ -526,21 +636,46 @@ def load_scifact() -> Suite:
     if not root.exists():
         with zipfile.ZipFile(source) as archive:
             archive.extractall(CACHE / "data")
-    corpus_rows = [json.loads(line) for line in (root / "corpus.jsonl").read_text().splitlines() if line]
-    queries = {q["_id"]: q["text"] for q in map(json.loads, (root / "queries.jsonl").read_text().splitlines()) if q}
+    corpus_rows = [
+        json.loads(line)
+        for line in (root / "corpus.jsonl").read_text().splitlines()
+        if line
+    ]
+    queries = {
+        q["_id"]: q["text"]
+        for q in map(json.loads, (root / "queries.jsonl").read_text().splitlines())
+        if q
+    }
     qrels: dict[str, dict[str, float]] = defaultdict(dict)
     for line in (root / "qrels" / "test.tsv").read_text().splitlines()[1:]:
         qid, doc, score = line.split("\t")
         if int(score) > 0:
             qrels[qid][f"{doc}.txt"] = float(score)
-    files = {f"{row['_id']}.txt": f"{row.get('title', '')}\n{row['text']}\n" for row in corpus_rows}
-    cases = [Case(id=f"scifact-{qid}", suite="scifact", corpus="scifact", query=queries[qid], gold_units=gold)
-             for qid, gold in sorted(qrels.items(), key=lambda kv: int(kv[0]))]
+    files = {
+        f"{row['_id']}.txt": f"{row.get('title', '')}\n{row['text']}\n"
+        for row in corpus_rows
+    }
+    cases = [
+        Case(
+            id=f"scifact-{qid}",
+            suite="scifact",
+            corpus="scifact",
+            query=queries[qid],
+            gold_units=gold,
+        )
+        for qid, gold in sorted(qrels.items(), key=lambda kv: int(kv[0]))
+    ]
 
     def materialize(corpus: str) -> Path:
         return _write_corpus(CACHE / "corpora" / "scifact" / "corpus", files)
 
-    return Suite("scifact", cases, materialize, window=0, data_sha256={"scifact": _sha256(source)})
+    return Suite(
+        "scifact",
+        cases,
+        materialize,
+        window=0,
+        data_sha256={"scifact": _sha256(source)},
+    )
 
 
 LOADERS: dict[str, Callable[[], Suite]] = {

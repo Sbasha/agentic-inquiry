@@ -66,7 +66,7 @@ def create_test_parsed_document(
                 line_end=1,
             )
         ]
-    
+
     return ParsedDocument(
         doc_id="test_doc",
         file_path=file_path,

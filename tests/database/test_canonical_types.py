@@ -2,6 +2,7 @@
 
 These tests verify the core data structures used across all database operations.
 """
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -288,11 +289,7 @@ class TestFilter:
     def test_is_compound(self):
         """Test is_compound method."""
         simple = Filter(operator=FilterOperator.EQ, field="x", value=1)
-        compound = Filter(
-            operator=FilterOperator.AND,
-            left=simple,
-            right=simple
-        )
+        compound = Filter(operator=FilterOperator.AND, left=simple, right=simple)
         assert not simple.is_compound()
         assert compound.is_compound()
 

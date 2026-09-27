@@ -453,7 +453,9 @@ class LanceDBProvider:
         """Insert or update graph relationships."""
         if self._graph_provider is None:
             raise RuntimeError("Provider not initialized")
-        return await self._graph_provider.upsert_relationships(relationships, project_id)
+        return await self._graph_provider.upsert_relationships(
+            relationships, project_id
+        )
 
     async def get_relationships_by_entity(
         self,

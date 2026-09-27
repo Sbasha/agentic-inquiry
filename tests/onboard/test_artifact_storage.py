@@ -28,18 +28,14 @@ class TestLocalArtifactStorage:
         self, storage: LocalOnboardArtifactStorage
     ) -> None:
         content = "# Exploration Report\n\nThis is a test."
-        path = await storage.save_report(
-            "project-1", "run-1", "EXPLORATION", content
-        )
+        path = await storage.save_report("project-1", "run-1", "EXPLORATION", content)
         assert Path(path).exists()
         assert path.endswith("EXPLORATION.md")
 
         loaded = await storage.load_report("project-1", "run-1", "EXPLORATION")
         assert loaded == content
 
-    async def test_list_reports(
-        self, storage: LocalOnboardArtifactStorage
-    ) -> None:
+    async def test_list_reports(self, storage: LocalOnboardArtifactStorage) -> None:
         await storage.save_report("project-1", "run-1", "EXPLORATION", "# Explore")
         await storage.save_report("project-1", "run-1", "VALIDATION", "# Validate")
         await storage.save_report("project-1", "run-1", "ONBOARD", "# Onboard")
@@ -47,9 +43,7 @@ class TestLocalArtifactStorage:
         reports = await storage.list_reports("project-1", "run-1")
         assert sorted(reports) == ["EXPLORATION", "ONBOARD", "VALIDATION"]
 
-    async def test_list_empty(
-        self, storage: LocalOnboardArtifactStorage
-    ) -> None:
+    async def test_list_empty(self, storage: LocalOnboardArtifactStorage) -> None:
         reports = await storage.list_reports("nonexistent", "none")
         assert reports == []
 
@@ -137,9 +131,7 @@ class TestCreateOnboardArtifactStorage:
 
         @dataclass
         class MinimalConfig:
-            storage: MinimalStorageConfig = field(
-                default_factory=MinimalStorageConfig
-            )
+            storage: MinimalStorageConfig = field(default_factory=MinimalStorageConfig)
 
         config = MinimalConfig()
         config.storage.root = str(tmp_path)

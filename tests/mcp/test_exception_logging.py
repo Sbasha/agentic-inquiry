@@ -159,7 +159,9 @@ class TestSuggestionsExceptionLogging:
         self, mock_search_service, mock_config, caplog
     ):
         """Verify that threshold suggestion search failures are logged."""
-        from agentic_inquiry.mcp.utils.suggestions import _generate_threshold_suggestions
+        from agentic_inquiry.mcp.utils.suggestions import (
+            _generate_threshold_suggestions,
+        )
 
         # Make fts_search raise an exception
         mock_search_service.fts_search.side_effect = Exception("Search unavailable")
@@ -215,7 +217,9 @@ class TestDirectAccessExceptionLogging:
             )
 
         # Should log the lookup failures
-        debug_messages = [r.message for r in caplog.records if r.levelno == logging.DEBUG]
+        debug_messages = [
+            r.message for r in caplog.records if r.levelno == logging.DEBUG
+        ]
         assert any(
             "Entity lookup" in msg and "failed" in msg for msg in debug_messages
         ), f"Expected debug log for entity lookup failure, got: {debug_messages}"

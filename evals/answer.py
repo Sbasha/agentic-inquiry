@@ -5,6 +5,7 @@ on the user's subscription, or through Moonshot's ``kimi-k2.6`` (Graphify's
 model) when ``MOONSHOT_API_KEY`` is set. A second judge from a different model
 family runs locally through Ollama, so judge agreement costs nothing.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -25,7 +26,15 @@ from typing import Any
 
 from evals.data import CACHE, LOADERS, SEED, Case
 from evals.metrics import paired, render
-from evals.run import REPO_ROOT, RESULTS, _git, guard_test_split, record_test_run, applicable_arms, collect
+from evals.run import (
+    REPO_ROOT,
+    RESULTS,
+    _git,
+    guard_test_split,
+    record_test_run,
+    applicable_arms,
+    collect,
+)
 
 BUDGET = 2000
 ANSWERER = "claude-haiku-4-5-20251001"
@@ -111,7 +120,9 @@ def stratified(cases: list[Case], n: int, key: str) -> list[Case]:
     total = len(cases)
     picked: list[Case] = []
     for _, members in sorted(groups.items(), key=lambda kv: str(kv[0])):
-        members.sort(key=lambda c: hashlib.sha256(f"{SEED}:{c.id}".encode()).hexdigest())
+        members.sort(
+            key=lambda c: hashlib.sha256(f"{SEED}:{c.id}".encode()).hexdigest()
+        )
         picked += members[: max(1, round(n * len(members) / total))]
     return picked[:n]
 
@@ -146,53 +157,114 @@ def _claude(model: str, prompt: str) -> dict[str, Any]:
     with tempfile.TemporaryDirectory() as cwd:
         for attempt in range(6):
             proc = subprocess.run(
-                ["claude", "-p", "--model", model, "--output-format", "json", "--setting-sources", "project",
-                 "--no-session-persistence", "--tools", "", "--system-prompt", "You are a precise assistant."],
-                input=prompt, capture_output=True, text=True, cwd=cwd, timeout=300,
+                [
+                    "claude",
+                    "-p",
+                    "--model",
+                    model,
+                    "--output-format",
+                    "json",
+                    "--setting-sources",
+                    "project",
+                    "--no-session-persistence",
+                    "--tools",
+                    "",
+                    "--system-prompt",
+                    "You are a precise assistant.",
+                ],
+                input=prompt,
+                capture_output=True,
+                text=True,
+                cwd=cwd,
+                timeout=300,
             )
-            if not re.search(r"rate limit|overloaded|529|usage limit|too many requests", proc.stdout + proc.stderr, re.I):
+            if not re.search(
+                r"rate limit|overloaded|529|usage limit|too many requests",
+                proc.stdout + proc.stderr,
+                re.I,
+            ):
                 break
             time.sleep(min(600, 60 * 2**attempt))
     if proc.returncode != 0:
-        raise RuntimeError(f"claude -p failed: {proc.stderr.strip()[-300:] or proc.stdout[-300:]}")
+        raise RuntimeError(
+            f"claude -p failed: {proc.stderr.strip()[-300:] or proc.stdout[-300:]}"
+        )
     data = json.loads(proc.stdout)
     if data.get("is_error"):
         raise RuntimeError(f"claude -p error: {str(data.get('result'))[:300]}")
     usage = data.get("usage", {})
-    return {"text": str(data.get("result", "")).strip(), "model": model,
-            "input_tokens": usage.get("input_tokens", 0) + usage.get("cache_read_input_tokens", 0)
-            + usage.get("cache_creation_input_tokens", 0),
-            "output_tokens": usage.get("output_tokens", 0)}
+    return {
+        "text": str(data.get("result", "")).strip(),
+        "model": model,
+        "input_tokens": usage.get("input_tokens", 0)
+        + usage.get("cache_read_input_tokens", 0)
+        + usage.get("cache_creation_input_tokens", 0),
+        "output_tokens": usage.get("output_tokens", 0),
+    }
 
 
 def _moonshot(model: str, prompt: str) -> dict[str, Any]:
-    body = json.dumps({"model": model, "temperature": 0, "messages": [{"role": "user", "content": prompt}]}).encode()
+    body = json.dumps(
+        {
+            "model": model,
+            "temperature": 0,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+    ).encode()
     request = urllib.request.Request(
-        "https://api.moonshot.ai/v1/chat/completions", data=body,
-        headers={"Content-Type": "application/json", "Authorization": f"Bearer {os.environ['MOONSHOT_API_KEY']}"})
+        "https://api.moonshot.ai/v1/chat/completions",
+        data=body,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {os.environ['MOONSHOT_API_KEY']}",
+        },
+    )
     with urllib.request.urlopen(request, timeout=300) as response:  # noqa: S310 - fixed https URL
         data = json.loads(response.read())
     usage = data.get("usage", {})
-    return {"text": data["choices"][0]["message"]["content"].strip(), "model": model,
-            "input_tokens": usage.get("prompt_tokens", 0), "output_tokens": usage.get("completion_tokens", 0)}
+    return {
+        "text": data["choices"][0]["message"]["content"].strip(),
+        "model": model,
+        "input_tokens": usage.get("prompt_tokens", 0),
+        "output_tokens": usage.get("completion_tokens", 0),
+    }
 
 
 def _ollama(model: str, prompt: str) -> dict[str, Any]:
-    body = json.dumps({"model": model, "stream": False, "format": "json", "options": {"temperature": 0, "seed": SEED},
-                       "messages": [{"role": "user", "content": prompt}]}).encode()
-    request = urllib.request.Request("http://localhost:11434/api/chat", data=body,
-                                     headers={"Content-Type": "application/json"})
+    body = json.dumps(
+        {
+            "model": model,
+            "stream": False,
+            "format": "json",
+            "options": {"temperature": 0, "seed": SEED},
+            "messages": [{"role": "user", "content": prompt}],
+        }
+    ).encode()
+    request = urllib.request.Request(
+        "http://localhost:11434/api/chat",
+        data=body,
+        headers={"Content-Type": "application/json"},
+    )
     with urllib.request.urlopen(request, timeout=600) as response:  # noqa: S310 - local Ollama
         data = json.loads(response.read())
-    return {"text": data["message"]["content"].strip(), "model": model,
-            "input_tokens": data.get("prompt_eval_count", 0), "output_tokens": data.get("eval_count", 0)}
+    return {
+        "text": data["message"]["content"].strip(),
+        "model": model,
+        "input_tokens": data.get("prompt_eval_count", 0),
+        "output_tokens": data.get("eval_count", 0),
+    }
 
 
 def _ollama_digest(model: str) -> str:
     try:
-        with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=10) as response:  # noqa: S310
+        with urllib.request.urlopen(
+            "http://localhost:11434/api/tags", timeout=10
+        ) as response:  # noqa: S310
             tags = json.loads(response.read())
-        return next((m["digest"] for m in tags.get("models", []) if m["name"] == model), "missing")
+        return next(
+            (m["digest"] for m in tags.get("models", []) if m["name"] == model),
+            "missing",
+        )
     except OSError:
         return "unavailable"
 
@@ -228,15 +300,33 @@ def run_answers(arm_names: list[str], split: str, n: int, jobs: int = 3) -> Path
         arm_name, case, context, tokens = item
         gold = case.meta["answer"]
         try:
-            answer = complete(answerer, ANSWER_PROMPT.format(context=context, question=case.query))
-            verdict = complete(judge, JUDGE_PROMPT.format(question=case.query, gold=gold, answer=answer["text"]))
-            second = complete(SECOND_JUDGE, JUDGE_PROMPT.format(question=case.query, gold=gold, answer=answer["text"]))
+            answer = complete(
+                answerer, ANSWER_PROMPT.format(context=context, question=case.query)
+            )
+            verdict = complete(
+                judge,
+                JUDGE_PROMPT.format(
+                    question=case.query, gold=gold, answer=answer["text"]
+                ),
+            )
+            second = complete(
+                SECOND_JUDGE,
+                JUDGE_PROMPT.format(
+                    question=case.query, gold=gold, answer=answer["text"]
+                ),
+            )
         except Exception as exc:  # noqa: BLE001 - recorded per item
             return {"arm": arm_name, "case": case.id, "error": str(exc)[-300:]}
         return {
-            "arm": arm_name, "case": case.id, "category": case.meta.get("category"), "context_tokens": tokens,
-            "gold": gold, "answer": answer["text"], "answer_input_tokens": answer["input_tokens"],
-            "judge": parse_label(verdict["text"]), "second_judge": parse_label(second["text"]),
+            "arm": arm_name,
+            "case": case.id,
+            "category": case.meta.get("category"),
+            "context_tokens": tokens,
+            "gold": gold,
+            "answer": answer["text"],
+            "answer_input_tokens": answer["input_tokens"],
+            "judge": parse_label(verdict["text"]),
+            "second_judge": parse_label(second["text"]),
             "f1": round(token_f1(answer["text"], gold), 4),
         }
 
@@ -248,7 +338,11 @@ def run_answers(arm_names: list[str], split: str, n: int, jobs: int = 3) -> Path
 
     report = _answer_report(rows, arms, cases, split, started, answerer, judge)
     stamp = started.strftime("%Y%m%dT%H%M%SZ")
-    target = RESULTS / "locomo" / f"answers-{split}-{stamp}-{_git('rev-parse', '--short=8', 'HEAD')}.json"
+    target = (
+        RESULTS
+        / "locomo"
+        / f"answers-{split}-{stamp}-{_git('rev-parse', '--short=8', 'HEAD')}.json"
+    )
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(report, indent=1, sort_keys=True) + "\n")
     if split == "test":
@@ -258,8 +352,15 @@ def run_answers(arm_names: list[str], split: str, n: int, jobs: int = 3) -> Path
     return target
 
 
-def _answer_report(rows: list[dict[str, Any]], arms: list[Any], cases: list[Case], split: str,
-                   started: datetime, answerer: str, judge: str) -> dict[str, Any]:
+def _answer_report(
+    rows: list[dict[str, Any]],
+    arms: list[Any],
+    cases: list[Case],
+    split: str,
+    started: datetime,
+    answerer: str,
+    judge: str,
+) -> dict[str, Any]:
     good = [r for r in rows if "error" not in r and r["judge"] is not None]
     both = [r for r in good if r["second_judge"] is not None]
     kappa = cohen_kappa([r["judge"] for r in both], [r["second_judge"] for r in both])
@@ -272,11 +373,21 @@ def _answer_report(rows: list[dict[str, Any]], arms: list[Any], cases: list[Case
         count = max(1, len(items))
         summary[arm.name] = {
             "n": len(items),
-            "errors": sum(1 for r in rows if r["arm"] == arm.name and ("error" in r or r.get("judge") is None)),
+            "errors": sum(
+                1
+                for r in rows
+                if r["arm"] == arm.name and ("error" in r or r.get("judge") is None)
+            ),
             "accuracy": round(sum(r["judge"] for r in items) / count, 4),
-            "second_judge_accuracy": round(sum(r["second_judge"] or 0 for r in items) / count, 4),
+            "second_judge_accuracy": round(
+                sum(r["second_judge"] or 0 for r in items) / count, 4
+            ),
             "f1": round(sum(r["f1"] for r in items) / count, 4),
-            "median_context_tokens": sorted(r["context_tokens"] for r in items)[len(items) // 2] if items else 0,
+            "median_context_tokens": sorted(r["context_tokens"] for r in items)[
+                len(items) // 2
+            ]
+            if items
+            else 0,
         }
     corpus_of = {c.id: c.corpus for c in cases}
     comparisons = []
@@ -289,8 +400,15 @@ def _answer_report(rows: list[dict[str, Any]], arms: list[Any], cases: list[Case
             a = [float(by_arm[reference][c][metric]) for c in shared]
             b = [float(by_arm[arm.name][c][metric]) for c in shared]
             stats = paired(a, b, seed=SEED, clusters=[corpus_of[c] for c in shared])
-            comparisons.append({"metric": "accuracy" if metric == "judge" else "f1", "a": reference, "b": arm.name,
-                                "clustered": True, **stats})
+            comparisons.append(
+                {
+                    "metric": "accuracy" if metric == "judge" else "f1",
+                    "a": reference,
+                    "b": arm.name,
+                    "clustered": True,
+                    **stats,
+                }
+            )
     return {
         "schema": "InquiryEvalAnswers/v1",
         "suite": "locomo",
@@ -302,7 +420,10 @@ def _answer_report(rows: list[dict[str, Any]], arms: list[Any], cases: list[Case
             "started_utc": started.isoformat(timespec="seconds"),
             "answerer": answerer,
             "judge": judge,
-            "second_judge": {"model": SECOND_JUDGE, "digest": _ollama_digest(SECOND_JUDGE)},
+            "second_judge": {
+                "model": SECOND_JUDGE,
+                "digest": _ollama_digest(SECOND_JUDGE),
+            },
             "answer_prompt_sha256": hashlib.sha256(ANSWER_PROMPT.encode()).hexdigest(),
             "judge_prompt_sha256": hashlib.sha256(JUDGE_PROMPT.encode()).hexdigest(),
             "seed": SEED,
@@ -315,10 +436,16 @@ def _answer_report(rows: list[dict[str, Any]], arms: list[Any], cases: list[Case
 
 
 def _print(report: dict[str, Any]) -> None:
-    print(f"\nlocomo answers / {report['split']}  kappa={report['judge_agreement']['cohen_kappa']:.3f}")
+    print(
+        f"\nlocomo answers / {report['split']}  kappa={report['judge_agreement']['cohen_kappa']:.3f}"
+    )
     print(f"{'arm':12}  {'accuracy':>9}  {'judge2':>7}  {'f1':>6}  {'ctx tok':>7}  err")
     for arm, s in report["summary"].items():
-        print(f"{arm:12}  {s['accuracy']:9.4f}  {s['second_judge_accuracy']:7.4f}  {s['f1']:6.4f}  "
-              f"{s['median_context_tokens']:7d}  {s['errors']}")
+        print(
+            f"{arm:12}  {s['accuracy']:9.4f}  {s['second_judge_accuracy']:7.4f}  {s['f1']:6.4f}  "
+            f"{s['median_context_tokens']:7d}  {s['errors']}"
+        )
     for c in report["comparisons"]:
-        print(f"  {c['metric']}: {c['a']} - {c['b']}: {c['mean_diff']:+.4f} [{c['ci_low']:+.4f}, {c['ci_high']:+.4f}]")
+        print(
+            f"  {c['metric']}: {c['a']} - {c['b']}: {c['mean_diff']:+.4f} [{c['ci_low']:+.4f}, {c['ci_high']:+.4f}]"
+        )

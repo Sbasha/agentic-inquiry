@@ -27,13 +27,15 @@ def _make_search_results(dicts: list, source: str = "test") -> list[SearchResult
     results = []
     for d in dicts:
         result_id = d.get("id") or d.get("chunk_id") or str(hash(str(d)))
-        results.append(SearchResult(
-            id=str(result_id),
-            data=d,
-            score=d.get("score", 0.5),
-            source=source,
-            distance=d.get("_distance"),
-        ))
+        results.append(
+            SearchResult(
+                id=str(result_id),
+                data=d,
+                score=d.get("score", 0.5),
+                source=source,
+                distance=d.get("_distance"),
+            )
+        )
     return results
 
 
@@ -106,9 +108,11 @@ def hybrid_search_service(base_config, mock_db_manager, mock_event_system):
 
 class TestHybridSearchFallbackStrategies:
     """Test hybrid search fallback strategies."""
-    
+
     @pytest.mark.asyncio
-    async def test_both_strategies_return_results(self, search_service, mock_db_manager):
+    async def test_both_strategies_return_results(
+        self, search_service, mock_db_manager
+    ):
         """Test hybrid search when both vector and FTS return results."""
         # Setup mock results as SearchResult objects (now returned by vector_search/fts_search)
         vector_dicts = [
@@ -135,9 +139,7 @@ class TestHybridSearchFallbackStrategies:
         query_vector = [0.1] * 384
         query_fts = "test query"
         results = await search_service.hybrid_search(
-            query_vector=query_vector,
-            query_fts=query_fts,
-            limit=10
+            query_vector=query_vector, query_fts=query_fts, limit=10
         )
 
         # Verify both searches were called
@@ -151,14 +153,24 @@ class TestHybridSearchFallbackStrategies:
         # Verify no duplicates
         result_ids = [r.id for r in results]
         assert len(result_ids) == len(set(result_ids))
-    
+
     @pytest.mark.asyncio
     async def test_fallback_when_only_vector_returns_results(self, search_service):
         """Test fallback when only vector search returns results."""
         # Setup mock results with different file_paths for diversity
         vector_dicts = [
-            {"id": "v1", "content": "vector result 1", "score": 0.9, "file_path": "/a/file1.py"},
-            {"id": "v2", "content": "vector result 2", "score": 0.8, "file_path": "/b/file2.py"},
+            {
+                "id": "v1",
+                "content": "vector result 1",
+                "score": 0.9,
+                "file_path": "/a/file1.py",
+            },
+            {
+                "id": "v2",
+                "content": "vector result 2",
+                "score": 0.8,
+                "file_path": "/b/file2.py",
+            },
         ]
 
         # Mock the individual search methods to return SearchResult objects
@@ -171,9 +183,7 @@ class TestHybridSearchFallbackStrategies:
         query_vector = [0.1] * 384
         query_fts = "test query"
         results = await search_service.hybrid_search(
-            query_vector=query_vector,
-            query_fts=query_fts,
-            limit=10
+            query_vector=query_vector, query_fts=query_fts, limit=10
         )
 
         # Verify fallback to vector results - check IDs and content, not exact scores
@@ -181,14 +191,24 @@ class TestHybridSearchFallbackStrategies:
         assert len(results) >= 1  # At least some results returned
         result_ids = {r.id for r in results}
         assert "v1" in result_ids  # First result should be present
-    
+
     @pytest.mark.asyncio
     async def test_fallback_when_only_fts_returns_results(self, search_service):
         """Test fallback when only FTS returns results."""
         # Setup mock results with different file_paths for diversity
         fts_dicts = [
-            {"id": "f1", "content": "fts result 1", "score": 0.85, "file_path": "/a/file1.py"},
-            {"id": "f2", "content": "fts result 2", "score": 0.75, "file_path": "/b/file2.py"},
+            {
+                "id": "f1",
+                "content": "fts result 1",
+                "score": 0.85,
+                "file_path": "/a/file1.py",
+            },
+            {
+                "id": "f2",
+                "content": "fts result 2",
+                "score": 0.75,
+                "file_path": "/b/file2.py",
+            },
         ]
 
         # Mock the individual search methods to return SearchResult objects
@@ -201,9 +221,7 @@ class TestHybridSearchFallbackStrategies:
         query_vector = [0.1] * 384
         query_fts = "test query"
         results = await search_service.hybrid_search(
-            query_vector=query_vector,
-            query_fts=query_fts,
-            limit=10
+            query_vector=query_vector, query_fts=query_fts, limit=10
         )
 
         # Verify fallback to FTS results - check IDs, not exact equality
@@ -211,7 +229,7 @@ class TestHybridSearchFallbackStrategies:
         assert len(results) >= 1  # At least some results returned
         result_ids = {r.id for r in results}
         assert "f1" in result_ids  # First result should be present
-    
+
     @pytest.mark.asyncio
     async def test_both_strategies_return_no_results(self, search_service):
         """Test behavior when both strategies return no results."""
@@ -223,14 +241,12 @@ class TestHybridSearchFallbackStrategies:
         query_vector = [0.1] * 384
         query_fts = "test query"
         results = await search_service.hybrid_search(
-            query_vector=query_vector,
-            query_fts=query_fts,
-            limit=10
+            query_vector=query_vector, query_fts=query_fts, limit=10
         )
 
         # Verify empty results
         assert results == []
-    
+
     @pytest.mark.asyncio
     async def test_reranker_failure_fallback(self, search_service, mock_db_manager):
         """Test fallback when reranker fails.
@@ -258,7 +274,9 @@ class TestHybridSearchFallbackStrategies:
         # Mock reranker to raise an exception when rerank() is called
         mock_reranker = MagicMock()
         mock_reranker.rerank = MagicMock(side_effect=Exception("Reranker failed"))
-        search_service._hybrid_search._create_reranker = MagicMock(return_value=mock_reranker)
+        search_service._hybrid_search._create_reranker = MagicMock(
+            return_value=mock_reranker
+        )
 
         # Execute hybrid search - should fall back due to reranker failure
         query_vector = [0.1] * 384
@@ -268,12 +286,8 @@ class TestHybridSearchFallbackStrategies:
         # and we don't have a try/catch around the reranker call
         with pytest.raises(Exception, match="Reranker failed"):
             await search_service.hybrid_search(
-                query_vector=query_vector,
-                query_fts=query_fts,
-                limit=10
+                query_vector=query_vector, query_fts=query_fts, limit=10
             )
-    
-
 
 
 # NOTE: TestSimpleMergeFunction was removed as part of S3-003-CLEANUP.

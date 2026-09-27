@@ -5,6 +5,7 @@ until the token budget is spent, line by line, so an arm that returns large
 chunks and an arm that returns one-line graph nodes pay for exactly what an
 agent would read.
 """
+
 from __future__ import annotations
 
 import math
@@ -93,10 +94,16 @@ def render(
                 out.paths.append(hit.path)
             if hit.pointer:
                 if hit.path and hit.start > 0 and index == 0:
-                    out.pointed.setdefault(hit.path, []).append((hit.start, max(hit.end, hit.start)))
+                    out.pointed.setdefault(hit.path, []).append(
+                        (hit.start, max(hit.end, hit.start))
+                    )
             else:
                 source = hit.start + index - hit.body_offset
-                if hit.path and hit.start > 0 and hit.start <= source <= max(hit.end, hit.start):
+                if (
+                    hit.path
+                    and hit.start > 0
+                    and hit.start <= source <= max(hit.end, hit.start)
+                ):
                     out.lines.setdefault(hit.path, set()).add(source)
             if marker:
                 for unit in marker.findall(line):
@@ -116,18 +123,27 @@ def dedupe(items: Iterable[str]) -> list[str]:
     return ordered
 
 
-def _gains(relevant: Mapping[str, float] | set[str] | frozenset[str]) -> dict[str, float]:
+def _gains(
+    relevant: Mapping[str, float] | set[str] | frozenset[str],
+) -> dict[str, float]:
     if isinstance(relevant, Mapping):
         return {k: float(v) for k, v in relevant.items() if v > 0}
     return {k: 1.0 for k in relevant}
 
 
-def ndcg_at(ranked: Sequence[str], relevant: Mapping[str, float] | set[str] | frozenset[str], k: int) -> float:
+def ndcg_at(
+    ranked: Sequence[str],
+    relevant: Mapping[str, float] | set[str] | frozenset[str],
+    k: int,
+) -> float:
     """nDCG@k with linear gain, matching trec_eval's ``ndcg_cut``."""
     gains = _gains(relevant)
     if not gains:
         return 0.0
-    dcg = sum(gains.get(item, 0.0) / math.log2(rank + 2) for rank, item in enumerate(ranked[:k]))
+    dcg = sum(
+        gains.get(item, 0.0) / math.log2(rank + 2)
+        for rank, item in enumerate(ranked[:k])
+    )
     ideal = sorted(gains.values(), reverse=True)[:k]
     idcg = sum(g / math.log2(rank + 2) for rank, g in enumerate(ideal))
     return dcg / idcg
@@ -140,7 +156,9 @@ def mrr_at(ranked: Sequence[str], relevant: set[str] | frozenset[str], k: int) -
     return 0.0
 
 
-def recall_at(ranked: Sequence[str], relevant: set[str] | frozenset[str], k: int) -> float:
+def recall_at(
+    ranked: Sequence[str], relevant: set[str] | frozenset[str], k: int
+) -> float:
     if not relevant:
         return 0.0
     return len(set(ranked[:k]) & set(relevant)) / len(relevant)
@@ -171,7 +189,14 @@ def paired(
     diffs = np.asarray(a, dtype=float) - np.asarray(b, dtype=float)
     n = len(diffs)
     if n == 0:
-        return {"n": 0, "mean_diff": 0.0, "ci_low": 0.0, "ci_high": 0.0, "p_perm": 1.0, "mde": 0.0}
+        return {
+            "n": 0,
+            "mean_diff": 0.0,
+            "ci_low": 0.0,
+            "ci_high": 0.0,
+            "p_perm": 1.0,
+            "mde": 0.0,
+        }
     rng = np.random.default_rng(seed)
     mean = float(diffs.mean())
     if clusters is None:

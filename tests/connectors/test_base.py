@@ -8,6 +8,7 @@ Tests cover:
 - URI building and parsing
 - Hash extraction
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -116,7 +117,9 @@ class TestFileEnumeration:
         assert not any(".pyc" in uri for uri in uris)
 
     @pytest.mark.asyncio
-    async def test_list_nonexistent_returns_empty(self, mock_temp_directory: Path) -> None:
+    async def test_list_nonexistent_returns_empty(
+        self, mock_temp_directory: Path
+    ) -> None:
         """List returns empty iterator for nonexistent directory."""
         connector = FsspecConnector()
 
@@ -219,9 +222,7 @@ class TestIgnorePatterns:
         connector = FsspecConnector(ignore_patterns=["__pycache__"])
 
         root = str(mock_temp_directory)
-        assert (
-            connector._should_ignore(f"{root}/__pycache__/module.pyc", root) is True
-        )
+        assert connector._should_ignore(f"{root}/__pycache__/module.pyc", root) is True
         assert connector._should_ignore(f"{root}/src/main.py", root) is False
 
     def test_should_ignore_relative_path(self, mock_temp_directory: Path) -> None:

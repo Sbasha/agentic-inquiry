@@ -1,4 +1,5 @@
 """Test flush_pending_relationships with enhanced resolution."""
+
 import asyncio
 
 import pytest
@@ -11,7 +12,11 @@ from agentic_inquiry.config import Config
 from agentic_inquiry.embeddings.base import Embedder
 from agentic_inquiry.embeddings.registry import EmbeddingRegistry
 from agentic_inquiry.indexing.pipeline import IndexingPipeline
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -35,10 +40,11 @@ class _DummyEmbedder(Embedder):
 
 def test_flush_relationships_with_enhanced_resolution():
     """Test that flush_pending_relationships uses enhanced resolution and tracks statistics."""
+
     async def run():
         import uuid
         from agentic_inquiry.events import EventSystem
-        
+
         config = Config.load()
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-flush")
@@ -46,10 +52,10 @@ def test_flush_relationships_with_enhanced_resolution():
         await mock_db_manager.connect()
 
         project_id = f"test_{uuid.uuid4().hex[:8]}"
-        
+
         # Create EventSystem for the pipeline
         event_system = await EventSystem.from_config(config, project_id=project_id)
-        
+
         try:
             pipeline = IndexingPipeline(
                 db_manager=mock_db_manager,
@@ -69,7 +75,7 @@ def test_flush_relationships_with_enhanced_resolution():
                         language="python",
                         symbols=["Helper"],
                         symbol_metadata={"Helper": {"type": "class"}},
-                        relationships=[]
+                        relationships=[],
                     ),
                 ],
             )
@@ -92,7 +98,7 @@ def test_flush_relationships_with_enhanced_resolution():
                                 target_name="Helper",
                                 type="imports",
                             )
-                        ]
+                        ],
                     ),
                 ],
             )
@@ -116,7 +122,9 @@ def test_flush_relationships_with_enhanced_resolution():
             assert stats["unresolved_external"] == 0
 
             # Verify relationship exists in database
-            relationships = await mock_db_manager.advanced_filter("graph_relationships", {})
+            relationships = await mock_db_manager.advanced_filter(
+                "graph_relationships", {}
+            )
             assert len(relationships) == 1
 
             rel = relationships[0]
@@ -131,13 +139,14 @@ def test_flush_relationships_with_enhanced_resolution():
 
 def test_flush_relationships_external_dependency():
     """Test that external dependencies are handled correctly."""
+
     async def run():
         import uuid
         from agentic_inquiry.config import Config, StorageConfig
-        
+
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
-        
+
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-external")
         await mock_db_manager.create_tables_and_indexes()
@@ -172,7 +181,7 @@ def test_flush_relationships_external_dependency():
                             target_name="numpy",
                             type="imports",
                         )
-                    ]
+                    ],
                 ),
             ],
         )
@@ -198,7 +207,9 @@ def test_flush_relationships_external_dependency():
         # Verify external entity was created
         entities = await mock_db_manager.advanced_filter("graph_entities", {})
         # Should have: 1 file entity + 1 code entity (main) + 1 external entity (numpy)
-        external_entities = [e for e in entities if e.get("type", "").startswith("external_")]
+        external_entities = [
+            e for e in entities if e.get("type", "").startswith("external_")
+        ]
         assert len(external_entities) == 1
         assert "numpy" in external_entities[0].get("name", "")
 
@@ -207,13 +218,14 @@ def test_flush_relationships_external_dependency():
 
 def test_flush_relationships_confidence_tracking():
     """Test that confidence levels are tracked correctly."""
+
     async def run():
         import uuid
         from agentic_inquiry.config import Config, StorageConfig
-        
+
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
-        
+
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-confidence")
         await mock_db_manager.create_tables_and_indexes()
@@ -240,7 +252,7 @@ def test_flush_relationships_confidence_tracking():
                     language="python",
                     symbols=["User"],
                     symbol_metadata={"User": {"type": "class"}},
-                    relationships=[]
+                    relationships=[],
                 ),
             ],
         )
@@ -262,7 +274,7 @@ def test_flush_relationships_confidence_tracking():
                             target_name="User",
                             type="imports",
                         )
-                    ]
+                    ],
                 ),
             ],
         )
@@ -281,8 +293,9 @@ def test_flush_relationships_confidence_tracking():
         # Verify relationship has confidence metadata
         relationships = await mock_db_manager.advanced_filter("graph_relationships", {})
         assert len(relationships) == 1
-        
+
         import json
+
         metadata = json.loads(relationships[0]["metadata"])
         assert "resolution_confidence" in metadata
         assert metadata["resolution_confidence"] >= 0.8
@@ -292,13 +305,14 @@ def test_flush_relationships_confidence_tracking():
 
 def test_get_resolution_stats_api():
     """Test the get_resolution_stats() public API method."""
+
     async def run():
         import uuid
         from agentic_inquiry.config import Config, StorageConfig
-        
+
         config = Config()
         config.storage = StorageConfig(root="/tmp/project")
-        
+
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-stats-api")
         await mock_db_manager.create_tables_and_indexes()
@@ -328,7 +342,7 @@ def test_get_resolution_stats_api():
                     language="python",
                     symbols=["Helper"],
                     symbol_metadata={"Helper": {"type": "class"}},
-                    relationships=[]
+                    relationships=[],
                 ),
             ],
         )
@@ -359,7 +373,7 @@ def test_get_resolution_stats_api():
                             target_name="numpy",
                             type="imports",
                         ),
-                    ]
+                    ],
                 ),
             ],
         )
@@ -373,11 +387,11 @@ def test_get_resolution_stats_api():
 
         # Get statistics via public API
         stats = pipeline.get_resolution_stats()
-        
+
         # Verify stats structure and content
         assert stats is not None
         assert isinstance(stats, dict)
-        
+
         # Verify all required fields are present
         assert "total" in stats
         assert "resolved_cross_file" in stats
@@ -389,12 +403,12 @@ def test_get_resolution_stats_api():
         assert "average_confidence" in stats
         assert "resolution_time_seconds" in stats
         assert "resolver_cache_statistics" in stats
-        
+
         # Verify counts
         assert stats["total"] == 2
         assert stats["resolved_cross_file"] == 1
         assert stats["unresolved_external"] == 1
-        
+
         # Verify strategy tracking (updated to match RelationshipResolver strategy names)
         assert isinstance(stats["by_strategy"], dict)
         assert "exact_match" in stats["by_strategy"]  # Changed from exact_type_match
@@ -402,30 +416,30 @@ def test_get_resolution_stats_api():
         assert "module_path" in stats["by_strategy"]
         assert "proximity" in stats["by_strategy"]
         assert "no_resolution" in stats["by_strategy"]
-        
+
         # Verify confidence tracking
         assert isinstance(stats["confidence_levels"], dict)
         assert "high" in stats["confidence_levels"]
         assert "medium" in stats["confidence_levels"]
         assert "low" in stats["confidence_levels"]
-        
+
         # Verify average confidence is calculated
         assert isinstance(stats["average_confidence"], float)
         assert 0.0 <= stats["average_confidence"] <= 1.0
-        
+
         # Verify resolution time is tracked
         assert isinstance(stats["resolution_time_seconds"], float)
         assert stats["resolution_time_seconds"] >= 0.0
-        
+
         # Verify resolver cache statistics (renamed from cache_statistics)
         assert isinstance(stats["resolver_cache_statistics"], dict)
         assert "cache_hits" in stats["resolver_cache_statistics"]
         assert "cache_misses" in stats["resolver_cache_statistics"]
         assert "cache_size" in stats["resolver_cache_statistics"]
-        
+
         # Verify internal tracking data is not exposed
         assert "confidence_scores" not in stats
-        
+
         # Verify returned stats is a copy (modifications don't affect internal state)
         stats["total"] = 999
         new_stats = pipeline.get_resolution_stats()

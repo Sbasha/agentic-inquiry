@@ -1,9 +1,16 @@
 """Gold-label derivation and split assignment for evals/."""
+
 from __future__ import annotations
 
 import textwrap
 
-from evals.data import enclosing_defs, evidence_ids, parse_patch, split_of, stratified_sample
+from evals.data import (
+    enclosing_defs,
+    evidence_ids,
+    parse_patch,
+    split_of,
+    stratified_sample,
+)
 
 PATCH = textwrap.dedent(
     """\
@@ -90,15 +97,26 @@ def test_split_is_stable_and_roughly_one_third_dev() -> None:
 
 
 def test_evidence_ids_normalizes_malformed_entries() -> None:
-    assert evidence_ids(["D1:3", "D8:6; D9:17", "D:1", "d2:4"]) == ["D1:3", "D8:6", "D9:17", "D2:4"]
+    assert evidence_ids(["D1:3", "D8:6; D9:17", "D:1", "d2:4"]) == [
+        "D1:3",
+        "D8:6",
+        "D9:17",
+        "D2:4",
+    ]
 
 
 def test_stratified_sample_respects_caps_and_is_seeded() -> None:
-    rows = [{"repo": "a", "id": f"a{i}"} for i in range(10)] + [{"repo": "b", "id": f"b{i}"} for i in range(3)]
-    pick = stratified_sample(rows, key="repo", id_field="id", caps={"a": 4, "b": 5}, seed=1)
+    rows = [{"repo": "a", "id": f"a{i}"} for i in range(10)] + [
+        {"repo": "b", "id": f"b{i}"} for i in range(3)
+    ]
+    pick = stratified_sample(
+        rows, key="repo", id_field="id", caps={"a": 4, "b": 5}, seed=1
+    )
     assert sum(r["repo"] == "a" for r in pick) == 4
     assert sum(r["repo"] == "b" for r in pick) == 3
-    assert pick == stratified_sample(rows, key="repo", id_field="id", caps={"a": 4, "b": 5}, seed=1)
+    assert pick == stratified_sample(
+        rows, key="repo", id_field="id", caps={"a": 4, "b": 5}, seed=1
+    )
 
 
 def test_insertion_pairs_name_both_neighbours() -> None:
@@ -119,6 +137,20 @@ def test_method_inserted_between_methods_is_credited_to_the_class() -> None:
 def test_locomo_cases_split_by_conversation() -> None:
     from evals.data import Case
 
-    a = Case(id="conv-1-q1", suite="locomo", corpus="conv-1", query="", gold_units={}, split_unit="conv-1")
-    b = Case(id="conv-1-q2", suite="locomo", corpus="conv-1", query="", gold_units={}, split_unit="conv-1")
+    a = Case(
+        id="conv-1-q1",
+        suite="locomo",
+        corpus="conv-1",
+        query="",
+        gold_units={},
+        split_unit="conv-1",
+    )
+    b = Case(
+        id="conv-1-q2",
+        suite="locomo",
+        corpus="conv-1",
+        query="",
+        gold_units={},
+        split_unit="conv-1",
+    )
     assert a.split == b.split == split_of("conv-1")

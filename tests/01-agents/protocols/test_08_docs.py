@@ -9,6 +9,7 @@ Validates that MCP tools can support a documentation-generation workflow:
 - T5: Identify edge cases and limitations
 - T6: Generate API reference and user guide content
 """
+
 import time
 from pathlib import Path
 from typing import Any, Dict, List
@@ -60,20 +61,49 @@ async def run(
     log(test_id, "Setup: Create session")
     try:
         session_id, project_id = await create_test_session(
-            services, test_id, slug, run_id,
+            services,
+            test_id,
+            slug,
+            run_id,
             description="Documentation generation - Search module",
         )
-        check(results, issues, "setup_session", True, {"session_id": session_id, "project_id": project_id})
+        check(
+            results,
+            issues,
+            "setup_session",
+            True,
+            {"session_id": session_id, "project_id": project_id},
+        )
         log(test_id, f"Session: {session_id}, project: {project_id}")
     except Exception as e:
-        check(results, issues, "setup_session", False, severity="CRITICAL", fail_msg=str(e))
-        return summarize(test_id, slug, results, issues, time.time() - t_start, adoption_journal=journal)
+        check(
+            results,
+            issues,
+            "setup_session",
+            False,
+            severity="CRITICAL",
+            fail_msg=str(e),
+        )
+        return summarize(
+            test_id,
+            slug,
+            results,
+            issues,
+            time.time() - t_start,
+            adoption_journal=journal,
+        )
 
     # ── Setup: Index Codebase ──────────────────────────────────────────
-    log(test_id, "Setup: Index codebase (full, wait_for_completion=True, wait_timeout=1800)")
+    log(
+        test_id,
+        "Setup: Index codebase (full, wait_for_completion=True, wait_timeout=1800)",
+    )
     t_idx = time.time()
     idx = await index_and_wait(
-        services, session_id, project_id, test_id,
+        services,
+        session_id,
+        project_id,
+        test_id,
         source=CODEBASE_PATH,
         max_wait=1800,
         poll_interval=15,
@@ -81,27 +111,44 @@ async def run(
     )
     idx_elapsed = time.time() - t_idx
     check(
-        results, issues, "setup_indexing",
+        results,
+        issues,
+        "setup_indexing",
         idx.get("completed", False),
         detail={**idx, "elapsed_s": round(idx_elapsed, 1)},
         severity="CRITICAL",
         fail_msg=idx.get("error", "Indexing failed"),
     )
-    log(test_id, f"Indexing: completed={idx.get('completed')}, elapsed={idx_elapsed:.1f}s")
+    log(
+        test_id,
+        f"Indexing: completed={idx.get('completed')}, elapsed={idx_elapsed:.1f}s",
+    )
 
     if not idx.get("completed"):
-        return summarize(test_id, slug, results, issues, time.time() - t_start, project_id, adoption_journal=journal)
+        return summarize(
+            test_id,
+            slug,
+            results,
+            issues,
+            time.time() - t_start,
+            project_id,
+            adoption_journal=journal,
+        )
 
     # ── Setup: Verify Index Health ─────────────────────────────────────
     log(test_id, "Setup: Verify index health")
     try:
-        r, t = await call_tool(get_project_info, services=services, session_id=session_id)
+        r, t = await call_tool(
+            get_project_info, services=services, session_id=session_id
+        )
         stats = r.get("statistics", {})
         entities = stats.get("entities_created", r.get("entities", 0))
         chunks = stats.get("chunks_indexed", r.get("indexed_files", r.get("chunks", 0)))
         healthy = entities > 0 or chunks > 0
         check(
-            results, issues, "setup_health",
+            results,
+            issues,
+            "setup_health",
             healthy,
             detail={"entities": entities, "chunks": chunks, "info": r},
             severity="HIGH",
@@ -131,23 +178,41 @@ async def run(
             )
             hits = r.get("results", [])
             t1_results_count += len(hits)
-            t1_findings.append({"query": query, "label": label, "count": len(hits), "elapsed_s": round(t, 2)})
+            t1_findings.append(
+                {
+                    "query": query,
+                    "label": label,
+                    "count": len(hits),
+                    "elapsed_s": round(t, 2),
+                }
+            )
             log(test_id, f"  T1.1 '{label}': {len(hits)} results in {t:.2f}s")
 
         # Check we found something
         found_service = any(f["count"] > 0 for f in t1_findings)
         check(
-            results, issues, "t1_1_api_discovery",
+            results,
+            issues,
+            "t1_1_api_discovery",
             found_service,
             detail={"queries": t1_findings, "total_results": t1_results_count},
             severity="HIGH",
             fail_msg="No results for public API discovery queries",
         )
-        note_adoption(journal,
+        note_adoption(
+            journal,
             f"discovered {t1_results_count} SearchService methods via semantic search — grep would need to know exact function names",
-            "positive" if found_service else "negative")
+            "positive" if found_service else "negative",
+        )
     except Exception as e:
-        check(results, issues, "t1_1_api_discovery", False, severity="HIGH", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t1_1_api_discovery",
+            False,
+            severity="HIGH",
+            fail_msg=str(e),
+        )
 
     # ── T1.2: Supporting Components ─────────────────────────────────────
     log(test_id, "T1.2: Supporting components - types, config, exceptions")
@@ -172,14 +237,23 @@ async def run(
 
         found_any = any(f["count"] > 0 for f in t1_2_findings)
         check(
-            results, issues, "t1_2_supporting_components",
+            results,
+            issues,
+            "t1_2_supporting_components",
             found_any,
             detail={"queries": t1_2_findings},
             severity="MEDIUM",
             fail_msg="No results for supporting component queries",
         )
     except Exception as e:
-        check(results, issues, "t1_2_supporting_components", False, severity="MEDIUM", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t1_2_supporting_components",
+            False,
+            severity="MEDIUM",
+            fail_msg=str(e),
+        )
 
     # ── T2.1: Component Functionality ──────────────────────────────────
     log(test_id, "T2.1: Component functionality - understand SearchService")
@@ -193,20 +267,39 @@ async def run(
         )
         hits = r.get("results", [])
         # Look for search service content
-        relevant = [h for h in hits if "search" in (h.get("file_path", "") + h.get("content", "")).lower()]
+        relevant = [
+            h
+            for h in hits
+            if "search" in (h.get("file_path", "") + h.get("content", "")).lower()
+        ]
         check(
-            results, issues, "t2_1_component_functionality",
+            results,
+            issues,
+            "t2_1_component_functionality",
             len(relevant) > 0,
-            detail={"hits": len(hits), "relevant": len(relevant), "elapsed_s": round(t, 2)},
+            detail={
+                "hits": len(hits),
+                "relevant": len(relevant),
+                "elapsed_s": round(t, 2),
+            },
             severity="HIGH",
             fail_msg=f"SearchService understanding query returned no relevant results (hits={len(hits)})",
         )
-        note_adoption(journal,
+        note_adoption(
+            journal,
             f"semantic query returned {len(relevant)} relevant results describing SearchService purpose — like having a knowledgeable colleague explain the code",
-            "positive" if len(relevant) > 0 else "negative")
+            "positive" if len(relevant) > 0 else "negative",
+        )
         log(test_id, f"  T2.1: {len(hits)} hits, {len(relevant)} relevant in {t:.2f}s")
     except Exception as e:
-        check(results, issues, "t2_1_component_functionality", False, severity="HIGH", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t2_1_component_functionality",
+            False,
+            severity="HIGH",
+            fail_msg=str(e),
+        )
 
     # ── T2.2: Parameter Analysis ────────────────────────────────────────
     log(test_id, "T2.2: Parameter analysis - search_knowledge signature")
@@ -224,15 +317,28 @@ async def run(
             for h in hits
         )
         check(
-            results, issues, "t2_2_parameter_analysis",
+            results,
+            issues,
+            "t2_2_parameter_analysis",
             len(hits) > 0,
-            detail={"hits": len(hits), "has_params": has_params, "elapsed_s": round(t, 2)},
+            detail={
+                "hits": len(hits),
+                "has_params": has_params,
+                "elapsed_s": round(t, 2),
+            },
             severity="MEDIUM",
             fail_msg="Parameter analysis query returned no results",
         )
         log(test_id, f"  T2.2: {len(hits)} hits, params found={has_params}")
     except Exception as e:
-        check(results, issues, "t2_2_parameter_analysis", False, severity="MEDIUM", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t2_2_parameter_analysis",
+            False,
+            severity="MEDIUM",
+            fail_msg=str(e),
+        )
 
     # ── T3.1: Dependency Mapping ────────────────────────────────────────
     log(test_id, "T3.1: Dependency mapping - SearchService dependencies")
@@ -246,22 +352,35 @@ async def run(
         )
         hits = r.get("results", [])
         check(
-            results, issues, "t3_1_dependency_mapping",
+            results,
+            issues,
+            "t3_1_dependency_mapping",
             len(hits) > 0,
             detail={"hits": len(hits), "elapsed_s": round(t, 2)},
             severity="MEDIUM",
             fail_msg="Dependency mapping query returned no results",
         )
-        note_adoption(journal,
+        note_adoption(
+            journal,
             f"dependency mapping found {len(hits)} related components in {t:.2f}s — manual tracing would take minutes",
-            "positive" if len(hits) >= 2 else "neutral")
-        note_adoption(journal,
+            "positive" if len(hits) >= 2 else "neutral",
+        )
+        note_adoption(
+            journal,
             f"dependency mapping found {len(hits)} components but doesn't explain HOW they connect "
             f"— agent still needs to read actual import statements and call sites in the code",
-            "neutral")
+            "neutral",
+        )
         log(test_id, f"  T3.1: {len(hits)} hits in {t:.2f}s")
     except Exception as e:
-        check(results, issues, "t3_1_dependency_mapping", False, severity="MEDIUM", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t3_1_dependency_mapping",
+            False,
+            severity="MEDIUM",
+            fail_msg=str(e),
+        )
 
     # ── T3.2: Component Interactions ────────────────────────────────────
     log(test_id, "T3.2: Component interactions - how search pipeline works")
@@ -275,7 +394,9 @@ async def run(
         )
         hits = r.get("results", [])
         check(
-            results, issues, "t3_2_component_interactions",
+            results,
+            issues,
+            "t3_2_component_interactions",
             len(hits) > 0,
             detail={"hits": len(hits), "elapsed_s": round(t, 2)},
             severity="MEDIUM",
@@ -283,7 +404,14 @@ async def run(
         )
         log(test_id, f"  T3.2: {len(hits)} hits in {t:.2f}s")
     except Exception as e:
-        check(results, issues, "t3_2_component_interactions", False, severity="MEDIUM", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t3_2_component_interactions",
+            False,
+            severity="MEDIUM",
+            fail_msg=str(e),
+        )
 
     # ── T4.1: Usage Examples ────────────────────────────────────────────
     log(test_id, "T4.1: Usage examples - where search_knowledge is called")
@@ -297,20 +425,43 @@ async def run(
         )
         hits = r.get("results", [])
         # Look for test or example files
-        example_hits = [h for h in hits if "test" in h.get("file_path", "").lower() or "example" in h.get("file_path", "").lower()]
+        example_hits = [
+            h
+            for h in hits
+            if "test" in h.get("file_path", "").lower()
+            or "example" in h.get("file_path", "").lower()
+        ]
         check(
-            results, issues, "t4_1_usage_examples",
+            results,
+            issues,
+            "t4_1_usage_examples",
             len(hits) > 0,
-            detail={"hits": len(hits), "example_hits": len(example_hits), "elapsed_s": round(t, 2)},
+            detail={
+                "hits": len(hits),
+                "example_hits": len(example_hits),
+                "elapsed_s": round(t, 2),
+            },
             severity="MEDIUM",
             fail_msg="Usage example query returned no results",
         )
-        note_adoption(journal,
+        note_adoption(
+            journal,
             f"found {len(example_hits)} example files showing search_knowledge usage — agent gets working examples without manual codebase traversal",
-            "positive" if len(example_hits) > 0 else "neutral")
-        log(test_id, f"  T4.1: {len(hits)} hits, {len(example_hits)} example files in {t:.2f}s")
+            "positive" if len(example_hits) > 0 else "neutral",
+        )
+        log(
+            test_id,
+            f"  T4.1: {len(hits)} hits, {len(example_hits)} example files in {t:.2f}s",
+        )
     except Exception as e:
-        check(results, issues, "t4_1_usage_examples", False, severity="MEDIUM", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t4_1_usage_examples",
+            False,
+            severity="MEDIUM",
+            fail_msg=str(e),
+        )
 
     # ── T4.2: Example Curation ──────────────────────────────────────────
     log(test_id, "T4.2: Example curation - find test examples for search")
@@ -326,15 +477,28 @@ async def run(
         # Check for test files with actual search calls
         test_examples = [h for h in hits if "test" in h.get("file_path", "").lower()]
         check(
-            results, issues, "t4_2_example_curation",
+            results,
+            issues,
+            "t4_2_example_curation",
             len(hits) > 0,
-            detail={"hits": len(hits), "test_examples": len(test_examples), "elapsed_s": round(t, 2)},
+            detail={
+                "hits": len(hits),
+                "test_examples": len(test_examples),
+                "elapsed_s": round(t, 2),
+            },
             severity="LOW",
             fail_msg="Example curation query returned no results",
         )
         log(test_id, f"  T4.2: {len(hits)} hits, {len(test_examples)} test examples")
     except Exception as e:
-        check(results, issues, "t4_2_example_curation", False, severity="LOW", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t4_2_example_curation",
+            False,
+            severity="LOW",
+            fail_msg=str(e),
+        )
 
     # ── T5.1: Edge Case Discovery ───────────────────────────────────────
     log(test_id, "T5.1: Edge case discovery - search validation and error handling")
@@ -348,7 +512,9 @@ async def run(
         )
         hits = r.get("results", [])
         check(
-            results, issues, "t5_1_edge_cases",
+            results,
+            issues,
+            "t5_1_edge_cases",
             len(hits) > 0,
             detail={"hits": len(hits), "elapsed_s": round(t, 2)},
             severity="MEDIUM",
@@ -356,7 +522,14 @@ async def run(
         )
         log(test_id, f"  T5.1: {len(hits)} hits in {t:.2f}s")
     except Exception as e:
-        check(results, issues, "t5_1_edge_cases", False, severity="MEDIUM", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t5_1_edge_cases",
+            False,
+            severity="MEDIUM",
+            fail_msg=str(e),
+        )
 
     # ── T5.2: Limitations and Constraints ──────────────────────────────
     log(test_id, "T5.2: Limitations - search thresholds and constraints")
@@ -370,18 +543,24 @@ async def run(
         )
         hits = r.get("results", [])
         check(
-            results, issues, "t5_2_limitations",
+            results,
+            issues,
+            "t5_2_limitations",
             len(hits) > 0,
             detail={"hits": len(hits), "elapsed_s": round(t, 2)},
             severity="LOW",
             fail_msg="Limitations query returned no results",
         )
-        note_adoption(journal,
+        note_adoption(
+            journal,
             f"searched for threshold constants and constraints by concept — found {len(hits)} results without knowing variable names upfront",
-            "positive" if len(hits) > 0 else "negative")
+            "positive" if len(hits) > 0 else "negative",
+        )
         log(test_id, f"  T5.2: {len(hits)} hits in {t:.2f}s")
     except Exception as e:
-        check(results, issues, "t5_2_limitations", False, severity="LOW", fail_msg=str(e))
+        check(
+            results, issues, "t5_2_limitations", False, severity="LOW", fail_msg=str(e)
+        )
 
     # ── T6.1: API Reference Generation ─────────────────────────────────
     log(test_id, "T6.1: API reference - collect full search module content")
@@ -395,20 +574,44 @@ async def run(
             limit=10,
         )
         hits = r.get("results", [])
-        search_files = list({h.get("file_path", "") for h in hits if "search" in h.get("file_path", "").lower()})
+        search_files = list(
+            {
+                h.get("file_path", "")
+                for h in hits
+                if "search" in h.get("file_path", "").lower()
+            }
+        )
         check(
-            results, issues, "t6_1_api_reference",
+            results,
+            issues,
+            "t6_1_api_reference",
             len(hits) > 0,
-            detail={"hits": len(hits), "search_files": search_files, "elapsed_s": round(t, 2)},
+            detail={
+                "hits": len(hits),
+                "search_files": search_files,
+                "elapsed_s": round(t, 2),
+            },
             severity="MEDIUM",
             fail_msg="API reference query returned no results",
         )
-        note_adoption(journal,
+        note_adoption(
+            journal,
             f"collected API surface across {len(search_files)} search files in one query — assembling docs from scattered files is where semantic search saves the most time",
-            "positive" if len(search_files) >= 2 else "neutral")
-        log(test_id, f"  T6.1: {len(hits)} hits, {len(search_files)} unique search files")
+            "positive" if len(search_files) >= 2 else "neutral",
+        )
+        log(
+            test_id,
+            f"  T6.1: {len(hits)} hits, {len(search_files)} unique search files",
+        )
     except Exception as e:
-        check(results, issues, "t6_1_api_reference", False, severity="MEDIUM", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t6_1_api_reference",
+            False,
+            severity="MEDIUM",
+            fail_msg=str(e),
+        )
 
     # ── T6.2: User Guide Content ────────────────────────────────────────
     log(test_id, "T6.2: User guide - quick start and setup")
@@ -422,7 +625,9 @@ async def run(
         )
         hits = r.get("results", [])
         check(
-            results, issues, "t6_2_user_guide",
+            results,
+            issues,
+            "t6_2_user_guide",
             len(hits) > 0,
             detail={"hits": len(hits), "elapsed_s": round(t, 2)},
             severity="LOW",
@@ -430,7 +635,9 @@ async def run(
         )
         log(test_id, f"  T6.2: {len(hits)} hits in {t:.2f}s")
     except Exception as e:
-        check(results, issues, "t6_2_user_guide", False, severity="LOW", fail_msg=str(e))
+        check(
+            results, issues, "t6_2_user_guide", False, severity="LOW", fail_msg=str(e)
+        )
 
     # ── T7: Cross-Functional - List Search Entities ──────────────────
     log(test_id, "T7: List entities - verify search module entities indexed")
@@ -443,30 +650,56 @@ async def run(
             limit=20,
         )
         entities = r.get("entities", [])
-        search_entities = [e for e in entities if "search" in (e.get("name", "") + e.get("file_path", "")).lower()]
+        search_entities = [
+            e
+            for e in entities
+            if "search" in (e.get("name", "") + e.get("file_path", "")).lower()
+        ]
         check(
-            results, issues, "t7_list_search_entities",
+            results,
+            issues,
+            "t7_list_search_entities",
             len(entities) > 0,
-            detail={"total_entities": len(entities), "search_entities": len(search_entities), "elapsed_s": round(t, 2)},
+            detail={
+                "total_entities": len(entities),
+                "search_entities": len(search_entities),
+                "elapsed_s": round(t, 2),
+            },
             severity="MEDIUM",
             fail_msg=f"list_entities returned no results",
         )
-        note_adoption(journal,
+        note_adoption(
+            journal,
             f"entity index surfaced {len(search_entities)} search-related classes from {len(entities)} total — structured inventory that grep 'class ' cannot reliably produce",
-            "positive" if len(search_entities) > 0 else "neutral")
-        log(test_id, f"  T7: {len(entities)} total entities, {len(search_entities)} search-related")
+            "positive" if len(search_entities) > 0 else "neutral",
+        )
+        log(
+            test_id,
+            f"  T7: {len(entities)} total entities, {len(search_entities)} search-related",
+        )
     except Exception as e:
-        check(results, issues, "t7_list_search_entities", False, severity="MEDIUM", fail_msg=str(e))
+        check(
+            results,
+            issues,
+            "t7_list_search_entities",
+            False,
+            severity="MEDIUM",
+            fail_msg=str(e),
+        )
 
     # ── Honest assessment: doc generation limitations ────────────────────
-    note_adoption(journal,
+    note_adoption(
+        journal,
         "semantic search finds related code snippets but cannot generate coherent documentation on its own "
         "— the agent still needs an LLM to synthesize snippets into readable docs, so ai is a research tool not a doc generator",
-        "neutral")
+        "neutral",
+    )
 
     # ── Final Summary ────────────────────────────────────────────────────
     elapsed = time.time() - t_start
-    summary = summarize(test_id, slug, results, issues, elapsed, project_id, adoption_journal=journal)
+    summary = summarize(
+        test_id, slug, results, issues, elapsed, project_id, adoption_journal=journal
+    )
     write_results(output_dir, summary)
     log(test_id, f"Complete: {summary['pass_rate']} passed in {elapsed:.1f}s")
     return summary

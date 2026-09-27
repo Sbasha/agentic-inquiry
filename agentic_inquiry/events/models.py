@@ -16,13 +16,14 @@ if TYPE_CHECKING:
 
 class EventStatus(str, Enum):
     """Event status enumeration.
-    
+
     Represents the lifecycle state of an operation:
     - STARTED: Operation has begun
     - PROGRESS: Operation is in progress (intermediate state)
     - COMPLETED: Operation finished successfully
     - FAILED: Operation encountered an error
     """
+
     STARTED = "started"
     PROGRESS = "progress"
     COMPLETED = "completed"
@@ -32,10 +33,10 @@ class EventStatus(str, Enum):
 @dataclass
 class Event:
     """Structured event record.
-    
+
     Represents a single event in the system with full contextual information.
     Events are immutable once created and stored.
-    
+
     Attributes:
         event_id: Unique event identifier (UUID)
         project_id: Project identifier for isolation
@@ -47,7 +48,7 @@ class Event:
         source: Component that emitted the event
         metadata: Arbitrary contextual data
         schema_version: Schema version for evolution
-    
+
     Example:
         >>> event = Event(
         ...     project_id="my_project",
@@ -58,6 +59,7 @@ class Event:
         ...     metadata={"file_count": 42}
         ... )
     """
+
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     project_id: str = ""
     operation_id: Optional[str] = None
@@ -68,10 +70,10 @@ class Event:
     source: str = ""
     metadata: Dict[str, Any] = field(default_factory=dict)
     schema_version: str = "1.0"
-    
+
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for storage.
-        
+
         Returns:
             Dictionary representation suitable for JSON serialization
         """
@@ -82,12 +84,14 @@ class Event:
             "session_id": self.session_id,
             "timestamp": self.timestamp,
             "event_type": self.event_type,
-            "status": self.status.value if isinstance(self.status, EventStatus) else self.status,
+            "status": self.status.value
+            if isinstance(self.status, EventStatus)
+            else self.status,
             "source": self.source,
             "metadata": self.metadata,
             "schema_version": self.schema_version,
         }
-    
+
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "Event":
         """Create from dictionary.

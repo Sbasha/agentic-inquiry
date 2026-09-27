@@ -29,6 +29,7 @@ from agentic_inquiry.memory.system import MemorySystem
 def mock_embedding_service() -> MagicMock:
     """Create a mock embedding service."""
     service = MagicMock()
+
     # Mock embed_async to return different dimensions based on density
     async def mock_embed(text: str, density: str = "medium"):
         if density == "low":
@@ -38,7 +39,7 @@ def mock_embedding_service() -> MagicMock:
         elif density == "high":
             return np.random.rand(768).astype(np.float32)
         return np.random.rand(384).astype(np.float32)
-    
+
     service.embed_async = AsyncMock(side_effect=mock_embed)
     service.embed_batch_async = AsyncMock(
         return_value=[np.random.rand(384).astype(np.float32) for _ in range(3)]
@@ -87,7 +88,7 @@ async def memory_system(
         DocumentCacheConfig,
         EmbeddingsConfig,
     )
-    
+
     # Create a mock config with all required attributes
     config = MagicMock(spec=Config)
     config.memory = memory_config
@@ -306,7 +307,9 @@ async def test_consolidation_workflow(
     assert result.items_promoted >= 0, "Promoted items should be non-negative"
     assert result.items_demoted >= 0, "Demoted items should be non-negative"
     assert result.concepts_extracted >= 0, "Extracted concepts should be non-negative"
-    assert result.relationships_created >= 0, "Created relationships should be non-negative"
+    assert result.relationships_created >= 0, (
+        "Created relationships should be non-negative"
+    )
 
 
 @pytest.mark.asyncio
@@ -576,7 +579,7 @@ async def test_memory_summary_persistence(
         "Architecture pattern discussion",
         "Performance optimization tip",
     ]
-    
+
     stored_items = []
     for i, summary in enumerate(summaries):
         memory_item = await memory_system.store(
@@ -586,36 +589,42 @@ async def test_memory_summary_persistence(
             summary=summary,
         )
         stored_items.append(memory_item)
-        
+
         # Verify summary is set on the returned item
         assert memory_item.summary == summary, f"Summary not set on stored item {i}"
-    
+
     # Retrieve memories and verify summaries are present
     results = await memory_system.retrieve(
         query="programming architecture performance",
         context=sample_context,
         limit=10,
     )
-    
+
     # Verify we got results
     assert len(results) > 0, "No memories retrieved"
-    
+
     # Verify all retrieved memories have summaries
     for result in results:
-        assert result.item.summary is not None, f"Summary is None for item {result.item.id}"
+        assert result.item.summary is not None, (
+            f"Summary is None for item {result.item.id}"
+        )
         assert result.item.summary != "", f"Summary is empty for item {result.item.id}"
-        assert isinstance(result.item.summary, str), f"Summary is not a string for item {result.item.id}"
-    
+        assert isinstance(result.item.summary, str), (
+            f"Summary is not a string for item {result.item.id}"
+        )
+
     # Verify 100% of memories have summaries
     memories_with_summaries = sum(1 for r in results if r.item.summary)
-    assert memories_with_summaries == len(results), \
+    assert memories_with_summaries == len(results), (
         f"Only {memories_with_summaries}/{len(results)} memories have summaries"
-    
+    )
+
     # Verify specific summaries are preserved
     retrieved_summaries = {r.item.summary for r in results}
     for expected_summary in summaries:
-        assert expected_summary in retrieved_summaries, \
+        assert expected_summary in retrieved_summaries, (
             f"Expected summary '{expected_summary}' not found in retrieved memories"
+        )
 
 
 @pytest.mark.asyncio
@@ -630,7 +639,7 @@ async def test_memory_summary_across_tiers(
         (0.75, MemoryTier.EPISODIC, "Episodic memory summary"),
         (0.95, MemoryTier.SEMANTIC, "Semantic memory summary"),
     ]
-    
+
     for importance, expected_tier, summary in test_cases:
         memory_item = await memory_system.store(
             content=f"Content for {expected_tier.value} tier",
@@ -638,15 +647,17 @@ async def test_memory_summary_across_tiers(
             importance=importance,
             summary=summary,
         )
-        
+
         # Verify tier assignment
-        assert memory_item.tier == expected_tier, \
+        assert memory_item.tier == expected_tier, (
             f"Expected tier {expected_tier}, got {memory_item.tier}"
-        
+        )
+
         # Verify summary is set
-        assert memory_item.summary == summary, \
+        assert memory_item.summary == summary, (
             f"Summary not preserved for {expected_tier.value} tier"
-        
+        )
+
         # Retrieve directly from the tier and verify summary
         if expected_tier == MemoryTier.WORKING:
             retrieved = await memory_system.working_memory.get_by_id(memory_item.id)
@@ -654,10 +665,13 @@ async def test_memory_summary_across_tiers(
             retrieved = await memory_system.episodic_memory.get_by_id(memory_item.id)
         else:  # SEMANTIC
             retrieved = await memory_system.semantic_memory.get_by_id(memory_item.id)
-        
-        assert retrieved is not None, f"Could not retrieve item from {expected_tier.value}"
-        assert retrieved.summary == summary, \
+
+        assert retrieved is not None, (
+            f"Could not retrieve item from {expected_tier.value}"
+        )
+        assert retrieved.summary == summary, (
             f"Summary not preserved in {expected_tier.value} tier storage"
+        )
 
 
 @pytest.mark.asyncio
@@ -683,7 +697,7 @@ async def test_configuration_loading(
     """Test that configuration is properly loaded."""
     # Create a custom config
     from agentic_inquiry.config import StorageConfig, EmbeddingsConfig
-    
+
     custom_config = MagicMock(spec=Config)
     custom_config.memory = MemoryConfig(
         working_memory=WorkingMemoryConfig(capacity=50),  # Custom capacity
@@ -762,14 +776,25 @@ async def test_async_context_manager(
     memory_config: MemoryConfig,
 ) -> None:
     """Test MemorySystem async context manager initializes and shuts down properly."""
-    from agentic_inquiry.config import StorageConfig, CacheConfig, DocumentCacheConfig, EmbeddingsConfig
+    from agentic_inquiry.config import (
+        StorageConfig,
+        CacheConfig,
+        DocumentCacheConfig,
+        EmbeddingsConfig,
+    )
 
     # Create config like the memory_system fixture
     config = MagicMock(spec=Config)
     config.memory = memory_config
-    config.storage = StorageConfig(root=str(tmp_path), default_project_id="test_default")
+    config.storage = StorageConfig(
+        root=str(tmp_path), default_project_id="test_default"
+    )
     config.storage.uri = str(tmp_path / "test.lancedb")
-    config.cache = CacheConfig(document_cache=DocumentCacheConfig(max_size=100, ttl_seconds=3600, eviction_policy="lru"))
+    config.cache = CacheConfig(
+        document_cache=DocumentCacheConfig(
+            max_size=100, ttl_seconds=3600, eviction_policy="lru"
+        )
+    )
     config.embeddings = EmbeddingsConfig(default_provider="sentence_transformer")
 
     # Use async with to test context manager
@@ -804,14 +829,25 @@ async def test_async_context_manager_handles_exception(
     memory_config: MemoryConfig,
 ) -> None:
     """Test MemorySystem async context manager shuts down even on exception."""
-    from agentic_inquiry.config import StorageConfig, CacheConfig, DocumentCacheConfig, EmbeddingsConfig
+    from agentic_inquiry.config import (
+        StorageConfig,
+        CacheConfig,
+        DocumentCacheConfig,
+        EmbeddingsConfig,
+    )
 
     # Create config like the memory_system fixture
     config = MagicMock(spec=Config)
     config.memory = memory_config
-    config.storage = StorageConfig(root=str(tmp_path), default_project_id="test_default")
+    config.storage = StorageConfig(
+        root=str(tmp_path), default_project_id="test_default"
+    )
     config.storage.uri = str(tmp_path / "test.lancedb")
-    config.cache = CacheConfig(document_cache=DocumentCacheConfig(max_size=100, ttl_seconds=3600, eviction_policy="lru"))
+    config.cache = CacheConfig(
+        document_cache=DocumentCacheConfig(
+            max_size=100, ttl_seconds=3600, eviction_policy="lru"
+        )
+    )
     config.embeddings = EmbeddingsConfig(default_provider="sentence_transformer")
 
     class TestError(Exception):

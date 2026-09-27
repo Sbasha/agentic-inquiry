@@ -48,6 +48,7 @@ class CommandInfo:
         argument_hint: Hint about expected arguments
         file_path: Path to the command definition file
     """
+
     name: str
     full_name: str
     description: str
@@ -97,7 +98,7 @@ def parse_frontmatter(file_path: Path) -> dict[str, Any]:
 
             # Handle arrays
             if value.startswith("[") and value.endswith("]"):
-                value = [v.strip().strip('"\'') for v in value[1:-1].split(",")]
+                value = [v.strip().strip("\"'") for v in value[1:-1].split(",")]
 
             result[key] = value
 
@@ -121,7 +122,7 @@ def find_commands_directory() -> Optional[Path]:
             versions = sorted(
                 [d for d in cache_path.iterdir() if d.is_dir()],
                 key=lambda p: p.name,
-                reverse=True
+                reverse=True,
             )
             for version_dir in versions:
                 commands_dir = version_dir / "commands"
@@ -159,13 +160,15 @@ def discover_commands() -> list[CommandInfo]:
         metadata = parse_frontmatter(cmd_file)
         name = cmd_file.stem
 
-        commands.append(CommandInfo(
-            name=name,
-            full_name=f"ai:{name}",
-            description=metadata.get("description", ""),
-            argument_hint=metadata.get("argument-hint", ""),
-            file_path=cmd_file,
-        ))
+        commands.append(
+            CommandInfo(
+                name=name,
+                full_name=f"ai:{name}",
+                description=metadata.get("description", ""),
+                argument_hint=metadata.get("argument-hint", ""),
+                file_path=cmd_file,
+            )
+        )
 
     logger.debug("Discovered %d commands", len(commands))
     return commands
@@ -239,7 +242,7 @@ def get_command_info(command_name: str) -> Optional[CommandInfo]:
     name = command_name.lower()
     for prefix in ("/ai:", "/ai-", "ai:", "ai-"):
         if name.startswith(prefix):
-            name = name[len(prefix):]
+            name = name[len(prefix) :]
             break
 
     commands = discover_commands()
@@ -255,19 +258,16 @@ def main() -> int:
     """CLI entry point for command discovery."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Discover available ai commands"
-    )
+    parser = argparse.ArgumentParser(description="Discover available ai commands")
     parser.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         choices=["table", "list", "json"],
         default="list",
-        help="Output format"
+        help="Output format",
     )
     parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Show detailed information"
+        "--verbose", "-v", action="store_true", help="Show detailed information"
     )
 
     args = parser.parse_args()
@@ -278,6 +278,7 @@ def main() -> int:
         print(format_commands_table(commands))
     elif args.format == "json":
         import json
+
         data = [
             {
                 "name": cmd.name,

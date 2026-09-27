@@ -21,7 +21,7 @@ import agentic_inquiry.parsers.implementations  # noqa: F401
 @pytest.fixture
 def sample_python_file():
     """Create a sample Python file for testing."""
-    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
         f.write('''
 """User management module."""
 import os
@@ -39,7 +39,7 @@ class UserManager:
 ''')
         f.flush()
         yield Path(f.name)
-    
+
     # Cleanup
     Path(f.name).unlink()
 
@@ -49,7 +49,7 @@ async def test_parser_returns_parsed_document(sample_python_file):
     """Test that parser returns a ParsedDocument instance."""
     parser = get_parser_instance("unified_code")
     result = await parser.parse(str(sample_python_file))
-    
+
     assert isinstance(result, ParsedDocument)
 
 
@@ -58,13 +58,13 @@ async def test_parsed_document_has_required_fields(sample_python_file):
     """Test that ParsedDocument has all required fields."""
     parser = get_parser_instance("unified_code")
     doc = await parser.parse(str(sample_python_file))
-    
+
     # Required fields
-    assert hasattr(doc, 'doc_id')
-    assert hasattr(doc, 'file_path')
-    assert hasattr(doc, 'chunks')
-    assert hasattr(doc, 'metadata')
-    
+    assert hasattr(doc, "doc_id")
+    assert hasattr(doc, "file_path")
+    assert hasattr(doc, "chunks")
+    assert hasattr(doc, "metadata")
+
     # Verify types
     assert isinstance(doc.doc_id, str)
     assert isinstance(doc.file_path, str)
@@ -77,21 +77,21 @@ async def test_chunks_have_required_fields(sample_python_file):
     """Test that ParserChunk objects have required fields."""
     parser = get_parser_instance("unified_code")
     doc = await parser.parse(str(sample_python_file))
-    
+
     assert len(doc.chunks) > 0, "Should have at least one chunk"
-    
+
     for chunk in doc.chunks:
         assert isinstance(chunk, ParserChunk)
-        
+
         # Required fields
-        assert hasattr(chunk, 'content')
-        assert hasattr(chunk, 'symbols')
-        assert hasattr(chunk, 'relationships')
-        assert hasattr(chunk, 'metadata')
-        assert hasattr(chunk, 'ranking_signals')
-        assert hasattr(chunk, 'fts_text')
-        assert hasattr(chunk, 'language')
-        
+        assert hasattr(chunk, "content")
+        assert hasattr(chunk, "symbols")
+        assert hasattr(chunk, "relationships")
+        assert hasattr(chunk, "metadata")
+        assert hasattr(chunk, "ranking_signals")
+        assert hasattr(chunk, "fts_text")
+        assert hasattr(chunk, "language")
+
         # Verify types
         assert chunk.content is None or isinstance(chunk.content, str)
         assert isinstance(chunk.symbols, list)
@@ -107,14 +107,16 @@ async def test_code_symbols_extracted(sample_python_file):
     """Test that code symbols are extracted."""
     parser = get_parser_instance("unified_code")
     doc = await parser.parse(str(sample_python_file))
-    
+
     # Collect all symbols
     all_symbols = []
     for chunk in doc.chunks:
         all_symbols.extend(chunk.symbols)
-    
+
     # Should find the UserManager class
-    assert "UserManager" in all_symbols, f"Should find UserManager in symbols: {all_symbols}"
+    assert "UserManager" in all_symbols, (
+        f"Should find UserManager in symbols: {all_symbols}"
+    )
 
 
 @pytest.mark.asyncio
@@ -122,12 +124,12 @@ async def test_metadata_has_content_type(sample_python_file):
     """Test that metadata includes content_type field."""
     parser = get_parser_instance("unified_code")
     doc = await parser.parse(str(sample_python_file))
-    
+
     # Check document metadata
     if doc.metadata:
         assert "content_type" in doc.metadata
         assert doc.metadata["content_type"] == "CODE"
-    
+
     # Check chunk metadata
     for chunk in doc.chunks:
         if chunk.metadata:
@@ -140,7 +142,7 @@ async def test_language_detected(sample_python_file):
     """Test that language is correctly detected."""
     parser = get_parser_instance("unified_code")
     doc = await parser.parse(str(sample_python_file))
-    
+
     # Check chunks - language is a chunk-level field
     for chunk in doc.chunks:
         assert chunk.language == "python"
@@ -151,11 +153,11 @@ async def test_fts_text_generated(sample_python_file):
     """Test that FTS text is generated for code chunks."""
     parser = get_parser_instance("unified_code")
     doc = await parser.parse(str(sample_python_file))
-    
+
     # At least some chunks should have FTS text
     has_fts = any(chunk.fts_text for chunk in doc.chunks)
     assert has_fts, "At least one chunk should have fts_text"
-    
+
     # FTS text should contain symbols
     for chunk in doc.chunks:
         if chunk.fts_text and chunk.symbols:
@@ -170,7 +172,7 @@ async def test_ranking_signals_present(sample_python_file):
     """Test that ranking signals are present."""
     parser = get_parser_instance("unified_code")
     doc = await parser.parse(str(sample_python_file))
-    
+
     # At least some chunks should have ranking signals
     has_signals = any(chunk.ranking_signals for chunk in doc.chunks)
     assert has_signals, "At least one chunk should have ranking_signals"
@@ -180,18 +182,20 @@ async def test_ranking_signals_present(sample_python_file):
 async def test_multiple_file_types():
     """Test that parser works with multiple file types."""
     test_files = {
-        'test.py': 'def hello(): pass',
-        'test.js': 'function hello() {}',
-        'test.java': 'public class Test {}',
+        "test.py": "def hello(): pass",
+        "test.js": "function hello() {}",
+        "test.java": "public class Test {}",
     }
-    
+
     parser = get_parser_instance("unified_code")
-    
+
     for filename, content in test_files.items():
-        with tempfile.NamedTemporaryFile(mode='w', suffix=Path(filename).suffix, delete=False) as f:
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=Path(filename).suffix, delete=False
+        ) as f:
             f.write(content)
             f.flush()
-            
+
             try:
                 doc = await parser.parse(f.name)
                 assert isinstance(doc, ParsedDocument)

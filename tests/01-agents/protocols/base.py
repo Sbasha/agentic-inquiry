@@ -4,6 +4,7 @@ Shared helpers for UAT protocol modules.
 All protocol modules use these helpers for common operations:
 session creation, indexing, waiting, tool calls, and result formatting.
 """
+
 import asyncio
 import json
 import time
@@ -83,7 +84,10 @@ async def index_and_wait(
         return {"completed": True, "elapsed_s": time.time() - t0, **r}
 
     if status != "started":
-        return {"completed": False, "error": r.get("error", f"Unexpected status: {status}")}
+        return {
+            "completed": False,
+            "error": r.get("error", f"Unexpected status: {status}"),
+        }
 
     log(test_id, f"Indexing started (op={operation_id}), polling...")
 
@@ -102,7 +106,9 @@ async def index_and_wait(
         # Check for completion events.
         # chunking_completed: chunks + entities + relationships stored (FTS/graph ready)
         # indexing_completed: everything including embeddings (vector search ready)
-        target_event = "indexing_completed" if wait_for_embeddings else "chunking_completed"
+        target_event = (
+            "indexing_completed" if wait_for_embeddings else "chunking_completed"
+        )
         try:
             events_result = await get_events(
                 services=services,
@@ -117,16 +123,24 @@ async def index_and_wait(
                     data = evt_data
                     if evt_type == "indexing_completed":
                         total_elapsed = time.time() - t0
-                        log(test_id, f"Indexing completed (event, rels={data.get('relationships_created', '?')}) in {total_elapsed:.1f}s")
+                        log(
+                            test_id,
+                            f"Indexing completed (event, rels={data.get('relationships_created', '?')}) in {total_elapsed:.1f}s",
+                        )
                         return {
                             "completed": True,
                             "elapsed_s": total_elapsed,
                             "files_processed": data.get("items_processed", 0),
                             "chunks_created": data.get("chunks_created", 0),
-                            "relationships_created": data.get("relationships_created", 0),
+                            "relationships_created": data.get(
+                                "relationships_created", 0
+                            ),
                         }
                     elif evt_type == "indexing_failed":
-                        return {"completed": False, "error": data.get("message", "Indexing failed")}
+                        return {
+                            "completed": False,
+                            "error": data.get("message", "Indexing failed"),
+                        }
         except Exception:
             pass
 
@@ -148,10 +162,16 @@ async def index_and_wait(
 
                 if stable_count >= STABLE_THRESHOLD and chunks_stable_at is None:
                     chunks_stable_at = time.time()
-                    log(test_id, f"  Chunks stable at {chunks}, waiting for completion event...")
+                    log(
+                        test_id,
+                        f"  Chunks stable at {chunks}, waiting for completion event...",
+                    )
 
                 if int(elapsed) % 15 == 0:
-                    log(test_id, f"  chunks={chunks} (stable={stable_count}/{STABLE_THRESHOLD})")
+                    log(
+                        test_id,
+                        f"  chunks={chunks} (stable={stable_count}/{STABLE_THRESHOLD})",
+                    )
             elif int(elapsed) % 30 == 0:
                 log(test_id, f"  Indexing... state={state.status}, chunks={chunks}")
         except Exception as e:
@@ -160,8 +180,16 @@ async def index_and_wait(
 
     # Timeout — if chunks exist, return partial success
     if prev_chunks > 0:
-        log(test_id, f"Indexing timed out after {max_wait}s (chunks={prev_chunks} but no completion event)")
-        return {"completed": True, "elapsed_s": time.time() - t0, "chunks_detected": prev_chunks, "timed_out": True}
+        log(
+            test_id,
+            f"Indexing timed out after {max_wait}s (chunks={prev_chunks} but no completion event)",
+        )
+        return {
+            "completed": True,
+            "elapsed_s": time.time() - t0,
+            "chunks_detected": prev_chunks,
+            "timed_out": True,
+        }
     log(test_id, f"Indexing timed out after {max_wait}s")
     return {"completed": False, "error": f"Timed out after {max_wait}s"}
 
@@ -197,11 +225,13 @@ def check(
     """Record a test check result."""
     results[name] = {"pass": passed, **(detail or {})}
     if not passed:
-        issues.append({
-            "severity": severity,
-            "test": name,
-            "msg": fail_msg or f"{name} failed",
-        })
+        issues.append(
+            {
+                "severity": severity,
+                "test": name,
+                "msg": fail_msg or f"{name} failed",
+            }
+        )
 
 
 def _build_adoption_evidence(
@@ -233,7 +263,11 @@ def _build_adoption_evidence(
             continue
         # Result counts — more results = more value vs grep
         for key in ("total", "result_count", "total_results", "entity_count"):
-            if key in detail and isinstance(detail[key], (int, float)) and detail[key] > 0:
+            if (
+                key in detail
+                and isinstance(detail[key], (int, float))
+                and detail[key] > 0
+            ):
                 quality_signals.append(f"{name}: {key}={detail[key]}")
         # Timing — fast enough to be useful interactively?
         for key in ("elapsed_s", "time_s"):
@@ -363,7 +397,8 @@ def summarize(
 ) -> Dict[str, Any]:
     """Build a standard summary dict from test results."""
     test_checks = {
-        k: v.get("pass", False) for k, v in results.items()
+        k: v.get("pass", False)
+        for k, v in results.items()
         if isinstance(v, dict) and "pass" in v
     }
     passed = sum(1 for v in test_checks.values() if v)
@@ -376,8 +411,12 @@ def summarize(
     if adoption_journal:
         evidence["journal"] = adoption_journal
         evidence["journal_summary"] = {
-            "positive": sum(1 for j in adoption_journal if j.get("signal") == "positive"),
-            "negative": sum(1 for j in adoption_journal if j.get("signal") == "negative"),
+            "positive": sum(
+                1 for j in adoption_journal if j.get("signal") == "positive"
+            ),
+            "negative": sum(
+                1 for j in adoption_journal if j.get("signal") == "negative"
+            ),
             "blocker": sum(1 for j in adoption_journal if j.get("signal") == "blocker"),
             "neutral": sum(1 for j in adoption_journal if j.get("signal") == "neutral"),
         }

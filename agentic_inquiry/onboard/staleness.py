@@ -83,7 +83,11 @@ async def check_onboard_staleness(
 
     now = datetime.now(timezone.utc)
     # Make naive timestamps tz-aware for comparison
-    ts = latest.timestamp if latest.timestamp.tzinfo else latest.timestamp.replace(tzinfo=timezone.utc)
+    ts = (
+        latest.timestamp
+        if latest.timestamp.tzinfo
+        else latest.timestamp.replace(tzinfo=timezone.utc)
+    )
     days_elapsed = (now - ts).days
 
     files_changed = 0
@@ -106,9 +110,15 @@ async def check_onboard_staleness(
         if onboard_cfg:
             staleness_cfg = getattr(onboard_cfg, "staleness", None)
             if staleness_cfg:
-                days_threshold = getattr(staleness_cfg, "days_threshold", days_threshold)
-                files_threshold = getattr(staleness_cfg, "files_threshold", files_threshold)
-                commits_threshold = getattr(staleness_cfg, "commits_threshold", commits_threshold)
+                days_threshold = getattr(
+                    staleness_cfg, "days_threshold", days_threshold
+                )
+                files_threshold = getattr(
+                    staleness_cfg, "files_threshold", files_threshold
+                )
+                commits_threshold = getattr(
+                    staleness_cfg, "commits_threshold", commits_threshold
+                )
 
     is_stale = False
     reason: Optional[str] = None
@@ -144,7 +154,9 @@ async def check_onboard_staleness(
             + "\n\nConsider running /ai:onboard to refresh documentation."
         )
     else:
-        git_note = "" if git_available else " (git unavailable, change detection skipped)"
+        git_note = (
+            "" if git_available else " (git unavailable, change detection skipped)"
+        )
         message = (
             f"Onboard documentation is current "
             f"({days_elapsed} days old, {files_changed} files changed, "
@@ -166,7 +178,10 @@ async def _count_changed_files(workspace: Path, since_commit: str) -> int:
     """Count files changed since commit via git diff --numstat."""
     try:
         proc = await asyncio.create_subprocess_exec(
-            "git", "diff", "--numstat", f"{since_commit}..HEAD",
+            "git",
+            "diff",
+            "--numstat",
+            f"{since_commit}..HEAD",
             cwd=str(workspace),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -188,7 +203,10 @@ async def _count_commits_since(workspace: Path, since_commit: str) -> int:
     """Count commits since commit via git rev-list."""
     try:
         proc = await asyncio.create_subprocess_exec(
-            "git", "rev-list", "--count", f"{since_commit}..HEAD",
+            "git",
+            "rev-list",
+            "--count",
+            f"{since_commit}..HEAD",
             cwd=str(workspace),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
@@ -209,7 +227,9 @@ async def _is_git_available(workspace: Path) -> bool:
     """Check if git is functional in workspace."""
     try:
         proc = await asyncio.create_subprocess_exec(
-            "git", "rev-parse", "--git-dir",
+            "git",
+            "rev-parse",
+            "--git-dir",
             cwd=str(workspace),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,

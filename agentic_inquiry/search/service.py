@@ -3,6 +3,7 @@
 Accepts StorageFacade as the storage interface. StorageFacade provides
 unified access to vector and graph storage through the provider framework.
 """
+
 from __future__ import annotations
 
 import logging
@@ -70,7 +71,9 @@ class SearchService:
             project_id = storage.project_id
 
         self.config = config
-        self.event_system: EventSystem | NoOpEventSystem = event_system if event_system is not None else NoOpEventSystem()
+        self.event_system: EventSystem | NoOpEventSystem = (
+            event_system if event_system is not None else NoOpEventSystem()
+        )
 
         # Resolve project_id
         if project_id is None:
@@ -84,6 +87,7 @@ class SearchService:
 
         # Import metrics tracker
         from agentic_inquiry.metrics import get_metrics_tracker
+
         self._metrics = get_metrics_tracker()
 
         # Initialize deduplicator with configuration
@@ -102,7 +106,11 @@ class SearchService:
         from agentic_inquiry.search.hybrid_search import HybridSearchService
 
         # Pass None to sub-services if using NoOpEventSystem
-        sub_event_sys: Optional[EventSystem] = None if isinstance(self.event_system, NoOpEventSystem) else self.event_system
+        sub_event_sys: Optional[EventSystem] = (
+            None
+            if isinstance(self.event_system, NoOpEventSystem)
+            else self.event_system
+        )
 
         self._graph_search = GraphSearchService(
             storage=storage,
@@ -119,7 +127,6 @@ class SearchService:
             project_id=project_id,
         )
 
-
     @property
     def storage_facade(self) -> StorageFacade:
         """Access the underlying StorageFacade.
@@ -135,17 +142,17 @@ class SearchService:
     @property
     def embedding_service(self):
         """Lazy-loaded embedding service instance.
-        
+
         Creates and caches an EmbeddingService instance on first access.
         This avoids creating multiple instances and improves performance.
-        
+
         Returns:
             EmbeddingService instance configured with current config
-            
+
         Raises:
             RuntimeError: If embedder is not configured
         """
-        if not hasattr(self, '_embedding_service'):
+        if not hasattr(self, "_embedding_service"):
             # Check if embedder is configured
             if not embedding_registry._default_configured:
                 raise RuntimeError(
@@ -160,8 +167,9 @@ class SearchService:
                     "  services = create_mcp_services(config, project_id)\n\n"
                     "See docs/mcp/configuration.md for more details."
                 )
-            
+
             from agentic_inquiry.embeddings import EmbeddingService
+
             self._embedding_service = EmbeddingService(self.config)
         return self._embedding_service
 
@@ -203,43 +211,39 @@ class SearchService:
 
     def _resolve_project_id(self, project_id: Optional[str]) -> Optional[str]:
         """Resolve project_id parameter to actual project ID.
-        
+
         Args:
             project_id: Project ID parameter from search method. Can be:
                        - CURRENT_PROJECT_ID: Use the project_id from ProjectContext
                        - Specific ID: Use that ID
                        - None: Search across all projects
-        
+
         Returns:
             Resolved project ID or None for all-projects search
         """
         if project_id == CURRENT_PROJECT_ID:
             return self.project_id
         return project_id
-    
+
     def _sanitize_fts_query(self, query: str) -> str:
         """Sanitize FTS query if sanitization is enabled.
-        
+
         Args:
             query: Original FTS query
-            
+
         Returns:
             Sanitized query if enabled, otherwise original query
         """
         if not self.config.search.query_sanitization.enabled:
             return query
-        
+
         # Sanitize the query
         sanitized = self.query_sanitizer.sanitize(query)
-        
+
         # Log if query was changed
         if sanitized != query:
-            logger.info(
-                "Query sanitized: original=%s, sanitized=%s",
-                query,
-                sanitized
-            )
-        
+            logger.info("Query sanitized: original=%s, sanitized=%s", query, sanitized)
+
         return sanitized
 
     def _sanitize_query_metadata(
@@ -251,27 +255,27 @@ class SearchService:
         **kwargs: Any,
     ) -> Dict[str, Any]:
         """Sanitize query parameters for event metadata.
-        
+
         Removes sensitive data and truncates large values to keep event metadata
         manageable and safe for logging.
-        
+
         Args:
             query_vector: Query vector (will be summarized, not included in full)
             query_fts: Full-text search query
             limit: Result limit
             filters: Query filters
             **kwargs: Additional parameters to include
-        
+
         Returns:
             Sanitized metadata dictionary
         """
         metadata: Dict[str, Any] = {}
-        
+
         # Summarize vector instead of including full array
         if query_vector is not None:
             metadata["vector_dim"] = len(query_vector)
             metadata["has_vector"] = True
-        
+
         # Include FTS query (truncate if very long)
         if query_fts is not None:
             max_query_length = 200
@@ -280,11 +284,11 @@ class SearchService:
                 metadata["query_fts_truncated"] = True
             else:
                 metadata["query_fts"] = query_fts
-        
+
         # Include limit
         if limit is not None:
             metadata["limit"] = limit
-        
+
         # Sanitize filters (avoid exposing sensitive values)
         if filters is not None:
             # Handle both dict filters and Filter AST
@@ -295,7 +299,7 @@ class SearchService:
                 # Filter AST - just indicate we have filters
                 metadata["filter_type"] = type(filters).__name__
             metadata["has_filters"] = True
-        
+
         # Include additional parameters
         for key, value in kwargs.items():
             # Skip large or sensitive values
@@ -305,19 +309,19 @@ class SearchService:
                 metadata[key] = value
             elif isinstance(value, list) and len(value) < 10:
                 metadata[key] = value
-        
+
         return metadata
 
     def get_metrics(self) -> Dict[str, Any]:
         """Get search service metrics.
-        
+
         Returns:
             Dictionary containing latency metrics for search operations
         """
         return {
             "latency_metrics": self._metrics.get_all_metrics(),
         }
-    
+
     @classmethod
     async def from_config(
         cls,
@@ -381,7 +385,7 @@ class SearchService:
                 still including all results, enabling cross-content discovery.
             content_preference_weight: Boost factor (0.0-1.0). A value of 0.7 means
                 matching results score 70% higher. Default: 0.7.
-            return_ambiguity: If True, returns a dict with 'results' (List[SearchResult]) 
+            return_ambiguity: If True, returns a dict with 'results' (List[SearchResult])
                              and 'ambiguity' (Dict).
 
         Returns:
@@ -404,48 +408,54 @@ class SearchService:
             project_ids=project_ids,
             content_preference=content_preference,
             content_preference_weight=content_preference_weight,
-            return_ambiguity=return_ambiguity
+            return_ambiguity=return_ambiguity,
         )
-        
+
         if return_ambiguity:
             result_dict = cast(Dict[str, Any], search_result)
             return {
-                "results": dicts_to_search_results(cast(List[Dict[str, Any]], result_dict["results"]), source="hybrid"),
-                "ambiguity": result_dict["ambiguity"]
+                "results": dicts_to_search_results(
+                    cast(List[Dict[str, Any]], result_dict["results"]), source="hybrid"
+                ),
+                "ambiguity": result_dict["ambiguity"],
             }
-            
-        return dicts_to_search_results(cast(List[Dict[str, Any]], search_result), source="hybrid")
 
-    def _apply_deduplication(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        return dicts_to_search_results(
+            cast(List[Dict[str, Any]], search_result), source="hybrid"
+        )
+
+    def _apply_deduplication(
+        self, results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Apply deduplication to search results if enabled.
-        
+
         Args:
             results: Search results to deduplicate
-        
+
         Returns:
             Deduplicated results if enabled, otherwise original results
         """
         if not self.config.search.deduplication.enabled:
             return results
-        
+
         # Calculate diversity before deduplication
         diversity_before = self.deduplicator.calculate_diversity_score(results)
-        
+
         # Apply deduplication
         deduplicated = self.deduplicator.deduplicate_results(results)
-        
+
         # Calculate diversity after deduplication
         diversity_after = self.deduplicator.calculate_diversity_score(deduplicated)
-        
+
         # Log diversity metrics
         logger.info(
             "Search deduplication: %d -> %d results, diversity: %.2f -> %.2f",
             len(results),
             len(deduplicated),
             diversity_before,
-            diversity_after
+            diversity_after,
         )
-        
+
         return deduplicated
 
     async def vector_search(
@@ -473,7 +483,11 @@ class SearchService:
             List of SearchResult with normalized scores and project_id in metadata
         """
         # Track the search operation - convert NoOpEventSystem to None for track_operation
-        event_sys: Optional[EventSystem] = None if isinstance(self.event_system, NoOpEventSystem) else self.event_system
+        event_sys: Optional[EventSystem] = (
+            None
+            if isinstance(self.event_system, NoOpEventSystem)
+            else self.event_system
+        )
         async with track_operation(
             event_sys,
             "search.query",
@@ -516,8 +530,10 @@ class SearchService:
 
                     # Track result quality for self-audit
                     if search_results:
-                        avg_score = sum(r.score for r in search_results) / len(search_results)
-                        if avg_score < 0.4: # Low confidence
+                        avg_score = sum(r.score for r in search_results) / len(
+                            search_results
+                        )
+                        if avg_score < 0.4:  # Low confidence
                             self._metrics.increment("search.low_confidence")
 
                     return search_results
@@ -548,7 +564,11 @@ class SearchService:
             List of SearchResult with normalized scores and project_id in metadata
         """
         # Track the search operation - convert NoOpEventSystem to None for track_operation
-        event_sys: Optional[EventSystem] = None if isinstance(self.event_system, NoOpEventSystem) else self.event_system
+        event_sys: Optional[EventSystem] = (
+            None
+            if isinstance(self.event_system, NoOpEventSystem)
+            else self.event_system
+        )
         async with track_operation(
             event_sys,
             "search.query",
@@ -594,8 +614,10 @@ class SearchService:
 
                     # Track result quality for self-audit
                     if search_results:
-                        avg_score = sum(r.score for r in search_results) / len(search_results)
-                        if avg_score < 0.4: # Low confidence
+                        avg_score = sum(r.score for r in search_results) / len(
+                            search_results
+                        )
+                        if avg_score < 0.4:  # Low confidence
                             self._metrics.increment("search.low_confidence")
 
                     return search_results
@@ -765,7 +787,9 @@ class SearchService:
             List of SearchResult with graph source
         """
         # GraphSearchService may return List[Dict] or List[SearchResult] depending on path
-        results: Union[List[Dict[str, Any]], List[SearchResult]] = await self._graph_search.graph_filtered_search(
+        results: Union[
+            List[Dict[str, Any]], List[SearchResult]
+        ] = await self._graph_search.graph_filtered_search(
             graph_filters=graph_filters,
             search_query_vector=search_query_vector,
             search_query_fts=search_query_fts,
@@ -779,8 +803,10 @@ class SearchService:
         )
         # If results are dicts, convert them. Otherwise, they are already SearchResult objects.
         if not results or isinstance(results[0], dict):
-            return dicts_to_search_results(cast(List[Dict[str, Any]], results), source="graph")  # type: ignore[return-value]
-        
+            return dicts_to_search_results(
+                cast(List[Dict[str, Any]], results), source="graph"
+            )  # type: ignore[return-value]
+
         # At this point, results must be List[SearchResult]
         return cast(List[SearchResult], results)
 
@@ -840,7 +866,7 @@ class SearchService:
         project_id: Optional[str] = CURRENT_PROJECT_ID,
     ) -> List[Dict[str, Any]]:
         """Enrich search results with graph context.
-        
+
         Delegates to GraphSearchService for the actual enrichment logic.
         """
         return await self._graph_search.enrich_with_graph_context(
@@ -848,12 +874,14 @@ class SearchService:
             project_id=project_id,
         )
 
-    def _enrich_results_with_project_id(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _enrich_results_with_project_id(
+        self, results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Enrich search results with project_id in metadata.
-        
+
         Args:
             results: List of search results from database
-        
+
         Returns:
             Results with project_id added to metadata field
         """
@@ -876,7 +904,7 @@ class SearchService:
         include_metadata: bool = True,
     ) -> Dict[str, Any]:
         """Traverse relationships from an entity in the knowledge graph.
-        
+
         Delegates to GraphSearchService for the actual traversal logic.
         """
         return await self._graph_search.traverse_relationships(
@@ -897,7 +925,7 @@ class SearchService:
         similarity_threshold: float = 0.7,
     ) -> Dict[str, Any]:
         """Resolve an entity by name with disambiguation support.
-        
+
         Delegates to GraphSearchService for the actual resolution logic.
         """
         return await self._graph_search.resolve_entity(
