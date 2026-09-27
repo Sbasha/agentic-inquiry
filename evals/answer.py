@@ -299,7 +299,12 @@ def _ollama_digest(model: str) -> str:
         ) as response:  # noqa: S310
             tags = json.loads(response.read())
         return next(
-            (m["digest"] for m in tags.get("models", []) if m["name"] == model),
+            # A bare name means the ":latest" tag, as Ollama resolves it.
+            (
+                m["digest"]
+                for m in tags.get("models", [])
+                if m["name"] in {model, f"{model}:latest"}
+            ),
             "missing",
         )
     except OSError:
