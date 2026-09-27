@@ -52,6 +52,8 @@ files inside any feature dir are gitignored; see
 
 [`lancedb-single-commit-upsert`](lancedb-single-commit-upsert/spec.md) - Session, record and memory-item row replacement is one LanceDB commit, so concurrent writers leave one complete row; `negate_memory` and `supersede_memory` write only the columns they change.
 
+[`load-stable-indexing-tests`](load-stable-indexing-tests/spec.md) - Resolver cache tests that count backend calls instead of timing them; no Hypothesis deadline on counting tests.
+
 [`local-only-config-cleanup`](local-only-config-cleanup/spec.md) - Shipped configs, examples and user docs describe only local storage, and every full config we ship loads against the schema.
 
 [`local-only-rerankers`](local-only-rerankers/spec.md) - Every hybrid-search reranker runs locally; a config naming a hosted reranker such as `cohere` fails at load and lists the valid options.
