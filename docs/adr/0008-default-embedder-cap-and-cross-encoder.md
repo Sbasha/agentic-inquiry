@@ -33,6 +33,16 @@ Every figure below is from the RFC-0003 dev split at commit d7492fc or later (th
 | BGE-m3 dense baseline | 0.775 | 0.874 | 0.597 |
 | hybrid baseline (BM25 + BGE-m3, RRF) | 0.775 | 0.823 | 0.658 |
 
+On SWE-bench dev code localization (gold-function hit within 2,000 tokens, 32 tasks whose indexes were built, paired and clustered by repository):
+
+| Configuration | fn_hit@2000 | Difference from bge-small, 3 per file |
+| --- | --- | --- |
+| bge-small, 3 per file | 0.385 | |
+| bge-small, 3 per file, cross-encoder | 0.351 | -0.034, CI [-0.117, +0.029] |
+| bge-small, 3 per file, cross-encoder, graph channel (5 seeds) | 0.329 | -0.056, CI [-0.133, +0.015] |
+
+On the same tasks the baselines scored BM25 0.278, BGE-m3 dense 0.351, hybrid 0.366 and Graphify 0.178.
+
 ## Decision drivers
 
 - Retrieval quality on externally labelled data, weighted towards the memory suites, where the gains were largest.
@@ -43,6 +53,7 @@ Every figure below is from the RFC-0003 dev split at commit d7492fc or later (th
 
 - Existing indexes re-embed on the next `ai index`: the file-state salt includes the embedder identity (`watching/file_tracker.py`).
 - SciFact nDCG@10 is 0.024 lower than with MiniLM plus the cross-encoder. Against BM25 the dev margin is +0.024, CI [-0.019, +0.068], so the pre-registered non-inferiority hypothesis H2 is at risk on the test split.
+- On code the cross-encoder is neutral within the dev noise (-0.034 fn_hit, CI crossing zero); it stays on because the memory suites gain 0.06 or more. The graph channel lowered both fn_hit and file nDCG@10 on dev and stays off.
 - BGE-m3 dense retrieval stays ahead on LongMemEval (0.874 against 0.794). Closing that gap needs a larger embedder: in a dense-only probe on 40 LongMemEval dev cases, bge-small reached 0.798 against BGE-m3's 0.900, and nomic-embed-text-v1.5 embedded about 1.5 turns per second on a loaded CPU, too slow as a default for code repositories.
 
 ## Confirmation
