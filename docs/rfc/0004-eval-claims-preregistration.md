@@ -62,7 +62,7 @@ Working without a tool is tested where it is meaningful: C1 (full history in the
 - One model for all ingestion and answering: `claude-haiku-4-5-20251001`. One judge for every arm: `claude-sonnet-5`, checked against a second judge from another model family and against a person's review of 100 sampled verdicts.
 - One agent model for C3, `claude-sonnet-5`, with the same prompt, turn limit and tools apart from the one under test.
 - Calls that stand in for a direct API call (ingestion, answering, judging) run without extended thinking, as the API does by default. The Claude Code CLI turns thinking on unless told otherwise, so these calls switch it off. C3's agent runs are Claude Code sessions and keep its defaults.
-- One embedding model (BGE-m3) wherever a tool allows the choice.
+- One embedding model (BGE-m3) for every tool we configure. `inquiry` runs as shipped (frozen), with its default `BAAI/bge-small-en-v1.5`; the memory tools get BGE-m3, the larger model.
 - One context budget for every retrieval arm in C1 and C2: 2,000 tokens, counted by one tokenizer. The no-tool arm has no budget by definition; its cost is what it pays for that.
 - One answer prompt for every arm, neutral about whether the context is excerpts, facts or notes.
 - Each competitor runs at its documented defaults, configured the way its own benchmark code configures it: `mem0ai/memory-benchmarks` for mem0, Cognee's `eval_framework`, Graphify's `graphify update` and `query`. Our adapter code and each tool's exact version are published with the results.
@@ -92,6 +92,35 @@ Working without a tool is tested where it is meaningful: C1 (full history in the
 - **Time.**
   - Wall-clock time is measured at one fixed concurrency for every tool.
   - LLM time is the sum of provider-reported API durations. Calls made through the Claude Code CLI carry a fixed per-call overhead (its system prompt and start-up), measured once on an empty prompt and subtracted from token counts and time.
+
+## Pre-run corrections (2026-09-27, before any C1, C2 or C3 run)
+
+An implementation review found these before any claim ran:
+
+- **Leaked labels.** In LongMemEval-S every session that holds an answer has an ID beginning `answer_` (948 of 948), and no other session does (0 of 22,919). Every haystack shown to a tool or an answerer now uses opaque per-haystack IDs (`s000`, `s001`, ...). Earlier LongMemEval runs, including the `e32fb55` Level A test run, showed those IDs to every arm alike.
+- **Build health.** A memory-tool build is retried up to three times for infrastructure failures (timeouts, rate limits), then refused on any failed LLM call, any reply from a different model, or unparseable JSON replies above 1% of its calls.
+- **Infrastructure failures.** Failures caused by timeouts or rate limits are recorded as such. A comparison is invalid when either arm has more than 5% of them, and an invalid comparison supports no claim.
+- **Time.**
+  - C1: an item's time is its haystack's build and query wall-clock plus the answer call's API time. Query time is measured after the tool's client is open, as for `inquiry`. LLM API time is reported separately.
+  - C2: an item's time is one cold command-line query per tool (`ai search`, `graphify query`).
+  - C3: a run's wall-clock.
+  - Builds run once. Each tool keeps its own persistent caches (`inquiry`'s content-hash embedding cache is a product feature), and the shim reports cache hits per build.
+- **Cost.**
+  - C1 attributes each haystack's build cost to its question.
+  - C3 prices every model a Claude Code session used.
+- **Graphify** builds with its documented `graphify update .` (AST, clustering and report, no LLM), and the C3 agent sees its whole `graphify-out/`.
+- **C3 scoring.**
+  - Only the first five `path:line` pairs count, after stripping any absolute prefix naming the working tree or the snapshot.
+  - The prompt allows 13 tool calls, keeping the fourteenth turn for the answer.
+  - A tool counts as used when its own command ran without error. Any other Bash command that ran is reported.
+- **Judging.**
+  - A verdict is correct when the judge's reply contains "yes", as in LongMemEval's scorer.
+  - The check judge must label at least 95% of answers for a test run to stand.
+  - Each C1 run writes a seeded sample of 100 verdicts for a person to review.
+- **Prebuilt indexes.** Indexes and memory builds for test corpora may be built before a run starts. They read no labels and produce no scores.
+- **Ledger.**
+  - A test run commits its start entry before any work.
+  - A test run refuses to start unless `inquiry`'s `code_hash` is `a45c43efd352e8db` and no configuration override is set.
 
 ## Statistics and sample sizes
 
