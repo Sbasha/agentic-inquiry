@@ -8,7 +8,8 @@
 |---|-------|--------|
 | [0001](0001-golden-bench.md) | Golden bench: pin recall@10 + latency | accepted; superseded as a quality gate by 0003 |
 | [0002](0002-afp-lifecycle-contract.md) | AFP lifecycle contract: capabilities, integration hook, mcp | accepted |
-| [0003](0003-eval-harness-and-competitor-parity.md) | Evaluation harness and competitor parity | accepted |
+| [0003](0003-eval-harness-and-competitor-parity.md) | Evaluation harness and competitor parity | accepted; superseded for test runs by 0004 |
+| [0004](0004-eval-claims-preregistration.md) | Claims, benchmarks and pre-registration for comparing Agentic Inquiry | accepted |
 
 ## Adding a new RFC
 

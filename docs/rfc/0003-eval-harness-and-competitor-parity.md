@@ -1,6 +1,6 @@
 # RFC-0003: Evaluation harness and competitor parity
 
-- **Status:** Accepted
+- **Status:** Accepted; superseded by RFC-0004 for all test runs after 2026-09-27
 - **Author:** Sbasha
 - **Approver:** Sbasha
 - **Date opened:** 2026-09-26
