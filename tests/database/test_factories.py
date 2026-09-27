@@ -9,6 +9,8 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
+from collections.abc import AsyncIterator
+
 from agentic_inquiry.config import Config
 from agentic_inquiry.database.factories import (
     create_event_store,
@@ -18,6 +20,19 @@ from agentic_inquiry.database.factories import (
 from agentic_inquiry.database.lancedb_manager import LanceDBManager
 from agentic_inquiry.events.store import EventStore
 from agentic_inquiry.watching.file_tracker import FileTracker
+
+
+@pytest.fixture
+async def event_stores() -> AsyncIterator[list[EventStore]]:
+    """Collect the EventStores a test creates and close them afterwards.
+
+    Each store holds an aiosqlite writer connection, which runs a non-daemon
+    thread until closed; an unclosed one blocks interpreter exit.
+    """
+    stores: list[EventStore] = []
+    yield stores
+    for store in stores:
+        await store.close()
 
 
 class TestVectorAdapterFactory:
@@ -71,20 +86,26 @@ class TestEventStoreFactory:
     """Tests for create_event_store factory."""
 
     @pytest.mark.asyncio
-    async def test_create_event_store_default(self, integration_config: Config) -> None:
+    async def test_create_event_store_default(
+        self, integration_config: Config, event_stores: list[EventStore]
+    ) -> None:
         """Test that factory creates EventStore by default."""
         event_store = await create_event_store(integration_config)
+        event_stores.append(event_store)
 
         # Should return EventStore instance
         assert isinstance(event_store, EventStore)
 
     @pytest.mark.asyncio
-    async def test_create_event_store_explicit(self, integration_config: Config) -> None:
+    async def test_create_event_store_explicit(
+        self, integration_config: Config, event_stores: list[EventStore]
+    ) -> None:
         """Test that factory creates EventStore when explicitly configured."""
         # Explicitly set backend to sqlite
         integration_config.storage.event_store_backend = "sqlite"
 
         event_store = await create_event_store(integration_config)
+        event_stores.append(event_store)
 
         # Should return EventStore instance
         assert isinstance(event_store, EventStore)
@@ -103,11 +124,13 @@ class TestEventStoreFactory:
 
     @pytest.mark.asyncio
     async def test_multiple_factory_calls_create_separate_instances(
-        self, integration_config: Config
+        self, integration_config: Config, event_stores: list[EventStore]
     ) -> None:
         """Test that multiple factory calls create separate event store instances."""
         event_store1 = await create_event_store(integration_config)
+        event_stores.append(event_store1)
         event_store2 = await create_event_store(integration_config)
+        event_stores.append(event_store2)
 
         # Should be different instances
         assert event_store1 is not event_store2
@@ -199,12 +222,13 @@ class TestFactoryIntegration:
 
     @pytest.mark.asyncio
     async def test_all_factories_create_valid_instances(
-        self, integration_config: Config
+        self, integration_config: Config, event_stores: list[EventStore]
     ) -> None:
         """Test that all factories create valid instances."""
         # Create all components via factories
         adapter = await create_vector_adapter(integration_config)
         event_store = await create_event_store(integration_config)
+        event_stores.append(event_store)
         file_tracker = await create_file_tracker(integration_config)
 
         # All should be valid instances of their respective classes
@@ -214,7 +238,7 @@ class TestFactoryIntegration:
 
     @pytest.mark.asyncio
     async def test_factories_respect_independent_backend_settings(
-        self, integration_config: Config
+        self, integration_config: Config, event_stores: list[EventStore]
     ) -> None:
         """Test that each factory respects its own backend setting."""
         # Each backend can be configured independently
@@ -225,6 +249,7 @@ class TestFactoryIntegration:
         # All factories should succeed
         adapter = await create_vector_adapter(integration_config)
         event_store = await create_event_store(integration_config)
+        event_stores.append(event_store)
         file_tracker = await create_file_tracker(integration_config)
 
         assert isinstance(adapter, LanceDBManager)

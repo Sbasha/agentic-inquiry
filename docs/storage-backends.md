@@ -21,23 +21,26 @@ storage:
   backends:
     default:
       type: lancedb
-      uri: "${storage.root}/lancedb"
+      database_path: "/data/agentic-inquiry/lancedb"
     local_sqlite:
       type: sqlite
-      path: "${storage.root}/local.db"
+      database_path: "/data/agentic-inquiry/local.db"
   vector_backend: default
   graph_backend: default
   events_backend: local_sqlite
   file_tracker_backend_v2: local_sqlite
 ```
 
-The single-provider form remains supported:
+For the `lancedb` type, `database_path` is required but not read: LanceDB always lives at `storage.root` joined with `storage.lancedb.path` (default `lancedb`), so keep the two in step. SQLite reads its `database_path`.
+
+The single-provider form still loads but is deprecated: `StorageFacade` converts it to the named form above and logs a `DeprecationWarning`. `lancedb.path` is relative to `storage.root`.
 
 ```yaml
 storage:
   root: "/data/agentic-inquiry"
+  backend: lancedb
   lancedb:
-    uri: "${storage.root}/lancedb"
+    path: "lancedb"
 ```
 
 The registry in `agentic_inquiry/storage/registry.py` maps `(backend type, role)` to a provider class. `StorageFacade` (`agentic_inquiry/storage/facade.py`) resolves each role once, owns provider lifecycle and exposes one API to indexing, search, memory and the MCP server. Consumers query `ProviderCapabilities` (`agentic_inquiry/storage/capabilities.py`) instead of testing backend type strings.

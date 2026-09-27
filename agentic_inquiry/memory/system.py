@@ -354,12 +354,17 @@ class MemorySystem:
                 logger.exception("Error in consolidation loop")
                 # Continue running despite errors
 
-    async def shutdown(self) -> None:
+    async def shutdown(self, consolidate: bool = True) -> None:
         """
         Shutdown the memory system and cleanup resources.
 
         Stops background tasks, performs final consolidation,
         and closes database connections.
+
+        Args:
+            consolidate: Run a final consolidation of every active context.
+                Pass False to only stop the background tasks, leaving stored
+                memories exactly as written.
         """
         if not self._initialized:
             logger.debug("MemorySystem not initialized, nothing to shutdown")
@@ -379,7 +384,9 @@ class MemorySystem:
         await self.context_manager.stop()
 
         # Perform final consolidation for all active contexts
-        active_contexts = self.context_manager.get_active_contexts()
+        active_contexts = (
+            self.context_manager.get_active_contexts() if consolidate else []
+        )
         if active_contexts:
             logger.info(
                 "Performing final consolidation for %d contexts",

@@ -9,7 +9,6 @@ and focuses on graph-specific operations (entities and relationships).
 
 from __future__ import annotations
 
-import asyncio
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, Dict, List, Optional, Sequence
 

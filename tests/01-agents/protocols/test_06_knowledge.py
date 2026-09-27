@@ -31,11 +31,9 @@ async def run(
     run_id: str,
     output_dir: Path,
 ) -> Dict[str, Any]:
-    from agentic_inquiry.mcp.tools.session import create_session, list_sessions
+    from agentic_inquiry.mcp.tools.session import create_session
     from agentic_inquiry.mcp.tools.search import search_knowledge
     from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
-    from agentic_inquiry.mcp.tools.info import get_project_info, get_events
-    from agentic_inquiry.mcp.tools.context import build_context
 
     results: Dict[str, Any] = {}
     issues: list = []

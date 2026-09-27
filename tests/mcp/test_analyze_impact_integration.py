@@ -7,7 +7,7 @@ import pytest_asyncio
 from unittest.mock import MagicMock, AsyncMock
 
 from agentic_inquiry.config import Config
-from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.factories import close_mcp_services, create_mcp_services
 from agentic_inquiry.mcp.tools.analysis import analyze_impact
 from agentic_inquiry.models.graph_entity import GraphEntity
 from agentic_inquiry.models.graph_relationship import GraphRelationship
@@ -27,14 +27,13 @@ async def test_services(tmp_path):
     )
     
     # Mock event system to avoid actual event emission
+    event_system = services["event_system"]
     services["event_system"] = MagicMock()
     services["event_system"].emit = AsyncMock(return_value=None)
     
     yield services
-    
-    # Cleanup
-    if "storage" in services:
-        await services["storage"].close()
+
+    await close_mcp_services({**services, "event_system": event_system})
 
 
 @pytest_asyncio.fixture

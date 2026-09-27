@@ -12,8 +12,11 @@ import sys
 from pathlib import Path
 
 import pytest
+from unittest.mock import AsyncMock, Mock
 
+from agentic_inquiry.integration import reconcile as reconcile_module
 from agentic_inquiry.mcp.factories import _maintenance_tick
+from tests.helpers.assertions import aiosqlite_threads, assert_no_new_aiosqlite_threads
 
 
 def _run(
@@ -141,3 +144,90 @@ def test_tick_skips_when_the_project_lock_is_held(
         "environment_busy" in record.message or "reconcile skipped" in record.message
         for record in caplog.records
     )
+
+
+@pytest.fixture
+def consolidations(monkeypatch: pytest.MonkeyPatch) -> AsyncMock:
+    from agentic_inquiry.memory.consolidation import ConsolidationEngine
+
+    consolidate = AsyncMock()
+    monkeypatch.setattr(ConsolidationEngine, "consolidate", consolidate)
+    return consolidate
+
+
+def test_tick_releases_the_runtime_without_consolidating(
+    queued: tuple[Path, Path], consolidations: AsyncMock
+) -> None:
+    home, project = queued
+    before = aiosqlite_threads()
+
+    asyncio.run(_maintenance_tick(None, None, str(project)))
+
+    assert _row(home, project)["state"] == "committed"
+    consolidations.assert_not_awaited()
+    assert_no_new_aiosqlite_threads(before)
+
+
+def test_failed_row_still_releases_the_runtime(
+    queued: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, project = queued
+    monkeypatch.setattr(
+        reconcile_module,
+        "_commit_one",
+        AsyncMock(return_value=("failed", {"outcome": "failed", "memory_ids": []}, None)),
+    )
+    before = aiosqlite_threads()
+
+    result = asyncio.run(reconcile_module.reconcile(str(project), lock_timeout=0))
+
+    assert result["failed"] == 1
+    assert_no_new_aiosqlite_threads(before)
+
+
+def test_raising_commit_still_releases_the_runtime(
+    queued: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, project = queued
+    monkeypatch.setattr(
+        reconcile_module, "_commit_one", AsyncMock(side_effect=RuntimeError("commit failed"))
+    )
+    before = aiosqlite_threads()
+
+    with pytest.raises(RuntimeError, match="commit failed"):
+        asyncio.run(reconcile_module.reconcile(str(project), lock_timeout=0))
+
+    assert_no_new_aiosqlite_threads(before)
+
+
+def test_failing_memory_shutdown_still_closes_storage(
+    queued: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from agentic_inquiry.memory.system import MemorySystem
+
+    home, project = queued
+    monkeypatch.setattr(
+        MemorySystem, "shutdown", AsyncMock(side_effect=RuntimeError("shutdown failed"))
+    )
+    before = aiosqlite_threads()
+
+    asyncio.run(_maintenance_tick(None, None, str(project)))
+
+    assert _row(home, project)["state"] == "committed"
+    assert_no_new_aiosqlite_threads(before)
+
+
+def test_failed_runtime_setup_closes_its_storage(
+    queued: tuple[Path, Path], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _, project = queued
+    monkeypatch.setattr(
+        "agentic_inquiry.indexing.pipeline.IndexingPipeline.__init__",
+        Mock(side_effect=RuntimeError("pipeline failed")),
+    )
+    before = aiosqlite_threads()
+
+    with pytest.raises(RuntimeError, match="pipeline failed"):
+        asyncio.run(reconcile_module.reconcile(str(project), lock_timeout=0))
+
+    assert_no_new_aiosqlite_threads(before)

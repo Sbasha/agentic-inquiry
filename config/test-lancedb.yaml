@@ -4,7 +4,7 @@
 
 # Storage configuration - LanceDB backend (default)
 storage:
-  root: "./.agentic-inquiry/test"
+  root: "./.agentic-inquiry_test"
   default_project_id: "test"
 
   # Use default LanceDB backend
@@ -33,7 +33,7 @@ storage:
   vector:
     provider: "lancedb"
     lancedb:
-      path: "./.agentic-inquiry/test/lancedb"
+      path: "./.agentic-inquiry_test/lancedb"
 
   graph:
     provider: "lancedb"
@@ -44,7 +44,7 @@ storage:
   relational:
     provider: "sqlite"
     sqlite:
-      path: "./.agentic-inquiry/test/agentic-inquiry.db"
+      path: "./.agentic-inquiry_test/agentic-inquiry.db"
 
   use_facade: false
 

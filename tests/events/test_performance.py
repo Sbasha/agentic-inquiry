@@ -75,6 +75,7 @@ class TestEventEmissionLatency:
         """Test that single event emission is under 1ms."""
         # Setup
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test")
         async with system:
@@ -121,6 +122,7 @@ class TestEventEmissionLatency:
     async def test_concurrent_event_emission_latency(self, tmp_path: Path):
         """Test event emission latency under concurrent load."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test_concurrent")
         async with system:
@@ -175,6 +177,7 @@ class TestBatchWriteThroughput:
     async def test_batch_write_throughput(self, tmp_path: Path):
         """Test that batch writing achieves > 1000 events/sec."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test_throughput")
         async with system:
@@ -217,6 +220,7 @@ class TestBatchWriteThroughput:
     async def test_sustained_throughput(self, tmp_path: Path):
         """Test sustained throughput over longer period."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test_sustained")
         async with system:
@@ -365,6 +369,7 @@ class TestMemoryUsage:
     async def test_memory_usage_under_load(self, tmp_path: Path):
         """Test that memory usage stays under 10MB during normal operation."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         # Start memory tracking
         tracemalloc.start()
@@ -416,6 +421,7 @@ class TestMemoryUsage:
     async def test_queue_memory_limit(self, tmp_path: Path):
         """Test that queue doesn't grow unbounded."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test_queue")
         async with system:
@@ -455,6 +461,7 @@ class TestStressTest:
     async def test_high_volume_stress(self, tmp_path: Path):
         """Test system under high volume load."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test_stress")
         async with system:

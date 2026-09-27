@@ -14,13 +14,10 @@ from __future__ import annotations
 
 import os
 import subprocess
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 
 pytestmark = pytest.mark.integration
@@ -29,7 +26,6 @@ from agentic_inquiry.config import (
     Config,
     MCPAPIConfig,
     MCPConfig,
-    OverlayConfig,
     StorageConfig,
 )
 
@@ -280,7 +276,7 @@ def _make_commit(repo_path: Path, filename: str = "file.txt", message: str = "co
 
 def test_branch_discovery_filters_stale_branches(tmp_path):
     """discover_branches must only return branches within age cutoff (plus default)."""
-    from agentic_inquiry.indexing.branch_discovery import discover_branches, DiscoveredBranch
+    from agentic_inquiry.indexing.branch_discovery import discover_branches
 
     repo = tmp_path / "repo"
     repo.mkdir()

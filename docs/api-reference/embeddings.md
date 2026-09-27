@@ -9,8 +9,6 @@ last_updated: 2025-10-29
 
 # Embeddings API Reference
 
-> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
-
 This document provides detailed API documentation for Agentic Inquiry's embedding system, including the LocalModelEmbedder, ModelLoader, and ModelMetadata classes.
 
 ## Overview
@@ -21,90 +19,8 @@ The embedding system provides a flexible architecture for generating vector embe
 - **SentenceTransformerEmbedder** - Uses HuggingFace Sentence Transformers
 - **FastEmbedEmbedder** - Uses qdrant/fastembed (ONNX Runtime)
 - **HashingEmbedder** - Fast deterministic hashing
-- **NoOpEmbedder** - Server-side embedding (AlloyDB)
-- **RemoteEmbedder / BedrockEmbedder** - Cloud-API embedders (RFC 0003)
+- **NoOpEmbedder** - Placeholder for a provider that embeds server-side
 - **Custom embedders** - Implement your own
-
-## RemoteEmbedder + BedrockEmbedder
-
-Cloud-API embedders that call a hosted embedding endpoint client-side.
-Selected via `config.embeddings.default_provider = "bedrock"`. Pairs
-with any LOCAL-strategy backend (LanceDB, plain Postgres, RDS without
-`aws_ml`). See [RFC 0003](../rfc/0003-pluggable-embedding-providers.md)
-for the design rationale and
-[`docs/architecture/embeddings.md`](../architecture/embeddings.md#remote-embedders)
-for the runtime flow.
-
-### Quick start
-
-```yaml
-embeddings:
-  default_provider: bedrock
-  default_dimensions: 1024
-  bedrock:
-    model_id: amazon.titan-embed-text-v2:0
-    region: us-east-1            # required when provider == bedrock
-    output_dim: 1024              # 256 | 512 | 1024 for Titan v2
-    normalize: true
-    request_concurrency: 4        # parallel InvokeModel calls
-```
-
-Install the optional extra:
-
-```bash
-pip install 'agentic-inquiry[aws]'
-```
-
-AWS credentials use the standard boto3 provider chain (env vars,
-`AWS_PROFILE`, EC2 / ECS / Lambda role). The embedder doesn't shadow
-those — set them outside the agentic-inquiry config.
-
-### `BedrockConfig` fields
-
-| Field | Default | Purpose |
-|---|---|---|
-| `model_id` | `amazon.titan-embed-text-v2:0` | Bedrock model id |
-| `region` | `None` (required at runtime) | AWS region |
-| `output_dim` | `1024` | Titan v2: 256 / 512 / 1024 |
-| `normalize` | `true` | Request L2-normalized vectors |
-| `batch_size` | `16` | User-facing chunk size (effective per-call batch is `min(batch_size, _max_inputs_per_request)`) |
-| `max_retries` | `3` | Retries on `ThrottlingException` / `ServiceQuotaExceededException` |
-| `timeout_seconds` | `30.0` | boto3 read/connect timeout |
-| `request_concurrency` | `1` | Parallel `InvokeModel` calls. **Default 1 means serial — you almost certainly want to raise this for real corpora.** Titan v2 is one-input-per-call, so concurrency directly multiplies throughput. Bound by Bedrock RPM quota (Titan v2 default 2000 RPM in `us-east-1` ≈ 16-32 safe across most accounts; check the AWS console). |
-
-### Env-var overrides
-
-Per the `AI_<SECTION>_<SUBSECTION>_<FIELD>` convention:
-
-| Variable | Maps to |
-|---|---|
-| `INQUIRY_EMBEDDINGS_BEDROCK_MODEL_ID` | `embeddings.bedrock.model_id` |
-| `INQUIRY_EMBEDDINGS_BEDROCK_REGION` | `embeddings.bedrock.region` |
-| `INQUIRY_EMBEDDINGS_BEDROCK_OUTPUT_DIM` | `embeddings.bedrock.output_dim` |
-| `INQUIRY_EMBEDDINGS_BEDROCK_NORMALIZE` | `embeddings.bedrock.normalize` |
-| `INQUIRY_EMBEDDINGS_BEDROCK_BATCH_SIZE` | `embeddings.bedrock.batch_size` |
-| `INQUIRY_EMBEDDINGS_BEDROCK_MAX_RETRIES` | `embeddings.bedrock.max_retries` |
-| `INQUIRY_EMBEDDINGS_BEDROCK_TIMEOUT_SECONDS` | `embeddings.bedrock.timeout_seconds` |
-| `INQUIRY_EMBEDDINGS_BEDROCK_REQUEST_CONCURRENCY` | `embeddings.bedrock.request_concurrency` |
-
-### Adding the next remote embedder
-
-`RemoteEmbedder` is the base for any cloud-API embedder. Subclass it,
-implement `_invoke(texts) -> list[list[float]]` calling the provider's
-blocking SDK, and declare:
-
-- `provider_name: ClassVar[str]` — used in metrics / logs
-- `_max_inputs_per_request: ClassVar[int]` — provider's hard cap on
-  inputs per request (Titan v2: 1, Vertex AI: 250, OpenAI: 2048)
-- `_throttle_exceptions: ClassVar[Tuple[Type[BaseException], ...]]` —
-  exception types that trigger exponential-backoff retry
-
-The base class handles batch chunking, optional thread-pool
-parallelism keyed on `request_concurrency`, retry with backoff, and
-output-dim validation. See
-[`docs/architecture/embeddings.md` § "Adding the next remote
-embedder"](../architecture/embeddings.md#adding-the-next-remote-embedder)
-for the full convention.
 
 ## LocalModelEmbedder
 
@@ -747,148 +663,7 @@ async def embed_multiple_queries(queries: List[str]):
 
 ## NoOpEmbedder
 
-The `NoOpEmbedder` class is used for server-side embedding strategies where the database generates embeddings directly. This is primarily used with AlloyDB's `text-embedding-005` model.
-
-### Class Definition
-
-```python
-from agentic_inquiry.embeddings.noop import NoOpEmbedder
-
-class NoOpEmbedder(Embedder):
-    """Embedder that returns empty vectors for server-side embedding."""
-```
-
-### Constructor
-
-```python
-def __init__(self, ndims: int = 768) -> None:
-    """Initialize no-op embedder.
-
-    Args:
-        ndims: Expected embedding dimensions (default 768 for text-embedding-005).
-               Used for validation only - actual embeddings are generated server-side.
-    """
-```
-
-### Methods
-
-#### generate()
-
-```python
-def generate(self, texts: List[str]) -> List[List[float]]:
-    """Generate empty embeddings (server-side embedding).
-
-    Args:
-        texts: List of text strings (ignored).
-
-    Returns:
-        List of empty vectors, one per input text.
-
-    Example:
-        >>> embedder = NoOpEmbedder(ndims=768)
-        >>> texts = ["function definition", "class implementation"]
-        >>> embeddings = embedder.generate(texts)
-        >>> len(embeddings)
-        2
-        >>> embeddings[0]
-        []
-    """
-```
-
-### Usage Example
-
-```python
-from agentic_inquiry.embeddings.noop import NoOpEmbedder
-from agentic_inquiry.embeddings.registry import embedding_registry
-from agentic_inquiry.storage.config import BackendConfig
-from agentic_inquiry.config import Config
-
-# Configure for AlloyDB server-side embedding
-embedder = NoOpEmbedder(ndims=768)
-embedding_registry.configure_default_embedder(embedder, ndims=768)
-
-# Create config with server-side embedding strategy
-config = Config.load()
-config.storage.backend = "alloydb"
-config.storage.embedding_strategy = "server_side"
-config.storage.embedding_model = "text-embedding-005"
-config.storage.embedding_dim = 768
-
-# Storage facade will automatically use server-side embedding
-from agentic_inquiry.storage.facade import StorageFacade
-storage = await StorageFacade.from_config(config, project_id="my-project")
-```
-
-### When to Use
-
-Use `NoOpEmbedder` when:
-- Using AlloyDB with `google_ml_integration` extension
-- `embedding_strategy="server_side"` in config
-- Want to offload embedding computation to the database
-- Need high throughput indexing (16+ files/sec)
-
-## Server-Side Embedding
-
-### Configuration
-
-Server-side embedding is configured at the storage backend level:
-
-```yaml
-storage:
-  backend: "alloydb"
-  embedding_strategy: "server_side"  # "local" or "server_side"
-  embedding_model: "text-embedding-005"  # AlloyDB model
-  embedding_dim: 768  # Dimensions for text-embedding-005
-
-  # GCP-specific settings
-  gcp_project_id: "my-project"
-  gcp_region: "us-central1"
-  gcp_instance: "my-instance"
-```
-
-### Automatic Embedding Generation
-
-For AlloyDB backends with server-side embedding, the pipeline automatically triggers embedding generation after indexing completes:
-
-```python
-from agentic_inquiry.indexing.pipeline import IndexingPipeline
-
-# Pipeline automatically calls generate_embeddings() after indexing
-pipeline = IndexingPipeline(db_manager=storage, config=config, project_id="my-project")
-
-# Index directory (embeddings generated automatically)
-await pipeline.index_directory(path="/path/to/code", wait=True)
-
-# Or generate embeddings manually using the provider's generate_embeddings() method
-await storage.vector_provider.generate_embeddings()
-await storage.graph_provider.generate_embeddings()
-```
-
-The `generate_embeddings()` method uses AlloyDB's `ai.initialize_embeddings()` procedure when all rows have `NULL` embeddings (~400/sec). For tables with mixed NULL/non-NULL embeddings, it falls back to per-row `embedding()` updates (~25/sec).
-
-### Performance Characteristics
-
-| Strategy | Speed | Dependencies | Use Case | Notes |
-|----------|-------|--------------|----------|-------|
-| `local` | Varies by hardware | SentenceTransformer, ONNX | Local dev, small projects | 50-200/sec typical on modern hardware |
-| `server_side` | 16+ files/sec | AlloyDB, GCP | Production, large codebases | `ai.initialize_embeddings()` ~400/sec, per-row fallback ~25/sec |
-
-### Vector Search with Server-Side Embedding
-
-When using server-side embedding, pass raw query text (not vectors) to search:
-
-```python
-from agentic_inquiry.search.service import SearchService
-
-search = SearchService(storage=storage, config=config)
-
-# Pass query as string (database generates embedding)
-results = await search.hybrid_search(
-    query_vector="how to configure storage",  # String, not vector
-    query_fts="storage configuration",
-    limit=10
-)
-```
+`agentic_inquiry.embeddings.noop.NoOpEmbedder` satisfies the `Embedder` interface without loading a model and returns zero vectors. The embeddings factory configures it when the provider's `ProviderCapabilities` or the backend's `embedding_strategy` setting is `server_side`. No shipped provider embeds server-side, so setting `embedding_strategy: server_side` on a shipped backend makes indexing store zero vectors. The server-side seam is described under "Embedding placement" in [storage-backends.md](../storage-backends.md).
 
 ## Environment Variables
 
@@ -900,21 +675,12 @@ Override configuration with environment variables:
 | `INQUIRY_EMBEDDINGS_LOCAL_MODEL_PATH` | string | Path to model directory |
 | `INQUIRY_EMBEDDINGS_LOCAL_NORMALIZE` | boolean | Enable normalization |
 | `INQUIRY_EMBEDDINGS_LOCAL_BATCH_SIZE` | integer | Batch size for inference |
-| `INQUIRY_STORAGE_EMBEDDING_STRATEGY` | string | "local" or "server_side" |
-| `INQUIRY_STORAGE_EMBEDDING_MODEL` | string | Model name for server-side |
-| `INQUIRY_STORAGE_EMBEDDING_DIM` | integer | Embedding dimensions |
 
 **Example:**
 ```bash
 # Local embedding
 export INQUIRY_EMBEDDINGS_PROVIDER=local
 export INQUIRY_EMBEDDINGS_LOCAL_MODEL_PATH=models/all-MiniLM-L6-v2
-
-# Server-side embedding (AlloyDB)
-export INQUIRY_STORAGE_BACKEND=alloydb
-export INQUIRY_STORAGE_EMBEDDING_STRATEGY=server_side
-export INQUIRY_STORAGE_EMBEDDING_MODEL=text-embedding-005
-export INQUIRY_STORAGE_EMBEDDING_DIM=768
 ```
 
 ## See Also
