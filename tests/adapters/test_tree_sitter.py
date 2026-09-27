@@ -5,6 +5,7 @@ and that our assumptions about AST structure are correct.
 
 Run with: pytest tests/adapters/test_tree_sitter.py -v
 """
+
 from __future__ import annotations
 
 import pytest
@@ -137,7 +138,7 @@ class TestNodeNavigation:
         name_node = func.child_by_field_name("name")
 
         # Extract text using byte range
-        name_text = code[name_node.start_byte:name_node.end_byte].decode()
+        name_text = code[name_node.start_byte : name_node.end_byte].decode()
         assert name_text == "hello_world"
 
 
@@ -231,5 +232,5 @@ class TestPositionTracking:
         assign = expr.children[0]
         target = assign.child_by_field_name("left")
 
-        extracted = code[target.start_byte:target.end_byte]
+        extracted = code[target.start_byte : target.end_byte]
         assert extracted == b"variable"

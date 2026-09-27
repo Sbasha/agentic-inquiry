@@ -28,13 +28,9 @@ class OnboardArtifactStorage(Protocol):
         self, project_id: str, run_id: str, report_name: str
     ) -> str: ...
 
-    async def list_reports(
-        self, project_id: str, run_id: str
-    ) -> List[str]: ...
+    async def list_reports(self, project_id: str, run_id: str) -> List[str]: ...
 
-    async def delete_run_artifacts(
-        self, project_id: str, run_id: str
-    ) -> int: ...
+    async def delete_run_artifacts(self, project_id: str, run_id: str) -> int: ...
 
 
 class LocalOnboardArtifactStorage:
@@ -81,9 +77,7 @@ class LocalOnboardArtifactStorage:
         logger.debug("Saved report: %s", report_path)
         return str(report_path)
 
-    async def load_report(
-        self, project_id: str, run_id: str, report_name: str
-    ) -> str:
+    async def load_report(self, project_id: str, run_id: str, report_name: str) -> str:
         """Load a report from local filesystem.
 
         Raises:
@@ -96,9 +90,7 @@ class LocalOnboardArtifactStorage:
 
         return await asyncio.to_thread(report_path.read_text, encoding="utf-8")
 
-    async def list_reports(
-        self, project_id: str, run_id: str
-    ) -> List[str]:
+    async def list_reports(self, project_id: str, run_id: str) -> List[str]:
         """List report names for a run."""
         run_dir = self._get_run_dir(project_id, run_id)
 
@@ -107,9 +99,7 @@ class LocalOnboardArtifactStorage:
 
         return sorted(p.stem for p in run_dir.glob("*.md"))
 
-    async def delete_run_artifacts(
-        self, project_id: str, run_id: str
-    ) -> int:
+    async def delete_run_artifacts(self, project_id: str, run_id: str) -> int:
         """Delete all artifacts for a run.
 
         Returns:
@@ -173,6 +163,7 @@ class GCSOnboardArtifactStorage:
         """Lazy-initialize gcsfs filesystem."""
         if self._fs is None:
             import gcsfs
+
             self._fs = gcsfs.GCSFileSystem(**self._storage_options)
         return self._fs
 
@@ -197,9 +188,7 @@ class GCSOnboardArtifactStorage:
         logger.debug("Saved report to GCS: gs://%s", report_path)
         return f"gs://{report_path}"
 
-    async def load_report(
-        self, project_id: str, run_id: str, report_name: str
-    ) -> str:
+    async def load_report(self, project_id: str, run_id: str, report_name: str) -> str:
         """Load report from GCS.
 
         Raises:
@@ -216,9 +205,7 @@ class GCSOnboardArtifactStorage:
         except FileNotFoundError:
             raise FileNotFoundError(f"Report not found: gs://{report_path}")
 
-    async def list_reports(
-        self, project_id: str, run_id: str
-    ) -> List[str]:
+    async def list_reports(self, project_id: str, run_id: str) -> List[str]:
         """List report names for a run in GCS."""
         run_path = self._get_run_path(project_id, run_id)
 
@@ -232,9 +219,7 @@ class GCSOnboardArtifactStorage:
         reports = await asyncio.to_thread(_list)
         return sorted(reports)
 
-    async def delete_run_artifacts(
-        self, project_id: str, run_id: str
-    ) -> int:
+    async def delete_run_artifacts(self, project_id: str, run_id: str) -> int:
         """Delete all artifacts for a run in GCS."""
         run_path = self._get_run_path(project_id, run_id)
 
@@ -273,7 +258,9 @@ def create_onboard_artifact_storage(
         RuntimeError: If GCS initialization fails.
     """
     onboard_cfg = getattr(config, "onboard", None)
-    artifact_cfg = getattr(onboard_cfg, "artifact_storage", None) if onboard_cfg else None
+    artifact_cfg = (
+        getattr(onboard_cfg, "artifact_storage", None) if onboard_cfg else None
+    )
 
     # Determine storage type from new config structure
     storage_type = getattr(artifact_cfg, "type", "local") if artifact_cfg else "local"
@@ -288,7 +275,11 @@ def create_onboard_artifact_storage(
                 storage_type = "gcs"
 
     if storage_type == "gcs" and gcs_bucket:
-        gcs_prefix = getattr(artifact_cfg, "gcs_prefix", "onboard/") if artifact_cfg else "onboard/"
+        gcs_prefix = (
+            getattr(artifact_cfg, "gcs_prefix", "onboard/")
+            if artifact_cfg
+            else "onboard/"
+        )
         # Strip trailing slash for consistency
         gcs_prefix = gcs_prefix.rstrip("/") or "onboard"
 
@@ -303,7 +294,11 @@ def create_onboard_artifact_storage(
         )
 
     # Local storage — use configured local_path, resolve relative to storage root
-    local_path = getattr(artifact_cfg, "local_path", "test_results/onboard") if artifact_cfg else "test_results/onboard"
+    local_path = (
+        getattr(artifact_cfg, "local_path", "test_results/onboard")
+        if artifact_cfg
+        else "test_results/onboard"
+    )
     base_path = Path(local_path)
     if not base_path.is_absolute():
         base_path = Path(config.storage.root) / local_path

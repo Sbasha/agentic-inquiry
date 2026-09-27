@@ -36,7 +36,9 @@ def _retrieval_result(content: str, category: str) -> RetrievalResult:
         modifier_agent_id="rest_api",
         metadata={"category": category, "file_paths": ["auth.py"]},
     )
-    return RetrievalResult(item=item, relevance_score=0.9, retrieval_tier=MemoryTier.EPISODIC)
+    return RetrievalResult(
+        item=item, relevance_score=0.9, retrieval_tier=MemoryTier.EPISODIC
+    )
 
 
 def _build_test_app() -> tuple[FastAPI, MagicMock]:
@@ -81,9 +83,7 @@ def test_store_reaches_memory_system() -> None:
 def test_recall_returns_memory_system_results() -> None:
     app, memory_system = _build_test_app()
 
-    response = TestClient(app).post(
-        "/api/v1/memory/recall", json={"query": "auth"}
-    )
+    response = TestClient(app).post("/api/v1/memory/recall", json={"query": "auth"})
 
     assert response.status_code == 200
     body = response.json()

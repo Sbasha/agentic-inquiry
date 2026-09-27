@@ -65,10 +65,10 @@ class SQLiteEventProvider(SQLiteEventStorage):
         # Handle 'path' and 'database_path' aliases for 'db_path' from configuration
         if db_path is None:
             db_path = kwargs.get("path") or kwargs.get("database_path")
-            
+
         if db_path is None:
             raise ValueError("db_path or path is required for SQLiteEventProvider")
-            
+
         super().__init__(db_path=db_path, project_id=project_id)
 
     async def run_maintenance(self) -> Dict[str, Any]:

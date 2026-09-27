@@ -6,6 +6,7 @@ thread safety under contention, and the ``max_entries=0`` pass-through.
 No torch / sentence-transformers needed — uses a ``SpyEmbedder`` that
 records calls and returns deterministic vectors.
 """
+
 from __future__ import annotations
 
 import threading

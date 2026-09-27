@@ -30,7 +30,7 @@ async def index_files(
     session_id: str,
     file_paths: List[str],
     force_reindex: bool = False,
-    parser_options: Optional[Dict[str, Any]] = None
+    parser_options: Optional[Dict[str, Any]] = None,
 ) -> dict:
     """Index specific files with granular control.
 
@@ -71,7 +71,7 @@ async def index_files(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -84,10 +84,15 @@ async def index_files(
     # Onboard gate check (missing onboard is a warning, not a block)
     try:
         metadata_svc = await OnboardMetadataService.from_config(
-            config, workspace=str(project_root), project_id=project_id,
+            config,
+            workspace=str(project_root),
+            project_id=project_id,
         )
         staleness = await check_onboard_gate(
-            metadata_svc, project_root, config, skip_gate=force_reindex,
+            metadata_svc,
+            project_root,
+            config,
+            skip_gate=force_reindex,
         )
         if staleness and staleness.is_stale:
             logger.warning("Onboard stale during index_files: %s", staleness.message)
@@ -108,7 +113,7 @@ async def index_files(
         return {
             "status": "failed",
             "error": "file_paths must be a non-empty list of file paths",
-            "error_type": "validation_error"
+            "error_type": "validation_error",
         }
 
     # Create indexing pipeline
@@ -116,7 +121,7 @@ async def index_files(
         "db_manager": db_manager,
         "config": config,
         "project_id": project_id,
-        "event_system": event_system
+        "event_system": event_system,
     }
     if hasattr(db_manager, "embedding_registry"):
         pipeline_kwargs["registry"] = db_manager.embedding_registry
@@ -129,7 +134,7 @@ async def index_files(
         source="mcp_tool",
         tool_name="index_files",
         session_id=session_id,
-        file_count=len(file_paths)
+        file_count=len(file_paths),
     )
 
     # Process each file
@@ -145,32 +150,40 @@ async def index_files(
         try:
             # Validate path for security
             try:
-                file_path = validate_file_path(file_path_str, project_root, must_exist=False)
+                file_path = validate_file_path(
+                    file_path_str, project_root, must_exist=False
+                )
             except PathValidationError as e:
                 failed_count += 1
-                error_results.append({
-                    "file": file_path_str,
-                    "error": "path_validation",
-                    "message": str(e)
-                })
+                error_results.append(
+                    {
+                        "file": file_path_str,
+                        "error": "path_validation",
+                        "message": str(e),
+                    }
+                )
                 continue
 
             if not file_path.exists():
                 failed_count += 1
-                error_results.append({
-                    "file": file_path_str,
-                    "error": "file_not_found",
-                    "message": f"File not found: {file_path}"
-                })
+                error_results.append(
+                    {
+                        "file": file_path_str,
+                        "error": "file_not_found",
+                        "message": f"File not found: {file_path}",
+                    }
+                )
                 continue
 
             if not file_path.is_file():
                 failed_count += 1
-                error_results.append({
-                    "file": file_path_str,
-                    "error": "not_a_file",
-                    "message": f"Path is not a file: {file_path}"
-                })
+                error_results.append(
+                    {
+                        "file": file_path_str,
+                        "error": "not_a_file",
+                        "message": f"Path is not a file: {file_path}",
+                    }
+                )
                 continue
 
             # Check if already indexed (unless force_reindex)
@@ -180,21 +193,22 @@ async def index_files(
                         table_name="document_chunks",
                         filters=file_path_filter(str(file_path)),
                         limit=1,
-                        project_id=project_id
+                        project_id=project_id,
                     )
                     if existing:
                         skipped_count += 1
-                        file_results.append({
-                            "file": file_path_str,
-                            "status": "skipped",
-                            "reason": "already_indexed"
-                        })
+                        file_results.append(
+                            {
+                                "file": file_path_str,
+                                "status": "skipped",
+                                "reason": "already_indexed",
+                            }
+                        )
                         continue
                 except Exception as e:
                     # S5-002: Log table access failure (likely table doesn't exist yet)
                     logger.debug(
-                        "Could not check existing index for '%s': %s",
-                        file_path_str, e
+                        "Could not check existing index for '%s': %s", file_path_str, e
                     )
 
             # Parse and index
@@ -207,20 +221,20 @@ async def index_files(
             await indexing_pipeline.process_document(parsed_doc)
 
             indexed_count += 1
-            file_results.append({
-                "file": file_path_str,
-                "status": "indexed",
-                "chunks": len(parsed_doc.chunks)
-            })
+            file_results.append(
+                {
+                    "file": file_path_str,
+                    "status": "indexed",
+                    "chunks": len(parsed_doc.chunks),
+                }
+            )
 
         except Exception as e:
             logger.error("Failed to index file %s: %s", file_path_str, e)
             failed_count += 1
-            error_results.append({
-                "file": file_path_str,
-                "error": type(e).__name__,
-                "message": str(e)
-            })
+            error_results.append(
+                {"file": file_path_str, "error": type(e).__name__, "message": str(e)}
+            )
 
     # Flush pending relationships
     relationships_created = await indexing_pipeline.flush_pending_relationships()
@@ -242,7 +256,7 @@ async def index_files(
         tool_name="index_files",
         session_id=session_id,
         indexed=indexed_count,
-        failed=failed_count
+        failed=failed_count,
     )
 
     return {
@@ -252,7 +266,7 @@ async def index_files(
         "skipped": skipped_count,
         "files": file_results,
         "errors": error_results,
-        "relationships_created": relationships_created
+        "relationships_created": relationships_created,
     }
 
 
@@ -262,7 +276,7 @@ async def search_code(
     query: str,
     language: Optional[str] = None,
     symbol_type: Optional[str] = None,
-    limit: int = 20
+    limit: int = 20,
 ) -> dict:
     """Code-only search with syntax awareness.
 
@@ -293,7 +307,7 @@ async def search_code(
         validate_limit,
         validate_query_length,
         create_validation_error_response,
-        QueryValidationError
+        QueryValidationError,
     )
 
     session_manager = services["session_manager"]
@@ -311,25 +325,21 @@ async def search_code(
             context={"session_id": session_id},
             provided_value=query[:100] if query else None,
             expected_type="non-empty string (max 10,000 chars)",
-            example='query="authentication"'
+            example='query="authentication"',
         )
 
     # Validate parameters
     try:
         limit = validate_limit(limit, min_value=1, max_value=100)
     except ValueError as e:
-        return {
-            "status": "failed",
-            "error": str(e),
-            "error_type": "validation_error"
-        }
+        return {"status": "failed", "error": str(e), "error_type": "validation_error"}
 
     # Validate session
     if not await session_manager.validate_session(session_id):
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -343,7 +353,7 @@ async def search_code(
         source="mcp_tool",
         tool_name="search_code",
         session_id=session_id,
-        query=query
+        query=query,
     )
 
     try:
@@ -363,38 +373,43 @@ async def search_code(
             query_fts=query,
             project_id=project_id,
             limit=limit * 2,  # Get extra to filter by symbol_type
-            filters=filters
+            filters=filters,
         )
 
         # Filter by symbol_type if specified
         if symbol_type and results:
             symbol_type_lower = symbol_type.lower()
             results = [
-                r for r in results
+                r
+                for r in results
                 if any(
                     s.lower() == symbol_type_lower or symbol_type_lower in s.lower()
                     for s in (r.data.get("symbols") or [])
-                ) or r.data.get("entity_type", "").lower() == symbol_type_lower
+                )
+                or r.data.get("entity_type", "").lower() == symbol_type_lower
             ]
 
         # Format results
         formatted_results = []
         for result in results[:limit]:
-            formatted_results.append({
-                "file_path": result.data.get("file_path", ""),
-                "content": result.data.get("content", ""),
-                "score": result.score,
-                "line_start": result.data.get("line_start"),
-                "line_end": result.data.get("line_end"),
-                "language": result.data.get("language"),
-                "symbols": result.data.get("symbols", []),
-                "entity_type": result.data.get("entity_type"),
-                "entity_name": result.data.get("entity_name"),
-                "metadata": {
-                    k: v for k, v in (result.data.get("metadata") or {}).items()
-                    if k in {"complexity", "imports", "decorators"}
+            formatted_results.append(
+                {
+                    "file_path": result.data.get("file_path", ""),
+                    "content": result.data.get("content", ""),
+                    "score": result.score,
+                    "line_start": result.data.get("line_start"),
+                    "line_end": result.data.get("line_end"),
+                    "language": result.data.get("language"),
+                    "symbols": result.data.get("symbols", []),
+                    "entity_type": result.data.get("entity_type"),
+                    "entity_name": result.data.get("entity_name"),
+                    "metadata": {
+                        k: v
+                        for k, v in (result.data.get("metadata") or {}).items()
+                        if k in {"complexity", "imports", "decorators"}
+                    },
                 }
-            })
+            )
 
         search_time_ms = int((time.time() - start_time) * 1000)
 
@@ -404,32 +419,26 @@ async def search_code(
             source="mcp_tool",
             tool_name="search_code",
             session_id=session_id,
-            count=len(formatted_results)
+            count=len(formatted_results),
         )
 
         return {
             "results": formatted_results,
             "total": len(formatted_results),
             "query": query,
-            "filters": {
-                "language": language,
-                "symbol_type": symbol_type
-            },
-            "search_time_ms": search_time_ms
+            "filters": {"language": language, "symbol_type": symbol_type},
+            "search_time_ms": search_time_ms,
         }
 
     except Exception as e:
         await event_system.emit(
-            "mcp.tool.failed",
-            source="mcp_tool",
-            tool_name="search_code",
-            error=str(e)
+            "mcp.tool.failed", source="mcp_tool", tool_name="search_code", error=str(e)
         )
         logger.error("Failed to search code: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
             error=e,
             context={"session_id": session_id, "query": query},
-            services=services
+            services=services,
         )
 
 
@@ -438,7 +447,7 @@ async def search_docs(
     session_id: str,
     query: str,
     doc_type: Optional[str] = None,
-    limit: int = 20
+    limit: int = 20,
 ) -> dict:
     """Documentation-only search.
 
@@ -467,7 +476,7 @@ async def search_docs(
         validate_limit,
         validate_query_length,
         create_validation_error_response,
-        QueryValidationError
+        QueryValidationError,
     )
 
     session_manager = services["session_manager"]
@@ -485,25 +494,21 @@ async def search_docs(
             context={"session_id": session_id},
             provided_value=query[:100] if query else None,
             expected_type="non-empty string (max 10,000 chars)",
-            example='query="authentication setup"'
+            example='query="authentication setup"',
         )
 
     # Validate parameters
     try:
         limit = validate_limit(limit, min_value=1, max_value=100)
     except ValueError as e:
-        return {
-            "status": "failed",
-            "error": str(e),
-            "error_type": "validation_error"
-        }
+        return {"status": "failed", "error": str(e), "error_type": "validation_error"}
 
     # Validate session
     if not await session_manager.validate_session(session_id):
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -517,7 +522,7 @@ async def search_docs(
         source="mcp_tool",
         tool_name="search_docs",
         session_id=session_id,
-        query=query
+        query=query,
     )
 
     try:
@@ -536,7 +541,7 @@ async def search_docs(
             query_fts=query,
             project_id=project_id,
             limit=limit * 3,  # Get extra to filter
-            boost_overview=True  # Boost README and docs
+            boost_overview=True,  # Boost README and docs
         )
 
         # Filter to documentation only
@@ -571,7 +576,11 @@ async def search_docs(
             # Filter by doc_type if specified
             if doc_type:
                 doc_type_lower = doc_type.lower()
-                if doc_type_lower == "markdown" and language != "markdown" and not file_path.endswith(".md"):
+                if (
+                    doc_type_lower == "markdown"
+                    and language != "markdown"
+                    and not file_path.endswith(".md")
+                ):
                     continue
                 if doc_type_lower == "docstring" and content_type != "DOCSTRING":
                     continue
@@ -588,16 +597,22 @@ async def search_docs(
         # Format results
         formatted_results = []
         for result in doc_results:
-            formatted_results.append({
-                "file_path": result.data.get("file_path", ""),
-                "content": result.data.get("content", ""),
-                "score": result.score,
-                "line_start": result.data.get("line_start"),
-                "line_end": result.data.get("line_end"),
-                "doc_type": result.data.get("content_type", "").lower(),
-                "section_title": result.data.get("metadata", {}).get("section_title"),
-                "heading_level": result.data.get("metadata", {}).get("heading_level")
-            })
+            formatted_results.append(
+                {
+                    "file_path": result.data.get("file_path", ""),
+                    "content": result.data.get("content", ""),
+                    "score": result.score,
+                    "line_start": result.data.get("line_start"),
+                    "line_end": result.data.get("line_end"),
+                    "doc_type": result.data.get("content_type", "").lower(),
+                    "section_title": result.data.get("metadata", {}).get(
+                        "section_title"
+                    ),
+                    "heading_level": result.data.get("metadata", {}).get(
+                        "heading_level"
+                    ),
+                }
+            )
 
         search_time_ms = int((time.time() - start_time) * 1000)
 
@@ -607,31 +622,26 @@ async def search_docs(
             source="mcp_tool",
             tool_name="search_docs",
             session_id=session_id,
-            count=len(formatted_results)
+            count=len(formatted_results),
         )
 
         return {
             "results": formatted_results,
             "total": len(formatted_results),
             "query": query,
-            "filters": {
-                "doc_type": doc_type
-            },
-            "search_time_ms": search_time_ms
+            "filters": {"doc_type": doc_type},
+            "search_time_ms": search_time_ms,
         }
 
     except Exception as e:
         await event_system.emit(
-            "mcp.tool.failed",
-            source="mcp_tool",
-            tool_name="search_docs",
-            error=str(e)
+            "mcp.tool.failed", source="mcp_tool", tool_name="search_docs", error=str(e)
         )
         logger.error("Failed to search docs: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
             error=e,
             context={"session_id": session_id, "query": query},
-            services=services
+            services=services,
         )
 
 
@@ -642,7 +652,7 @@ async def graph_traverse(
     relationship_types: Optional[List[str]] = None,
     max_depth: int = 2,
     direction: str = "both",
-    timeout_ms: Optional[int] = None
+    timeout_ms: Optional[int] = None,
 ) -> dict:
     """Custom graph navigation and relationship traversal.
 
@@ -690,7 +700,7 @@ async def graph_traverse(
         return {
             "status": "failed",
             "error": "max_depth must be between 1 and 5",
-            "error_type": "validation_error"
+            "error_type": "validation_error",
         }
 
     valid_directions = {"outbound", "inbound", "both"}
@@ -698,7 +708,7 @@ async def graph_traverse(
         return {
             "status": "failed",
             "error": f"direction must be one of: {', '.join(valid_directions)}",
-            "error_type": "validation_error"
+            "error_type": "validation_error",
         }
 
     # Validate session
@@ -706,7 +716,7 @@ async def graph_traverse(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -719,7 +729,7 @@ async def graph_traverse(
         source="mcp_tool",
         tool_name="graph_traverse",
         session_id=session_id,
-        start_id=start_id
+        start_id=start_id,
     )
 
     try:
@@ -740,7 +750,7 @@ async def graph_traverse(
                 table_name="graph_entities",
                 filters=by_id("id", start_id),
                 limit=1,
-                project_id=project_id
+                project_id=project_id,
             )
             if entities:
                 start_entity = entities[0]
@@ -755,7 +765,7 @@ async def graph_traverse(
                     table_name="graph_entities",
                     filters=eq("name", start_id),
                     limit=1,
-                    project_id=project_id
+                    project_id=project_id,
                 )
                 if entities:
                     start_entity = entities[0]
@@ -770,7 +780,7 @@ async def graph_traverse(
                     table_name="graph_entities",
                     filters={},
                     limit=1000,
-                    project_id=project_id
+                    project_id=project_id,
                 )
                 for entity in all_entities:
                     if _get_attr(entity, "name", "").lower() == start_id.lower():
@@ -779,8 +789,7 @@ async def graph_traverse(
             except Exception as e:
                 # S5-002: Log case-insensitive entity lookup failure
                 logger.debug(
-                    "Case-insensitive entity lookup for '%s' failed: %s",
-                    start_id, e
+                    "Case-insensitive entity lookup for '%s' failed: %s", start_id, e
                 )
 
         if not start_entity:
@@ -791,21 +800,21 @@ async def graph_traverse(
                 "suggestions": [
                     "Check the entity name or ID",
                     "Use list_entities() to see available entities",
-                    "Use find_similar() to search for similar entities"
-                ]
+                    "Use find_similar() to search for similar entities",
+                ],
             }
 
         # Check timeout after entity lookup
         if check_timeout():
             logger.warning(
                 "graph_traverse timed out during entity lookup after %.1fms",
-                (time.perf_counter() - start_time) * 1000
+                (time.perf_counter() - start_time) * 1000,
             )
             return {
                 "error": "timeout",
                 "message": f"Graph traversal timed out after {effective_timeout_ms}ms during entity lookup",
                 "start_id": start_id,
-                "suggestion": "Try reducing max_depth or increasing timeout_ms"
+                "suggestion": "Try reducing max_depth or increasing timeout_ms",
             }
 
         # BFS traversal
@@ -815,7 +824,9 @@ async def graph_traverse(
         visited: set = set()
         timed_out = False
 
-        start_entity_id = _get_attr(start_entity, "id") or _get_attr(start_entity, "name")
+        start_entity_id = _get_attr(start_entity, "id") or _get_attr(
+            start_entity, "name"
+        )
         start_type = _get_attr(start_entity, "type")
         nodes[start_entity_id] = {
             "id": start_entity_id,
@@ -823,7 +834,7 @@ async def graph_traverse(
             "type": start_type,
             "entity_type": start_type,
             "file_path": _get_attr(start_entity, "file_path"),
-            "depth": 0
+            "depth": 0,
         }
 
         # Queue: (entity_id, current_depth, path)
@@ -836,7 +847,9 @@ async def graph_traverse(
                 timed_out = True
                 logger.warning(
                     "graph_traverse timed out during BFS after %.1fms (nodes=%d, edges=%d)",
-                    (time.perf_counter() - start_time) * 1000, len(nodes), len(edges)
+                    (time.perf_counter() - start_time) * 1000,
+                    len(nodes),
+                    len(edges),
                 )
                 break
 
@@ -853,27 +866,27 @@ async def graph_traverse(
                         table_name="graph_relationships",
                         filters=source_id_filter(current_id),
                         limit=100,
-                        project_id=project_id
+                        project_id=project_id,
                     )
                 elif direction.lower() == "inbound":
                     relationships = await db_manager.advanced_filter(
                         table_name="graph_relationships",
                         filters=target_id_filter(current_id),
                         limit=100,
-                        project_id=project_id
+                        project_id=project_id,
                     )
                 else:  # both
                     outbound = await db_manager.advanced_filter(
                         table_name="graph_relationships",
                         filters=source_id_filter(current_id),
                         limit=100,
-                        project_id=project_id
+                        project_id=project_id,
                     )
                     inbound = await db_manager.advanced_filter(
                         table_name="graph_relationships",
                         filters=target_id_filter(current_id),
                         limit=100,
-                        project_id=project_id
+                        project_id=project_id,
                     )
                     relationships = outbound + inbound
 
@@ -881,7 +894,8 @@ async def graph_traverse(
                 if relationship_types:
                     rel_types_lower = [rt.lower() for rt in relationship_types]
                     relationships = [
-                        r for r in relationships
+                        r
+                        for r in relationships
                         if _get_attr(r, "type", "").lower() in rel_types_lower
                     ]
 
@@ -905,14 +919,16 @@ async def graph_traverse(
                         edge_direction = "inbound"
 
                     # Add edge
-                    edges.append({
-                        "source": source_id,
-                        "target": target_id,
-                        "type": rel_type,
-                        "relationship_type": rel_type,
-                        "direction": edge_direction,
-                        "metadata": _get_attr(rel, "metadata", {})
-                    })
+                    edges.append(
+                        {
+                            "source": source_id,
+                            "target": target_id,
+                            "type": rel_type,
+                            "relationship_type": rel_type,
+                            "direction": edge_direction,
+                            "metadata": _get_attr(rel, "metadata", {}),
+                        }
+                    )
 
                     # Add neighbor node if not visited
                     if neighbor_id not in visited:
@@ -925,7 +941,7 @@ async def graph_traverse(
                                 table_name="graph_entities",
                                 filters=by_id("id", neighbor_id),
                                 limit=1,
-                                project_id=project_id
+                                project_id=project_id,
                             )
                             if neighbor_entities:
                                 neighbor_entity = neighbor_entities[0]
@@ -933,7 +949,8 @@ async def graph_traverse(
                             # S5-002: Log neighbor ID lookup failure
                             logger.debug(
                                 "Neighbor entity lookup by ID '%s' failed: %s",
-                                neighbor_id, e
+                                neighbor_id,
+                                e,
                             )
 
                         if not neighbor_entity:
@@ -943,7 +960,7 @@ async def graph_traverse(
                                     table_name="graph_entities",
                                     filters=eq("name", neighbor_id),
                                     limit=1,
-                                    project_id=project_id
+                                    project_id=project_id,
                                 )
                                 if neighbor_entities:
                                     neighbor_entity = neighbor_entities[0]
@@ -951,17 +968,26 @@ async def graph_traverse(
                                 # S5-002: Log neighbor name lookup failure
                                 logger.debug(
                                     "Neighbor entity lookup by name '%s' failed: %s",
-                                    neighbor_id, e
+                                    neighbor_id,
+                                    e,
                                 )
 
-                        neighbor_type = _get_attr(neighbor_entity, "type") if neighbor_entity else "unknown"
+                        neighbor_type = (
+                            _get_attr(neighbor_entity, "type")
+                            if neighbor_entity
+                            else "unknown"
+                        )
                         nodes[neighbor_id] = {
                             "id": neighbor_id,
-                            "name": _get_attr(neighbor_entity, "name") if neighbor_entity else neighbor_id,
+                            "name": _get_attr(neighbor_entity, "name")
+                            if neighbor_entity
+                            else neighbor_id,
                             "type": neighbor_type,
                             "entity_type": neighbor_type,
-                            "file_path": _get_attr(neighbor_entity, "file_path") if neighbor_entity else None,
-                            "depth": current_depth + 1
+                            "file_path": _get_attr(neighbor_entity, "file_path")
+                            if neighbor_entity
+                            else None,
+                            "depth": current_depth + 1,
                         }
 
                         new_path = current_path + [neighbor_id]
@@ -983,7 +1009,7 @@ async def graph_traverse(
             tool_name="graph_traverse",
             session_id=session_id,
             nodes=len(nodes),
-            edges=len(edges)
+            edges=len(edges),
         )
 
         # Calculate execution time
@@ -994,7 +1020,7 @@ async def graph_traverse(
                 "id": start_entity_id,
                 "name": _get_attr(start_entity, "name"),
                 "type": _get_attr(start_entity, "type"),
-                "entity_type": _get_attr(start_entity, "type")
+                "entity_type": _get_attr(start_entity, "type"),
             },
             "nodes": list(nodes.values()),
             "edges": edges,
@@ -1003,17 +1029,19 @@ async def graph_traverse(
                 "total_nodes": len(nodes),
                 "total_edges": len(edges),
                 "total_paths": len(paths),
-                "max_depth_reached": max(n["depth"] for n in nodes.values()) if nodes else 0
+                "max_depth_reached": max(n["depth"] for n in nodes.values())
+                if nodes
+                else 0,
             },
             "parameters": {
                 "max_depth": max_depth,
                 "direction": direction,
-                "relationship_types": relationship_types
+                "relationship_types": relationship_types,
             },
             "meta": {
                 "execution_time_ms": round(execution_time_ms, 2),
-                "result_count": len(nodes) + len(edges)
-            }
+                "result_count": len(nodes) + len(edges),
+            },
         }
 
         # Add timeout warning if traversal was cut short
@@ -1021,7 +1049,7 @@ async def graph_traverse(
             result["warning"] = {
                 "message": f"Traversal timed out after {effective_timeout_ms}ms",
                 "partial_results": True,
-                "suggestion": "Increase timeout_ms or reduce max_depth for complete results"
+                "suggestion": "Increase timeout_ms or reduce max_depth for complete results",
             }
 
         return result
@@ -1031,21 +1059,18 @@ async def graph_traverse(
             "mcp.tool.failed",
             source="mcp_tool",
             tool_name="graph_traverse",
-            error=str(e)
+            error=str(e),
         )
         logger.error("Failed to traverse graph: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
             error=e,
             context={"session_id": session_id, "start_id": start_id},
-            services=services
+            services=services,
         )
 
 
 async def get_by_id(
-    services: dict,
-    session_id: str,
-    ids: List[str],
-    include_content: bool = True
+    services: dict, session_id: str, ids: List[str], include_content: bool = True
 ) -> dict:
     """Bulk entity retrieval by ID.
 
@@ -1078,14 +1103,14 @@ async def get_by_id(
         return {
             "status": "failed",
             "error": "ids must be a non-empty list",
-            "error_type": "validation_error"
+            "error_type": "validation_error",
         }
 
     if len(ids) > 100:
         return {
             "status": "failed",
             "error": "Maximum 100 IDs per request",
-            "error_type": "validation_error"
+            "error_type": "validation_error",
         }
 
     # Validate session
@@ -1093,7 +1118,7 @@ async def get_by_id(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -1106,7 +1131,7 @@ async def get_by_id(
         source="mcp_tool",
         tool_name="get_by_id",
         session_id=session_id,
-        id_count=len(ids)
+        id_count=len(ids),
     )
 
     try:
@@ -1128,38 +1153,46 @@ async def get_by_id(
                         table_name=table_name,
                         filters=eq(id_field, entity_id),
                         limit=1,
-                        project_id=project_id
+                        project_id=project_id,
                     )
 
                     if results:
                         result = results[0]
                         # Use correct field per table schema
-                        type_field = "type" if table_name == "graph_entities" else "content_type"
+                        type_field = (
+                            "type" if table_name == "graph_entities" else "content_type"
+                        )
                         entity_data = {
                             "id": entity_id,
                             "type": _get_attr(result, type_field, "unknown"),
-                            "source_table": table_name
+                            "source_table": table_name,
                         }
 
                         if table_name == "graph_entities":
-                            entity_data.update({
-                                "name": _get_attr(result, "name"),
-                                "file_path": _get_attr(result, "file_path"),
-                                "line_start": _get_attr(result, "line_start"),
-                                "line_end": _get_attr(result, "line_end"),
-                                "parent": _get_attr(result, "parent_name"),
-                                "docstring": _get_attr(result, "docstring")
-                            })
+                            entity_data.update(
+                                {
+                                    "name": _get_attr(result, "name"),
+                                    "file_path": _get_attr(result, "file_path"),
+                                    "line_start": _get_attr(result, "line_start"),
+                                    "line_end": _get_attr(result, "line_end"),
+                                    "parent": _get_attr(result, "parent_name"),
+                                    "docstring": _get_attr(result, "docstring"),
+                                }
+                            )
                         else:  # document_chunks
-                            entity_data.update({
-                                "file_path": _get_attr(result, "file_path"),
-                                "line_start": _get_attr(result, "line_start"),
-                                "line_end": _get_attr(result, "line_end"),
-                                "language": _get_attr(result, "language"),
-                                "symbols": _get_attr(result, "symbols", [])
-                            })
+                            entity_data.update(
+                                {
+                                    "file_path": _get_attr(result, "file_path"),
+                                    "line_start": _get_attr(result, "line_start"),
+                                    "line_end": _get_attr(result, "line_end"),
+                                    "language": _get_attr(result, "language"),
+                                    "symbols": _get_attr(result, "symbols", []),
+                                }
+                            )
                             if include_content:
-                                entity_data["content"] = _get_attr(result, "content", "")
+                                entity_data["content"] = _get_attr(
+                                    result, "content", ""
+                                )
 
                         # Add metadata
                         if _get_attr(result, "metadata"):
@@ -1170,7 +1203,9 @@ async def get_by_id(
                         break
 
                 except Exception as e:
-                    logger.debug("Error searching %s for %s: %s", table_name, entity_id, e)
+                    logger.debug(
+                        "Error searching %s for %s: %s", table_name, entity_id, e
+                    )
                     continue
 
             if not found:
@@ -1183,35 +1218,30 @@ async def get_by_id(
             tool_name="get_by_id",
             session_id=session_id,
             found=len(entities),
-            not_found=len(not_found)
+            not_found=len(not_found),
         )
 
         return {
             "entities": entities,
             "found_count": len(entities),
             "not_found": not_found,
-            "not_found_count": len(not_found)
+            "not_found_count": len(not_found),
         }
 
     except Exception as e:
         await event_system.emit(
-            "mcp.tool.failed",
-            source="mcp_tool",
-            tool_name="get_by_id",
-            error=str(e)
+            "mcp.tool.failed", source="mcp_tool", tool_name="get_by_id", error=str(e)
         )
         logger.error("Failed to get entities by ID: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
             error=e,
             context={"session_id": session_id, "id_count": len(ids)},
-            services=services
+            services=services,
         )
 
 
 async def get_recent_activity(
-    services: dict,
-    session_id: str,
-    time_range_days: int = 7
+    services: dict, session_id: str, time_range_days: int = 7
 ) -> dict:
     """Get recent project activity and changes.
 
@@ -1249,7 +1279,7 @@ async def get_recent_activity(
         return {
             "status": "failed",
             "error": "time_range_days must be between 1 and 90",
-            "error_type": "validation_error"
+            "error_type": "validation_error",
         }
 
     # Validate session
@@ -1257,7 +1287,7 @@ async def get_recent_activity(
         return await MCPErrorHandler.handle(
             error=Exception(f"Session '{session_id}' not found or expired"),
             context={"session_id": session_id},
-            services=services
+            services=services,
         )
 
     # Get session to extract project_id
@@ -1270,13 +1300,14 @@ async def get_recent_activity(
         source="mcp_tool",
         tool_name="get_recent_activity",
         session_id=session_id,
-        time_range_days=time_range_days
+        time_range_days=time_range_days,
     )
 
     try:
         # Try to use TemporalAnalyzer if available
         try:
             from agentic_inquiry.mcp.services.temporal_analyzer import TemporalAnalyzer
+
             analyzer = TemporalAnalyzer(db_manager, config)
             activity = await analyzer.get_recent_activity(project_id, time_range_days)
 
@@ -1285,13 +1316,13 @@ async def get_recent_activity(
                 "mcp.tool.completed",
                 source="mcp_tool",
                 tool_name="get_recent_activity",
-                session_id=session_id
+                session_id=session_id,
             )
 
             return {
                 "recent_activity": activity,
                 "time_range_days": time_range_days,
-                "project_id": project_id
+                "project_id": project_id,
             }
 
         except ImportError:
@@ -1308,7 +1339,7 @@ async def get_recent_activity(
                 table_name="document_chunks",
                 filters={},
                 limit=5000,
-                project_id=project_id
+                project_id=project_id,
             )
         except Exception:
             chunks = []
@@ -1320,10 +1351,10 @@ async def get_recent_activity(
                     "hot_areas": [],
                     "new_files": [],
                     "stale_areas": [],
-                    "message": "No indexed content found"
+                    "message": "No indexed content found",
                 },
                 "time_range_days": time_range_days,
-                "project_id": project_id
+                "project_id": project_id,
             }
 
         # Group by file path
@@ -1338,21 +1369,23 @@ async def get_recent_activity(
                     "path": file_path,
                     "chunks": 0,
                     "last_indexed": _get_attr(chunk, "indexed_at"),
-                    "language": _get_attr(chunk, "language")
+                    "language": _get_attr(chunk, "language"),
                 }
             file_info[file_path]["chunks"] += 1
 
             # Track most recent
             indexed_at = _get_attr(chunk, "indexed_at")
-            if indexed_at and (not file_info[file_path]["last_indexed"] or
-                              indexed_at > file_info[file_path]["last_indexed"]):
+            if indexed_at and (
+                not file_info[file_path]["last_indexed"]
+                or indexed_at > file_info[file_path]["last_indexed"]
+            ):
                 file_info[file_path]["last_indexed"] = indexed_at
 
         # Sort files by last indexed
         sorted_files = sorted(
             file_info.values(),
             key=lambda x: x.get("last_indexed") or "",  # file_info values are dicts
-            reverse=True
+            reverse=True,
         )
 
         # Analyze directory activity
@@ -1365,7 +1398,9 @@ async def get_recent_activity(
 
         hot_areas = [
             {"directory": d, "file_count": c}
-            for d, c in sorted(dir_activity.items(), key=lambda x: x[1], reverse=True)[:10]
+            for d, c in sorted(dir_activity.items(), key=lambda x: x[1], reverse=True)[
+                :10
+            ]
         ]
 
         # Track success
@@ -1373,7 +1408,7 @@ async def get_recent_activity(
             "mcp.tool.completed",
             source="mcp_tool",
             tool_name="get_recent_activity",
-            session_id=session_id
+            session_id=session_id,
         )
 
         return {
@@ -1383,10 +1418,10 @@ async def get_recent_activity(
                 "new_files": sorted_files[:10],  # Most recently indexed
                 "stale_areas": [],  # Would need file system access for real staleness
                 "total_files": len(file_info),
-                "total_chunks": len(chunks)
+                "total_chunks": len(chunks),
             },
             "time_range_days": time_range_days,
-            "project_id": project_id
+            "project_id": project_id,
         }
 
     except Exception as e:
@@ -1394,13 +1429,11 @@ async def get_recent_activity(
             "mcp.tool.failed",
             source="mcp_tool",
             tool_name="get_recent_activity",
-            error=str(e)
+            error=str(e),
         )
         logger.error("Failed to get recent activity: %s", e, exc_info=True)
         return await MCPErrorHandler.handle(
-            error=e,
-            context={"session_id": session_id},
-            services=services
+            error=e, context={"session_id": session_id}, services=services
         )
 
 
@@ -1469,9 +1502,7 @@ async def save_onboard_report(
         )
 
         storage = create_onboard_artifact_storage(config)
-        path = await storage.save_report(
-            project_id, run_id, report_name, content
-        )
+        path = await storage.save_report(project_id, run_id, report_name, content)
 
         storage_type = getattr(
             getattr(

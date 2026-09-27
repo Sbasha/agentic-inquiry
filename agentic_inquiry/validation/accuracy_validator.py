@@ -7,6 +7,7 @@ Validates index accuracy using consistency-based checks:
 4. Framework patterns - Framework-specific patterns match source
 5. Completeness - Symbols in source are in the index (deep mode)
 """
+
 from __future__ import annotations
 
 import logging
@@ -46,12 +47,21 @@ FRAMEWORK_INDICATORS: Dict[str, Dict[str, Any]] = {
     },
     "express": {
         "files": ["package.json"],
-        "patterns": [r"express\(\)", r"require\(['\"]express['\"]\)", r"app\.(get|post|put|delete)"],
+        "patterns": [
+            r"express\(\)",
+            r"require\(['\"]express['\"]\)",
+            r"app\.(get|post|put|delete)",
+        ],
         "extensions": [".js", ".ts"],
     },
     "react": {
         "files": ["package.json"],
-        "patterns": [r"from ['\"]react['\"]", r"import React", r"useState", r"useEffect"],
+        "patterns": [
+            r"from ['\"]react['\"]",
+            r"import React",
+            r"useState",
+            r"useEffect",
+        ],
         "extensions": [".jsx", ".tsx", ".js", ".ts"],
     },
     "vue": {
@@ -153,7 +163,18 @@ class AccuracyValidator:
                     break
 
         # Scan for language extensions
-        for ext in [".py", ".java", ".js", ".ts", ".go", ".rs", ".kt", ".vue", ".jsx", ".tsx"]:
+        for ext in [
+            ".py",
+            ".java",
+            ".js",
+            ".ts",
+            ".go",
+            ".rs",
+            ".kt",
+            ".vue",
+            ".jsx",
+            ".tsx",
+        ]:
             if list(self._project_root.glob(f"**/*{ext}"))[:1]:
                 detected["languages"].add(ext.lstrip("."))
 
@@ -179,13 +200,15 @@ class AccuracyValidator:
 
             # Filter to entities with file paths and sample
             entities_with_files = [
-                e for e in entities
-                if e.get("file_path") and e.get("line_number")
+                e for e in entities if e.get("file_path") and e.get("line_number")
             ]
-            sample = random.sample(
-                entities_with_files,
-                min(sample_size, len(entities_with_files))
-            ) if entities_with_files else []
+            sample = (
+                random.sample(
+                    entities_with_files, min(sample_size, len(entities_with_files))
+                )
+                if entities_with_files
+                else []
+            )
 
             for entity in sample:
                 file_path = Path(entity["file_path"])
@@ -302,13 +325,13 @@ class AccuracyValidator:
 
             # Filter to lineage-related relationships
             lineage_rels = [
-                r for r in relationships
-                if r.get("relationship_type") in lineage_types
+                r for r in relationships if r.get("relationship_type") in lineage_types
             ]
-            sample = random.sample(
-                lineage_rels,
-                min(sample_size, len(lineage_rels))
-            ) if lineage_rels else []
+            sample = (
+                random.sample(lineage_rels, min(sample_size, len(lineage_rels)))
+                if lineage_rels
+                else []
+            )
 
             for rel in sample:
                 result.total_checked += 1
@@ -316,19 +339,31 @@ class AccuracyValidator:
                 target_id = rel.get("target_id")
 
                 # Check both endpoints exist
-                source_exists = bool(await self._storage.query_raw(
-                    table_name="graph_entities",
-                    filters={"id": source_id},
-                    limit=1,
-                    project_id=getattr(self._storage, "project_id", None),
-                )) if source_id else False
+                source_exists = (
+                    bool(
+                        await self._storage.query_raw(
+                            table_name="graph_entities",
+                            filters={"id": source_id},
+                            limit=1,
+                            project_id=getattr(self._storage, "project_id", None),
+                        )
+                    )
+                    if source_id
+                    else False
+                )
 
-                target_exists = bool(await self._storage.query_raw(
-                    table_name="graph_entities",
-                    filters={"id": target_id},
-                    limit=1,
-                    project_id=getattr(self._storage, "project_id", None),
-                )) if target_id else False
+                target_exists = (
+                    bool(
+                        await self._storage.query_raw(
+                            table_name="graph_entities",
+                            filters={"id": target_id},
+                            limit=1,
+                            project_id=getattr(self._storage, "project_id", None),
+                        )
+                    )
+                    if target_id
+                    else False
+                )
 
                 if source_exists and target_exists:
                     result.valid_count += 1
@@ -377,10 +412,18 @@ class AccuracyValidator:
 
             # Exclude common non-source directories
             source_files = [
-                f for f in source_files
+                f
+                for f in source_files
                 if not any(
                     excl in str(f)
-                    for excl in [".venv", "node_modules", "__pycache__", ".git", "dist", "build"]
+                    for excl in [
+                        ".venv",
+                        "node_modules",
+                        "__pycache__",
+                        ".git",
+                        "dist",
+                        "build",
+                    ]
                 )
             ][:sample_size]
 
@@ -390,8 +433,7 @@ class AccuracyValidator:
 
                     # Check if any framework pattern matches
                     has_pattern = any(
-                        re.search(pattern, content)
-                        for pattern in patterns
+                        re.search(pattern, content) for pattern in patterns
                     )
 
                     if has_pattern:
@@ -446,17 +488,22 @@ class AccuracyValidator:
             # Sample Python files (can extend to other languages)
             py_files = list(self._project_root.glob("**/*.py"))
             py_files = [
-                f for f in py_files
+                f
+                for f in py_files
                 if not any(
                     excl in str(f)
                     for excl in [".venv", "node_modules", "__pycache__", ".git", "test"]
                 )
             ]
 
-            sample_files = random.sample(
-                py_files,
-                min(sample_size // 5, len(py_files))  # ~20 files
-            ) if py_files else []
+            sample_files = (
+                random.sample(
+                    py_files,
+                    min(sample_size // 5, len(py_files)),  # ~20 files
+                )
+                if py_files
+                else []
+            )
 
             # Simple pattern-based symbol extraction
             class_pattern = re.compile(r"^class\s+(\w+)", re.MULTILINE)
@@ -469,7 +516,11 @@ class AccuracyValidator:
 
                     # Find classes and functions
                     classes = class_pattern.findall(content)
-                    functions = [f for f in func_pattern.findall(content) if not f.startswith("_")]
+                    functions = [
+                        f
+                        for f in func_pattern.findall(content)
+                        if not f.startswith("_")
+                    ]
 
                     symbols = classes + functions[:10]  # Limit functions per file
 
@@ -486,8 +537,8 @@ class AccuracyValidator:
 
                         # Check if any match is in this file
                         found = any(
-                            rel_path in str(e.get("file_path", "")) or
-                            str(file_path) in str(e.get("file_path", ""))
+                            rel_path in str(e.get("file_path", ""))
+                            or str(file_path) in str(e.get("file_path", ""))
                             for e in entities
                         )
 

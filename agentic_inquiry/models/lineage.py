@@ -3,6 +3,7 @@
 This module provides models for tracking data flow through the codebase,
 from UI components through backend services to database columns.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -15,9 +16,10 @@ class Confidence(str, Enum):
 
     Higher confidence indicates stronger evidence for the relationship.
     """
-    HIGH = "high"       # Direct annotation or explicit mapping
-    MEDIUM = "medium"   # Naming convention match
-    LOW = "low"         # Single weak indicator
+
+    HIGH = "high"  # Direct annotation or explicit mapping
+    MEDIUM = "medium"  # Naming convention match
+    LOW = "low"  # Single weak indicator
     INFERRED = "inferred"  # Guessed from context
 
 
@@ -35,38 +37,70 @@ class ArchitecturalLayer(str, Enum):
 
     Used to identify where an entity sits in the application stack.
     """
-    UI = "ui"                   # JSP, Vue, React components, HTML templates
-    CONTROLLER = "controller"   # REST controllers, request handlers
-    SERVICE = "service"         # Business logic layer
-    REPOSITORY = "repository"   # Data access layer
-    ENTITY = "entity"           # ORM entities, domain models
-    DATABASE = "database"       # Tables, columns, schemas
-    UNKNOWN = "unknown"         # Could not determine layer
+
+    UI = "ui"  # JSP, Vue, React components, HTML templates
+    CONTROLLER = "controller"  # REST controllers, request handlers
+    SERVICE = "service"  # Business logic layer
+    REPOSITORY = "repository"  # Data access layer
+    ENTITY = "entity"  # ORM entities, domain models
+    DATABASE = "database"  # Tables, columns, schemas
+    UNKNOWN = "unknown"  # Could not determine layer
 
 
 # Layer inference patterns
 LAYER_PATTERNS: dict[ArchitecturalLayer, list[str]] = {
     ArchitecturalLayer.UI: [
-        "component", "view", "template", "page", "form",
-        ".tsx", ".jsx", ".vue", ".html", ".jsp",
+        "component",
+        "view",
+        "template",
+        "page",
+        "form",
+        ".tsx",
+        ".jsx",
+        ".vue",
+        ".html",
+        ".jsp",
     ],
     ArchitecturalLayer.CONTROLLER: [
-        "controller", "handler", "endpoint", "resource", "router",
-        "@Controller", "@RestController", "@RequestMapping",
+        "controller",
+        "handler",
+        "endpoint",
+        "resource",
+        "router",
+        "@Controller",
+        "@RestController",
+        "@RequestMapping",
     ],
     ArchitecturalLayer.SERVICE: [
-        "service", "manager", "facade", "orchestrator",
-        "@Service", "@Component",
+        "service",
+        "manager",
+        "facade",
+        "orchestrator",
+        "@Service",
+        "@Component",
     ],
     ArchitecturalLayer.REPOSITORY: [
-        "repository", "dao", "mapper", "store",
-        "@Repository", "Repository",
+        "repository",
+        "dao",
+        "mapper",
+        "store",
+        "@Repository",
+        "Repository",
     ],
     ArchitecturalLayer.ENTITY: [
-        "entity", "model", "domain", "@Entity", "Base", "__tablename__",
+        "entity",
+        "model",
+        "domain",
+        "@Entity",
+        "Base",
+        "__tablename__",
     ],
     ArchitecturalLayer.DATABASE: [
-        "table", "column", "schema", "migration", ".sql",
+        "table",
+        "column",
+        "schema",
+        "migration",
+        ".sql",
     ],
 }
 
@@ -77,6 +111,7 @@ class LineageStep:
 
     Represents one entity in the chain from source to sink.
     """
+
     entity_id: str
     entity_name: str
     entity_type: str
@@ -101,6 +136,7 @@ class LineagePath:
 
     Represents a full data flow path through the application layers.
     """
+
     path_id: str
     source_id: str
     sink_id: str
@@ -117,10 +153,7 @@ class LineagePath:
         if not self.steps:
             return Confidence.LOW
 
-        min_step = min(
-            self.steps,
-            key=lambda s: CONFIDENCE_RANK.get(s.confidence, 0)
-        )
+        min_step = min(self.steps, key=lambda s: CONFIDENCE_RANK.get(s.confidence, 0))
         return min_step.confidence
 
     @property
@@ -139,6 +172,7 @@ class ImpactAnalysis:
 
     Shows what would be affected by changing the target entity.
     """
+
     entity_id: str
     entity_name: str
     affected_entities: List[str] = field(default_factory=list)
@@ -154,21 +188,30 @@ class ImpactAnalysis:
 
 # Lineage-specific relationship types to add to RelationshipType enum
 LINEAGE_RELATIONSHIP_TYPES = {
-    "binds_to",       # UI element → data field
-    "maps_to",        # Entity field → DB column
-    "returns_view",   # Controller → view template
-    "uses_model",     # Controller → model attribute
+    "binds_to",  # UI element → data field
+    "maps_to",  # Entity field → DB column
+    "returns_view",  # Controller → view template
+    "uses_model",  # Controller → model attribute
     "receives_prop",  # Component receives prop from parent
-    "emits",          # Component emits event
-    "injects",        # Dependency injection
+    "emits",  # Component emits event
+    "injects",  # Dependency injection
 }
 
 
 # PII field detection patterns
 PII_PATTERNS = [
-    "email", "phone", "ssn", "address", "name",
-    "password", "credit_card", "dob", "birth",
-    "social_security", "passport", "license",
+    "email",
+    "phone",
+    "ssn",
+    "address",
+    "name",
+    "password",
+    "credit_card",
+    "dob",
+    "birth",
+    "social_security",
+    "passport",
+    "license",
 ]
 
 
@@ -185,7 +228,9 @@ def is_pii_field(name: str) -> bool:
     return any(pattern in name_lower for pattern in PII_PATTERNS)
 
 
-def infer_layer(entity_name: str, entity_type: str, file_path: Optional[str]) -> ArchitecturalLayer:
+def infer_layer(
+    entity_name: str, entity_type: str, file_path: Optional[str]
+) -> ArchitecturalLayer:
     """Infer architectural layer from entity metadata.
 
     Args:

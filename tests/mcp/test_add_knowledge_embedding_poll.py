@@ -54,7 +54,10 @@ async def test_single_file_polls_embeddings_before_ready(tmp_path, monkeypatch):
 
     services["event_system"].emit = AsyncMock(side_effect=_emit)
 
-    with patch(PIPELINE_PATCH_PATH) as pipeline_cls, patch(PARSER_CHAIN_PATCH_PATH) as chain_factory:
+    with (
+        patch(PIPELINE_PATCH_PATH) as pipeline_cls,
+        patch(PARSER_CHAIN_PATCH_PATH) as chain_factory,
+    ):
         pipeline = MagicMock()
         pipeline.process_document = AsyncMock()
         pipeline.flush_pending_relationships = AsyncMock(return_value=0)

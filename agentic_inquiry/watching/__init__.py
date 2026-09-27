@@ -17,58 +17,62 @@ logger = logging.getLogger(__name__)
 @runtime_checkable
 class WatcherProtocol(Protocol):
     """Protocol for file watcher implementations.
-    
+
     File watchers monitor directories for changes and trigger callbacks
     when files are created, modified, or deleted.
     """
-    
+
     def register_callback(self, callback: Callable[[str, str], None]) -> None:
         """Register a callback for file events.
-        
+
         Args:
             callback: Function with signature callback(file_path: str, event_type: str)
                      where event_type is one of: "created", "modified", "deleted"
         """
         ...
-    
+
     def unregister_callback(self, callback: Callable[[str, str], None]) -> None:
         """Unregister a previously registered callback.
-        
+
         Args:
             callback: The callback function to remove
         """
         ...
-    
-    def watch_directory(self, path: str, recursive: bool = True, 
-                       ignore_patterns: Optional[List[str]] = None) -> None:
+
+    def watch_directory(
+        self,
+        path: str,
+        recursive: bool = True,
+        ignore_patterns: Optional[List[str]] = None,
+    ) -> None:
         """Start watching a directory for changes.
-        
+
         Args:
             path: Directory path to watch
             recursive: Whether to watch subdirectories
             ignore_patterns: Optional list of glob patterns to ignore
         """
         ...
-    
+
     def start(self) -> None:
         """Start the file watcher."""
         ...
-    
+
     def stop(self) -> None:
         """Stop the file watcher and clean up resources."""
         ...
-    
+
     def pause(self) -> None:
         """Pause the file watcher without stopping it."""
         ...
-    
+
     def resume(self) -> None:
         """Resume a paused file watcher."""
         ...
-    
+
     def is_running(self) -> bool:
         """Check if the watcher is currently running.
-        
+
         Returns:
             True if watcher is running, False otherwise
         """
@@ -77,41 +81,42 @@ class WatcherProtocol(Protocol):
 
 class WatcherRegistry:
     """Registry for file watcher implementations.
-    
+
     Similar to ParserRegistry and EmbeddingRegistry, this provides a
     centralized way to register and retrieve file watcher implementations.
     """
-    
+
     def __init__(self) -> None:
         """Initialize the watcher registry."""
         self._watchers: dict[str, WatcherProtocol] = {}
         self._default: Optional[str] = None
-    
-    def register(self, name: str, watcher: WatcherProtocol, *, 
-                set_default: bool = False) -> None:
+
+    def register(
+        self, name: str, watcher: WatcherProtocol, *, set_default: bool = False
+    ) -> None:
         """Register a watcher implementation.
-        
+
         Args:
             name: Descriptive name for the watcher
             watcher: Watcher instance implementing WatcherProtocol
             set_default: Whether to set this as the default watcher
-            
+
         Raises:
             ValueError: If watcher name already registered
         """
         if name in self._watchers:
             raise ValueError(f"Watcher '{name}' already registered")
-        
+
         self._watchers[name] = watcher
-        
+
         if set_default or self._default is None:
             self._default = name
-        
+
         logger.info("Registered watcher: %s", name)
-    
+
     def unregister(self, name: str) -> None:
         """Unregister a watcher.
-        
+
         Args:
             name: Name of the watcher to unregister
         """
@@ -120,33 +125,33 @@ class WatcherRegistry:
             if self._default == name:
                 self._default = None
             logger.info("Unregistered watcher: %s", name)
-    
+
     def get(self, name: Optional[str] = None) -> WatcherProtocol:
         """Get a watcher by name, or the default watcher.
-        
+
         Args:
             name: Optional watcher name (uses default if None)
-            
+
         Returns:
             The requested watcher instance
-            
+
         Raises:
             ValueError: If no default watcher set
             KeyError: If named watcher not found
         """
         watcher_name = name or self._default
-        
+
         if watcher_name is None:
             raise ValueError("No default watcher set")
-        
+
         try:
             return self._watchers[watcher_name]
         except KeyError as exc:
             raise KeyError(f"Watcher '{watcher_name}' not registered") from exc
-    
+
     def available(self) -> List[str]:
         """List all registered watcher names.
-        
+
         Returns:
             List of registered watcher names
         """
@@ -157,10 +162,11 @@ class WatcherRegistry:
 _watcher_registry = WatcherRegistry()
 
 
-def register_watcher(name: str, watcher: WatcherProtocol, *, 
-                    set_default: bool = False) -> None:
+def register_watcher(
+    name: str, watcher: WatcherProtocol, *, set_default: bool = False
+) -> None:
     """Register a watcher implementation globally.
-    
+
     Args:
         name: Descriptive name for the watcher
         watcher: Watcher instance implementing WatcherProtocol
@@ -171,7 +177,7 @@ def register_watcher(name: str, watcher: WatcherProtocol, *,
 
 def unregister_watcher(name: str) -> None:
     """Unregister a watcher globally.
-    
+
     Args:
         name: Name of the watcher to unregister
     """

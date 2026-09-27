@@ -13,11 +13,11 @@ from agentic_inquiry.mcp.tools.knowledge import add_knowledge
 
 class _DummyEmbedder:
     """Dummy embedder for testing."""
-    
+
     def generate(self, texts):
         """Generate dummy embeddings."""
         return [[0.1] * 384 for _ in texts]
-    
+
     def ndims(self):
         """Return embedding dimensions."""
         return 384
@@ -27,17 +27,27 @@ class _DummyEmbedder:
 async def mock_services_with_events(tmp_path):
     """Create mock services with event tracking."""
     from agentic_inquiry.config import (
-        Config, StorageConfig, CacheConfig, DocumentCacheConfig,
-        SearchConfig, HybridSearchConfig, GraphSearchConfig,
-        EmbeddingsConfig, SentenceTransformerConfig,
-        ParsersConfig, ParserConfig, ProgressConfig
+        Config,
+        StorageConfig,
+        CacheConfig,
+        DocumentCacheConfig,
+        SearchConfig,
+        HybridSearchConfig,
+        GraphSearchConfig,
+        EmbeddingsConfig,
+        SentenceTransformerConfig,
+        ParsersConfig,
+        ParserConfig,
+        ProgressConfig,
     )
     from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
     from agentic_inquiry.mcp.services.session_manager import SessionManager
-    
+
     # Create config
     config = Config()
-    config.storage = StorageConfig(root=str(tmp_path), default_project_id="test_default")
+    config.storage = StorageConfig(
+        root=str(tmp_path), default_project_id="test_default"
+    )
     config.cache = CacheConfig(
         document_cache=DocumentCacheConfig(
             max_size=100,
@@ -72,19 +82,16 @@ async def mock_services_with_events(tmp_path):
         document=ParserConfig(enabled=True, priority=50),
         fallback_text=ParserConfig(enabled=True, priority=0),
     )
-    config.progress = ProgressConfig(
-        enabled=False,
-        emit_interval=10,
-        min_duration=1.0
-    )
-    
+    config.progress = ProgressConfig(enabled=False, emit_interval=10, min_duration=1.0)
+
     # Create database manager
     mock_db_manager = InMemoryLanceDBManager(uri="memory://test_directory_indexing")
     await mock_db_manager.create_tables_and_indexes()
     await mock_db_manager.connect()
-    
+
     # Configure embedder for the database manager
     from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+
     registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
     mock_db_manager.mock_embedding_registry = registry
 
@@ -93,27 +100,24 @@ async def mock_services_with_events(tmp_path):
     mock_storage_facade.get_db_manager = MagicMock(return_value=mock_db_manager)
 
     # Create session manager
-    session_manager = SessionManager(
-        db_manager=mock_storage_facade,
-        config=config
-    )
-    
+    session_manager = SessionManager(db_manager=mock_storage_facade, config=config)
+
     # Create test session
     session_result = await session_manager.create_session(
         project_id="test_directory_project",
-        description="Directory indexing test session"
+        description="Directory indexing test session",
     )
     test_session_id = session_result["session_id"]
-    
+
     # Mock event system with tracking
     emitted_events = []
-    
+
     async def track_emit(*args, **kwargs):
         emitted_events.append({"args": args, "kwargs": kwargs})
-    
+
     event_system = AsyncMock()
     event_system.emit = AsyncMock(side_effect=track_emit)
-    
+
     yield {
         "config": config,
         "mock_db_manager": mock_db_manager,
@@ -122,7 +126,7 @@ async def mock_services_with_events(tmp_path):
         "event_system": event_system,
         "mock_embedding_registry": registry,
         "test_session_id": test_session_id,
-        "emitted_events": emitted_events
+        "emitted_events": emitted_events,
     }
 
 
@@ -133,24 +137,33 @@ def patch_indexing_pipeline(mock_services_with_events):
     NOTE: Import the real class BEFORE patching to avoid recursion.
     """
     # Import the real class BEFORE the patch context
-    from agentic_inquiry.indexing.pipeline import IndexingPipeline as RealIndexingPipeline
+    from agentic_inquiry.indexing.pipeline import (
+        IndexingPipeline as RealIndexingPipeline,
+    )
 
     with patch("agentic_inquiry.indexing.pipeline.IndexingPipeline") as mock_class:
+
         def create_pipeline(*args, **kwargs):
             # Override to use our test registry - use the REAL class
             return RealIndexingPipeline(
-                db_manager=kwargs.get("db_manager", mock_services_with_events["mock_db_manager"]),
+                db_manager=kwargs.get(
+                    "db_manager", mock_services_with_events["mock_db_manager"]
+                ),
                 config=kwargs.get("config", mock_services_with_events["config"]),
                 project_id=kwargs.get("project_id", "test_directory_project"),
-                event_system=kwargs.get("event_system", mock_services_with_events["event_system"]),
-                registry=mock_services_with_events["mock_embedding_registry"]
+                event_system=kwargs.get(
+                    "event_system", mock_services_with_events["event_system"]
+                ),
+                registry=mock_services_with_events["mock_embedding_registry"],
             )
 
         mock_class.side_effect = create_pipeline
         yield mock_class
 
 
-async def _wait_for_indexing_completion(session_manager, session_id, operation_id, timeout=30.0):
+async def _wait_for_indexing_completion(
+    session_manager, session_id, operation_id, timeout=30.0
+):
     """Wait for directory indexing to complete by polling session events."""
     import asyncio
     import time
@@ -167,7 +180,7 @@ async def _wait_for_indexing_completion(session_manager, session_id, operation_i
                         return {
                             "status": data.get("status", "completed"),
                             "items_processed": data.get("items_processed", 0),
-                            "chunks_created": data.get("chunks_created", 0)
+                            "chunks_created": data.get("chunks_created", 0),
                         }
         await asyncio.sleep(0.1)
 
@@ -175,7 +188,9 @@ async def _wait_for_indexing_completion(session_manager, session_id, operation_i
 
 
 @pytest.mark.asyncio
-async def test_directory_indexing_completes_successfully(mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch):
+async def test_directory_indexing_completes_successfully(
+    mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch
+):
     """Test that directory indexing completes and returns status.
 
     Requirements: 2.1, 2.4, 2.10
@@ -203,7 +218,7 @@ def function_{i}():
         services=mock_services_with_events,
         session_id=session_id,
         content_type="directory",
-        source="test_code"
+        source="test_code",
     )
 
     # Directory indexing is async, verify we got 'started' status with operation_id
@@ -216,13 +231,19 @@ def function_{i}():
     )
 
     # Verify completion
-    assert completion_result["status"] == "completed", f"Expected completed status, got: {completion_result}"
-    assert completion_result["items_processed"] == 10, f"Expected 10 files, got: {completion_result['items_processed']}"
+    assert completion_result["status"] == "completed", (
+        f"Expected completed status, got: {completion_result}"
+    )
+    assert completion_result["items_processed"] == 10, (
+        f"Expected 10 files, got: {completion_result['items_processed']}"
+    )
     assert completion_result["chunks_created"] > 0, "Expected chunks to be created"
 
 
 @pytest.mark.asyncio
-async def test_directory_indexing_progress_tracking(mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch):
+async def test_directory_indexing_progress_tracking(
+    mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch
+):
     """Test that progress is tracked during directory indexing.
 
     Requirements: 2.2, 2.3
@@ -236,7 +257,7 @@ async def test_directory_indexing_progress_tracking(mock_services_with_events, p
 
     # Create 5 files
     for i in range(5):
-        (test_dir / f"file_{i}.py").write_text(f'# File {i}\nvalue = {i}')
+        (test_dir / f"file_{i}.py").write_text(f"# File {i}\nvalue = {i}")
 
     session_id = mock_services_with_events["test_session_id"]
     session_manager = mock_services_with_events["session_manager"]
@@ -246,7 +267,7 @@ async def test_directory_indexing_progress_tracking(mock_services_with_events, p
         services=mock_services_with_events,
         session_id=session_id,
         content_type="directory",
-        source="test_code"  # Relative path
+        source="test_code",  # Relative path
     )
 
     # Directory indexing is async
@@ -265,7 +286,9 @@ async def test_directory_indexing_progress_tracking(mock_services_with_events, p
 
 
 @pytest.mark.asyncio
-async def test_directory_indexing_emits_events(mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch):
+async def test_directory_indexing_emits_events(
+    mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch
+):
     """Test that events are emitted during directory indexing.
 
     Requirements: 2.3, 2.7
@@ -279,7 +302,7 @@ async def test_directory_indexing_emits_events(mock_services_with_events, patch_
 
     # Create 3 files
     for i in range(3):
-        (test_dir / f"file_{i}.py").write_text(f'x = {i}')
+        (test_dir / f"file_{i}.py").write_text(f"x = {i}")
 
     session_id = mock_services_with_events["test_session_id"]
     session_manager = mock_services_with_events["session_manager"]
@@ -293,7 +316,7 @@ async def test_directory_indexing_emits_events(mock_services_with_events, patch_
         services=mock_services_with_events,
         session_id=session_id,
         content_type="directory",
-        source="test_code"
+        source="test_code",
     )
 
     # Wait for completion
@@ -307,12 +330,18 @@ async def test_directory_indexing_emits_events(mock_services_with_events, patch_
     [e for e in session_events if e.get("event_type") == "indexing_progress"]
 
     # May have 0 progress events if progress is tracked differently, check for completion instead
-    completion_events = [e for e in session_events if e.get("event_type") == "indexing_completed"]
-    assert len(completion_events) >= 1, f"Expected completion event, got session events: {session_events}"
+    completion_events = [
+        e for e in session_events if e.get("event_type") == "indexing_completed"
+    ]
+    assert len(completion_events) >= 1, (
+        f"Expected completion event, got session events: {session_events}"
+    )
 
 
 @pytest.mark.asyncio
-async def test_directory_indexing_timeout_detection(mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch):
+async def test_directory_indexing_timeout_detection(
+    mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch
+):
     """Test that timeout parameter is accepted and timeout handling works.
 
     Requirements: 2.5, 2.6
@@ -328,7 +357,7 @@ async def test_directory_indexing_timeout_detection(mock_services_with_events, p
     test_dir.mkdir()
 
     # Create a file
-    (test_dir / "file.py").write_text('x = 1')
+    (test_dir / "file.py").write_text("x = 1")
 
     session_id = mock_services_with_events["test_session_id"]
     session_manager = mock_services_with_events["session_manager"]
@@ -339,7 +368,7 @@ async def test_directory_indexing_timeout_detection(mock_services_with_events, p
         session_id=session_id,
         content_type="directory",
         source="test_code",
-        filters={"timeout": 300}  # Normal timeout
+        filters={"timeout": 300},  # Normal timeout
     )
 
     # Directory indexing returns 'started' immediately
@@ -355,7 +384,9 @@ async def test_directory_indexing_timeout_detection(mock_services_with_events, p
 
 @pytest.mark.asyncio
 @pytest.mark.slow
-async def test_directory_indexing_large_directory(mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch):
+async def test_directory_indexing_large_directory(
+    mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch
+):
     """Test indexing a directory with 100+ files.
 
     Requirements: 2.9
@@ -387,7 +418,7 @@ class Class_{i}:
         services=mock_services_with_events,
         session_id=session_id,
         content_type="directory",
-        source="large_project"
+        source="large_project",
     )
 
     # Directory indexing is async
@@ -400,13 +431,19 @@ class Class_{i}:
     )
 
     # Verify all files processed
-    assert completion_result["status"] == "completed", f"Expected completed, got: {completion_result}"
-    assert completion_result["items_processed"] == 100, f"Expected 100 files, got: {completion_result['items_processed']}"
+    assert completion_result["status"] == "completed", (
+        f"Expected completed, got: {completion_result}"
+    )
+    assert completion_result["items_processed"] == 100, (
+        f"Expected 100 files, got: {completion_result['items_processed']}"
+    )
     assert completion_result["chunks_created"] > 0
 
 
 @pytest.mark.asyncio
-async def test_directory_indexing_returns_completion_format(mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch):
+async def test_directory_indexing_returns_completion_format(
+    mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch
+):
     """Test that directory indexing returns same format as file indexing.
 
     Requirements: 2.4, 2.10
@@ -419,7 +456,7 @@ async def test_directory_indexing_returns_completion_format(mock_services_with_e
     # Create test directory
     test_dir = tmp_path / "test_code"
     test_dir.mkdir()
-    (test_dir / "file.py").write_text('x = 1')
+    (test_dir / "file.py").write_text("x = 1")
 
     session_id = mock_services_with_events["test_session_id"]
     session_manager = mock_services_with_events["session_manager"]
@@ -429,7 +466,7 @@ async def test_directory_indexing_returns_completion_format(mock_services_with_e
         services=mock_services_with_events,
         session_id=session_id,
         content_type="directory",
-        source="test_code"
+        source="test_code",
     )
 
     # Wait for async completion
@@ -442,7 +479,7 @@ async def test_directory_indexing_returns_completion_format(mock_services_with_e
         services=mock_services_with_events,
         session_id=session_id,
         content_type="file",
-        source="test_code/file.py"
+        source="test_code/file.py",
     )
 
     # Verify completion results have same structure
@@ -459,7 +496,9 @@ async def test_directory_indexing_returns_completion_format(mock_services_with_e
 
 
 @pytest.mark.asyncio
-async def test_directory_indexing_with_errors_continues(mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch):
+async def test_directory_indexing_with_errors_continues(
+    mock_services_with_events, patch_indexing_pipeline, tmp_path, monkeypatch
+):
     """Test that directory indexing continues after individual file errors.
 
     Requirements: 2.8
@@ -472,11 +511,11 @@ async def test_directory_indexing_with_errors_continues(mock_services_with_event
     test_dir.mkdir()
 
     # Create valid files
-    (test_dir / "valid1.py").write_text('x = 1')
-    (test_dir / "valid2.py").write_text('y = 2')
+    (test_dir / "valid1.py").write_text("x = 1")
+    (test_dir / "valid2.py").write_text("y = 2")
 
     # Create a file that will cause parsing error
-    (test_dir / "invalid.py").write_text('def broken(')  # Syntax error
+    (test_dir / "invalid.py").write_text("def broken(")  # Syntax error
 
     session_id = mock_services_with_events["test_session_id"]
     session_manager = mock_services_with_events["session_manager"]
@@ -486,7 +525,7 @@ async def test_directory_indexing_with_errors_continues(mock_services_with_event
         services=mock_services_with_events,
         session_id=session_id,
         content_type="directory",
-        source="test_code"
+        source="test_code",
     )
 
     # Directory indexing is async
@@ -499,6 +538,8 @@ async def test_directory_indexing_with_errors_continues(mock_services_with_event
     )
 
     # Should complete despite errors
-    assert completion_result["status"] == "completed", f"Expected completed, got: {completion_result}"
+    assert completion_result["status"] == "completed", (
+        f"Expected completed, got: {completion_result}"
+    )
     # Should process at least the valid files (3 total, some may error)
     assert completion_result["items_processed"] >= 2

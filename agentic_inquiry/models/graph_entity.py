@@ -1,4 +1,5 @@
 """Data model representing a node in the project knowledge graph."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
@@ -8,11 +9,11 @@ from typing import List, Optional
 
 class EntityType(str, Enum):
     """Enumeration of all entity types in the knowledge graph.
-    
+
     Entity types categorize nodes in the knowledge graph, enabling
     type-specific filtering and disambiguation during entity resolution.
     """
-    
+
     # Code entities (plain structural types - domain is separate "code" field)
     CODE_FUNCTION = "function"  # Standalone function (not in a class)
     CODE_METHOD = "method"  # Method within a class
@@ -27,7 +28,7 @@ class EntityType(str, Enum):
     CODE_PROPERTY = "property"  # Property or attribute
     CODE_PARAMETER = "parameter"  # Function parameter
     CODE_TYPE = "type"  # Type alias or type definition
-    
+
     # Documentation entities
     DOC_SECTION = "doc_section"  # Documentation section
     DOC_PAGE = "doc_page"  # Documentation page
@@ -36,36 +37,36 @@ class EntityType(str, Enum):
     DOC_EXAMPLE = "doc_example"  # Code example in documentation
     DOC_FAQ = "doc_faq"  # FAQ entry
     DOC_CHANGELOG = "doc_changelog"  # Changelog entry
-    
+
     # Conceptual entities
     CONCEPT = "concept"  # Abstract concept or idea
     PATTERN = "pattern"  # Design pattern or code pattern
     ARCHITECTURE = "architecture"  # Architectural component
     REQUIREMENT = "requirement"  # Requirement or specification
     DECISION = "decision"  # Design decision or ADR
-    
+
     # Memory entities
     MEMORY_OBSERVATION = "memory_observation"  # Agent observation
     MEMORY_INSIGHT = "memory_insight"  # Agent insight or learning
     MEMORY_TASK = "memory_task"  # Task or work item
     MEMORY_NOTE = "memory_note"  # General note or annotation
-    
+
     # Test entities
     TEST_CASE = "test_case"  # Test case
     TEST_SUITE = "test_suite"  # Test suite
     TEST_FIXTURE = "test_fixture"  # Test fixture
     TEST_MOCK = "test_mock"  # Mock or stub
-    
+
     # Configuration entities
     CONFIG_SETTING = "config_setting"  # Configuration setting
     CONFIG_FILE = "config_file"  # Configuration file
     CONFIG_SCHEMA = "config_schema"  # Configuration schema
-    
+
     # Data entities
     DATA_MODEL = "data_model"  # Data model or schema
     DATA_FIELD = "data_field"  # Field in a data model
     DATA_QUERY = "data_query"  # Database query
-    
+
     # External entities (unresolved symbols from stdlib, libraries, builtins)
     EXTERNAL_FUNCTION = "external_function"  # External function or method
     EXTERNAL_CLASS = "external_class"  # External class, interface, struct, type
@@ -142,9 +143,23 @@ class GraphEntity:
     _distance: Optional[float] = None
 
     def __post_init__(self) -> None:
-        if not all(isinstance(value, str) and value for value in (self.id, self.name, self.type, self.file_path, self.doc_id, self.project_id)):
-            raise ValueError("GraphEntity id, name, type, file_path, doc_id and project_id must be non-empty strings")
-        if not isinstance(self.vector, list) or not all(isinstance(v, (int, float)) for v in self.vector):
+        if not all(
+            isinstance(value, str) and value
+            for value in (
+                self.id,
+                self.name,
+                self.type,
+                self.file_path,
+                self.doc_id,
+                self.project_id,
+            )
+        ):
+            raise ValueError(
+                "GraphEntity id, name, type, file_path, doc_id and project_id must be non-empty strings"
+            )
+        if not isinstance(self.vector, list) or not all(
+            isinstance(v, (int, float)) for v in self.vector
+        ):
             raise ValueError("vector must be a list of numbers")
         if not isinstance(self.has_ranking_signals, bool):
             raise ValueError("has_ranking_signals must be a boolean")
@@ -162,5 +177,5 @@ class GraphEntity:
         """
         result = asdict(self)
         # Remove runtime-only fields that shouldn't be persisted
-        result.pop('_distance', None)
+        result.pop("_distance", None)
         return result

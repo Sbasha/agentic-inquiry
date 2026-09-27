@@ -25,14 +25,35 @@ class TestMaintenanceConfigEnvOverrides:
     @pytest.mark.parametrize(
         ("env_var", "env_value", "config_data", "path", "expected"),
         [
-            ("INQUIRY_MAINTENANCE_TRIGGER", "indexing.completed", {'maintenance': {'trigger': 'project.closed'}}, ("maintenance", "trigger"), "indexing.completed"),
-            ("INQUIRY_MAINTENANCE_RETENTION_MINUTES", "120", {'maintenance': {'cleanup_retention_minutes': 60}}, ("maintenance", "cleanup_retention_minutes"), 120),
-            ("INQUIRY_MAINTENANCE_ENABLED", "false", {'maintenance': {'enabled': True}}, ("maintenance", "enabled"), False),
+            (
+                "INQUIRY_MAINTENANCE_TRIGGER",
+                "indexing.completed",
+                {"maintenance": {"trigger": "project.closed"}},
+                ("maintenance", "trigger"),
+                "indexing.completed",
+            ),
+            (
+                "INQUIRY_MAINTENANCE_RETENTION_MINUTES",
+                "120",
+                {"maintenance": {"cleanup_retention_minutes": 60}},
+                ("maintenance", "cleanup_retention_minutes"),
+                120,
+            ),
+            (
+                "INQUIRY_MAINTENANCE_ENABLED",
+                "false",
+                {"maintenance": {"enabled": True}},
+                ("maintenance", "enabled"),
+                False,
+            ),
         ],
     )
-    def test_maintenance_env_overrides(self, monkeypatch, env_var, env_value, config_data, path, expected):
+    def test_maintenance_env_overrides(
+        self, monkeypatch, env_var, env_value, config_data, path, expected
+    ):
         """Test maintenance environment variable overrides."""
         import copy
+
         monkeypatch.setenv(env_var, env_value)
 
         config_data = Config._apply_env_overrides(copy.deepcopy(config_data))
@@ -48,17 +69,17 @@ class TestMaintenanceConfigEnvOverrides:
         monkeypatch.setenv("INQUIRY_MAINTENANCE_ENABLED", "false")
 
         config_data = {
-            'maintenance': {
-                'trigger': 'project.closed',
-                'cleanup_retention_minutes': 60,
-                'enabled': True
+            "maintenance": {
+                "trigger": "project.closed",
+                "cleanup_retention_minutes": 60,
+                "enabled": True,
             }
         }
         config_data = Config._apply_env_overrides(config_data)
 
-        assert config_data['maintenance']['trigger'] == "disabled"
-        assert config_data['maintenance']['cleanup_retention_minutes'] == 30
-        assert config_data['maintenance']['enabled'] is False
+        assert config_data["maintenance"]["trigger"] == "disabled"
+        assert config_data["maintenance"]["cleanup_retention_minutes"] == 30
+        assert config_data["maintenance"]["enabled"] is False
 
     def test_invalid_maintenance_trigger_raises_error(self, monkeypatch):
         """Test that invalid maintenance trigger value raises ConfigurationError."""
@@ -73,11 +94,27 @@ class TestMaintenanceConfigEnvOverrides:
     @pytest.mark.parametrize(
         ("env_value", "expected_substrings"),
         [
-            ("4", ["Invalid cleanup_retention_minutes", "4", "Must be between 5 and 1440"]),
-            ("1441", ["Invalid cleanup_retention_minutes", "1441", "Must be between 5 and 1440"]),
+            (
+                "4",
+                [
+                    "Invalid cleanup_retention_minutes",
+                    "4",
+                    "Must be between 5 and 1440",
+                ],
+            ),
+            (
+                "1441",
+                [
+                    "Invalid cleanup_retention_minutes",
+                    "1441",
+                    "Must be between 5 and 1440",
+                ],
+            ),
         ],
     )
-    def test_invalid_retention_minutes(self, monkeypatch, env_value, expected_substrings):
+    def test_invalid_retention_minutes(
+        self, monkeypatch, env_value, expected_substrings
+    ):
         """Test invalid cleanup_retention_minutes values."""
         monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", env_value)
 
@@ -95,7 +132,9 @@ class TestMaintenanceConfigEnvOverrides:
             ("1440", 1440),
         ],
     )
-    def test_valid_retention_minutes_boundary_values(self, monkeypatch, env_value, expected):
+    def test_valid_retention_minutes_boundary_values(
+        self, monkeypatch, env_value, expected
+    ):
         """Test that boundary values for cleanup_retention_minutes are accepted."""
         monkeypatch.setenv("INQUIRY_MAINTENANCE_RETENTION_MINUTES", env_value)
         config = Config.load()
@@ -108,13 +147,28 @@ class TestMCPQueryConfigEnvOverrides:
     @pytest.mark.parametrize(
         ("env_var", "env_value", "config_data", "path", "expected"),
         [
-            ("INQUIRY_TRAVERSAL_LIMIT", "1000", {'mcp': {'query': {'traversal_limit': 500}}}, ("mcp", "query", "traversal_limit"), 1000),
-            ("INQUIRY_BATCH_SIZE", "250", {'mcp': {'query': {'batch_size': 100}}}, ("mcp", "query", "batch_size"), 250),
+            (
+                "INQUIRY_TRAVERSAL_LIMIT",
+                "1000",
+                {"mcp": {"query": {"traversal_limit": 500}}},
+                ("mcp", "query", "traversal_limit"),
+                1000,
+            ),
+            (
+                "INQUIRY_BATCH_SIZE",
+                "250",
+                {"mcp": {"query": {"batch_size": 100}}},
+                ("mcp", "query", "batch_size"),
+                250,
+            ),
         ],
     )
-    def test_query_env_overrides(self, monkeypatch, env_var, env_value, config_data, path, expected):
+    def test_query_env_overrides(
+        self, monkeypatch, env_var, env_value, config_data, path, expected
+    ):
         """Test MCP query environment variable overrides."""
         import copy
+
         monkeypatch.setenv(env_var, env_value)
 
         config_data = Config._apply_env_overrides(copy.deepcopy(config_data))
@@ -128,29 +182,40 @@ class TestMCPQueryConfigEnvOverrides:
         monkeypatch.setenv("INQUIRY_TRAVERSAL_LIMIT", "1500")
         monkeypatch.setenv("INQUIRY_BATCH_SIZE", "200")
 
-        config_data = {
-            'mcp': {
-                'query': {
-                    'traversal_limit': 500,
-                    'batch_size': 100
-                }
-            }
-        }
+        config_data = {"mcp": {"query": {"traversal_limit": 500, "batch_size": 100}}}
         config_data = Config._apply_env_overrides(config_data)
 
-        assert config_data['mcp']['query']['traversal_limit'] == 1500
-        assert config_data['mcp']['query']['batch_size'] == 200
+        assert config_data["mcp"]["query"]["traversal_limit"] == 1500
+        assert config_data["mcp"]["query"]["batch_size"] == 200
 
     @pytest.mark.parametrize(
         ("env_var", "env_value", "expected_substrings"),
         [
-            ("INQUIRY_TRAVERSAL_LIMIT", "99", ["traversal_limit must be between 100 and 2000", "got 99"]),
-            ("INQUIRY_TRAVERSAL_LIMIT", "2001", ["traversal_limit must be between 100 and 2000", "got 2001"]),
-            ("INQUIRY_BATCH_SIZE", "9", ["batch_size must be between 10 and 500", "got 9"]),
-            ("INQUIRY_BATCH_SIZE", "501", ["batch_size must be between 10 and 500", "got 501"]),
+            (
+                "INQUIRY_TRAVERSAL_LIMIT",
+                "99",
+                ["traversal_limit must be between 100 and 2000", "got 99"],
+            ),
+            (
+                "INQUIRY_TRAVERSAL_LIMIT",
+                "2001",
+                ["traversal_limit must be between 100 and 2000", "got 2001"],
+            ),
+            (
+                "INQUIRY_BATCH_SIZE",
+                "9",
+                ["batch_size must be between 10 and 500", "got 9"],
+            ),
+            (
+                "INQUIRY_BATCH_SIZE",
+                "501",
+                ["batch_size must be between 10 and 500", "got 501"],
+            ),
         ],
     )
-    def test_invalid_query_limits(self, monkeypatch, env_var, env_value, expected_substrings):
+    def test_invalid_query_limits(
+        self, monkeypatch, env_var, env_value, expected_substrings
+    ):
         """Test invalid traversal_limit and batch_size values."""
         monkeypatch.setenv(env_var, env_value)
 
@@ -164,13 +229,25 @@ class TestMCPQueryConfigEnvOverrides:
     @pytest.mark.parametrize(
         ("env_var", "env_value", "attr_path", "expected"),
         [
-            ("INQUIRY_TRAVERSAL_LIMIT", "100", ("mcp", "query", "traversal_limit"), 100),
-            ("INQUIRY_TRAVERSAL_LIMIT", "2000", ("mcp", "query", "traversal_limit"), 2000),
+            (
+                "INQUIRY_TRAVERSAL_LIMIT",
+                "100",
+                ("mcp", "query", "traversal_limit"),
+                100,
+            ),
+            (
+                "INQUIRY_TRAVERSAL_LIMIT",
+                "2000",
+                ("mcp", "query", "traversal_limit"),
+                2000,
+            ),
             ("INQUIRY_BATCH_SIZE", "10", ("mcp", "query", "batch_size"), 10),
             ("INQUIRY_BATCH_SIZE", "500", ("mcp", "query", "batch_size"), 500),
         ],
     )
-    def test_valid_query_limit_boundaries(self, monkeypatch, env_var, env_value, attr_path, expected):
+    def test_valid_query_limit_boundaries(
+        self, monkeypatch, env_var, env_value, attr_path, expected
+    ):
         """Test boundary values for traversal_limit and batch_size."""
         monkeypatch.setenv(env_var, env_value)
         config = Config.load()
@@ -303,9 +380,13 @@ mcp:
             Config.load()
 
         # Verify debug messages were logged
-        debug_messages = [record.message for record in caplog.records if record.levelname == "DEBUG"]
+        debug_messages = [
+            record.message for record in caplog.records if record.levelname == "DEBUG"
+        ]
 
-        assert any("INQUIRY_MAINTENANCE_RETENTION_MINUTES" in msg for msg in debug_messages)
+        assert any(
+            "INQUIRY_MAINTENANCE_RETENTION_MINUTES" in msg for msg in debug_messages
+        )
         assert any("INQUIRY_TRAVERSAL_LIMIT" in msg for msg in debug_messages)
 
 
@@ -458,8 +539,9 @@ class TestUserConfigOverlaysPackagedDefaults:
         config = Config.load()
 
         assert config.search.deduplication.max_results_per_file == 4
-        assert config.search.hybrid_search.reranker_type == (
-            _packaged_defaults()["search"]["hybrid_search"]["reranker_type"]
+        assert (
+            config.search.hybrid_search.reranker_type
+            == (_packaged_defaults()["search"]["hybrid_search"]["reranker_type"])
         )
 
     def test_partial_explicit_config_path_loads(self, home, tmp_path) -> None:
@@ -469,8 +551,9 @@ class TestUserConfigOverlaysPackagedDefaults:
         config = Config.load(str(explicit))
 
         assert config.search.deduplication.max_results_per_file == 5
-        assert config.storage.default_project_id == (
-            _packaged_defaults()["storage"]["default_project_id"]
+        assert (
+            config.storage.default_project_id
+            == (_packaged_defaults()["storage"]["default_project_id"])
         )
 
     def test_env_overlay_stacks_on_partial_project_config(self, home) -> None:
@@ -492,8 +575,9 @@ class TestUserConfigOverlaysPackagedDefaults:
 
         assert config.search.hybrid_search.reranker_params["k"] == 90
         assert config.search.deduplication.max_results_per_file == 2
-        assert config.search.hybrid_search.reranker_type == (
-            _packaged_defaults()["search"]["hybrid_search"]["reranker_type"]
+        assert (
+            config.search.hybrid_search.reranker_type
+            == (_packaged_defaults()["search"]["hybrid_search"]["reranker_type"])
         )
 
     def test_reranker_params_carry_no_default_keys(self, home) -> None:
@@ -520,7 +604,9 @@ class TestUserConfigOverlaysPackagedDefaults:
         assert set(dataclass_defaults.binary_extensions) <= set(
             packaged["binary_extensions"]
         )
-        assert set(dataclass_defaults.ignore_patterns) <= set(packaged["ignore_patterns"])
+        assert set(dataclass_defaults.ignore_patterns) <= set(
+            packaged["ignore_patterns"]
+        )
 
     def test_non_mapping_config_file_is_rejected(self, home) -> None:
         Path("agentic-inquiry.yaml").write_text("- storage\n- search\n")

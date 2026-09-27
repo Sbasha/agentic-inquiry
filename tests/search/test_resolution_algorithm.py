@@ -1,4 +1,5 @@
 """Test the enhanced resolution algorithm using RelationshipResolver."""
+
 import pytest
 
 pytestmark = pytest.mark.integration
@@ -35,6 +36,7 @@ def _create_mock_event_system():
 @pytest.mark.smoke
 def test_resolution_strategy_1_exact_type_match():
     """Test Strategy 1: Exact type matching with single candidate."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-strategy1")
@@ -63,7 +65,7 @@ def test_resolution_strategy_1_exact_type_match():
                     content="class IndexingPipeline:\n    pass",
                     language="python",
                     symbols=["IndexingPipeline"],
-                    symbol_metadata={"IndexingPipeline": {"type": "class"}}
+                    symbol_metadata={"IndexingPipeline": {"type": "class"}},
                 ),
             ],
         )
@@ -75,7 +77,7 @@ def test_resolution_strategy_1_exact_type_match():
             target_type="class",
             source_file="/tmp/project/main.py",
             source_language="python",
-            import_path=None
+            import_path=None,
         )
 
         assert result is not None
@@ -89,6 +91,7 @@ def test_resolution_strategy_1_exact_type_match():
 
 def test_resolution_strategy_1_multiple_candidates():
     """Test Strategy 1: Exact type matching with multiple candidates uses proximity."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-strategy1-multi")
@@ -117,11 +120,11 @@ def test_resolution_strategy_1_multiple_candidates():
                     content="class Helper:\n    pass",
                     language="python",
                     symbols=["Helper"],
-                    symbol_metadata={"Helper": {"type": "class"}}
+                    symbol_metadata={"Helper": {"type": "class"}},
                 ),
             ],
         )
-        
+
         doc2 = ParsedDocument(
             doc_id="doc-2",
             file_path="/tmp/project/core/helper.py",
@@ -130,11 +133,11 @@ def test_resolution_strategy_1_multiple_candidates():
                     content="class Helper:\n    pass",
                     language="python",
                     symbols=["Helper"],
-                    symbol_metadata={"Helper": {"type": "class"}}
+                    symbol_metadata={"Helper": {"type": "class"}},
                 ),
             ],
         )
-        
+
         await pipeline.process_document(doc1)
         await pipeline.process_document(doc2)
 
@@ -144,7 +147,7 @@ def test_resolution_strategy_1_multiple_candidates():
             target_type="class",
             source_file="/tmp/project/utils/main.py",
             source_language="python",
-            import_path=None
+            import_path=None,
         )
 
         assert result is not None
@@ -159,6 +162,7 @@ def test_resolution_strategy_1_multiple_candidates():
 
 def test_resolution_strategy_2_module_path():
     """Test Strategy 2: Module path resolution."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-strategy2")
@@ -187,7 +191,7 @@ def test_resolution_strategy_2_module_path():
                     content="# Pipeline module",
                     language="python",
                     symbols=["IndexingPipeline"],  # Register a class in the module
-                    symbol_metadata={"IndexingPipeline": {"type": "class"}}
+                    symbol_metadata={"IndexingPipeline": {"type": "class"}},
                 ),
             ],
         )
@@ -199,7 +203,7 @@ def test_resolution_strategy_2_module_path():
             target_type="class",
             source_file="/tmp/project/main.py",
             source_language="python",
-            import_path="agentic_inquiry.indexing.pipeline"
+            import_path="agentic_inquiry.indexing.pipeline",
         )
 
         assert result is not None
@@ -212,6 +216,7 @@ def test_resolution_strategy_2_module_path():
 
 def test_resolution_strategy_3_single_name_match():
     """Test Strategy 3: Single name match."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-strategy3")
@@ -240,7 +245,7 @@ def test_resolution_strategy_3_single_name_match():
                     content="def process_data():\n    pass",
                     language="python",
                     symbols=["process_data"],
-                    symbol_metadata={"process_data": {"type": "function"}}
+                    symbol_metadata={"process_data": {"type": "function"}},
                 ),
             ],
         )
@@ -252,7 +257,7 @@ def test_resolution_strategy_3_single_name_match():
             target_type=None,  # No type specified
             source_file="/tmp/project/main.py",
             source_language="python",
-            import_path=None
+            import_path=None,
         )
 
         # RelationshipResolver may return None if confidence is too low
@@ -272,6 +277,7 @@ def test_resolution_strategy_3_single_name_match():
 
 def test_resolution_external_dependency():
     """Test that external dependencies return None."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-external")
@@ -297,7 +303,7 @@ def test_resolution_external_dependency():
             target_type="module",
             source_file="/tmp/project/main.py",
             source_language="python",
-            import_path=None
+            import_path=None,
         )
 
         assert result is None  # External dependency
@@ -307,6 +313,7 @@ def test_resolution_external_dependency():
 
 def test_resolution_prefers_exported_symbols():
     """Test that exported symbols are preferred over internal ones."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-exported")
@@ -335,11 +342,13 @@ def test_resolution_prefers_exported_symbols():
                     content="def _internal_helper():\n    pass",
                     language="python",
                     symbols=["_internal_helper"],
-                    symbol_metadata={"_internal_helper": {"type": "function", "is_exported": False}}
+                    symbol_metadata={
+                        "_internal_helper": {"type": "function", "is_exported": False}
+                    },
                 ),
             ],
         )
-        
+
         # Register an exported symbol with same name (without underscore)
         doc2 = ParsedDocument(
             doc_id="doc-2",
@@ -349,11 +358,13 @@ def test_resolution_prefers_exported_symbols():
                     content="def helper():\n    pass",
                     language="python",
                     symbols=["helper"],
-                    symbol_metadata={"helper": {"type": "function", "is_exported": True}}
+                    symbol_metadata={
+                        "helper": {"type": "function", "is_exported": True}
+                    },
                 ),
             ],
         )
-        
+
         await pipeline.process_document(doc1)
         await pipeline.process_document(doc2)
 
@@ -366,6 +377,7 @@ def test_resolution_prefers_exported_symbols():
 
 def test_resolution_same_language_bonus():
     """Test that same language gets a scoring bonus."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-language")
@@ -394,11 +406,11 @@ def test_resolution_same_language_bonus():
                     content="def format_data():\n    pass",
                     language="python",
                     symbols=["format_data"],
-                    symbol_metadata={"format_data": {"type": "function"}}
+                    symbol_metadata={"format_data": {"type": "function"}},
                 ),
             ],
         )
-        
+
         doc2 = ParsedDocument(
             doc_id="doc-2",
             file_path="/tmp/project/utils.js",
@@ -407,11 +419,11 @@ def test_resolution_same_language_bonus():
                     content="function format_data() {}",
                     language="javascript",
                     symbols=["format_data"],
-                    symbol_metadata={"format_data": {"type": "function"}}
+                    symbol_metadata={"format_data": {"type": "function"}},
                 ),
             ],
         )
-        
+
         await pipeline.process_document(doc1)
         await pipeline.process_document(doc2)
 
@@ -421,7 +433,7 @@ def test_resolution_same_language_bonus():
             target_type=None,
             source_file="/tmp/project/main.py",
             source_language="python",
-            import_path=None
+            import_path=None,
         )
 
         # RelationshipResolver may return None if confidence is too low
@@ -437,9 +449,9 @@ def test_resolution_same_language_bonus():
     asyncio.run(run())
 
 
-
 def test_infer_type_from_file():
     """Test _infer_type_from_file helper method."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-infer-type")
@@ -468,19 +480,19 @@ def test_infer_type_from_file():
                     content="class User:\n    pass",
                     language="python",
                     symbols=["User"],
-                    symbol_metadata={"User": {"type": "class"}}
+                    symbol_metadata={"User": {"type": "class"}},
                 ),
                 ParserChunk(
                     content="class Product:\n    pass",
                     language="python",
                     symbols=["Product"],
-                    symbol_metadata={"Product": {"type": "class"}}
+                    symbol_metadata={"Product": {"type": "class"}},
                 ),
                 ParserChunk(
                     content="def helper():\n    pass",
                     language="python",
                     symbols=["helper"],
-                    symbol_metadata={"helper": {"type": "function"}}
+                    symbol_metadata={"helper": {"type": "function"}},
                 ),
             ],
         )
@@ -495,6 +507,7 @@ def test_infer_type_from_file():
 
 def test_infer_type_from_file_no_symbols():
     """Test _infer_type_from_file returns 'module' for files with no symbols."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-infer-no-symbols")
@@ -523,6 +536,7 @@ def test_infer_type_from_file_no_symbols():
 
 def test_infer_type_from_file_single_type():
     """Test _infer_type_from_file with only one type of symbol."""
+
     async def run():
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-infer-single")
@@ -551,13 +565,13 @@ def test_infer_type_from_file_single_type():
                     content="def func1():\n    pass",
                     language="python",
                     symbols=["func1"],
-                    symbol_metadata={"func1": {"type": "function"}}
+                    symbol_metadata={"func1": {"type": "function"}},
                 ),
                 ParserChunk(
                     content="def func2():\n    pass",
                     language="python",
                     symbols=["func2"],
-                    symbol_metadata={"func2": {"type": "function"}}
+                    symbol_metadata={"func2": {"type": "function"}},
                 ),
             ],
         )

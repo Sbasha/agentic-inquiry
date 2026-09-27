@@ -212,9 +212,7 @@ async def hooks_post_write_handler(request: web.Request) -> web.Response:
         change_type = data.get("change_type", "edit")
 
         # Fire-and-forget store
-        asyncio.create_task(
-            orch.record_file_change(file_path, change_type)
-        )
+        asyncio.create_task(orch.record_file_change(file_path, change_type))
 
         return web.json_response({"recorded": True})
     except Exception:

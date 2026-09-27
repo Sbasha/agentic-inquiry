@@ -356,9 +356,11 @@ class TestImpactTraversalWithRelationships:
 
         # Relationship only in project A
         await memory_provider.upsert_relationships(
-            [relationship_factory(
-                rel_id="r1", project_id=project_a, source_id="e1", target_id="e2"
-            )],
+            [
+                relationship_factory(
+                    rel_id="r1", project_id=project_a, source_id="e1", target_id="e2"
+                )
+            ],
             project_a,
         )
 

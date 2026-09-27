@@ -43,19 +43,16 @@ async def test_count_compiles_predicate_once_per_call():
     ]
     await provider.upsert_chunks(chunks, "p")
 
-    with patch(
-        "agentic_inquiry.database.filters.MemoryFilterAdapter"
-    ) as mock_adapter:
+    with patch("agentic_inquiry.database.filters.MemoryFilterAdapter") as mock_adapter:
         # Make the real predicate still work so we count a realistic 25.
         from agentic_inquiry.database.filters.memory_adapter import (
             MemoryFilterAdapter as _Real,
         )
+
         real_instance = _Real()
         mock_adapter.return_value = real_instance
 
-        total = await provider.count(
-            filters={"content_type": "CODE"}, project_id="p"
-        )
+        total = await provider.count(filters={"content_type": "CODE"}, project_id="p")
 
     assert total == 25
     # One construction despite scanning 25 rows.

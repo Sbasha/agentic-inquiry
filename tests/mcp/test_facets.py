@@ -4,13 +4,16 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-from agentic_inquiry.mcp.utils.facets import generate_facets, generate_refinement_suggestions
+from agentic_inquiry.mcp.utils.facets import (
+    generate_facets,
+    generate_refinement_suggestions,
+)
 
 
 def test_generate_facets_empty_results():
     """Test facet generation with empty results."""
     facets = generate_facets([])
-    
+
     assert facets["by_type"] == {}
     assert facets["by_language"] == {}
     assert facets["by_directory"] == {}
@@ -25,9 +28,9 @@ def test_generate_facets_by_type():
         {"type": "code", "file_path": "test2.py"},
         {"type": "doc", "file_path": "README.md"},
     ]
-    
+
     facets = generate_facets(results)
-    
+
     assert facets["by_type"]["code"] == 2
     assert facets["by_type"]["doc"] == 1
     assert facets["total_count"] == 3
@@ -52,9 +55,9 @@ def test_generate_facets_by_language():
             "metadata": {"language": "python"},
         },
     ]
-    
+
     facets = generate_facets(results)
-    
+
     assert facets["by_language"]["python"] == 2
     assert facets["by_language"]["javascript"] == 1
 
@@ -66,9 +69,9 @@ def test_generate_facets_by_directory():
         {"type": "code", "file_path": "src/module2/test.py"},
         {"type": "doc", "file_path": "docs/api.md"},
     ]
-    
+
     facets = generate_facets(results)
-    
+
     assert facets["by_directory"]["src"] == 2
     assert facets["by_directory"]["docs"] == 1
 
@@ -89,14 +92,14 @@ def test_generate_facets_common_terms():
             "file_path": "auth.py",
         },
     ]
-    
+
     facets = generate_facets(results)
-    
+
     # Should extract "authentication", "authorization", "user", etc.
     assert "authentication" in facets["common_terms"]
     assert "authorization" in facets["common_terms"]
     assert "user" in facets["common_terms"]
-    
+
     # Should filter out stop words
     assert "the" not in facets["common_terms"]
     assert "a" not in facets["common_terms"]
@@ -111,15 +114,15 @@ def test_generate_refinement_suggestions_no_filters():
         "common_terms": {"function": 5, "class": 3},
         "total_count": 15,
     }
-    
+
     suggestions = generate_refinement_suggestions(facets, {})
-    
+
     # Should suggest filtering by type
     assert any("type" in s.lower() for s in suggestions)
-    
+
     # Should suggest filtering by language
     assert any("language" in s.lower() for s in suggestions)
-    
+
     # Should suggest filtering by directory
     assert any("director" in s.lower() for s in suggestions)
 
@@ -133,17 +136,14 @@ def test_generate_refinement_suggestions_with_filters():
         "common_terms": {"function": 5, "class": 3},
         "total_count": 15,
     }
-    
+
     # Already filtered by type
-    suggestions = generate_refinement_suggestions(
-        facets,
-        {"type": "code"}
-    )
-    
+    suggestions = generate_refinement_suggestions(facets, {"type": "code"})
+
     # Should not suggest filtering by type again
     type_suggestions = [s for s in suggestions if "type" in s.lower()]
     assert len(type_suggestions) == 0
-    
+
     # Should still suggest other filters
     assert any("language" in s.lower() for s in suggestions)
 
@@ -155,9 +155,9 @@ def test_generate_facets_language_from_extension():
         {"type": "code", "file_path": "test.js", "metadata": {}},
         {"type": "code", "file_path": "test.ts", "metadata": {}},
     ]
-    
+
     facets = generate_facets(results)
-    
+
     # Should detect languages from extensions
     assert "py" in facets["by_language"]
     assert "js" in facets["by_language"]

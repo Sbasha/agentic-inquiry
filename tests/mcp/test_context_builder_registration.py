@@ -24,7 +24,7 @@ async def services(mock_config):
 @pytest.mark.asyncio
 async def test_context_builder_registered_in_factory(services):
     """Test that ContextBuilder is registered in service factory."""
-    
+
     # Verify context_builder is in services
     assert "context_builder" in services
     assert services["context_builder"] is not None
@@ -34,9 +34,9 @@ async def test_context_builder_registered_in_factory(services):
 @pytest.mark.asyncio
 async def test_context_builder_has_all_dependencies(services):
     """Test that ContextBuilder receives all required dependencies."""
-    
+
     context_builder = services["context_builder"]
-    
+
     # Verify all dependencies are set and have expected types
     from agentic_inquiry.search.service import SearchService
     from agentic_inquiry.memory.system import MemorySystem
@@ -66,7 +66,7 @@ async def test_context_builder_dependencies_are_correct_types(services):
     from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
 
     context_builder = services["context_builder"]
-    
+
     # Verify dependency types
     assert isinstance(context_builder.search, SearchService)
     assert isinstance(context_builder.memory, MemorySystem)
@@ -79,32 +79,31 @@ async def test_context_builder_dependencies_are_correct_types(services):
 @pytest.mark.asyncio
 async def test_context_builder_can_be_used_after_creation(services):
     """Test that ContextBuilder can be used after creation from factory."""
-    
+
     context_builder = services["context_builder"]
     session_manager = services["session_manager"]
-    
+
     # Create a test session
     session = await session_manager.create_session(
-        project_id="test_project",
-        description="Test session"
+        project_id="test_project", description="Test session"
     )
     session_id = session["session_id"]
-    
+
     # Try to build context (should not raise errors)
     result = await context_builder.build_context(
         query="test query",
         session_id=session_id,
         focus="all",
         depth="focused",
-        max_tokens=1000
+        max_tokens=1000,
     )
-    
+
     # Verify result structure
     assert "context" in result
     assert "summary" in result
     assert "suggestions" in result
     assert "token_usage" in result
-    
+
     # Verify context structure
     assert "code" in result["context"]
     assert "documentation" in result["context"]
@@ -115,20 +114,20 @@ async def test_context_builder_can_be_used_after_creation(services):
 @pytest.mark.asyncio
 async def test_all_context_builder_dependencies_created_before_builder(services):
     """Test that all dependencies are created before ContextBuilder."""
-    
+
     # Verify all required services exist
     required_services = [
         "search_service",
         "memory_system",
         "storage",  # StorageFacade (was db_manager)
         "session_manager",
-        "config"
+        "config",
     ]
-    
+
     for service_name in required_services:
         assert service_name in services, f"Required service {service_name} not found"
         assert services[service_name] is not None, f"Service {service_name} is None"
-    
+
     # Verify context_builder exists
     assert "context_builder" in services
     assert services["context_builder"] is not None

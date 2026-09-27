@@ -4,6 +4,7 @@ Runner for TEST_03 Feature Implementation UAT.
 Feature: Add a new CLI command `ai stats` that shows index statistics,
 following the pattern of existing CLI commands.
 """
+
 import asyncio
 import json
 import logging
@@ -16,8 +17,15 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     handlers=[logging.StreamHandler(sys.stdout)],
 )
-for noisy in ["httpx", "httpcore", "asyncio", "urllib3", "sentence_transformers",
-              "transformers", "torch"]:
+for noisy in [
+    "httpx",
+    "httpcore",
+    "asyncio",
+    "urllib3",
+    "sentence_transformers",
+    "transformers",
+    "torch",
+]:
     logging.getLogger(noisy).setLevel(logging.WARNING)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -93,11 +101,18 @@ async def main():
             wait_timeout=1800,
         )
         idx_elapsed = time.time() - t_idx
-        log(f"Indexing result: status={idx_r.get('status')}, elapsed={idx_elapsed:.1f}s")
-        log(f"  files={idx_r.get('files_processed', idx_r.get('items_processed', '?'))}, "
+        log(
+            f"Indexing result: status={idx_r.get('status')}, elapsed={idx_elapsed:.1f}s"
+        )
+        log(
+            f"  files={idx_r.get('files_processed', idx_r.get('items_processed', '?'))}, "
             f"chunks={idx_r.get('chunks_created', '?')}, "
-            f"rels={idx_r.get('relationships_created', '?')}")
-        idx_ok = idx_r.get("status") in ("completed", "done") or idx_r.get("completed") is True
+            f"rels={idx_r.get('relationships_created', '?')}"
+        )
+        idx_ok = (
+            idx_r.get("status") in ("completed", "done")
+            or idx_r.get("completed") is True
+        )
         results["setup_index"] = {
             "pass": idx_ok,
             "elapsed_s": round(idx_elapsed, 1),
@@ -107,7 +122,13 @@ async def main():
             "status": idx_r.get("status"),
         }
         if not idx_ok:
-            issues.append({"severity": "HIGH", "test": "setup_index", "msg": f"Indexing incomplete: {idx_r.get('status')}"})
+            issues.append(
+                {
+                    "severity": "HIGH",
+                    "test": "setup_index",
+                    "msg": f"Indexing incomplete: {idx_r.get('status')}",
+                }
+            )
     except Exception as e:
         log(f"Indexing error: {e}")
         results["setup_index"] = {"pass": False, "error": str(e)}
@@ -142,9 +163,13 @@ async def main():
             limit=10,
         )
         results_count = len(r_cli.get("results", []))
-        log(f"  Query 'CLI command implementation entry point': {results_count} results")
+        log(
+            f"  Query 'CLI command implementation entry point': {results_count} results"
+        )
         for item in r_cli.get("results", [])[:5]:
-            log(f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]")
+            log(
+                f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]"
+            )
         results["t1_1a_cli_search"] = {
             "pass": results_count > 0,
             "count": results_count,
@@ -167,7 +192,9 @@ async def main():
         results_count = len(r_cmds.get("results", []))
         log(f"  Query 'ai command handler': {results_count} results")
         for item in r_cmds.get("results", [])[:5]:
-            log(f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]")
+            log(
+                f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]"
+            )
         results["t1_1b_cmd_search"] = {
             "pass": results_count > 0,
             "count": results_count,
@@ -189,7 +216,9 @@ async def main():
         results_count = len(r_cli2.get("results", []))
         log(f"  Query 'agentic-inquiry CLI module': {results_count} results")
         for item in r_cli2.get("results", [])[:5]:
-            log(f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]")
+            log(
+                f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]"
+            )
         results["t1_1c_module_search"] = {
             "pass": results_count > 0,
             "count": results_count,
@@ -200,10 +229,14 @@ async def main():
     except Exception as e:
         log(f"  Error: {e}")
         results["t1_1c_module_search"] = {"pass": False, "error": str(e)}
-        issues.append({"severity": "HIGH", "test": "t1_1c_module_search", "msg": str(e)})
+        issues.append(
+            {"severity": "HIGH", "test": "t1_1c_module_search", "msg": str(e)}
+        )
 
     # T1.2: Pattern recognition - search for existing command patterns
-    log("T1.2: Pattern recognition - search for command registration and dispatch patterns")
+    log(
+        "T1.2: Pattern recognition - search for command registration and dispatch patterns"
+    )
     try:
         r_pat = await search_knowledge(
             services=services,
@@ -214,7 +247,9 @@ async def main():
         results_count = len(r_pat.get("results", []))
         log(f"  Pattern search: {results_count} results")
         for item in r_pat.get("results", [])[:5]:
-            log(f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]")
+            log(
+                f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]"
+            )
         results["t1_2_pattern"] = {
             "pass": results_count > 0,
             "count": results_count,
@@ -262,7 +297,9 @@ async def main():
         results_count = len(r_insert.get("results", []))
         log(f"  Insertion point search: {results_count} results")
         for item in r_insert.get("results", [])[:5]:
-            log(f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]")
+            log(
+                f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]"
+            )
         results["t2_1_insertion"] = {
             "pass": results_count > 0,
             "count": results_count,
@@ -284,7 +321,9 @@ async def main():
         results_count = len(r_integ.get("results", []))
         log(f"  Integration points: {results_count} results")
         for item in r_integ.get("results", [])[:5]:
-            log(f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]")
+            log(
+                f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]"
+            )
         results["t2_2_integration"] = {
             "pass": results_count > 0,
             "count": results_count,
@@ -306,7 +345,9 @@ async def main():
         results_count = len(r_test_loc.get("results", []))
         log(f"  Test location search: {results_count} results")
         for item in r_test_loc.get("results", [])[:5]:
-            log(f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]")
+            log(
+                f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]"
+            )
         results["t2_3_test_location"] = {
             "pass": results_count > 0,
             "count": results_count,
@@ -314,7 +355,9 @@ async def main():
     except Exception as e:
         log(f"  Error: {e}")
         results["t2_3_test_location"] = {"pass": False, "error": str(e)}
-        issues.append({"severity": "MEDIUM", "test": "t2_3_test_location", "msg": str(e)})
+        issues.append(
+            {"severity": "MEDIUM", "test": "t2_3_test_location", "msg": str(e)}
+        )
 
     # ══════════════════════════════════════════════════════════════════
     # TEST 3: Dependency Analysis
@@ -340,7 +383,9 @@ async def main():
     except Exception as e:
         log(f"  Error: {e}")
         results["t3_1_dependencies"] = {"pass": False, "error": str(e)}
-        issues.append({"severity": "MEDIUM", "test": "t3_1_dependencies", "msg": str(e)})
+        issues.append(
+            {"severity": "MEDIUM", "test": "t3_1_dependencies", "msg": str(e)}
+        )
 
     # T3.2: Impact assessment - what would be affected
     log("T3.2: Impact assessment via analyze_impact")
@@ -351,7 +396,11 @@ async def main():
             entity="cli",
         )
         log(f"  Impact result: {json.dumps(r_impact, default=str)[:400]}")
-        has_data = bool(r_impact.get("affected_components") or r_impact.get("impact_score") or r_impact.get("results"))
+        has_data = bool(
+            r_impact.get("affected_components")
+            or r_impact.get("impact_score")
+            or r_impact.get("results")
+        )
         results["t3_2_impact"] = {
             "pass": True,  # tool ran without error
             "has_data": has_data,
@@ -394,7 +443,9 @@ async def main():
         results_count = len(r_model.get("results", []))
         log(f"  Model command search: {results_count} results")
         for item in r_model.get("results", [])[:5]:
-            log(f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]")
+            log(
+                f"    - {item.get('file_path', item.get('path', '?'))} [{item.get('score', 0):.3f}]"
+            )
         results["t4_1_step_plan"] = {
             "pass": results_count > 0,
             "count": results_count,
@@ -533,10 +584,10 @@ async def main():
 
 def _write_results(results: dict, issues: list, t_start: float):
     total_elapsed = time.time() - t_start
-    total = len([k for k, v in results.items()
-                 if isinstance(v, dict) and "pass" in v])
-    passed = len([k for k, v in results.items()
-                  if isinstance(v, dict) and v.get("pass") is True])
+    total = len([k for k, v in results.items() if isinstance(v, dict) and "pass" in v])
+    passed = len(
+        [k for k, v in results.items() if isinstance(v, dict) and v.get("pass") is True]
+    )
 
     summary = {
         "test_id": "TEST_03",

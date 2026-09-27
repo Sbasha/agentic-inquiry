@@ -107,7 +107,9 @@ class TestInMemorySessionStorage:
         assert loaded.description == sample_session.description
 
     @pytest.mark.asyncio
-    async def test_load_nonexistent_session(self, memory_storage: InMemorySessionStorage):
+    async def test_load_nonexistent_session(
+        self, memory_storage: InMemorySessionStorage
+    ):
         """Loading nonexistent session returns None."""
         loaded = await memory_storage.load_session("nonexistent-id")
         assert loaded is None
@@ -126,7 +128,9 @@ class TestInMemorySessionStorage:
         assert loaded is None
 
     @pytest.mark.asyncio
-    async def test_delete_nonexistent_session(self, memory_storage: InMemorySessionStorage):
+    async def test_delete_nonexistent_session(
+        self, memory_storage: InMemorySessionStorage
+    ):
         """Deleting nonexistent session returns False."""
         deleted = await memory_storage.delete_session("nonexistent-id")
         assert deleted is False
@@ -135,8 +139,7 @@ class TestInMemorySessionStorage:
     async def test_list_sessions(self, memory_storage: InMemorySessionStorage):
         """List all sessions."""
         sessions = [
-            Session(session_id=f"session-{i}", project_id="project-a")
-            for i in range(3)
+            Session(session_id=f"session-{i}", project_id="project-a") for i in range(3)
         ]
         for session in sessions:
             await memory_storage.persist_session(session)
@@ -148,7 +151,9 @@ class TestInMemorySessionStorage:
         assert session_ids == {"session-0", "session-1", "session-2"}
 
     @pytest.mark.asyncio
-    async def test_list_sessions_by_project(self, memory_storage: InMemorySessionStorage):
+    async def test_list_sessions_by_project(
+        self, memory_storage: InMemorySessionStorage
+    ):
         """List sessions filtered by project_id."""
         await memory_storage.persist_session(
             Session(session_id="s1", project_id="project-a")
@@ -198,7 +203,9 @@ class TestInMemorySessionStorage:
         assert len(listed) == 2
 
     @pytest.mark.asyncio
-    async def test_list_sessions_with_limit(self, memory_storage: InMemorySessionStorage):
+    async def test_list_sessions_with_limit(
+        self, memory_storage: InMemorySessionStorage
+    ):
         """List sessions respects limit."""
         for i in range(10):
             await memory_storage.persist_session(
@@ -347,7 +354,12 @@ class TestLanceDBSessionStorage:
             Session(session_id="bare", project_id="p")
         )
         await lancedb_session_storage.persist_session(
-            Session(session_id="full", project_id="p", description="Described", log_file="/tmp/s.log")
+            Session(
+                session_id="full",
+                project_id="p",
+                description="Described",
+                log_file="/tmp/s.log",
+            )
         )
 
         listed = await lancedb_session_storage.list_sessions()
@@ -365,7 +377,9 @@ class TestLanceDBSessionStorage:
         import lancedb
 
         legacy = Session(session_id="legacy", project_id="p").to_db_record()
-        lancedb.connect(str(tmp_path / "lancedb")).create_table("mcp_sessions", data=[legacy])
+        lancedb.connect(str(tmp_path / "lancedb")).create_table(
+            "mcp_sessions", data=[legacy]
+        )
 
         with pytest.raises(StorageError) as exc_info:
             await lancedb_session_storage.persist_session(
@@ -404,7 +418,9 @@ class TestLanceDBSessionStorage:
         monkeypatch: pytest.MonkeyPatch,
     ):
         """Load session raises StorageError on failure."""
-        monkeypatch.setattr(lancedb_session_storage.db_manager, "advanced_filter", _fail)
+        monkeypatch.setattr(
+            lancedb_session_storage.db_manager, "advanced_filter", _fail
+        )
 
         with pytest.raises(StorageError) as exc_info:
             await lancedb_session_storage.load_session("test-id")
@@ -418,7 +434,9 @@ class TestLanceDBSessionStorage:
         """Delete marks the session expired rather than removing the record."""
         await lancedb_session_storage.persist_session(sample_session)
 
-        deleted = await lancedb_session_storage.delete_session(sample_session.session_id)
+        deleted = await lancedb_session_storage.delete_session(
+            sample_session.session_id
+        )
 
         assert deleted is True
         loaded = await lancedb_session_storage.load_session(sample_session.session_id)
@@ -477,7 +495,9 @@ class TestLanceDBSessionStorage:
         monkeypatch: pytest.MonkeyPatch,
     ):
         """List sessions raises StorageError on failure."""
-        monkeypatch.setattr(lancedb_session_storage.db_manager, "advanced_filter", _fail)
+        monkeypatch.setattr(
+            lancedb_session_storage.db_manager, "advanced_filter", _fail
+        )
 
         with pytest.raises(StorageError) as exc_info:
             await lancedb_session_storage.list_sessions()
@@ -506,7 +526,9 @@ class TestLanceDBSessionStorage:
         monkeypatch: pytest.MonkeyPatch,
     ):
         """Find expired sessions raises StorageError on failure."""
-        monkeypatch.setattr(lancedb_session_storage.db_manager, "advanced_filter", _fail)
+        monkeypatch.setattr(
+            lancedb_session_storage.db_manager, "advanced_filter", _fail
+        )
 
         with pytest.raises(StorageError) as exc_info:
             await lancedb_session_storage.find_expired_sessions(ttl_hours=24)
@@ -520,7 +542,9 @@ class TestLanceDBSessionStorage:
         """Mark session expired persists the expired state."""
         await lancedb_session_storage.persist_session(sample_session)
 
-        marked = await lancedb_session_storage.mark_session_expired(sample_session.session_id)
+        marked = await lancedb_session_storage.mark_session_expired(
+            sample_session.session_id
+        )
 
         assert marked is True
         loaded = await lancedb_session_storage.load_session(sample_session.session_id)
@@ -532,7 +556,9 @@ class TestLanceDBSessionStorage:
         self, lancedb_session_storage: LanceDBSessionStorage
     ):
         """Mark session expired returns False when not found."""
-        assert await lancedb_session_storage.mark_session_expired("nonexistent") is False
+        assert (
+            await lancedb_session_storage.mark_session_expired("nonexistent") is False
+        )
 
     @pytest.mark.asyncio
     async def test_mark_session_expired_error(
@@ -545,7 +571,12 @@ class TestLanceDBSessionStorage:
         await lancedb_session_storage.persist_session(sample_session)
         monkeypatch.setattr(lancedb_session_storage.db_manager, "upsert", _fail)
 
-        assert await lancedb_session_storage.mark_session_expired(sample_session.session_id) is False
+        assert (
+            await lancedb_session_storage.mark_session_expired(
+                sample_session.session_id
+            )
+            is False
+        )
 
 
 # =============================================================================
@@ -581,6 +612,8 @@ class TestSessionManagerIntegration:
         from agentic_inquiry.config import Config
         from agentic_inquiry.mcp.services.session_manager import SessionManager
 
-        session_manager = SessionManager(db_manager=lancedb_storage, config=Config.load())
+        session_manager = SessionManager(
+            db_manager=lancedb_storage, config=Config.load()
+        )
 
         assert isinstance(session_manager.storage, LanceDBSessionStorage)

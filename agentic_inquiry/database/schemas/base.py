@@ -5,6 +5,7 @@ Schemas define the canonical field names and types that all adapters must suppor
 
 See: docs/design/logical-schema-reference.md
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

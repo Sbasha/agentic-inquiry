@@ -175,7 +175,9 @@ def test_failed_row_still_releases_the_runtime(
     monkeypatch.setattr(
         reconcile_module,
         "_commit_one",
-        AsyncMock(return_value=("failed", {"outcome": "failed", "memory_ids": []}, None)),
+        AsyncMock(
+            return_value=("failed", {"outcome": "failed", "memory_ids": []}, None)
+        ),
     )
     before = aiosqlite_threads()
 
@@ -190,7 +192,9 @@ def test_raising_commit_still_releases_the_runtime(
 ) -> None:
     _, project = queued
     monkeypatch.setattr(
-        reconcile_module, "_commit_one", AsyncMock(side_effect=RuntimeError("commit failed"))
+        reconcile_module,
+        "_commit_one",
+        AsyncMock(side_effect=RuntimeError("commit failed")),
     )
     before = aiosqlite_threads()
 

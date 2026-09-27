@@ -5,6 +5,7 @@ It encapsulates all SQLite-specific operations and row conversion logic.
 
 Design reference: DES-S2-003 in .sessions/deep-architecture-review/009-design.md
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -152,9 +153,7 @@ class SQLiteEventStorage:
                 "CREATE INDEX IF NOT EXISTS idx_project_timestamp "
                 "ON events(project_id, timestamp)"
             )
-            await db.execute(
-                "CREATE INDEX IF NOT EXISTS idx_status ON events(status)"
-            )
+            await db.execute("CREATE INDEX IF NOT EXISTS idx_status ON events(status)")
 
             await db.commit()
 
@@ -202,7 +201,9 @@ class SQLiteEventStorage:
                         delay = policy.calculate_delay(attempt)
                         logger.warning(
                             "Database locked, retrying in %.2fs (attempt %s/%s)",
-                            delay, attempt + 1, policy.max_attempts
+                            delay,
+                            attempt + 1,
+                            policy.max_attempts,
                         )
                         await asyncio.sleep(delay)
                     else:
@@ -264,9 +265,7 @@ class SQLiteEventStorage:
             )
             return 0
         except sqlite3.DatabaseError:
-            logger.error(
-                "Failed to write %s events due to database error", len(events)
-            )
+            logger.error("Failed to write %s events due to database error", len(events))
             return 0
         except Exception as e:
             logger.error("Failed to write %s events: %s", len(events), e)

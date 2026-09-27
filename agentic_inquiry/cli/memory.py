@@ -99,7 +99,9 @@ async def create_memory_system(config, project_id: str):
     # the model into a process that asked for the deterministic embedder.
     provider = getattr(config.embeddings, "default_provider", "")
     if provider != "hashing" and not embedding_registry._default_configured:
-        from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
+        from agentic_inquiry.embeddings.sentence_transformer import (
+            SentenceTransformerEmbedder,
+        )
 
         model_name = getattr(
             config.embeddings.sentence_transformer, "model_name", "all-MiniLM-L6-v2"
@@ -125,7 +127,9 @@ async def create_memory_system(config, project_id: str):
 
         if backend_type == "lancedb":
             # LanceDB backend - use LanceDBMemoryAdapter for persistence across invocations
-            from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
+            from agentic_inquiry.memory.adapters.lancedb_adapter import (
+                LanceDBMemoryAdapter,
+            )
 
             db_manager = storage.get_db_manager()
             episodic_storage = LanceDBMemoryAdapter(
@@ -142,7 +146,9 @@ async def create_memory_system(config, project_id: str):
             await semantic_storage.initialize()
         else:
             # Unknown backend - use in-memory adapter as last resort
-            from agentic_inquiry.memory.adapters.inmemory_adapter import InMemoryMemoryAdapter
+            from agentic_inquiry.memory.adapters.inmemory_adapter import (
+                InMemoryMemoryAdapter,
+            )
 
             episodic_storage = InMemoryMemoryAdapter(embedding_dims=embedding_dims)
             semantic_storage = InMemoryMemoryAdapter(embedding_dims=embedding_dims)
@@ -215,7 +221,9 @@ async def save_command(args: argparse.Namespace) -> int:
     try:
         memory_system, storage = await create_memory_system(config, project_id)
 
-        from agentic_inquiry.memory.adapters.inmemory_adapter import InMemoryMemoryAdapter
+        from agentic_inquiry.memory.adapters.inmemory_adapter import (
+            InMemoryMemoryAdapter,
+        )
         from agentic_inquiry.memory.models import MemoryTier
 
         if isinstance(

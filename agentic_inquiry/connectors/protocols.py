@@ -11,6 +11,7 @@ All protocols are @runtime_checkable for isinstance() detection.
 
 See: docs/design/connector-architecture.md
 """
+
 from __future__ import annotations
 
 from enum import Enum
@@ -108,9 +109,7 @@ class WatchCapability(Protocol):
                 handle_change(event_type, item)
     """
 
-    def watch(
-        self, root: str
-    ) -> AsyncIterator[tuple[WatchEventType, SourceItem]]:
+    def watch(self, root: str) -> AsyncIterator[tuple[WatchEventType, SourceItem]]:
         """Watch for changes under a root path.
 
         Yields (event_type, item) tuples as changes occur.

@@ -160,7 +160,11 @@ class TestDiagnosticsInResult:
             entities_created=5,
             files_processed=3,
             files_failed=2,
-            diagnostics={"files_discovered": 10, "files_processed": 3, "files_failed": 2},
+            diagnostics={
+                "files_discovered": 10,
+                "files_processed": 3,
+                "files_failed": 2,
+            },
         )
         assert result.files_discovered == 10
 

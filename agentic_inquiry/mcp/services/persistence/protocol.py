@@ -71,7 +71,7 @@ class SessionStorageProtocol(Protocol):
         self,
         project_id: Optional[str] = None,
         include_expired: bool = False,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[Dict[str, Any]]:
         """List sessions with optional filtering.
 
@@ -98,9 +98,7 @@ class SessionStorageProtocol(Protocol):
 
     @abstractmethod
     async def find_expired_sessions(
-        self,
-        ttl_hours: float,
-        limit: int = 1000
+        self, ttl_hours: float, limit: int = 1000
     ) -> List[Dict[str, Any]]:
         """Find sessions that have exceeded TTL.
 

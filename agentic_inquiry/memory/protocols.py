@@ -11,6 +11,7 @@ Design principles:
 
 See: DES-S2-002 in .sessions/deep-architecture-review/009-design.md
 """
+
 from __future__ import annotations
 
 from typing import (

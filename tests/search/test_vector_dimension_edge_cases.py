@@ -86,8 +86,11 @@ class TestZeroDimensionVectors:
     """Tests for zero-dimension (empty) vector edge cases."""
 
     @pytest.mark.unit
-    async def test_empty_query_vector_returns_empty_results(self, hybrid_search_service):
+    async def test_empty_query_vector_returns_empty_results(
+        self, hybrid_search_service
+    ):
         """Test that an empty query vector returns empty results gracefully."""
+
         # Setup mock functions
         async def mock_vector_search(**kwargs):
             # Empty vector should result in no vector search
@@ -110,7 +113,9 @@ class TestZeroDimensionVectors:
         assert result == []
 
     @pytest.mark.unit
-    async def test_none_query_vector_falls_back_to_fts_only(self, hybrid_search_service, mock_deduplicator):
+    async def test_none_query_vector_falls_back_to_fts_only(
+        self, hybrid_search_service, mock_deduplicator
+    ):
         """Test that None query vector falls back to FTS-only search."""
         # Setup FTS results
         fts_dicts = [
@@ -149,7 +154,9 @@ class TestZeroDimensionVectors:
         mock_config.embeddings.default_dimensions = 0
 
         # Mock the embedder to simulate zero-dimension output
-        with patch('agentic_inquiry.embeddings.registry.embedding_registry') as mock_registry:
+        with patch(
+            "agentic_inquiry.embeddings.registry.embedding_registry"
+        ) as mock_registry:
             mock_embedder = MagicMock()
             mock_embedder.ndims.return_value = 0
             mock_embedder.embed.return_value = np.array([])
@@ -226,7 +233,9 @@ class TestMaxDimensionVectors:
         assert call_count["vector"] == 1
 
     @pytest.mark.unit
-    async def test_large_dimension_with_results(self, hybrid_search_service, mock_deduplicator):
+    async def test_large_dimension_with_results(
+        self, hybrid_search_service, mock_deduplicator
+    ):
         """Test that large dimension vectors can return results successfully."""
         # Create a large vector
         large_vector = [0.05] * 5000
@@ -283,7 +292,7 @@ class TestMismatchedDimensions:
                 table_name="document_chunks",
                 query_vector=query_vector_small,
                 vector_column_name="vector",
-                limit=10
+                limit=10,
             )
 
     @pytest.mark.unit
@@ -303,11 +312,13 @@ class TestMismatchedDimensions:
                 table_name="document_chunks",
                 query_vector=query_vector_large,
                 vector_column_name="vector",
-                limit=10
+                limit=10,
             )
 
     @pytest.mark.unit
-    async def test_mismatched_dimensions_with_graceful_fallback(self, hybrid_search_service, mock_deduplicator):
+    async def test_mismatched_dimensions_with_graceful_fallback(
+        self, hybrid_search_service, mock_deduplicator
+    ):
         """Test graceful fallback to FTS when vector search fails due to dimension mismatch."""
         # Setup: vector search fails, FTS succeeds
         fts_dicts = [
@@ -321,7 +332,9 @@ class TestMismatchedDimensions:
         # Setup mock functions
         async def mock_vector_search(**kwargs):
             # Simulate dimension mismatch error
-            raise Exception("Dimension mismatch: query vector has 128 dimensions, expected 384")
+            raise Exception(
+                "Dimension mismatch: query vector has 128 dimensions, expected 384"
+            )
 
         async def mock_fts_search(**kwargs):
             return fts_results
@@ -375,13 +388,14 @@ class TestDimensionValidation:
     async def test_nan_vector_values(self, hybrid_search_service):
         """Test handling of NaN values in vectors."""
         # Create vector with NaN values
-        vector_with_nan = [0.1, float('nan'), 0.3, 0.4]
+        vector_with_nan = [0.1, float("nan"), 0.3, 0.4]
 
         # Setup mock that would detect NaN
         async def mock_vector_search(**kwargs):
             query_vec = kwargs.get("query_vector", [])
             # Simulate NaN checking
             import math
+
             if any(math.isnan(x) for x in query_vec if isinstance(x, float)):
                 raise ValueError("Vector contains NaN values")
             return []
@@ -404,13 +418,14 @@ class TestDimensionValidation:
     async def test_infinity_vector_values(self, hybrid_search_service):
         """Test handling of infinity values in vectors."""
         # Create vector with infinity values
-        vector_with_inf = [0.1, float('inf'), 0.3, 0.4]
+        vector_with_inf = [0.1, float("inf"), 0.3, 0.4]
 
         # Setup mock that would detect infinity
         async def mock_vector_search(**kwargs):
             query_vec = kwargs.get("query_vector", [])
             # Simulate infinity checking
             import math
+
             if any(math.isinf(x) for x in query_vec if isinstance(x, float)):
                 raise ValueError("Vector contains infinity values")
             return []
@@ -477,7 +492,9 @@ class TestDimensionValidation:
         # Configure service
         mock_config.embeddings.default_dimensions = 384
 
-        with patch('agentic_inquiry.embeddings.registry.embedding_registry') as mock_registry:
+        with patch(
+            "agentic_inquiry.embeddings.registry.embedding_registry"
+        ) as mock_registry:
             mock_embedder = MagicMock()
             mock_embedder.ndims.return_value = 384
             mock_embedder.embed.return_value = np.array([0.1] * 384)
@@ -496,6 +513,7 @@ class TestEdgeCaseCombinations:
     @pytest.mark.unit
     async def test_empty_vector_with_empty_fts_query(self, hybrid_search_service):
         """Test both empty vector and empty FTS query."""
+
         # Setup mock functions
         async def mock_vector_search(**kwargs):
             return []

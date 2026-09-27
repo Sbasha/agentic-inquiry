@@ -6,6 +6,7 @@ Tests cover:
 - File deletion on eviction
 - Integration with FileCacheTracker
 """
+
 from __future__ import annotations
 
 import tempfile
@@ -69,11 +70,13 @@ class TestMaterializerEviction:
             max_size=100,
         )
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file1.txt": b"x" * 40,
-            "s3://bucket/file2.txt": b"y" * 40,
-            "s3://bucket/file3.txt": b"z" * 40,
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file1.txt": b"x" * 40,
+                "s3://bucket/file2.txt": b"y" * 40,
+                "s3://bucket/file3.txt": b"z" * 40,
+            }
+        )
 
         item1 = SourceItem(uri="s3://bucket/file1.txt", content_hash="hash1")
         item2 = SourceItem(uri="s3://bucket/file2.txt", content_hash="hash2")
@@ -101,12 +104,14 @@ class TestMaterializerEviction:
             max_size=100,
         )
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file1.txt": b"a" * 30,
-            "s3://bucket/file2.txt": b"b" * 30,
-            "s3://bucket/file3.txt": b"c" * 30,
-            "s3://bucket/file4.txt": b"d" * 30,
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file1.txt": b"a" * 30,
+                "s3://bucket/file2.txt": b"b" * 30,
+                "s3://bucket/file3.txt": b"c" * 30,
+                "s3://bucket/file4.txt": b"d" * 30,
+            }
+        )
 
         item1 = SourceItem(uri="s3://bucket/file1.txt", content_hash="hash1")
         item2 = SourceItem(uri="s3://bucket/file2.txt", content_hash="hash2")
@@ -137,10 +142,9 @@ class TestMaterializerEviction:
             max_size=0,  # unlimited
         )
 
-        connector = MockRemoteConnector({
-            f"s3://bucket/file{i}.txt": b"x" * 100
-            for i in range(10)
-        })
+        connector = MockRemoteConnector(
+            {f"s3://bucket/file{i}.txt": b"x" * 100 for i in range(10)}
+        )
 
         paths = []
         for i in range(10):
@@ -163,10 +167,12 @@ class TestMaterializerEviction:
             max_size=1000,
         )
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file1.txt": b"content1",
-            "s3://bucket/file2.txt": b"content2",
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file1.txt": b"content1",
+                "s3://bucket/file2.txt": b"content2",
+            }
+        )
 
         item1 = SourceItem(uri="s3://bucket/file1.txt", content_hash="hash1")
         item2 = SourceItem(uri="s3://bucket/file2.txt", content_hash="hash2")
@@ -193,11 +199,13 @@ class TestMaterializerEviction:
             max_size=100,
         )
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file1.txt": b"x" * 50,
-            "s3://bucket/file2.txt": b"y" * 50,
-            "s3://bucket/file3.txt": b"z" * 50,
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file1.txt": b"x" * 50,
+                "s3://bucket/file2.txt": b"y" * 50,
+                "s3://bucket/file3.txt": b"z" * 50,
+            }
+        )
 
         item1 = SourceItem(uri="s3://bucket/file1.txt", content_hash="hash1")
         item2 = SourceItem(uri="s3://bucket/file2.txt", content_hash="hash2")
@@ -220,9 +228,11 @@ class TestMaterializerEviction:
             max_size=1000,
         )
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file1.txt": b"content",
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file1.txt": b"content",
+            }
+        )
 
         item = SourceItem(uri="s3://bucket/file1.txt", content_hash="hash1")
 
@@ -243,10 +253,12 @@ class TestMaterializerEviction:
             max_size=1000,
         )
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file1.txt": b"a",
-            "s3://bucket/file2.txt": b"b",
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file1.txt": b"a",
+                "s3://bucket/file2.txt": b"b",
+            }
+        )
 
         await materializer.materialize(
             connector,
@@ -273,10 +285,12 @@ class TestMaterializerEviction:
             max_size=100,
         )
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file1.txt": b"x" * 50,
-            "s3://bucket/file2.txt": b"y" * 60,
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file1.txt": b"x" * 50,
+                "s3://bucket/file2.txt": b"y" * 60,
+            }
+        )
 
         item1 = SourceItem(uri="s3://bucket/file1.txt", content_hash="aabbcc")
         item2 = SourceItem(uri="s3://bucket/file2.txt", content_hash="ddeeff")
@@ -298,9 +312,11 @@ class TestMaterializerEviction:
             max_size=1000,
         )
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file.txt": b"content",
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file.txt": b"content",
+            }
+        )
 
         item = SourceItem(uri="s3://bucket/file.txt", content_hash="hash1")
 

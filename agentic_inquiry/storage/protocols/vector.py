@@ -257,9 +257,7 @@ class VectorStorageProtocol(Protocol):
         """
         ...
 
-    async def delete_chunks_by_ids(
-        self, chunk_ids: List[str], project_id: str
-    ) -> int:
+    async def delete_chunks_by_ids(self, chunk_ids: List[str], project_id: str) -> int:
         """Delete chunks by their IDs.
 
         Removes specific document chunks by their unique identifiers.
@@ -642,9 +640,7 @@ class MaintenanceProtocol(Protocol):
         """
         ...
 
-    async def run_maintenance(
-        self, project_id: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def run_maintenance(self, project_id: Optional[str] = None) -> Dict[str, Any]:
         """Run storage maintenance operations.
 
         Performs optimization tasks like fragment consolidation, index

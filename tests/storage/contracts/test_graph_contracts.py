@@ -37,15 +37,11 @@ class TestGraphEntityCRUD:
         self, vector_provider, project_id, entity_factory
     ):
         """upsert_entities should update existing entities."""
-        entity = entity_factory(
-            entity_id="e1", project_id=project_id, name="original"
-        )
+        entity = entity_factory(entity_id="e1", project_id=project_id, name="original")
         await vector_provider.upsert_entities([entity], project_id)
 
         # Update with new name
-        updated = entity_factory(
-            entity_id="e1", project_id=project_id, name="updated"
-        )
+        updated = entity_factory(entity_id="e1", project_id=project_id, name="updated")
         count = await vector_provider.upsert_entities([updated], project_id)
 
         assert count == 1
@@ -158,9 +154,7 @@ class TestGraphEntityCRUD:
         ]
         await vector_provider.upsert_entities(entities, project_id)
 
-        deleted = await vector_provider.delete_entities_by_ids(
-            ["e1", "e2"], project_id
-        )
+        deleted = await vector_provider.delete_entities_by_ids(["e1", "e2"], project_id)
 
         assert deleted == 2
 
@@ -170,8 +164,7 @@ class TestGraphEntityCRUD:
     ):
         """count_entities should return total number of entities."""
         entities = [
-            entity_factory(entity_id=f"e{i}", project_id=project_id)
-            for i in range(5)
+            entity_factory(entity_id=f"e{i}", project_id=project_id) for i in range(5)
         ]
         await vector_provider.upsert_entities(entities, project_id)
 
@@ -357,9 +350,7 @@ class TestGraphRelationshipCRUD:
         ]
         await vector_provider.upsert_relationships(relationships, project_id)
 
-        deleted = await vector_provider.delete_relationships_by_entity(
-            "e1", project_id
-        )
+        deleted = await vector_provider.delete_relationships_by_entity("e1", project_id)
 
         assert deleted == 2
 
@@ -447,9 +438,7 @@ class TestGraphProjectIsolation:
     """Tests for project-based data isolation in graph storage."""
 
     @pytest.mark.asyncio
-    async def test_entities_isolated_by_project(
-        self, vector_provider, entity_factory
-    ):
+    async def test_entities_isolated_by_project(self, vector_provider, entity_factory):
         """Entities from different projects should be isolated."""
         project_a = "graph_project_a"
         project_b = "graph_project_b"
@@ -467,9 +456,7 @@ class TestGraphProjectIsolation:
         assert count_b == 1
 
     @pytest.mark.asyncio
-    async def test_get_entity_respects_project(
-        self, vector_provider, entity_factory
-    ):
+    async def test_get_entity_respects_project(self, vector_provider, entity_factory):
         """get_entity should only return entity from specified project."""
         project_a = "graph_iso_a"
         project_b = "graph_iso_b"

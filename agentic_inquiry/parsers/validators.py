@@ -1,4 +1,5 @@
 """Utilities for validating parser output prior to ingestion."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -29,7 +30,9 @@ def _has_text_payload(chunk: ParserChunk) -> bool:
     return False
 
 
-def validate_chunks_have_text(chunks: Iterable[ParserChunk]) -> List[ChunkValidationIssue]:
+def validate_chunks_have_text(
+    chunks: Iterable[ParserChunk],
+) -> List[ChunkValidationIssue]:
     """Validate that each chunk exposes textual content for embedding."""
 
     issues: List[ChunkValidationIssue] = []
@@ -46,7 +49,9 @@ def validate_chunks_have_text(chunks: Iterable[ParserChunk]) -> List[ChunkValida
     return issues
 
 
-def validate_parsed_document(parsed_document: ParsedDocument) -> List[ChunkValidationIssue]:
+def validate_parsed_document(
+    parsed_document: ParsedDocument,
+) -> List[ChunkValidationIssue]:
     """Run all validation checks against a :class:`ParsedDocument`."""
 
     issues = validate_chunks_have_text(parsed_document.chunks)

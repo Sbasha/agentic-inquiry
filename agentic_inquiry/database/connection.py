@@ -5,6 +5,7 @@ lifecycle including connect, close, reconnect, and health checking.
 
 Design reference: DES-S3-001 in .sessions/deep-architecture-review/009-design.md
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -63,10 +64,14 @@ class ConnectionManager:
         prepare_local_path: bool = False,
     ):
         if connection is not None and connection_factory is not None:
-            raise StorageError("Provide either 'connection' or 'connection_factory', not both.")
+            raise StorageError(
+                "Provide either 'connection' or 'connection_factory', not both."
+            )
 
         if connection is None and connection_factory is None and uri is None:
-            raise StorageError("A URI, connection or connection_factory must be provided.")
+            raise StorageError(
+                "A URI, connection or connection_factory must be provided."
+            )
 
         self.uri = uri
         self._db: Optional["lancedb.DBConnection"] = connection
@@ -88,9 +93,13 @@ class ConnectionManager:
             StorageError: If no URI is configured
         """
         if _lancedb is None:
-            raise ImportError("The 'lancedb' package is required to use ConnectionManager.")
+            raise ImportError(
+                "The 'lancedb' package is required to use ConnectionManager."
+            )
         if self.uri is None:
-            raise StorageError("A URI must be provided when no connection factory is supplied.")
+            raise StorageError(
+                "A URI must be provided when no connection factory is supplied."
+            )
         if self._prepare_local_path:
             os.makedirs(self.uri, exist_ok=True)
         return _lancedb.connect(self.uri)

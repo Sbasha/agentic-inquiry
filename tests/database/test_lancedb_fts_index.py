@@ -65,7 +65,9 @@ async def manager(storage_root: Path) -> AsyncIterator[LanceDBManager]:
 async def test_new_document_chunks_table_has_one_fts_index_on_fts_text(
     manager: LanceDBManager,
 ) -> None:
-    await manager.add_document_chunks([_chunk("c1", "def parseDocument(): pass", "parseDocument parse document")])
+    await manager.add_document_chunks(
+        [_chunk("c1", "def parseDocument(): pass", "parseDocument parse document")]
+    )
     table = await manager.get_table("document_chunks")
     assert _fts_indices(table) == [("fts_text",)]
 
@@ -133,7 +135,9 @@ async def test_legacy_tantivy_index_dir_is_removed_and_native_index_built(
     row: Dict[str, Any] = _chunk("c1", "x", "parseDocument parse document").to_dict()
     for field in BRANCH_INDEXING_FIELDS:
         row.pop(field, None)
-    db.create_table("document_chunks", data=[row], schema=get_document_chunks_schema(_DIMS))
+    db.create_table(
+        "document_chunks", data=[row], schema=get_document_chunks_schema(_DIMS)
+    )
     legacy = db_dir / "document_chunks.lance" / "_indices" / "fts"
     legacy.mkdir(parents=True)
     (legacy / "meta.json").write_text("{}")

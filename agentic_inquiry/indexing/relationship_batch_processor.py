@@ -5,6 +5,7 @@ batch processing, committing, and progress tracking for relationship flush opera
 
 Design reference: DES-S3-002 in .sessions/deep-architecture-review/009-design.md
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -140,9 +141,7 @@ class RelationshipBatchProcessor:
         self,
         batch: List[Tuple["ParserRelationship", str]],
         batch_number: int,
-        resolver_func: Callable[
-            [Tuple["ParserRelationship", str]], Any
-        ],
+        resolver_func: Callable[[Tuple["ParserRelationship", str]], Any],
         stats: Dict[str, Any],
         semaphore: asyncio.Semaphore,
     ) -> List["GraphRelationship"]:
@@ -163,7 +162,7 @@ class RelationshipBatchProcessor:
         from agentic_inquiry.models import GraphRelationship
 
         async def process_single(
-            rel_tuple: Tuple["ParserRelationship", str]
+            rel_tuple: Tuple["ParserRelationship", str],
         ) -> Optional["GraphRelationship"]:
             relationship, source_file_path = rel_tuple
             async with semaphore:

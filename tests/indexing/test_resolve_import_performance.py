@@ -27,6 +27,7 @@ from agentic_inquiry.indexing.relationship_resolver import (
 # Helpers for creating test data
 # =============================================================================
 
+
 def create_mock_resolver() -> RelationshipResolver:
     """Create a mock RelationshipResolver for testing."""
     mock_db = MagicMock()
@@ -65,6 +66,7 @@ def create_populated_cache(size: int = 100) -> SimpleCache:
 # Property 2: Cache Hit Performance Bound
 # Validates: Requirements 2.1
 # =============================================================================
+
 
 class TestCacheHitPerformance:
     """Tests for cache hit resolution performance."""
@@ -150,9 +152,17 @@ class TestCacheHitPerformance:
 
     @pytest.mark.perf
     @given(
-        target_name=st.text(min_size=1, max_size=30, alphabet=st.characters(whitelist_categories=('L', 'N'))),
+        target_name=st.text(
+            min_size=1,
+            max_size=30,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
         target_type=st.sampled_from(["function", "class", "module", "variable"]),
-        source_file=st.text(min_size=1, max_size=30, alphabet=st.characters(whitelist_categories=('L', 'N'))),
+        source_file=st.text(
+            min_size=1,
+            max_size=30,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
     )
     @settings(max_examples=30)
     @pytest.mark.asyncio
@@ -192,6 +202,7 @@ class TestCacheHitPerformance:
 # Validates: Requirements 2.2
 # =============================================================================
 
+
 class TestCacheMissPerformance:
     """Tests for cache miss resolution performance."""
 
@@ -212,7 +223,9 @@ class TestCacheMissPerformance:
         elapsed_ms = (time.perf_counter() - start) * 1000
 
         # Result may be None (unresolved) but timing should be bounded
-        assert elapsed_ms < 100.0, f"Cache miss took {elapsed_ms:.2f}ms, should be < 100ms"
+        assert elapsed_ms < 100.0, (
+            f"Cache miss took {elapsed_ms:.2f}ms, should be < 100ms"
+        )
 
     @pytest.mark.perf
     @pytest.mark.asyncio
@@ -236,8 +249,16 @@ class TestCacheMissPerformance:
 
     @pytest.mark.perf
     @given(
-        target_name=st.text(min_size=5, max_size=30, alphabet=st.characters(whitelist_categories=('L', 'N'))),
-        source_file=st.text(min_size=5, max_size=30, alphabet=st.characters(whitelist_categories=('L', 'N'))),
+        target_name=st.text(
+            min_size=5,
+            max_size=30,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
+        source_file=st.text(
+            min_size=5,
+            max_size=30,
+            alphabet=st.characters(whitelist_categories=("L", "N")),
+        ),
     )
     @settings(max_examples=20)
     @pytest.mark.asyncio
@@ -270,6 +291,7 @@ class TestCacheMissPerformance:
 # Property 5: Profiling Data Completeness
 # Validates: Requirements 2.5
 # =============================================================================
+
 
 class TestProfilingDataCompleteness:
     """Tests for profiling data tracking."""
@@ -458,6 +480,7 @@ class TestProfilingDataCompleteness:
 # =============================================================================
 # Additional Performance Tests
 # =============================================================================
+
 
 class TestSimpleCachePerformance:
     """Tests for SimpleCache performance characteristics."""

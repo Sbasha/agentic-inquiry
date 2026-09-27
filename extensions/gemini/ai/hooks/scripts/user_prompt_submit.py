@@ -16,7 +16,9 @@ import sys
 from pathlib import Path
 
 # Add plugin root to path for shared helpers
-_plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT") or str(Path(__file__).parent.parent.parent)
+_plugin_root = os.environ.get("CLAUDE_PLUGIN_ROOT") or str(
+    Path(__file__).parent.parent.parent
+)
 if _plugin_root not in sys.path:
     sys.path.insert(0, _plugin_root)
 
@@ -38,12 +40,14 @@ def main() -> None:
 
     try:
         from agentic_inquiry.server.http_client import HookClient
+
         client = HookClient(timeout=2.0)
 
         if client.available:
             # 1. Increment turn counter
             turn_result = client.post(
-                "/api/v1/session/increment", timeout=0.5,
+                "/api/v1/session/increment",
+                timeout=0.5,
             )
 
             # Check for checkpoint
@@ -71,7 +75,10 @@ def main() -> None:
                 if context_result.get("tier") != "NONE":
                     client.fire_and_forget(
                         "/api/v1/cache/prefetch",
-                        data={"queries": _predict_followups(prompt), "session_id": session_id},
+                        data={
+                            "queries": _predict_followups(prompt),
+                            "session_id": session_id,
+                        },
                     )
     except ImportError:
         pass  # Server not available

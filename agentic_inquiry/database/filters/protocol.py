@@ -117,9 +117,7 @@ def normalize_to_ast(filters: Optional[FilterInput]) -> Optional[Filter]:
                 if translated is not None:
                     sub_asts.append(translated)
             if sub_asts:
-                parts.append(
-                    sub_asts[0] if len(sub_asts) == 1 else or_(*sub_asts)
-                )
+                parts.append(sub_asts[0] if len(sub_asts) == 1 else or_(*sub_asts))
             continue
 
         if upper_key == "NOT":

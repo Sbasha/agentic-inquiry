@@ -53,7 +53,6 @@ class TestIsTestEnvironment:
         assert is_test_environment("prod-test") is False
 
 
-
 class TestGetDataDir:
     """Tests for get_data_dir and get_global_dir functions."""
 

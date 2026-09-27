@@ -78,7 +78,7 @@ def mock_fallback_search_empty():
     with patch(
         "agentic_inquiry.mcp.tools.search.execute_fallback_search",
         new_callable=AsyncMock,
-        return_value=empty_fallback_response
+        return_value=empty_fallback_response,
     ):
         yield
 
@@ -98,13 +98,15 @@ def mock_structural_search_empty():
     with patch(
         "agentic_inquiry.mcp.tools.search.structural_search",
         new_callable=AsyncMock,
-        return_value=empty_structural_response
+        return_value=empty_structural_response,
     ):
         yield
 
 
 @pytest.mark.asyncio
-async def test_empty_results_with_no_indexed_content(mcp_services, mock_fallback_search_empty):
+async def test_empty_results_with_no_indexed_content(
+    mcp_services, mock_fallback_search_empty
+):
     """Test empty result handling when project has no indexed content.
 
     This test verifies the empty result handling logic when fallback search
@@ -124,16 +126,16 @@ async def test_empty_results_with_no_indexed_content(mcp_services, mock_fallback
         session_id="test_session",
         query="test query",
         limit=10,
-        search_type="hybrid"
+        search_type="hybrid",
     )
-    
+
     # Verify response structure
     assert "results" in result
     assert len(result["results"]) == 0
     assert result["total"] == 0
     assert result["query"] == "test query"
     assert result["search_type"] == "hybrid"
-    
+
     # Verify debug_info is present
     assert "debug_info" in result
     debug_info = result["debug_info"]
@@ -141,23 +143,22 @@ async def test_empty_results_with_no_indexed_content(mcp_services, mock_fallback
     assert debug_info["project_id"] == "test_project"
     assert debug_info["indexed_chunks"] == 0
     assert debug_info["search_type"] == "hybrid"
-    
+
     # Verify message for empty project
     assert "message" in result
     assert "No indexed content found" in result["message"]
     assert "test_project" in result["message"]
-    
+
     # Verify suggestions for empty project
     assert "suggestions" in result
     assert len(result["suggestions"]) > 0
     assert any("add_knowledge()" in s for s in result["suggestions"])
     assert any("get_server_info()" in s for s in result["suggestions"])
     assert any("correct project_id" in s for s in result["suggestions"])
-    
+
     # Verify count_records was called with document_chunks (may be called multiple times)
     mcp_services["storage"].count_records.assert_any_call(
-        table_name="document_chunks",
-        project_id="test_project"
+        table_name="document_chunks", project_id="test_project"
     )
 
 
@@ -166,24 +167,24 @@ async def test_empty_results_with_indexed_content_but_no_matches(mcp_services):
     """Test empty result handling when content exists but no matches found."""
     # Mock empty search results
     mcp_services["search_service"].hybrid_search.return_value = []
-    
+
     # Mock indexed chunks exist
     mcp_services["storage"].count_records.return_value = 150
-    
+
     # Execute search
     result = await search_knowledge(
         services=mcp_services,
         session_id="test_session",
         query="nonexistent query",
         limit=10,
-        search_type="hybrid"
+        search_type="hybrid",
     )
-    
+
     # Verify response structure
     assert "results" in result
     assert len(result["results"]) == 0
     assert result["total"] == 0
-    
+
     # Verify debug_info is present
     assert "debug_info" in result
     debug_info = result["debug_info"]
@@ -191,20 +192,22 @@ async def test_empty_results_with_indexed_content_but_no_matches(mcp_services):
     assert debug_info["project_id"] == "test_project"
     assert debug_info["indexed_chunks"] == 150
     assert debug_info["search_type"] == "hybrid"
-    
+
     # Verify message for no matches
     assert "message" in result
     assert "No results found" in result["message"]
     assert "nonexistent query" in result["message"]
     assert "150 indexed chunks" in result["message"]
-    
+
     # Verify suggestions for no matches
     assert "suggestions" in result
     assert len(result["suggestions"]) > 0
     assert any("broader search terms" in s for s in result["suggestions"])
     assert any("different keywords" in s for s in result["suggestions"])
     assert any("search_type='fts'" in s for s in result["suggestions"])
-    assert any("content you're looking for is indexed" in s for s in result["suggestions"])
+    assert any(
+        "content you're looking for is indexed" in s for s in result["suggestions"]
+    )
 
 
 @pytest.mark.asyncio
@@ -212,22 +215,22 @@ async def test_debug_info_generation_with_vector_search(mcp_services):
     """Test debug_info generation with vector search type."""
     # Mock empty search results
     mcp_services["search_service"].vector_search.return_value = []
-    
+
     # Mock indexed chunks
     mcp_services["storage"].count_records.return_value = 50
-    
+
     # Execute search with vector search type
     result = await search_knowledge(
         services=mcp_services,
         session_id="test_session",
         query="test query",
         limit=10,
-        search_type="vector"
+        search_type="vector",
     )
-    
+
     # Verify debug_info has correct search_type
     assert result["debug_info"]["search_type"] == "vector"
-    
+
     # Verify vector_search was called
     mcp_services["search_service"].vector_search.assert_called_once()
 
@@ -237,28 +240,30 @@ async def test_debug_info_generation_with_fts_search(mcp_services):
     """Test debug_info generation with FTS search type."""
     # Mock empty search results
     mcp_services["search_service"].fts_search.return_value = []
-    
+
     # Mock indexed chunks
     mcp_services["storage"].count_records.return_value = 75
-    
+
     # Execute search with FTS search type
     result = await search_knowledge(
         services=mcp_services,
         session_id="test_session",
         query="exact keyword",
         limit=10,
-        search_type="fts"
+        search_type="fts",
     )
-    
+
     # Verify debug_info has correct search_type
     assert result["debug_info"]["search_type"] == "fts"
-    
+
     # Verify fts_search was called
     mcp_services["search_service"].fts_search.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_suggestion_quality_for_empty_project(mcp_services, mock_fallback_search_empty):
+async def test_suggestion_quality_for_empty_project(
+    mcp_services, mock_fallback_search_empty
+):
     """Test that suggestions are helpful and actionable for empty project.
 
     This test verifies suggestion generation for empty projects when
@@ -270,16 +275,13 @@ async def test_suggestion_quality_for_empty_project(mcp_services, mock_fallback_
 
     # Execute search
     result = await search_knowledge(
-        services=mcp_services,
-        session_id="test_session",
-        query="test",
-        limit=10
+        services=mcp_services, session_id="test_session", query="test", limit=10
     )
-    
+
     # Verify suggestions are actionable
     suggestions = result["suggestions"]
     assert len(suggestions) >= 3
-    
+
     # Check for specific actionable suggestions
     suggestions_text = " ".join(suggestions)
     assert "add_knowledge()" in suggestions_text
@@ -293,23 +295,26 @@ async def test_suggestion_quality_for_no_matches(mcp_services):
     # Mock empty search results but indexed content exists
     mcp_services["search_service"].hybrid_search.return_value = []
     mcp_services["storage"].count_records.return_value = 100
-    
+
     # Execute search
     result = await search_knowledge(
         services=mcp_services,
         session_id="test_session",
         query="specific term",
-        limit=10
+        limit=10,
     )
-    
+
     # Verify suggestions are helpful
     suggestions = result["suggestions"]
     assert len(suggestions) >= 4
-    
+
     # Check for specific helpful suggestions
     suggestions_text = " ".join(suggestions)
     assert "broader" in suggestions_text.lower()
-    assert "different" in suggestions_text.lower() or "synonyms" in suggestions_text.lower()
+    assert (
+        "different" in suggestions_text.lower()
+        or "synonyms" in suggestions_text.lower()
+    )
     assert "fts" in suggestions_text.lower()
 
 
@@ -329,18 +334,14 @@ async def test_project_checking_logic(mcp_services, mock_fallback_search_empty):
 
     # Execute search
     result = await search_knowledge(
-        services=mcp_services,
-        session_id="test_session",
-        query="test",
-        limit=10
+        services=mcp_services, session_id="test_session", query="test", limit=10
     )
-    
+
     # Verify count_records was called with correct parameters (may be called multiple times)
     mcp_services["storage"].count_records.assert_any_call(
-        table_name="document_chunks",
-        project_id="test_project"
+        table_name="document_chunks", project_id="test_project"
     )
-    
+
     # Verify debug_info reflects the count
     assert result["debug_info"]["indexed_chunks"] == 42
 
@@ -362,7 +363,7 @@ async def test_successful_search_with_results(mcp_services):
         "entity_name": "test",
         "symbols": [],
         "element_name": "test",
-        "metadata": {}
+        "metadata": {},
     }
     mock_result.score = 0.95
     mock_results = [mock_result]
@@ -376,7 +377,7 @@ async def test_successful_search_with_results(mcp_services):
         services=mcp_services,
         session_id="test_session",
         query="test function",
-        limit=10
+        limit=10,
     )
 
     # Verify results are returned
@@ -400,20 +401,20 @@ async def test_empty_results_with_filters(mcp_services):
     # Mock empty search results
     mcp_services["search_service"].hybrid_search.return_value = []
     mcp_services["storage"].count_records.return_value = 50
-    
+
     # Execute search with filters
     result = await search_knowledge(
         services=mcp_services,
         session_id="test_session",
         query="test",
         limit=10,
-        filters={"language": "python"}
+        filters={"language": "python"},
     )
-    
+
     # Verify debug_info is present
     assert "debug_info" in result
     assert result["debug_info"]["indexed_chunks"] == 50
-    
+
     # Verify suggestions are provided
     assert "suggestions" in result
     assert len(result["suggestions"]) > 0
@@ -424,21 +425,18 @@ async def test_session_not_found_error(mcp_services):
     """Test error handling when session is not found."""
     # Mock session validation failure
     mcp_services["session_manager"].validate_session.return_value = False
-    
+
     # Execute search
     result = await search_knowledge(
-        services=mcp_services,
-        session_id="invalid_session",
-        query="test",
-        limit=10
+        services=mcp_services, session_id="invalid_session", query="test", limit=10
     )
-    
+
     # Verify error response
     assert "error" in result
     assert result["error"]["code"] == "SESSION_NOT_FOUND"
     assert "invalid_session" in result["error"]["message"]
     assert "suggestions" in result
-    
+
     # Verify search was not performed
     mcp_services["search_service"].hybrid_search.assert_not_called()
     mcp_services["storage"].count_records.assert_not_called()
@@ -450,24 +448,24 @@ async def test_events_emitted_for_empty_results(mcp_services):
     # Mock empty search results
     mcp_services["search_service"].hybrid_search.return_value = []
     mcp_services["storage"].count_records.return_value = 0
-    
+
     # Execute search
     await search_knowledge(
-        services=mcp_services,
-        session_id="test_session",
-        query="test",
-        limit=10
+        services=mcp_services, session_id="test_session", query="test", limit=10
     )
-    
+
     # Verify events were emitted
     event_system = mcp_services["event_system"]
     assert event_system.emit.call_count >= 1
-    
+
     # Check for started event
     call_args_list = event_system.emit.call_args_list
-    event_types = [call.args[0] if call.args else call.kwargs.get("event_type") for call in call_args_list]
+    event_types = [
+        call.args[0] if call.args else call.kwargs.get("event_type")
+        for call in call_args_list
+    ]
     assert "mcp.tool.started" in event_types
-    
+
     # Note: When returning early with empty results, we don't emit completed event
     # This is expected behavior as we return before the normal completion path
 
@@ -489,7 +487,7 @@ async def test_index_state_included_when_sparse(mcp_services):
         "entity_name": "test",
         "symbols": [],
         "element_name": "test",
-        "metadata": {}
+        "metadata": {},
     }
     mock_result.score = 0.95
     mcp_services["search_service"].hybrid_search.return_value = [mock_result]
@@ -499,10 +497,7 @@ async def test_index_state_included_when_sparse(mcp_services):
 
     # Execute search
     result = await search_knowledge(
-        services=mcp_services,
-        session_id="test_session",
-        query="test",
-        limit=10
+        services=mcp_services, session_id="test_session", query="test", limit=10
     )
 
     # Verify index_state is present when index is sparse
@@ -529,7 +524,7 @@ async def test_index_state_not_included_when_ready(mcp_services):
         "entity_name": "test",
         "symbols": [],
         "element_name": "test",
-        "metadata": {}
+        "metadata": {},
     }
     mock_result.score = 0.95
     mcp_services["search_service"].hybrid_search.return_value = [mock_result]
@@ -539,10 +534,7 @@ async def test_index_state_not_included_when_ready(mcp_services):
 
     # Execute search
     result = await search_knowledge(
-        services=mcp_services,
-        session_id="test_session",
-        query="test",
-        limit=10
+        services=mcp_services, session_id="test_session", query="test", limit=10
     )
 
     # Verify index_state is NOT present when index is ready
@@ -550,7 +542,9 @@ async def test_index_state_not_included_when_ready(mcp_services):
 
 
 @pytest.mark.asyncio
-async def test_empty_results_includes_index_state_when_sparse(mcp_services, mock_fallback_search_empty):
+async def test_empty_results_includes_index_state_when_sparse(
+    mcp_services, mock_fallback_search_empty
+):
     """Test that index_state is included in empty results when index is sparse.
 
     This test verifies that index_state metadata is correctly added when
@@ -565,16 +559,12 @@ async def test_empty_results_includes_index_state_when_sparse(mcp_services, mock
 
     # Execute search
     result = await search_knowledge(
-        services=mcp_services,
-        session_id="test_session",
-        query="test",
-        limit=10
+        services=mcp_services, session_id="test_session", query="test", limit=10
     )
 
     # Verify index_state is present when index is sparse
     assert "index_state" in result
     assert result["index_state"]["status"] == "sparse"
-
 
 
 # ============================================================================
@@ -603,7 +593,7 @@ def mock_fallback_with_results():
             language="python",
             context_before="# Authentication module",
             context_after="    '''Authenticate a user with credentials.'''",
-            metadata={"source": "ripgrep"}
+            metadata={"source": "ripgrep"},
         ),
         FallbackResult(
             file_path="/project/src/auth.py",
@@ -612,7 +602,7 @@ def mock_fallback_with_results():
             score=0.9,
             match_type="text",
             language="python",
-            metadata={"source": "ripgrep"}
+            metadata={"source": "ripgrep"},
         ),
     ]
 
@@ -625,7 +615,7 @@ def mock_fallback_with_results():
     with patch(
         "agentic_inquiry.mcp.tools.search.execute_fallback_search",
         new_callable=AsyncMock,
-        return_value=fallback_response
+        return_value=fallback_response,
     ):
         yield fallback_response
 
@@ -654,7 +644,7 @@ async def test_fallback_triggered_when_index_sparse_and_returns_results(
         session_id="test_session",
         query="authenticate user",
         limit=10,
-        search_type="hybrid"
+        search_type="hybrid",
     )
 
     # Verify fallback was used
@@ -693,14 +683,14 @@ async def test_fallback_not_triggered_when_index_ready(mcp_services):
     # Mock execute_fallback_search to verify it's NOT called
     with patch(
         "agentic_inquiry.mcp.tools.search.execute_fallback_search",
-        new_callable=AsyncMock
+        new_callable=AsyncMock,
     ) as mock_fallback:
         result = await search_knowledge(
             services=mcp_services,
             session_id="test_session",
             query="nonexistent query",
             limit=10,
-            search_type="hybrid"
+            search_type="hybrid",
         )
 
         # Fallback should NOT be called when index is ready
@@ -714,7 +704,9 @@ async def test_fallback_not_triggered_when_index_ready(mcp_services):
 
 
 @pytest.mark.asyncio
-async def test_fallback_results_properly_formatted(mcp_services, mock_fallback_with_results):
+async def test_fallback_results_properly_formatted(
+    mcp_services, mock_fallback_with_results
+):
     """Test that fallback results are correctly formatted in the response.
 
     Verifies that FallbackResult objects are properly converted to the
@@ -725,10 +717,7 @@ async def test_fallback_results_properly_formatted(mcp_services, mock_fallback_w
     mcp_services["storage"].count_records.return_value = 5  # Very sparse
 
     result = await search_knowledge(
-        services=mcp_services,
-        session_id="test_session",
-        query="authenticate",
-        limit=10
+        services=mcp_services, session_id="test_session", query="authenticate", limit=10
     )
 
     # Verify all required fields are present in formatted results
@@ -761,7 +750,7 @@ def mock_structural_fallback_with_results():
             score=1.0,
             match_type="structural",
             language="python",
-            metadata={"pattern": "class $NAME: $$$BODY"}
+            metadata={"pattern": "class $NAME: $$$BODY"},
         ),
     ]
 
@@ -774,7 +763,7 @@ def mock_structural_fallback_with_results():
     with patch(
         "agentic_inquiry.mcp.tools.search.structural_search",
         new_callable=AsyncMock,
-        return_value=structural_response
+        return_value=structural_response,
     ):
         yield structural_response
 
@@ -796,7 +785,7 @@ async def test_structural_fallback_for_class_query(
         services=mcp_services,
         session_id="test_session",
         query="find all classes",  # Contains 'class' - triggers structural search
-        limit=10
+        limit=10,
     )
 
     # Verify structural search was used
@@ -825,13 +814,13 @@ async def test_fallback_verify_was_called_with_correct_params(mcp_services):
     with patch(
         "agentic_inquiry.mcp.tools.search.execute_fallback_search",
         new_callable=AsyncMock,
-        return_value={"results": [], "source": "python_glob", "source_note": "test"}
+        return_value={"results": [], "source": "python_glob", "source_note": "test"},
     ) as mock_fallback:
         await search_knowledge(
             services=mcp_services,
             session_id="test_session",
             query="test query",
-            limit=15
+            limit=15,
         )
 
         # Verify fallback was called

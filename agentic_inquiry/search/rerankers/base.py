@@ -3,6 +3,7 @@
 Provides shared functionality for reranker implementations, including
 score normalization and result merging.
 """
+
 from __future__ import annotations
 
 from typing import Dict, List, Tuple
@@ -43,10 +44,7 @@ def normalize_scores(
     max_score = max(scores)
 
     if max_score <= 0:
-        return [
-            result_map[id_].with_score(0.0, source=source)
-            for id_ in result_ids
-        ]
+        return [result_map[id_].with_score(0.0, source=source) for id_ in result_ids]
 
     # Proportional normalization: divide by max score
     # This preserves the relative quality signal between results
@@ -89,8 +87,7 @@ def normalize_scored_tuples(
 
     if max_score <= 0:
         return [
-            result_map[id_].with_score(0.0, source=source)
-            for id_, _ in scored_results
+            result_map[id_].with_score(0.0, source=source) for id_, _ in scored_results
         ]
 
     # Proportional normalization: divide by max score

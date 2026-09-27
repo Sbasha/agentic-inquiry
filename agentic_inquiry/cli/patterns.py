@@ -4,6 +4,7 @@ Usage:
     ai patterns [--project PROJECT] [--json]
     ai patterns discover [--min-cluster N]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -36,7 +37,9 @@ def format_pattern(pattern: dict, index: int) -> str:
     count = pattern.get("count", pattern.get("member_count", 0))
 
     lines.append(f"{index}. {name}")
-    lines.append(f"   Type: {pattern_type} | Confidence: {confidence:.2f} | Instances: {count}")
+    lines.append(
+        f"   Type: {pattern_type} | Confidence: {confidence:.2f} | Instances: {count}"
+    )
 
     # Description
     desc = pattern.get("description", "")
@@ -73,7 +76,10 @@ async def list_command(args: argparse.Namespace) -> int:
 
     project_id = args.project or config.storage.default_project_id
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     try:
@@ -88,7 +94,13 @@ async def list_command(args: argparse.Namespace) -> int:
         )
 
         if args.json:
-            print(json.dumps({"count": len(patterns), "patterns": patterns}, indent=2, default=str))
+            print(
+                json.dumps(
+                    {"count": len(patterns), "patterns": patterns},
+                    indent=2,
+                    default=str,
+                )
+            )
         else:
             if not patterns:
                 print("No patterns discovered yet.")
@@ -127,7 +139,10 @@ async def discover_command(args: argparse.Namespace) -> int:
 
     project_id = args.project or config.storage.default_project_id
     if not project_id:
-        print("Error: No project specified. Use --project or set in config.", file=sys.stderr)
+        print(
+            "Error: No project specified. Use --project or set in config.",
+            file=sys.stderr,
+        )
         return 1
 
     print(f"Discovering patterns in project '{project_id}'...")
@@ -163,14 +178,16 @@ async def discover_command(args: argparse.Namespace) -> int:
         # Type-based patterns
         for entity_type, members in by_type.items():
             if len(members) >= args.min_cluster:
-                patterns.append({
-                    "name": f"{entity_type.title()} Pattern",
-                    "type": "structural",
-                    "confidence": 0.8,
-                    "count": len(members),
-                    "description": f"Found {len(members)} {entity_type} entities",
-                    "examples": [m.get("name", m.get("id")) for m in members[:5]],
-                })
+                patterns.append(
+                    {
+                        "name": f"{entity_type.title()} Pattern",
+                        "type": "structural",
+                        "confidence": 0.8,
+                        "count": len(members),
+                        "description": f"Found {len(members)} {entity_type} entities",
+                        "examples": [m.get("name", m.get("id")) for m in members[:5]],
+                    }
+                )
 
         # Naming convention patterns
         prefixes: dict[str, list] = {}
@@ -182,36 +199,60 @@ async def discover_command(args: argparse.Namespace) -> int:
                 continue
 
             # Check common prefixes
-            for prefix in ["get_", "set_", "is_", "has_", "create_", "delete_", "update_", "handle_", "on_", "test_"]:
+            for prefix in [
+                "get_",
+                "set_",
+                "is_",
+                "has_",
+                "create_",
+                "delete_",
+                "update_",
+                "handle_",
+                "on_",
+                "test_",
+            ]:
                 if name.lower().startswith(prefix):
                     prefixes.setdefault(prefix, []).append(entity)
 
             # Check common suffixes
-            for suffix in ["_handler", "_service", "_controller", "_model", "_view", "_test", "_spec", "_factory"]:
+            for suffix in [
+                "_handler",
+                "_service",
+                "_controller",
+                "_model",
+                "_view",
+                "_test",
+                "_spec",
+                "_factory",
+            ]:
                 if name.lower().endswith(suffix):
                     suffixes.setdefault(suffix, []).append(entity)
 
         for prefix, members in prefixes.items():
             if len(members) >= args.min_cluster:
-                patterns.append({
-                    "name": f"{prefix}* Convention",
-                    "type": "naming",
-                    "confidence": 0.7,
-                    "count": len(members),
-                    "description": f"Functions/methods starting with '{prefix}'",
-                    "examples": [m.get("name") for m in members[:5]],
-                })
+                patterns.append(
+                    {
+                        "name": f"{prefix}* Convention",
+                        "type": "naming",
+                        "confidence": 0.7,
+                        "count": len(members),
+                        "description": f"Functions/methods starting with '{prefix}'",
+                        "examples": [m.get("name") for m in members[:5]],
+                    }
+                )
 
         for suffix, members in suffixes.items():
             if len(members) >= args.min_cluster:
-                patterns.append({
-                    "name": f"*{suffix} Convention",
-                    "type": "naming",
-                    "confidence": 0.7,
-                    "count": len(members),
-                    "description": f"Classes/functions ending with '{suffix}'",
-                    "examples": [m.get("name") for m in members[:5]],
-                })
+                patterns.append(
+                    {
+                        "name": f"*{suffix} Convention",
+                        "type": "naming",
+                        "confidence": 0.7,
+                        "count": len(members),
+                        "description": f"Classes/functions ending with '{suffix}'",
+                        "examples": [m.get("name") for m in members[:5]],
+                    }
+                )
 
         # Note: Patterns are displayed but not persisted to storage
         # (Pattern storage would require additional table schema)
@@ -219,7 +260,13 @@ async def discover_command(args: argparse.Namespace) -> int:
             pattern["project_id"] = project_id
 
         if args.json:
-            print(json.dumps({"discovered": len(patterns), "patterns": patterns}, indent=2, default=str))
+            print(
+                json.dumps(
+                    {"discovered": len(patterns), "patterns": patterns},
+                    indent=2,
+                    default=str,
+                )
+            )
         else:
             print(f"\nDiscovered {len(patterns)} pattern(s):\n")
             for i, pattern in enumerate(patterns, 1):
@@ -245,17 +292,20 @@ def create_parser() -> argparse.ArgumentParser:
 
     # Default list
     parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID",
     )
     parser.add_argument(
-        "--limit", "-l",
+        "--limit",
+        "-l",
         type=int,
         default=50,
         help="Maximum results (default: 50)",
     )
     parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )
@@ -272,11 +322,13 @@ def create_parser() -> argparse.ArgumentParser:
         help="Minimum cluster size (default: 3)",
     )
     discover_parser.add_argument(
-        "--project", "-p",
+        "--project",
+        "-p",
         help="Project ID",
     )
     discover_parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )

@@ -24,18 +24,19 @@ from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
 # Validates: Requirements 5.2
 # =============================================================================
 
+
 class TestZeroVectorDimensions:
     """Tests for zero vector dimensions using configured values."""
 
-    @given(
-        embedding_dimensions=st.integers(min_value=128, max_value=1536)
-    )
+    @given(embedding_dimensions=st.integers(min_value=128, max_value=1536))
     @settings(max_examples=100)
     @pytest.mark.asyncio
-    async def test_property_8_zero_vectors_use_configured_dimensions(self, embedding_dimensions):
+    async def test_property_8_zero_vectors_use_configured_dimensions(
+        self, embedding_dimensions
+    ):
         """Property 8: For any zero vector created by GraphBuilder, the vector length
         should equal the configured embedding_dimensions (not hardcoded 384).
-        
+
         **Feature: code-review-dec-2024-fixes, Property 8: Zero vectors use configured dimensions**
         **Validates: Requirements 5.2**
         """
@@ -44,7 +45,7 @@ class TestZeroVectorDimensions:
         symbol_registry = MagicMock()
         relationship_resolver = MagicMock()
         embedding_service = MagicMock()
-        
+
         # Create GraphBuilder with specific embedding dimensions
         graph_builder = GraphBuilder(
             db_manager=db_manager,
@@ -56,18 +57,22 @@ class TestZeroVectorDimensions:
             project_root="/test/root",
             embedding_dimensions=embedding_dimensions,
         )
-        
+
         # Verify the embedding dimensions are stored correctly
         assert graph_builder._embedding_dimensions == embedding_dimensions
-        
+
         # Test zero vector creation in _generate_external_entity_embeddings_batched
         # by simulating an error condition that triggers zero vector fallback
         embedding_service.generate_embeddings_batch = AsyncMock(
             side_effect=Exception("Simulated embedding error")
         )
-        
+
         # Create a mock external entity
-        from agentic_inquiry.indexing.external_entity_resolver import ExternalEntityInfo, ExternalCategory
+        from agentic_inquiry.indexing.external_entity_resolver import (
+            ExternalEntityInfo,
+            ExternalCategory,
+        )
+
         mock_entity = ExternalEntityInfo(
             entity_id="test::entity",
             name="TestEntity",
@@ -77,15 +82,14 @@ class TestZeroVectorDimensions:
             language="python",
             virtual_path="external/test.py",
             confidence=1.0,
-            metadata={}
+            metadata={},
         )
-        
+
         # Call the method that generates embeddings (and falls back to zeros on error)
         result = await graph_builder._generate_external_entity_embeddings_batched(
-            entities=[mock_entity],
-            batch_size=100
+            entities=[mock_entity], batch_size=100
         )
-        
+
         # Verify the zero vector has the correct dimensions
         assert len(result) == 1
         assert len(result[0]) == embedding_dimensions
@@ -97,7 +101,7 @@ class TestZeroVectorDimensions:
         symbol_registry = MagicMock()
         relationship_resolver = MagicMock()
         embedding_service = MagicMock()
-        
+
         # Test with default value
         graph_builder = GraphBuilder(
             db_manager=db_manager,
@@ -108,9 +112,9 @@ class TestZeroVectorDimensions:
             project_hash="test_hash",
             project_root="/test/root",
         )
-        
+
         assert graph_builder._embedding_dimensions == 384
-        
+
         # Test with custom value
         graph_builder_custom = GraphBuilder(
             db_manager=db_manager,
@@ -122,7 +126,7 @@ class TestZeroVectorDimensions:
             project_root="/test/root",
             embedding_dimensions=768,
         )
-        
+
         assert graph_builder_custom._embedding_dimensions == 768
 
 
@@ -131,17 +135,18 @@ class TestZeroVectorDimensions:
 # Validates: Requirements 5.4
 # =============================================================================
 
+
 class TestResolverReceivesConfiguredDimensions:
     """Tests for RelationshipResolver receiving configured dimensions."""
 
-    @given(
-        embedding_dimensions=st.integers(min_value=128, max_value=1536)
-    )
+    @given(embedding_dimensions=st.integers(min_value=128, max_value=1536))
     @settings(max_examples=100)
-    def test_property_9_resolver_receives_configured_dimensions(self, embedding_dimensions):
+    def test_property_9_resolver_receives_configured_dimensions(
+        self, embedding_dimensions
+    ):
         """Property 9: For any RelationshipResolver created by GraphBuilder,
         the embedding_dimensions parameter should be passed from GraphBuilderConfig.
-        
+
         **Feature: code-review-dec-2024-fixes, Property 9: Resolver receives configured dimensions**
         **Validates: Requirements 5.4**
         """
@@ -149,14 +154,14 @@ class TestResolverReceivesConfiguredDimensions:
         config = MagicMock()
         config.embeddings = MagicMock()
         config.embeddings.default_dimensions = embedding_dimensions
-        config.indexing = {'relationship_flush': {}}
-        
+        config.indexing = {"relationship_flush": {}}
+
         # Create GraphBuilderConfig from config
         graph_builder_config = GraphBuilderConfig.from_config(config)
-        
+
         # Verify the config has the correct embedding dimensions
         assert graph_builder_config.embedding_dimensions == embedding_dimensions
-        
+
         # Create RelationshipResolver with the configured dimensions
         symbol_registry = MagicMock()
         resolver = RelationshipResolver(
@@ -164,7 +169,7 @@ class TestResolverReceivesConfiguredDimensions:
             project_root="/test/root",
             embedding_dimensions=graph_builder_config.embedding_dimensions,
         )
-        
+
         # Verify the resolver received the correct dimensions
         assert resolver._embedding_dimensions == embedding_dimensions
 
@@ -172,18 +177,18 @@ class TestResolverReceivesConfiguredDimensions:
         """GraphBuilderConfig.from_config should load embedding_dimensions from config.embeddings.default_dimensions."""
         # Test with dict-style config
         config = MagicMock()
-        config.embeddings = {'default_dimensions': 512}
-        config.indexing = {'relationship_flush': {}}
-        
+        config.embeddings = {"default_dimensions": 512}
+        config.indexing = {"relationship_flush": {}}
+
         result = GraphBuilderConfig.from_config(config)
         assert result.embedding_dimensions == 512
-        
+
         # Test with object-style config
         config2 = MagicMock()
         config2.embeddings = MagicMock()
         config2.embeddings.default_dimensions = 768
-        config2.indexing = {'relationship_flush': {}}
-        
+        config2.indexing = {"relationship_flush": {}}
+
         result2 = GraphBuilderConfig.from_config(config2)
         assert result2.embedding_dimensions == 768
 
@@ -191,22 +196,22 @@ class TestResolverReceivesConfiguredDimensions:
         """GraphBuilderConfig should use default embedding_dimensions when config.embeddings is missing."""
         config = MagicMock()
         config.embeddings = None
-        config.indexing = {'relationship_flush': {}}
-        
+        config.indexing = {"relationship_flush": {}}
+
         result = GraphBuilderConfig.from_config(config)
         assert result.embedding_dimensions == 384
 
     def test_relationship_resolver_stores_embedding_dimensions(self):
         """RelationshipResolver should store embedding_dimensions as instance variable."""
         symbol_registry = MagicMock()
-        
+
         # Test with default value
         resolver = RelationshipResolver(
             symbol_registry=symbol_registry,
             project_root="/test/root",
         )
         assert resolver._embedding_dimensions == 384
-        
+
         # Test with custom value
         resolver_custom = RelationshipResolver(
             symbol_registry=symbol_registry,
@@ -221,11 +226,11 @@ class TestResolverReceivesConfiguredDimensions:
         config = MagicMock()
         config.embeddings = MagicMock()
         config.embeddings.default_dimensions = 1024
-        config.indexing = {'relationship_flush': {}}
-        
+        config.indexing = {"relationship_flush": {}}
+
         # Load config
         graph_builder_config = GraphBuilderConfig.from_config(config)
-        
+
         # Create resolver with config dimensions
         symbol_registry = MagicMock()
         resolver = RelationshipResolver(
@@ -233,7 +238,7 @@ class TestResolverReceivesConfiguredDimensions:
             project_root="/test/root",
             embedding_dimensions=graph_builder_config.embedding_dimensions,
         )
-        
+
         # Verify the dimensions flowed through correctly
         assert graph_builder_config.embedding_dimensions == 1024
         assert resolver._embedding_dimensions == 1024
@@ -242,6 +247,7 @@ class TestResolverReceivesConfiguredDimensions:
 # =============================================================================
 # Additional Tests for Completeness
 # =============================================================================
+
 
 class TestEmbeddingDimensionsEdgeCases:
     """Additional edge case tests for embedding dimensions."""
@@ -255,12 +261,13 @@ class TestEmbeddingDimensionsEdgeCases:
         """Verify that pipeline passes embedding_dimensions to both resolver and builder."""
         # This is a documentation test - the actual integration is tested in pipeline tests
         # Just verify the parameter exists in the constructors
-        
+
         # Check RelationshipResolver accepts embedding_dimensions
         import inspect
+
         resolver_sig = inspect.signature(RelationshipResolver.__init__)
-        assert 'embedding_dimensions' in resolver_sig.parameters
-        
+        assert "embedding_dimensions" in resolver_sig.parameters
+
         # Check GraphBuilder accepts embedding_dimensions
         builder_sig = inspect.signature(GraphBuilder.__init__)
-        assert 'embedding_dimensions' in builder_sig.parameters
+        assert "embedding_dimensions" in builder_sig.parameters

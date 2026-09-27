@@ -32,7 +32,9 @@ async def service(provider: SQLiteOnboardMetadataProvider) -> OnboardMetadataSer
 class TestSQLiteProvider:
     """Tests for SQLiteOnboardMetadataProvider."""
 
-    async def test_create_and_get_run(self, provider: SQLiteOnboardMetadataProvider) -> None:
+    async def test_create_and_get_run(
+        self, provider: SQLiteOnboardMetadataProvider
+    ) -> None:
         run = OnboardRun(
             run_id=str(uuid.uuid4()),
             project_id="test-project",
@@ -58,11 +60,14 @@ class TestSQLiteProvider:
         )
         await provider.create_run(run)
 
-        await provider.update_run(run.run_id, {
-            "status": "completed",
-            "file_count": 100,
-            "chunk_count": 500,
-        })
+        await provider.update_run(
+            run.run_id,
+            {
+                "status": "completed",
+                "file_count": 100,
+                "chunk_count": 500,
+            },
+        )
 
         fetched = await provider.get_run(run.run_id)
         assert fetched is not None
@@ -70,7 +75,9 @@ class TestSQLiteProvider:
         assert fetched.file_count == 100
         assert fetched.chunk_count == 500
 
-    async def test_get_latest_run(self, provider: SQLiteOnboardMetadataProvider) -> None:
+    async def test_get_latest_run(
+        self, provider: SQLiteOnboardMetadataProvider
+    ) -> None:
         # Create two runs
         run1_id = str(uuid.uuid4())
         run2_id = str(uuid.uuid4())
@@ -182,7 +189,10 @@ class TestMetadataService:
         assert run.commit_sha == "abc123"
 
         await service.complete_onboard_run(
-            run.run_id, file_count=100, chunk_count=500, entity_count=200,
+            run.run_id,
+            file_count=100,
+            chunk_count=500,
+            entity_count=200,
         )
 
         latest = await service.get_latest_onboard()
@@ -200,8 +210,6 @@ class TestMetadataService:
         assert runs[0].status == "failed"
         assert runs[0].error_message == "Connection timeout"
 
-    async def test_no_latest_when_empty(
-        self, service: OnboardMetadataService
-    ) -> None:
+    async def test_no_latest_when_empty(self, service: OnboardMetadataService) -> None:
         result = await service.get_latest_onboard()
         assert result is None

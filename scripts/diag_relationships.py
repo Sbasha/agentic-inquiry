@@ -1,4 +1,5 @@
 """Diagnostic: check if pending relationships accumulate during indexing."""
+
 import asyncio
 import logging
 import sys
@@ -33,7 +34,9 @@ async def main():
     services = server.services
 
     # Create session
-    r = await create_session(services, project_id="diag_rels_test", description="Relationship diagnostic")
+    r = await create_session(
+        services, project_id="diag_rels_test", description="Relationship diagnostic"
+    )
     session_id = r["session_id"]
     print(f"Session: {session_id}")
 
@@ -41,7 +44,9 @@ async def main():
     source = str(PROJECT_ROOT / "agentic_inquiry/mcp/tools")
     print(f"Indexing: {source}")
     t0 = time.time()
-    r = await add_knowledge(services, session_id=session_id, content_type="directory", source=source)
+    r = await add_knowledge(
+        services, session_id=session_id, content_type="directory", source=source
+    )
     print(f"add_knowledge returned: status={r.get('status')}")
 
     # Wait for async indexing

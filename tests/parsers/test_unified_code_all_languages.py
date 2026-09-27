@@ -57,24 +57,24 @@ LANG_MAP = {
 # Languages with rich samples should extract at least this many entities
 # These are intentionally conservative to avoid test brittleness
 EXPECTED_MIN_ENTITIES = {
-    "python": 2,      # Functions, classes, imports
+    "python": 2,  # Functions, classes, imports
     "javascript": 2,  # Functions, classes, exports
     "typescript": 2,  # Functions, classes, interfaces
-    "java": 2,        # Classes, methods, imports
-    "go": 1,          # Functions, types
-    "rust": 1,        # Functions, structs, impls
-    "ruby": 1,        # Classes, methods
-    "c": 1,           # Functions
-    "cpp": 1,         # Classes, functions
-    "c_sharp": 1,     # Classes, methods
-    "php": 1,         # Classes, functions
-    "swift": 1,       # Classes, functions
-    "kotlin": 1,      # Classes, functions
-    "scala": 1,       # Classes, objects
+    "java": 2,  # Classes, methods, imports
+    "go": 1,  # Functions, types
+    "rust": 1,  # Functions, structs, impls
+    "ruby": 1,  # Classes, methods
+    "c": 1,  # Functions
+    "cpp": 1,  # Classes, functions
+    "c_sharp": 1,  # Classes, methods
+    "php": 1,  # Classes, functions
+    "swift": 1,  # Classes, functions
+    "kotlin": 1,  # Classes, functions
+    "scala": 1,  # Classes, objects
     # Languages with simpler samples or limited tree-sitter support
     "jsx": 0,  # May have limited entity extraction
     "tsx": 0,  # May have limited entity extraction
-    "r": 0,           # May have limited entity extraction
+    "r": 0,  # May have limited entity extraction
     "julia": 0,
     "elixir": 0,
     "elm": 0,
@@ -112,9 +112,13 @@ def samples_dir():
     return Path("tests/parsers/samples/code")
 
 
-async def _run_language_parse(lang_dir: Path, language: str, parser: UnifiedCodeParser) -> dict:
+async def _run_language_parse(
+    lang_dir: Path, language: str, parser: UnifiedCodeParser
+) -> dict:
     """Helper function to parse content for a single language."""
-    files = [f for f in lang_dir.iterdir() if f.is_file() and not f.name.startswith(".")]
+    files = [
+        f for f in lang_dir.iterdir() if f.is_file() and not f.name.startswith(".")
+    ]
     if not files:
         return {"status": "NO_FILES", "language": language}
 
@@ -137,8 +141,8 @@ async def _run_language_parse(lang_dir: Path, language: str, parser: UnifiedCode
         # Also check metadata for elements (legacy format)
         all_elements = []
         for chunk in result.chunks:
-            if chunk.metadata and 'elements' in chunk.metadata:
-                all_elements.extend(chunk.metadata['elements'])
+            if chunk.metadata and "elements" in chunk.metadata:
+                all_elements.extend(chunk.metadata["elements"])
 
         by_type = defaultdict(list)
         for elem in all_elements:
@@ -147,7 +151,11 @@ async def _run_language_parse(lang_dir: Path, language: str, parser: UnifiedCode
         # Total entities = symbols + elements
         total_entities = len(all_symbols) + len(all_elements)
 
-        has_imports = "import" in by_type or "from_import" in by_type or any("import" in k for k in by_type)
+        has_imports = (
+            "import" in by_type
+            or "from_import" in by_type
+            or any("import" in k for k in by_type)
+        )
 
         return {
             "status": "SUCCESS",
@@ -174,7 +182,9 @@ async def _run_language_parse(lang_dir: Path, language: str, parser: UnifiedCode
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("lang_dir_name, language", language_params)
-async def test_language_parser(lang_dir_name: str, language: str, parser: UnifiedCodeParser, samples_dir: Path):
+async def test_language_parser(
+    lang_dir_name: str, language: str, parser: UnifiedCodeParser, samples_dir: Path
+):
     """Tests that the parser can successfully process a sample file for each language."""
     lang_dir = samples_dir / lang_dir_name
     if not lang_dir.is_dir():
@@ -206,7 +216,9 @@ async def test_language_parser(lang_dir_name: str, language: str, parser: Unifie
     # Log entity extraction info for debugging (visible with pytest -v -s)
     if actual_count > 0:
         symbols = result.get("symbols", [])
-        print(f"\n  {language}: {actual_count} entities, {chunk_count} chunks, symbols={symbols}")
+        print(
+            f"\n  {language}: {actual_count} entities, {chunk_count} chunks, symbols={symbols}"
+        )
 
 
 if __name__ == "__main__":

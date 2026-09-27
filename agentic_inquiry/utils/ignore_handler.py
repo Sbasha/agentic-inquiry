@@ -138,7 +138,9 @@ _cache_lock = threading.Lock()
 MAX_CACHE_SIZE = 16  # Limit cache size to prevent memory issues
 
 
-def get_ignore_handler(root_path: str, custom_ignores: List[str] | None = None) -> "IgnoreHandler":
+def get_ignore_handler(
+    root_path: str, custom_ignores: List[str] | None = None
+) -> "IgnoreHandler":
     """Get or create an IgnoreHandler for the given root path.
 
     This function caches IgnoreHandler instances to avoid repeated instantiation
@@ -195,7 +197,9 @@ class IgnoreHandler:
         if PATHSPEC_AVAILABLE:
             # Combine default and custom ignores
             all_ignores = DEFAULT_IGNORES + self.custom_ignores
-            self.default_spec = pathspec.PathSpec.from_lines("gitwildmatch", all_ignores)
+            self.default_spec = pathspec.PathSpec.from_lines(
+                "gitwildmatch", all_ignores
+            )
             self.gitignore_specs = self._load_gitignore_specs()
         else:
             self.default_spec = None  # type: ignore[assignment]
@@ -220,7 +224,9 @@ class IgnoreHandler:
             # Check if this directory has project indicators
             for indicator in project_indicators:
                 if (current / indicator).exists():
-                    logger.debug("Found project root at %s (indicator: %s)", current, indicator)
+                    logger.debug(
+                        "Found project root at %s (indicator: %s)", current, indicator
+                    )
                     return current
             current = current.parent
 
@@ -276,15 +282,25 @@ class IgnoreHandler:
                 gitignore_path = os.path.join(root, ".gitignore")
                 try:
                     with open(gitignore_path, encoding="utf-8", errors="ignore") as f:
-                        lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+                        lines = [
+                            line.strip()
+                            for line in f
+                            if line.strip() and not line.startswith("#")
+                        ]
                         if lines:
                             key = str(Path(root).resolve())
-                            specs[key] = pathspec.PathSpec.from_lines("gitwildmatch", lines)
+                            specs[key] = pathspec.PathSpec.from_lines(
+                                "gitwildmatch", lines
+                            )
                             # Use lazy logging to avoid spam
                             if logger.isEnabledFor(logging.DEBUG):
-                                logger.debug("Loaded .gitignore from %s", gitignore_path)
+                                logger.debug(
+                                    "Loaded .gitignore from %s", gitignore_path
+                                )
                 except Exception as e:
-                    logger.warning("Failed to load .gitignore from %s: %s", gitignore_path, e)
+                    logger.warning(
+                        "Failed to load .gitignore from %s: %s", gitignore_path, e
+                    )
 
         return specs
 
@@ -345,11 +361,17 @@ class IgnoreHandler:
                     # Wildcard pattern (simple)
                     import fnmatch
 
-                    if fnmatch.fnmatch(str_path, pattern) or fnmatch.fnmatch(resolved_path.name, pattern):
+                    if fnmatch.fnmatch(str_path, pattern) or fnmatch.fnmatch(
+                        resolved_path.name, pattern
+                    ):
                         return True
                 else:
                     # Exact match or suffix
-                    if pattern in str_path or str_path.endswith(pattern) or resolved_path.name == pattern:
+                    if (
+                        pattern in str_path
+                        or str_path.endswith(pattern)
+                        or resolved_path.name == pattern
+                    ):
                         return True
 
         return False

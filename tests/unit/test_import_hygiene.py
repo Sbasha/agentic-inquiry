@@ -16,7 +16,16 @@ from pathlib import Path
 
 import pytest
 
-HEAVY = ["lancedb", "pyarrow", "pandas", "torch", "sentence_transformers", "fastmcp", "fastapi", "fsspec"]
+HEAVY = [
+    "lancedb",
+    "pyarrow",
+    "pandas",
+    "torch",
+    "sentence_transformers",
+    "fastmcp",
+    "fastapi",
+    "fsspec",
+]
 
 
 def _run(code: str, tmp_path: Path) -> subprocess.CompletedProcess[str]:

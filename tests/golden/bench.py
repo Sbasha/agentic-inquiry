@@ -14,6 +14,7 @@ Run modes:
     python tests/golden/bench.py --pin      # regenerate baseline
     python tests/golden/bench.py --json     # machine-readable diff
 """
+
 from __future__ import annotations
 
 import argparse
@@ -64,8 +65,19 @@ INDEX_STATE_FILE = BENCH_INDEX_DIR / "bench-state.json"
 #   cli           -> error-handling (rich error surface for CLI commands)
 # Re-pin baseline (`make bench-pin`) when this list changes.
 CORPUS_SUBDIRS = [
-    "search", "storage", "embeddings", "parsers", "indexing", "memory",
-    "mcp", "watching", "cache", "events", "metrics", "connectors", "cli",
+    "search",
+    "storage",
+    "embeddings",
+    "parsers",
+    "indexing",
+    "memory",
+    "mcp",
+    "watching",
+    "cache",
+    "events",
+    "metrics",
+    "connectors",
+    "cli",
 ]
 
 PROJECT_ID = "golden_bench"
@@ -188,7 +200,9 @@ async def _index_corpus(corpus_path: Path) -> dict[str, Any]:
 
     storage = await StorageFacade.from_config(config, PROJECT_ID)
     try:
-        pipeline = IndexingPipeline(storage, config, PROJECT_ID, project_root=str(corpus_path))
+        pipeline = IndexingPipeline(
+            storage, config, PROJECT_ID, project_root=str(corpus_path)
+        )
         result = await pipeline.index_directory(path=str(corpus_path), wait=True)
         return result
     finally:
@@ -248,13 +262,15 @@ async def _run_queries(queries: list[dict[str, Any]]) -> list[dict[str, Any]]:
             else:
                 recall = 1.0 if results else 0.0
 
-            rows.append({
-                "id": q["id"],
-                "query": query_text,
-                "recall": round(recall, 4),
-                "latency_ms": round(latency_ms, 2),
-                "result_count": len(results),
-            })
+            rows.append(
+                {
+                    "id": q["id"],
+                    "query": query_text,
+                    "recall": round(recall, 4),
+                    "latency_ms": round(latency_ms, 2),
+                    "result_count": len(results),
+                }
+            )
         return rows
     finally:
         await storage.close()
@@ -289,7 +305,9 @@ def _summarize(rows: list[dict[str, Any]]) -> dict[str, Any]:
     latencies = [r["latency_ms"] for r in rows]
     return {
         "recall_at_10": round(statistics.mean(recalls), 4) if recalls else 0.0,
-        "median_latency_ms": round(statistics.median(latencies), 2) if latencies else 0.0,
+        "median_latency_ms": round(statistics.median(latencies), 2)
+        if latencies
+        else 0.0,
         "p95_latency_ms": round(_percentile(latencies, 95), 2) if latencies else 0.0,
         "query_count": len(rows),
     }
@@ -306,7 +324,9 @@ def _percentile(values: list[float], pct: float) -> float:
     return s[lo] + (s[hi] - s[lo]) * (k - lo)
 
 
-def _build_report(rows: list[dict[str, Any]], index_result: dict[str, Any]) -> dict[str, Any]:
+def _build_report(
+    rows: list[dict[str, Any]], index_result: dict[str, Any]
+) -> dict[str, Any]:
     summary = _summarize(rows)
     return {
         "version": "1.0",
@@ -320,8 +340,8 @@ def _build_report(rows: list[dict[str, Any]], index_result: dict[str, Any]) -> d
             "files_processed": index_result.get("files_processed"),
             "files_failed": index_result.get("files_failed"),
             "chunk_count": index_result.get("chunk_count")
-                or index_result.get("chunks_indexed")
-                or index_result.get("total_chunks"),
+            or index_result.get("chunks_indexed")
+            or index_result.get("total_chunks"),
         },
         "git_sha": _run_git(["rev-parse", "HEAD"]),
         # Untracked files (Claude Code worktrees, IDE droppings, local .env)
@@ -333,7 +353,9 @@ def _build_report(rows: list[dict[str, Any]], index_result: dict[str, Any]) -> d
     }
 
 
-def _diff_against_baseline(report: dict[str, Any], baseline: dict[str, Any]) -> tuple[bool, list[str]]:
+def _diff_against_baseline(
+    report: dict[str, Any], baseline: dict[str, Any]
+) -> tuple[bool, list[str]]:
     """Return (passed, messages). Recall must not drop; p95 latency budget is
     baseline x LATENCY_REGRESSION_TOLERANCE.
     """
@@ -442,12 +464,7 @@ async def run_bench(reindex: bool = False) -> tuple[bool, list[str], dict[str, A
         corpus, refreshed = _build_corpus_dir(BENCH_CORPUS_DIR)
 
         index_exists = (BENCH_INDEX_DIR / "lancedb").exists()
-        needs_index = (
-            reindex
-            or refreshed
-            or not index_exists
-            or current_git_dirty
-        )
+        needs_index = reindex or refreshed or not index_exists or current_git_dirty
         if not needs_index:
             needs_index = (
                 index_state is None
@@ -461,13 +478,19 @@ async def run_bench(reindex: bool = False) -> tuple[bool, list[str], dict[str, A
             # ones and recall numbers stop reflecting the staged corpus.
             if refreshed and (BENCH_INDEX_DIR / "lancedb").exists():
                 import shutil
-                logger.info("Corpus refreshed; wiping stale index at %s", BENCH_INDEX_DIR)
+
+                logger.info(
+                    "Corpus refreshed; wiping stale index at %s", BENCH_INDEX_DIR
+                )
                 shutil.rmtree(BENCH_INDEX_DIR / "lancedb", ignore_errors=True)
             logger.info("Indexing corpus at %s ...", corpus)
             index_result = await _index_corpus(corpus)
             logger.info("Index complete: %s", index_result.get("status"))
         else:
-            logger.info("Reusing existing bench index at %s (use --reindex to rebuild)", BENCH_INDEX_DIR)
+            logger.info(
+                "Reusing existing bench index at %s (use --reindex to rebuild)",
+                BENCH_INDEX_DIR,
+            )
             index_result = {"status": "reused"}
 
         rows = await _run_queries(queries)
@@ -499,11 +522,19 @@ async def _run_async(args: argparse.Namespace) -> int:
         return 0
 
     if messages == ["(no baseline yet)"]:
-        print(f"No baseline at {BASELINE_FILE}. Run with --pin to create one.", file=sys.stderr)
+        print(
+            f"No baseline at {BASELINE_FILE}. Run with --pin to create one.",
+            file=sys.stderr,
+        )
         return 2
 
     if args.json:
-        print(json.dumps({"passed": passed, "report": report["summary"], "messages": messages}, indent=2))
+        print(
+            json.dumps(
+                {"passed": passed, "report": report["summary"], "messages": messages},
+                indent=2,
+            )
+        )
     else:
         for m in messages:
             print(m)
@@ -514,9 +545,19 @@ async def _run_async(args: argparse.Namespace) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Golden-set recall@10 + latency bench")
-    parser.add_argument("--pin", action="store_true", help="Write baseline.json (regenerate the pinned baseline)")
-    parser.add_argument("--reindex", action="store_true", help="Rebuild the bench index even if it exists")
-    parser.add_argument("--json", action="store_true", help="Emit machine-readable diff")
+    parser.add_argument(
+        "--pin",
+        action="store_true",
+        help="Write baseline.json (regenerate the pinned baseline)",
+    )
+    parser.add_argument(
+        "--reindex",
+        action="store_true",
+        help="Rebuild the bench index even if it exists",
+    )
+    parser.add_argument(
+        "--json", action="store_true", help="Emit machine-readable diff"
+    )
     parser.add_argument("-v", "--verbose", action="store_true")
     args = parser.parse_args()
 

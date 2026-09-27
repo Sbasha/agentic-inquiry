@@ -3,6 +3,7 @@
 Traces data paths from UI components through backend services to database
 columns, and performs impact analysis for change assessment.
 """
+
 from __future__ import annotations
 
 import logging
@@ -182,7 +183,8 @@ class LineageService:
         if len(rels) >= 5000:
             logger.warning(
                 "Entity %s has >=5000 %s relationships, some may be truncated",
-                entity_id, direction
+                entity_id,
+                direction,
             )
 
         return rels
@@ -213,7 +215,11 @@ class LineageService:
         # Get starting entity with project isolation
         start_entity = await self._get_entity(source_id, resolved_project_id)
         if not start_entity:
-            logger.warning("Source entity not found: %s (project: %s)", source_id, resolved_project_id)
+            logger.warning(
+                "Source entity not found: %s (project: %s)",
+                source_id,
+                resolved_project_id,
+            )
             return []
 
         paths: List[LineagePath] = []
@@ -221,9 +227,7 @@ class LineageService:
         # BFS state: (current_id, path_steps)
         start_step = self._entity_to_step(start_entity)
         visited: Set[str] = {source_id}
-        queue: deque[tuple[str, List[LineageStep]]] = deque(
-            [(source_id, [start_step])]
-        )
+        queue: deque[tuple[str, List[LineageStep]]] = deque([(source_id, [start_step])])
 
         while queue:
             current_id, path_steps = queue.popleft()
@@ -239,16 +243,20 @@ class LineageService:
             if not relationships:
                 # Leaf node — record path if it has more than just the start
                 if len(path_steps) > 1:
-                    paths.append(LineagePath(
-                        path_id=str(uuid.uuid4()),
-                        source_id=source_id,
-                        sink_id=current_id,
-                        steps=path_steps,
-                        is_complete=target_layers is None or (
-                            path_steps[-1].layer in target_layers
-                            if target_layers else False
-                        ),
-                    ))
+                    paths.append(
+                        LineagePath(
+                            path_id=str(uuid.uuid4()),
+                            source_id=source_id,
+                            sink_id=current_id,
+                            steps=path_steps,
+                            is_complete=target_layers is None
+                            or (
+                                path_steps[-1].layer in target_layers
+                                if target_layers
+                                else False
+                            ),
+                        )
+                    )
                 continue
 
             for rel in relationships:
@@ -274,19 +282,23 @@ class LineageService:
 
                 # If target layers specified and we reached one, record path
                 if target_layers and target_step.layer in target_layers:
-                    paths.append(LineagePath(
-                        path_id=str(uuid.uuid4()),
-                        source_id=source_id,
-                        sink_id=target_id,
-                        steps=new_path,
-                        is_complete=True,
-                    ))
+                    paths.append(
+                        LineagePath(
+                            path_id=str(uuid.uuid4()),
+                            source_id=source_id,
+                            sink_id=target_id,
+                            steps=new_path,
+                            is_complete=True,
+                        )
+                    )
                 else:
                     queue.append((target_id, new_path))
 
         logger.info(
             "trace_downstream found %d paths from %s (max_depth=%d)",
-            len(paths), source_id, max_depth
+            len(paths),
+            source_id,
+            max_depth,
         )
         return paths
 
@@ -313,7 +325,9 @@ class LineageService:
         # Get starting entity with project isolation
         start_entity = await self._get_entity(sink_id, resolved_project_id)
         if not start_entity:
-            logger.warning("Sink entity not found: %s (project: %s)", sink_id, resolved_project_id)
+            logger.warning(
+                "Sink entity not found: %s (project: %s)", sink_id, resolved_project_id
+            )
             return []
 
         paths: List[LineagePath] = []
@@ -321,9 +335,7 @@ class LineageService:
         # BFS with incoming relationships
         start_step = self._entity_to_step(start_entity)
         visited: Set[str] = {sink_id}
-        queue: deque[tuple[str, List[LineageStep]]] = deque(
-            [(sink_id, [start_step])]
-        )
+        queue: deque[tuple[str, List[LineageStep]]] = deque([(sink_id, [start_step])])
 
         while queue:
             current_id, path_steps = queue.popleft()
@@ -339,16 +351,20 @@ class LineageService:
             if not relationships:
                 # Leaf node — record path if it has more than just the start
                 if len(path_steps) > 1:
-                    paths.append(LineagePath(
-                        path_id=str(uuid.uuid4()),
-                        source_id=current_id,
-                        sink_id=sink_id,
-                        steps=path_steps,
-                        is_complete=target_layers is None or (
-                            path_steps[0].layer in target_layers
-                            if target_layers else False
-                        ),
-                    ))
+                    paths.append(
+                        LineagePath(
+                            path_id=str(uuid.uuid4()),
+                            source_id=current_id,
+                            sink_id=sink_id,
+                            steps=path_steps,
+                            is_complete=target_layers is None
+                            or (
+                                path_steps[0].layer in target_layers
+                                if target_layers
+                                else False
+                            ),
+                        )
+                    )
                 continue
 
             for rel in relationships:
@@ -358,7 +374,9 @@ class LineageService:
                 visited.add(source_entity_id)
 
                 # Get source entity with project isolation
-                source_entity = await self._get_entity(source_entity_id, resolved_project_id)
+                source_entity = await self._get_entity(
+                    source_entity_id, resolved_project_id
+                )
                 if not source_entity:
                     continue
 
@@ -373,19 +391,23 @@ class LineageService:
 
                 # If target layers specified and we reached one, record path
                 if target_layers and source_step.layer in target_layers:
-                    paths.append(LineagePath(
-                        path_id=str(uuid.uuid4()),
-                        source_id=source_entity_id,
-                        sink_id=sink_id,
-                        steps=new_path,
-                        is_complete=True,
-                    ))
+                    paths.append(
+                        LineagePath(
+                            path_id=str(uuid.uuid4()),
+                            source_id=source_entity_id,
+                            sink_id=sink_id,
+                            steps=new_path,
+                            is_complete=True,
+                        )
+                    )
                 else:
                     queue.append((source_entity_id, new_path))
 
         logger.info(
             "trace_upstream found %d paths from %s (max_depth=%d)",
-            len(paths), sink_id, max_depth
+            len(paths),
+            sink_id,
+            max_depth,
         )
         return paths
 
@@ -419,7 +441,9 @@ class LineageService:
         # Layer-specific gap detection
         if layer == ArchitecturalLayer.ENTITY:
             # Entities should have MAPS_TO relationship to columns
-            rels = await self._get_relationships(entity_id, "outgoing", resolved_project_id)
+            rels = await self._get_relationships(
+                entity_id, "outgoing", resolved_project_id
+            )
             has_db_mapping = any(
                 r.get("type") in ("maps_to", "references", "defines")
                 and r.get("target_id")
@@ -430,17 +454,20 @@ class LineageService:
 
         elif layer == ArchitecturalLayer.CONTROLLER:
             # Controllers should call services
-            rels = await self._get_relationships(entity_id, "outgoing", resolved_project_id)
+            rels = await self._get_relationships(
+                entity_id, "outgoing", resolved_project_id
+            )
             has_service_call = any(
-                r.get("type") in ("calls", "uses", "references")
-                for r in rels
+                r.get("type") in ("calls", "uses", "references") for r in rels
             )
             if not has_service_call:
                 gaps.append(f"Controller {entity.get('name')} has no service calls")
 
         elif layer == ArchitecturalLayer.UI:
             # UI should have downstream connections
-            rels = await self._get_relationships(entity_id, "outgoing", resolved_project_id)
+            rels = await self._get_relationships(
+                entity_id, "outgoing", resolved_project_id
+            )
             if not rels:
                 gaps.append(f"UI component {entity.get('name')} has no bindings")
 
@@ -485,9 +512,7 @@ class LineageService:
 
         start_step = self._entity_to_step(entity)
         visited: Set[str] = {entity_id}
-        queue: deque[tuple[str, List[LineageStep]]] = deque(
-            [(entity_id, [start_step])]
-        )
+        queue: deque[tuple[str, List[LineageStep]]] = deque([(entity_id, [start_step])])
 
         while queue:
             current_id, path_steps = queue.popleft()

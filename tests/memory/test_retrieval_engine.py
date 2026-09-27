@@ -587,7 +587,7 @@ async def test_retrieve_with_disabled_cache(
             "importance": 0.2,
         },
     )
-    
+
     test_config.memory.retrieval = retrieval_config
 
     engine = RetrievalEngine(
@@ -650,7 +650,7 @@ async def test_ranking_algorithm(
     """Test that ranking algorithm combines multiple factors."""
     # Add items with different characteristics
     items = []
-    
+
     # High relevance, low importance
     item1 = MemoryItem(
         id=str(uuid.uuid4()),
@@ -664,7 +664,7 @@ async def test_ranking_algorithm(
         embedding=np.random.rand(384).astype(np.float32),
     )
     items.append(item1)
-    
+
     # Low relevance, high importance
     item2 = MemoryItem(
         id=str(uuid.uuid4()),

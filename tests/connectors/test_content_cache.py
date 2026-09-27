@@ -8,6 +8,7 @@ Tests cover:
 - Cache invalidation
 - Integration with connector → parser flow
 """
+
 from __future__ import annotations
 
 import tempfile
@@ -124,9 +125,11 @@ class TestRemoteMaterialization:
         materializer = ContentMaterializer(cache_root=str(temp_cache))
 
         content_data = b"print('hello from s3')"
-        connector = MockRemoteConnector({
-            "s3://bucket/path/file.py": content_data,
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/path/file.py": content_data,
+            }
+        )
 
         item = SourceItem(
             uri="s3://bucket/path/file.py",
@@ -148,9 +151,11 @@ class TestRemoteMaterialization:
         materializer = ContentMaterializer(cache_root=str(temp_cache))
 
         content_data = b"cached content"
-        connector = MockRemoteConnector({
-            "s3://bucket/file.txt": content_data,
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file.txt": content_data,
+            }
+        )
 
         item = SourceItem(
             uri="s3://bucket/file.txt",
@@ -187,10 +192,12 @@ class TestRemoteMaterialization:
         """Cached files preserve original extension."""
         materializer = ContentMaterializer(cache_root=str(temp_cache))
 
-        connector = MockRemoteConnector({
-            "s3://bucket/script.py": b"# python",
-            "gcs://bucket/data.json": b"{}",
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/script.py": b"# python",
+                "gcs://bucket/data.json": b"{}",
+            }
+        )
 
         py_item = SourceItem(
             uri="s3://bucket/script.py",
@@ -216,9 +223,11 @@ class TestCacheManagement:
         """Invalidate removes cached content."""
         materializer = ContentMaterializer(cache_root=str(temp_cache))
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file.txt": b"content",
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file.txt": b"content",
+            }
+        )
 
         item = SourceItem(
             uri="s3://bucket/file.txt",
@@ -235,9 +244,7 @@ class TestCacheManagement:
         assert not Path(path).exists()
 
     @pytest.mark.asyncio
-    async def test_invalidate_nonexistent_returns_false(
-        self, temp_cache: Path
-    ) -> None:
+    async def test_invalidate_nonexistent_returns_false(self, temp_cache: Path) -> None:
         """Invalidate returns False for non-cached content."""
         materializer = ContentMaterializer(cache_root=str(temp_cache))
 
@@ -254,11 +261,13 @@ class TestCacheManagement:
         """Clear removes all cached content."""
         materializer = ContentMaterializer(cache_root=str(temp_cache))
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file1.txt": b"content1",
-            "s3://bucket/file2.txt": b"content2",
-            "s3://bucket/file3.txt": b"content3",
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file1.txt": b"content1",
+                "s3://bucket/file2.txt": b"content2",
+                "s3://bucket/file3.txt": b"content3",
+            }
+        )
 
         # Cache multiple files
         for i in range(1, 4):
@@ -285,9 +294,11 @@ class TestCacheManagement:
         """Get cache statistics."""
         materializer = ContentMaterializer(cache_root=str(temp_cache))
 
-        connector = MockRemoteConnector({
-            "s3://bucket/file.txt": b"test content here",
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/file.txt": b"test content here",
+            }
+        )
 
         item = SourceItem(
             uri="s3://bucket/file.txt",
@@ -346,9 +357,11 @@ def hello():
     """Say hello."""
     print("Hello from remote!")
 '''
-        connector = MockRemoteConnector({
-            "s3://my-bucket/code/hello.py": python_code,
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://my-bucket/code/hello.py": python_code,
+            }
+        )
 
         item = SourceItem(
             uri="s3://my-bucket/code/hello.py",
@@ -376,9 +389,11 @@ def hello():
 
         # Same content accessed concurrently
         content = b"shared content"
-        connector = MockRemoteConnector({
-            "s3://bucket/shared.txt": content,
-        })
+        connector = MockRemoteConnector(
+            {
+                "s3://bucket/shared.txt": content,
+            }
+        )
 
         item = SourceItem(
             uri="s3://bucket/shared.txt",

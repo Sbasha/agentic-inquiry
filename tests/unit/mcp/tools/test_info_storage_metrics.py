@@ -43,20 +43,20 @@ class TestStorageMetricsInProjectInfo:
                 "status": "success",
                 "size_bytes": 1024000,  # 1MB
                 "version_count": 5,
-                "fragment_count": 3
+                "fragment_count": 3,
             },
             "graph_entities": {
                 "status": "success",
                 "size_bytes": 512000,  # 512KB
                 "version_count": 3,
-                "fragment_count": 2
+                "fragment_count": 2,
             },
             "graph_relationships": {
                 "status": "success",
                 "size_bytes": 256000,  # 256KB
                 "version_count": 2,
-                "fragment_count": 1
-            }
+                "fragment_count": 1,
+            },
         }
 
         mock_lance_manager.get_table_statistics = AsyncMock(return_value=table_stats)
@@ -66,11 +66,13 @@ class TestStorageMetricsInProjectInfo:
 
         # Mock memory system
         mock_memory_system = AsyncMock()
-        mock_memory_system.get_stats = AsyncMock(return_value={
-            "working_memory": {"size": 5},
-            "episodic_memory": {"size": 10},
-            "semantic_memory": {"size": 3}
-        })
+        mock_memory_system.get_stats = AsyncMock(
+            return_value={
+                "working_memory": {"size": 5},
+                "episodic_memory": {"size": 10},
+                "semantic_memory": {"size": 3},
+            }
+        )
 
         # Mock cache manager
         mock_cache_manager = MagicMock()
@@ -81,15 +83,18 @@ class TestStorageMetricsInProjectInfo:
             "session_manager": mock_session_manager,
             "storage": mock_storage,
             "memory_system": mock_memory_system,
-            "cache_manager": mock_cache_manager
+            "cache_manager": mock_cache_manager,
         }
 
         # Mock check_project_state
-        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
+        with patch(
+            "agentic_inquiry.mcp.utils.project_state.check_project_state",
+            new_callable=AsyncMock,
+        ) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
-                "warnings": []
+                "warnings": [],
             }
 
             # Call get_project_info
@@ -97,7 +102,9 @@ class TestStorageMetricsInProjectInfo:
 
         # Verify storage_metrics is in response
         assert "storage_metrics" in result, "Response should include storage_metrics"
-        assert isinstance(result["storage_metrics"], dict), "storage_metrics should be a dict"
+        assert isinstance(result["storage_metrics"], dict), (
+            "storage_metrics should be a dict"
+        )
 
     @pytest.mark.asyncio
     async def test_storage_metrics_includes_table_sizes(self):
@@ -126,20 +133,20 @@ class TestStorageMetricsInProjectInfo:
                 "status": "success",
                 "size_bytes": 2048000,  # 2MB
                 "version_count": 10,
-                "fragment_count": 5
+                "fragment_count": 5,
             },
             "graph_entities": {
                 "status": "success",
                 "size_bytes": 1024000,  # 1MB
                 "version_count": 8,
-                "fragment_count": 4
+                "fragment_count": 4,
             },
             "graph_relationships": {
                 "status": "success",
                 "size_bytes": 512000,  # 512KB
                 "version_count": 5,
-                "fragment_count": 2
-            }
+                "fragment_count": 2,
+            },
         }
 
         mock_lance_manager.get_table_statistics = AsyncMock(return_value=table_stats)
@@ -149,11 +156,13 @@ class TestStorageMetricsInProjectInfo:
 
         # Mock memory system
         mock_memory_system = AsyncMock()
-        mock_memory_system.get_stats = AsyncMock(return_value={
-            "working_memory": {"size": 0},
-            "episodic_memory": {"size": 0},
-            "semantic_memory": {"size": 0}
-        })
+        mock_memory_system.get_stats = AsyncMock(
+            return_value={
+                "working_memory": {"size": 0},
+                "episodic_memory": {"size": 0},
+                "semantic_memory": {"size": 0},
+            }
+        )
 
         # Mock cache manager (no cache)
         mock_cache_manager = MagicMock()
@@ -164,15 +173,18 @@ class TestStorageMetricsInProjectInfo:
             "session_manager": mock_session_manager,
             "storage": mock_storage,
             "memory_system": mock_memory_system,
-            "cache_manager": mock_cache_manager
+            "cache_manager": mock_cache_manager,
         }
 
         # Mock check_project_state
-        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
+        with patch(
+            "agentic_inquiry.mcp.utils.project_state.check_project_state",
+            new_callable=AsyncMock,
+        ) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
-                "warnings": []
+                "warnings": [],
             }
 
             # Call get_project_info
@@ -181,7 +193,9 @@ class TestStorageMetricsInProjectInfo:
         # Verify storage_metrics structure
         storage_metrics = result["storage_metrics"]
         assert "tables" in storage_metrics, "storage_metrics should have 'tables'"
-        assert "total_size_bytes" in storage_metrics, "storage_metrics should have 'total_size_bytes'"
+        assert "total_size_bytes" in storage_metrics, (
+            "storage_metrics should have 'total_size_bytes'"
+        )
 
         # Verify table sizes
         tables = storage_metrics["tables"]
@@ -192,7 +206,9 @@ class TestStorageMetricsInProjectInfo:
         # Verify each table has size_bytes
         for table_name, table_info in tables.items():
             assert "size_bytes" in table_info, f"{table_name} should have size_bytes"
-            assert isinstance(table_info["size_bytes"], (int, float)), f"{table_name} size_bytes should be numeric"
+            assert isinstance(table_info["size_bytes"], (int, float)), (
+                f"{table_name} size_bytes should be numeric"
+            )
 
         # Verify total_size_bytes is sum of all table sizes
         expected_total = 2048000 + 1024000 + 512000  # 3.5MB
@@ -225,20 +241,20 @@ class TestStorageMetricsInProjectInfo:
                 "status": "success",
                 "size_bytes": 1024000,
                 "version_count": 15,  # Many versions (needs cleanup)
-                "fragment_count": 8
+                "fragment_count": 8,
             },
             "graph_entities": {
                 "status": "success",
                 "size_bytes": 512000,
                 "version_count": 10,
-                "fragment_count": 5
+                "fragment_count": 5,
             },
             "graph_relationships": {
                 "status": "success",
                 "size_bytes": 256000,
                 "version_count": 7,
-                "fragment_count": 3
-            }
+                "fragment_count": 3,
+            },
         }
 
         mock_lance_manager.get_table_statistics = AsyncMock(return_value=table_stats)
@@ -248,11 +264,13 @@ class TestStorageMetricsInProjectInfo:
 
         # Mock memory system
         mock_memory_system = AsyncMock()
-        mock_memory_system.get_stats = AsyncMock(return_value={
-            "working_memory": {"size": 0},
-            "episodic_memory": {"size": 0},
-            "semantic_memory": {"size": 0}
-        })
+        mock_memory_system.get_stats = AsyncMock(
+            return_value={
+                "working_memory": {"size": 0},
+                "episodic_memory": {"size": 0},
+                "semantic_memory": {"size": 0},
+            }
+        )
 
         # Mock cache manager
         mock_cache_manager = MagicMock()
@@ -263,15 +281,18 @@ class TestStorageMetricsInProjectInfo:
             "session_manager": mock_session_manager,
             "storage": mock_storage,
             "memory_system": mock_memory_system,
-            "cache_manager": mock_cache_manager
+            "cache_manager": mock_cache_manager,
         }
 
         # Mock check_project_state
-        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
+        with patch(
+            "agentic_inquiry.mcp.utils.project_state.check_project_state",
+            new_callable=AsyncMock,
+        ) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
-                "warnings": []
+                "warnings": [],
             }
 
             # Call get_project_info
@@ -288,8 +309,12 @@ class TestStorageMetricsInProjectInfo:
 
         # Verify version_count is numeric
         for table_name, table_info in tables.items():
-            assert "version_count" in table_info, f"{table_name} should have version_count"
-            assert isinstance(table_info["version_count"], int), f"{table_name} version_count should be int"
+            assert "version_count" in table_info, (
+                f"{table_name} should have version_count"
+            )
+            assert isinstance(table_info["version_count"], int), (
+                f"{table_name} version_count should be int"
+            )
 
     @pytest.mark.asyncio
     async def test_storage_metrics_cached_for_performance(self):
@@ -318,7 +343,7 @@ class TestStorageMetricsInProjectInfo:
                 "status": "success",
                 "size_bytes": 1024000,
                 "version_count": 5,
-                "fragment_count": 3
+                "fragment_count": 3,
             }
         }
 
@@ -329,11 +354,13 @@ class TestStorageMetricsInProjectInfo:
 
         # Mock memory system
         mock_memory_system = AsyncMock()
-        mock_memory_system.get_stats = AsyncMock(return_value={
-            "working_memory": {"size": 0},
-            "episodic_memory": {"size": 0},
-            "semantic_memory": {"size": 0}
-        })
+        mock_memory_system.get_stats = AsyncMock(
+            return_value={
+                "working_memory": {"size": 0},
+                "episodic_memory": {"size": 0},
+                "semantic_memory": {"size": 0},
+            }
+        )
 
         # Mock cache manager with tracking
         cached_value = None
@@ -355,15 +382,18 @@ class TestStorageMetricsInProjectInfo:
             "session_manager": mock_session_manager,
             "storage": mock_storage,
             "memory_system": mock_memory_system,
-            "cache_manager": mock_cache_manager
+            "cache_manager": mock_cache_manager,
         }
 
         # Mock check_project_state
-        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
+        with patch(
+            "agentic_inquiry.mcp.utils.project_state.check_project_state",
+            new_callable=AsyncMock,
+        ) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
-                "warnings": []
+                "warnings": [],
             }
 
             # First call - should populate cache
@@ -376,7 +406,10 @@ class TestStorageMetricsInProjectInfo:
 
             # Reset mocks
             mock_lance_manager.get_table_statistics.reset_mock()
-            mock_cache_manager.get.return_value = {"tables": {}, "total_size_bytes": 100}
+            mock_cache_manager.get.return_value = {
+                "tables": {},
+                "total_size_bytes": 100,
+            }
 
             # Second call - should use cache
             await get_project_info(services, "test_session")
@@ -413,11 +446,13 @@ class TestStorageMetricsInProjectInfo:
 
         # Mock memory system
         mock_memory_system = AsyncMock()
-        mock_memory_system.get_stats = AsyncMock(return_value={
-            "working_memory": {"size": 0},
-            "episodic_memory": {"size": 0},
-            "semantic_memory": {"size": 0}
-        })
+        mock_memory_system.get_stats = AsyncMock(
+            return_value={
+                "working_memory": {"size": 0},
+                "episodic_memory": {"size": 0},
+                "semantic_memory": {"size": 0},
+            }
+        )
 
         # Mock cache manager
         mock_cache_manager = MagicMock()
@@ -428,15 +463,18 @@ class TestStorageMetricsInProjectInfo:
             "session_manager": mock_session_manager,
             "storage": mock_storage,
             "memory_system": mock_memory_system,
-            "cache_manager": mock_cache_manager
+            "cache_manager": mock_cache_manager,
         }
 
         # Mock check_project_state
-        with patch("agentic_inquiry.mcp.utils.project_state.check_project_state", new_callable=AsyncMock) as mock_check:
+        with patch(
+            "agentic_inquiry.mcp.utils.project_state.check_project_state",
+            new_callable=AsyncMock,
+        ) as mock_check:
             mock_check.return_value = {
                 "chunk_count": 100,
                 "entity_count": 50,
-                "warnings": []
+                "warnings": [],
             }
 
             # Call get_project_info

@@ -51,15 +51,15 @@ def test_metadata_contains_only_simple_types(metadata: Dict[str, Any]):
     """
     Property: For any metadata dictionary, after validation, all values
     should be instances of allowed types (str, int, float, bool, None).
-    
+
     **Validates: Requirements 2.1**
     """
     # Create parser instance
     parser = DocumentParser()
-    
+
     # Validate the metadata
     validated = parser._validate_metadata_types(metadata)
-    
+
     # Check that all values in validated metadata are simple types
     for field, value in validated.items():
         assert isinstance(value, ALLOWED_METADATA_TYPES), (
@@ -74,21 +74,22 @@ def test_complex_types_are_filtered_out(metadata: Dict[str, Any]):
     """
     Property: For any metadata dictionary containing complex types,
     those complex types should be filtered out from the result.
-    
+
     **Validates: Requirements 2.1**
     """
     # Create parser instance
     parser = DocumentParser()
-    
+
     # Validate the metadata
     validated = parser._validate_metadata_types(metadata)
-    
+
     # Count how many fields had complex types in the original
     complex_fields = {
-        field for field, value in metadata.items()
+        field
+        for field, value in metadata.items()
         if not isinstance(value, ALLOWED_METADATA_TYPES)
     }
-    
+
     # Verify that none of the complex fields appear in validated metadata
     for field in complex_fields:
         assert field not in validated, (
@@ -103,16 +104,14 @@ def test_simple_types_pass_through(metadata: Dict[str, Any]):
     """
     Property: For any metadata dictionary containing only simple types,
     all fields should pass through validation unchanged.
-    
+
     **Validates: Requirements 2.1**
     """
     # Create parser instance
     parser = DocumentParser()
-    
+
     # Validate the metadata
     validated = parser._validate_metadata_types(metadata)
-    
+
     # All simple-type fields should be present
-    assert validated == metadata, (
-        "Simple-type metadata should pass through unchanged"
-    )
+    assert validated == metadata, "Simple-type metadata should pass through unchanged"

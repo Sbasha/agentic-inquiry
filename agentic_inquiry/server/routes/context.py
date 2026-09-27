@@ -92,7 +92,10 @@ async def context_assemble(request: Request, body: ContextAssembleRequest) -> di
     elapsed = (time.monotonic() - start) * 1000
     logger.debug(
         "Context assembled: tier=%s score=%d parts=%d %.1fms",
-        signals["tier"], signals["score"], len(deduped), elapsed,
+        signals["tier"],
+        signals["score"],
+        len(deduped),
+        elapsed,
     )
 
     result = {
@@ -109,22 +112,34 @@ async def _gather_memories(memory_system, prompt: str, app_state) -> list[dict]:
     if not memory_system:
         return []
     try:
-        results = await memory_system.retrieve(query=prompt, limit=5, strategy="adaptive")
+        results = await memory_system.retrieve(
+            query=prompt, limit=5, strategy="adaptive"
+        )
         items = results.get("results", []) if isinstance(results, dict) else results
         output = []
-        confidence_gate = app_state.daemon_config.get("context", {}).get("confidence_gate", 0.7)
+        confidence_gate = app_state.daemon_config.get("context", {}).get(
+            "confidence_gate", 0.7
+        )
         for item in items:
-            content = getattr(item, "content", str(item)) if not isinstance(item, dict) else item.get("content", "")
+            content = (
+                getattr(item, "content", str(item))
+                if not isinstance(item, dict)
+                else item.get("content", "")
+            )
             confidence = 1.0
             if hasattr(item, "memory"):
                 meta = getattr(item.memory, "metadata", {}) or {}
                 confidence = meta.get("confidence", 1.0)
                 content = getattr(item.memory, "content", str(item))
             stale_tag = " [STALE]" if confidence < confidence_gate else ""
-            output.append({
-                "source": "memory", "content": content,
-                "tag": f"[ai Memory{stale_tag}]", "priority": 1,
-            })
+            output.append(
+                {
+                    "source": "memory",
+                    "content": content,
+                    "tag": f"[ai Memory{stale_tag}]",
+                    "priority": 1,
+                }
+            )
         return output
     except Exception:
         return []
@@ -137,8 +152,10 @@ async def _gather_search(search_service, prompt: str, signals: dict) -> list[dic
     try:
         preference = "code" if signals["intent"] == "CODE" else None
         results = await search_service.hybrid_search(
-            query_vector=prompt[:200], query_fts=prompt[:200],
-            limit=5, content_preference=preference,
+            query_vector=prompt[:200],
+            query_fts=prompt[:200],
+            limit=5,
+            content_preference=preference,
         )
         output = []
         for r in results:
@@ -153,10 +170,15 @@ async def _gather_search(search_service, prompt: str, signals: dict) -> list[dic
                 line = data.get("start_line", "")
                 tag = f"[ai Search: {file_path}:{line}]"
                 priority = 2
-            output.append({
-                "source": "search", "content": content[:500],
-                "tag": tag, "priority": priority, "file_path": file_path,
-            })
+            output.append(
+                {
+                    "source": "search",
+                    "content": content[:500],
+                    "tag": tag,
+                    "priority": priority,
+                    "file_path": file_path,
+                }
+            )
         return output
     except Exception:
         return []
@@ -168,17 +190,23 @@ async def _gather_search_links(search_service, prompt: str) -> list[dict]:
         return []
     try:
         results = await search_service.hybrid_search(
-            query_vector=prompt[:200], query_fts=prompt[:200], limit=8,
+            query_vector=prompt[:200],
+            query_fts=prompt[:200],
+            limit=8,
         )
         output = []
         for r in results:
             data = r.data if hasattr(r, "data") else {}
             file_path = data.get("file_path", "unknown")
             summary = data.get("content", "")[:100]
-            output.append({
-                "source": "link", "content": f"{file_path}: {summary}",
-                "tag": "[ai Related]", "priority": 3,
-            })
+            output.append(
+                {
+                    "source": "link",
+                    "content": f"{file_path}: {summary}",
+                    "tag": "[ai Related]",
+                    "priority": 3,
+                }
+            )
         return output
     except Exception:
         return []

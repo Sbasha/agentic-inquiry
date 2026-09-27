@@ -4,6 +4,7 @@ Usage:
     ai services detect [--path PATH] [--json]
     ai services show [--path PATH] [--format ascii|json|dot]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -33,7 +34,9 @@ def format_ascii_map(service_map: ServiceMap) -> str:
     lines.append("SERVICE ARCHITECTURE")
     lines.append("=" * 60)
     lines.append(f"Workspace: {service_map.workspace_path}")
-    lines.append(f"Detection sources: {', '.join(service_map.detection_sources) or 'none'}")
+    lines.append(
+        f"Detection sources: {', '.join(service_map.detection_sources) or 'none'}"
+    )
     lines.append("")
 
     # Group services by type
@@ -42,7 +45,15 @@ def format_ascii_map(service_map: ServiceMap) -> str:
         services_by_type.setdefault(svc.service_type, []).append(svc)
 
     # Type order for display
-    type_order = ["gateway", "application", "database", "cache", "queue", "external", "unknown"]
+    type_order = [
+        "gateway",
+        "application",
+        "database",
+        "cache",
+        "queue",
+        "external",
+        "unknown",
+    ]
 
     for svc_type in type_order:
         services = services_by_type.get(svc_type, [])
@@ -51,7 +62,9 @@ def format_ascii_map(service_map: ServiceMap) -> str:
 
         lines.append(f"┌─ {svc_type.upper()} ─" + "─" * (50 - len(svc_type)))
         for svc in services:
-            conf_badge = {"high": "●", "medium": "◐", "low": "○"}.get(svc.confidence, "?")
+            conf_badge = {"high": "●", "medium": "◐", "low": "○"}.get(
+                svc.confidence, "?"
+            )
             tech_info = f" ({svc.technology})" if svc.technology else ""
             ports_info = f" [{','.join(map(str, svc.ports))}]" if svc.ports else ""
             lines.append(f"│ {conf_badge} {svc.name}{tech_info}{ports_info}")
@@ -66,7 +79,9 @@ def format_ascii_map(service_map: ServiceMap) -> str:
         lines.append("┌─ CONNECTIONS ─" + "─" * 43)
         for conn in service_map.connections:
             port_info = f":{conn.port}" if conn.port else ""
-            lines.append(f"│ {conn.source_id} ──[{conn.protocol}]{port_info}──> {conn.target_id}")
+            lines.append(
+                f"│ {conn.source_id} ──[{conn.protocol}]{port_info}──> {conn.target_id}"
+            )
         lines.append("└" + "─" * 58)
         lines.append("")
 
@@ -153,7 +168,9 @@ async def detect_command(args: argparse.Namespace) -> int:
             print(json.dumps(service_map.to_dict(), indent=2))
         else:
             print(format_ascii_map(service_map))
-            print(f"\nFound {len(service_map.services)} services, {len(service_map.connections)} connections")
+            print(
+                f"\nFound {len(service_map.services)} services, {len(service_map.connections)} connections"
+            )
 
         return 0
 
@@ -212,12 +229,14 @@ def create_parser() -> argparse.ArgumentParser:
         description="Scan workspace and detect services using multiple strategies",
     )
     detect_parser.add_argument(
-        "--path", "-p",
+        "--path",
+        "-p",
         default=".",
         help="Workspace path to scan (default: current directory)",
     )
     detect_parser.add_argument(
-        "--json", "-j",
+        "--json",
+        "-j",
         action="store_true",
         help="Output as JSON",
     )
@@ -230,12 +249,14 @@ def create_parser() -> argparse.ArgumentParser:
         description="Display detected service architecture in various formats",
     )
     show_parser.add_argument(
-        "--path", "-p",
+        "--path",
+        "-p",
         default=".",
         help="Workspace path (default: current directory)",
     )
     show_parser.add_argument(
-        "--format", "-f",
+        "--format",
+        "-f",
         choices=["ascii", "json", "dot"],
         default="ascii",
         help="Output format (default: ascii)",

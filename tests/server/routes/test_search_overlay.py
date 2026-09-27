@@ -23,12 +23,18 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from agentic_inquiry.server.routes.search import LocalDiff, LocalDiffFile, SearchRequest, router
+from agentic_inquiry.server.routes.search import (
+    LocalDiff,
+    LocalDiffFile,
+    SearchRequest,
+    router,
+)
 
 
 # ---------------------------------------------------------------------------
 # Fixtures — minimal FastAPI app with mocked search_service
 # ---------------------------------------------------------------------------
+
 
 def _make_search_result(file_path: str, content: str = "def foo(): pass") -> MagicMock:
     """Create a minimal mock search result object."""
@@ -64,6 +70,7 @@ def _build_test_app(search_results: list) -> tuple[FastAPI, MagicMock]:
 # T45-1: local_modified annotation for matching files
 # ---------------------------------------------------------------------------
 
+
 class TestLocalModifiedAnnotation:
     """local_modified is set to True for files in the local diff."""
 
@@ -80,7 +87,11 @@ class TestLocalModifiedAnnotation:
                 "local_diff": {
                     "branch": "feature/x",
                     "modified_files": [
-                        {"path": "src/auth.py", "changed_lines": [1, 2, 3], "status": "modified"}
+                        {
+                            "path": "src/auth.py",
+                            "changed_lines": [1, 2, 3],
+                            "status": "modified",
+                        }
                     ],
                 },
             },
@@ -101,7 +112,11 @@ class TestLocalModifiedAnnotation:
                 "query": "something",
                 "local_diff": {
                     "modified_files": [
-                        {"path": "src/auth.py", "changed_lines": [1], "status": "modified"}
+                        {
+                            "path": "src/auth.py",
+                            "changed_lines": [1],
+                            "status": "modified",
+                        }
                     ],
                 },
             },
@@ -139,6 +154,7 @@ class TestLocalModifiedAnnotation:
 # ---------------------------------------------------------------------------
 # T45-2: No annotation when local_diff is absent
 # ---------------------------------------------------------------------------
+
 
 class TestNoAnnotationWithoutDiff:
     """When no local_diff is provided, local_modified must not appear."""
@@ -178,6 +194,7 @@ class TestNoAnnotationWithoutDiff:
 # ---------------------------------------------------------------------------
 # T45-3: local_changes_summary in response
 # ---------------------------------------------------------------------------
+
 
 class TestLocalChangesSummary:
     """local_changes_summary appears in response when local_diff has files."""
@@ -297,6 +314,7 @@ class TestLocalChangesSummary:
 # T45-4: SearchRequest schema validation
 # ---------------------------------------------------------------------------
 
+
 class TestSearchRequestSchema:
     """SearchRequest Pydantic model accepts local_diff and branch fields."""
 
@@ -341,6 +359,7 @@ class TestSearchRequestSchema:
 # T45-5: Zero storage writes during overlay search
 # ---------------------------------------------------------------------------
 
+
 class TestZeroStorageWrites:
     """Overlay-annotated searches must not trigger any storage writes."""
 
@@ -376,18 +395,23 @@ class TestZeroStorageWrites:
         body = SearchRequest(
             query="auth",
             local_diff=LocalDiff(
-                modified_files=[LocalDiffFile(path="src/auth.py", changed_lines=[1, 2, 3])]
+                modified_files=[
+                    LocalDiffFile(path="src/auth.py", changed_lines=[1, 2, 3])
+                ]
             ),
         )
 
         await search(request=mock_request, body=body)
 
-        assert write_calls == [], f"Unexpected storage writes during overlay search: {write_calls}"
+        assert write_calls == [], (
+            f"Unexpected storage writes during overlay search: {write_calls}"
+        )
 
 
 # ---------------------------------------------------------------------------
 # T45-6: Server annotates from request diff (no local git workspace needed)
 # ---------------------------------------------------------------------------
+
 
 class TestServerAnnotatesFromRequestDiff:
     """Annotation works purely from request data — no server-side git required."""
@@ -432,6 +456,7 @@ class TestServerAnnotatesFromRequestDiff:
 # T45-7: Truncation applied before annotation
 # ---------------------------------------------------------------------------
 
+
 class TestTruncationBeforeAnnotation:
     """Oversized diffs must be truncated before annotation."""
 
@@ -458,4 +483,7 @@ class TestTruncationBeforeAnnotation:
         data = resp.json()
         summary = data.get("local_changes_summary", {})
         # After truncation, the summary must reflect fewer than 6 files or truncated=True
-        assert summary.get("truncated") is True or summary.get("modified_file_count", 6) < 6
+        assert (
+            summary.get("truncated") is True
+            or summary.get("modified_file_count", 6) < 6
+        )

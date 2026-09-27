@@ -28,7 +28,7 @@ from agentic_inquiry.cli.env_resolver import (
 
 logger = logging.getLogger(__name__)
 
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 def run_async(coro: Coroutine[Any, Any, T]) -> T:
@@ -51,6 +51,7 @@ def run_async(coro: Coroutine[Any, Any, T]) -> T:
     # A running loop can't be re-entered, so run the coroutine on its own
     # loop in a worker thread.
     import concurrent.futures
+
     with concurrent.futures.ThreadPoolExecutor() as executor:
         future = executor.submit(asyncio.run, coro)
         return future.result()
@@ -149,9 +150,7 @@ class BaseSetup(ABC):
             default_name = "ai"
 
         # Prompt user for name
-        name = prompt_input(
-            "Environment name", default=default_name
-        )
+        name = prompt_input("Environment name", default=default_name)
 
         # Ensure dev environments follow naming convention
         if self.is_dev and not is_test_environment(name):
@@ -279,7 +278,9 @@ class BaseSetup(ABC):
             registry_path = get_data_dir(self.workspace) / REGISTRY_FILE_NAME
 
             if not registry_path.exists():
-                raise SetupError("Environment registry not found. Register environment first.")
+                raise SetupError(
+                    "Environment registry not found. Register environment first."
+                )
 
             with open(registry_path) as f:
                 registry = json.load(f)
@@ -336,7 +337,9 @@ def prompt_choice(question: str, options: list[str]) -> str:
             sys.exit(0)
 
 
-def prompt_input(question: str, default: Optional[str] = None, required: bool = False) -> str:
+def prompt_input(
+    question: str, default: Optional[str] = None, required: bool = False
+) -> str:
     """Prompt user for text input.
 
     Args:

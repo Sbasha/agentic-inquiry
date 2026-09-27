@@ -40,7 +40,7 @@ class SearchRequest(BaseModel):
     query: str
     limit: int = 10
     content_preference: str | None = None
-    branch: str | None = None       # WS4: scope search to a specific branch
+    branch: str | None = None  # WS4: scope search to a specific branch
     local_diff: LocalDiff | None = None  # WS3: local change overlay
 
 
@@ -66,7 +66,10 @@ async def search(request: Request, body: SearchRequest) -> dict:
 
         if overlay_enabled:
             from agentic_inquiry.server.overlay.truncation import truncate_diff
-            local_diff = truncate_diff(local_diff, max_per_file=max_per_file, max_total=max_total)
+
+            local_diff = truncate_diff(
+                local_diff, max_per_file=max_per_file, max_total=max_total
+            )
 
     # Latency metrics tracker is optional.
     _metrics_tracker = None
@@ -88,7 +91,11 @@ async def search(request: Request, body: SearchRequest) -> dict:
             # Local embedding: generate vector from query text
             query_vector = await embedding_service.embed_async(body.query)
 
-        ctx = _metrics_tracker.track_latency("search") if _metrics_tracker else nullcontext()
+        ctx = (
+            _metrics_tracker.track_latency("search")
+            if _metrics_tracker
+            else nullcontext()
+        )
         _search_start = time.perf_counter()
         with ctx:
             results = await search_service.hybrid_search(

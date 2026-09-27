@@ -5,6 +5,7 @@ and that our assumptions about embedding generation are correct.
 
 Run with: pytest tests/adapters/test_sentence_transformers.py -v
 """
+
 from __future__ import annotations
 
 import pytest
@@ -57,8 +58,7 @@ class TestBatchProcessing:
 
         for i, text in enumerate(texts):
             np.testing.assert_array_almost_equal(
-                individual[i], batch[i], decimal=5,
-                err_msg=f"Mismatch for text: {text}"
+                individual[i], batch[i], decimal=5, err_msg=f"Mismatch for text: {text}"
             )
 
     def test_empty_text_handling(self, skip_if_no_sentence_transformers):
@@ -76,7 +76,9 @@ class TestBatchProcessing:
 class TestSimilarityCalculation:
     """Test similarity calculation assumptions."""
 
-    def test_identical_texts_have_similarity_one(self, skip_if_no_sentence_transformers):
+    def test_identical_texts_have_similarity_one(
+        self, skip_if_no_sentence_transformers
+    ):
         """Identical texts have cosine similarity of 1."""
         from sentence_transformers import SentenceTransformer, util
 
@@ -101,7 +103,9 @@ class TestSimilarityCalculation:
         similarity = util.cos_sim(emb1, emb2).item()
         assert similarity > 0.5, f"Expected high similarity, got {similarity}"
 
-    def test_dissimilar_texts_have_low_similarity(self, skip_if_no_sentence_transformers):
+    def test_dissimilar_texts_have_low_similarity(
+        self, skip_if_no_sentence_transformers
+    ):
         """Semantically different texts have low similarity."""
         from sentence_transformers import SentenceTransformer, util
 

@@ -214,9 +214,9 @@ class ParserChain:
                 for name in self.parser_names:
                     try:
                         # Get the full parser instance from registry
-                        parser_instance = self._bound_parsers.get(name) or get_parser_instance(
+                        parser_instance = self._bound_parsers.get(
                             name
-                        )
+                        ) or get_parser_instance(name)
 
                         # Check if parser can handle this file (if can_parse is implemented)
                         if isinstance(parser_instance, ParserProtocol):

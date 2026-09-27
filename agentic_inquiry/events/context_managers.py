@@ -38,17 +38,17 @@ class NoOpOperationTracker:
 
 class OperationTracker:
     """Tracks an operation lifecycle with automatic event emission.
-    
+
     This class provides methods to emit progress, completion, and failure events
     for a tracked operation. It's typically used via the track_operation context
     manager rather than instantiated directly.
-    
+
     Example:
         >>> async with track_operation(events, "indexing", "pipeline") as op:
         ...     await op.progress(files_processed=10)
         ...     # Automatically emits completed on success
     """
-    
+
     def __init__(
         self,
         event_system: "EventSystem",
@@ -57,7 +57,7 @@ class OperationTracker:
         operation_id: str,
     ):
         """Initialize operation tracker.
-        
+
         Args:
             event_system: EventSystem instance for emitting events
             operation_type: Base event type (e.g., "indexing")
@@ -68,10 +68,10 @@ class OperationTracker:
         self.operation_type = operation_type
         self.source = source
         self.operation_id = operation_id
-    
+
     async def progress(self, **metadata: Any) -> None:
         """Emit progress event.
-        
+
         Args:
             **metadata: Progress metadata (e.g., files_processed=10)
         """
@@ -82,10 +82,10 @@ class OperationTracker:
             operation_id=self.operation_id,
             **metadata,
         )
-    
+
     async def complete(self, **metadata: Any) -> None:
         """Emit completion event.
-        
+
         Args:
             **metadata: Completion metadata (e.g., total_files=42)
         """
@@ -96,10 +96,10 @@ class OperationTracker:
             operation_id=self.operation_id,
             **metadata,
         )
-    
+
     async def fail(self, error: str, **metadata: Any) -> None:
         """Emit failure event.
-        
+
         Args:
             error: Error message describing the failure
             **metadata: Additional metadata (e.g., error_code=500)

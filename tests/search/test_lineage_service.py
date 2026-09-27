@@ -1,4 +1,5 @@
 """Tests for LineageService."""
+
 from __future__ import annotations
 
 import pytest
@@ -70,10 +71,19 @@ class TestLineageService:
     async def test_trace_with_entity_found(self, lineage_service, mock_storage):
         """Test trace when entity exists but no relationships."""
         # Setup mock to return entity
-        mock_storage.query_raw = AsyncMock(side_effect=[
-            [{"id": "entity-1", "name": "TestEntity", "type": "class", "file_path": "test.py"}],
-            [],  # No relationships
-        ])
+        mock_storage.query_raw = AsyncMock(
+            side_effect=[
+                [
+                    {
+                        "id": "entity-1",
+                        "name": "TestEntity",
+                        "type": "class",
+                        "file_path": "test.py",
+                    }
+                ],
+                [],  # No relationships
+            ]
+        )
 
         paths = await lineage_service.trace_downstream("entity-1")
         assert paths == []  # No downstream paths without relationships
@@ -89,16 +99,36 @@ class TestLineageService:
             if table_name == "graph_entities":
                 entity_id = filters.get("id") if filters else None
                 if entity_id == "entity-1":
-                    return [{"id": "entity-1", "name": "TestEntity", "type": "class",
-                            "file_path": "test.py", "layer": "service"}]
+                    return [
+                        {
+                            "id": "entity-1",
+                            "name": "TestEntity",
+                            "type": "class",
+                            "file_path": "test.py",
+                            "layer": "service",
+                        }
+                    ]
                 elif entity_id == "entity-2":
-                    return [{"id": "entity-2", "name": "Database", "type": "class",
-                            "file_path": "db.py", "layer": "database"}]
+                    return [
+                        {
+                            "id": "entity-2",
+                            "name": "Database",
+                            "type": "class",
+                            "file_path": "db.py",
+                            "layer": "database",
+                        }
+                    ]
             elif table_name == "graph_relationships":
                 source_id = filters.get("source_id") if filters else None
                 if source_id == "entity-1":
-                    return [{"source_id": "entity-1", "target_id": "entity-2",
-                            "relationship_type": "calls", "confidence": "high"}]
+                    return [
+                        {
+                            "source_id": "entity-1",
+                            "target_id": "entity-2",
+                            "relationship_type": "calls",
+                            "confidence": "high",
+                        }
+                    ]
             return []
 
         mock_storage.query_raw = mock_query

@@ -119,7 +119,9 @@ class BackendPoolManager:
             if backend_name in self._pools:
                 return self._pools[backend_name]
 
-            logger.info("Creating pool for backend: %s (type=%s)", backend_name, config.type)
+            logger.info(
+                "Creating pool for backend: %s (type=%s)", backend_name, config.type
+            )
             pool = await self._create_pool(backend_name, config)
             self._pools[backend_name] = pool
             self._initialized.add(backend_name)

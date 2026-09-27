@@ -50,9 +50,7 @@ class TestIndexingPayloads:
     def test_indexing_started_payload_valid(self):
         """Test IndexingStartedPayload with valid data."""
         payload = IndexingStartedPayload(
-            path="/path/to/file",
-            content_type="code",
-            file_count=42
+            path="/path/to/file", content_type="code", file_count=42
         )
         assert payload.path == "/path/to/file"
         assert payload.content_type == "code"
@@ -60,10 +58,7 @@ class TestIndexingPayloads:
 
     def test_indexing_started_payload_minimal(self):
         """Test IndexingStartedPayload with minimal data."""
-        payload = IndexingStartedPayload(
-            path="/path/to/file",
-            content_type="code"
-        )
+        payload = IndexingStartedPayload(path="/path/to/file", content_type="code")
         assert payload.path == "/path/to/file"
         assert payload.content_type == "code"
         assert payload.file_count is None
@@ -77,23 +72,18 @@ class TestIndexingPayloads:
     def test_indexing_started_payload_to_metadata(self):
         """Test IndexingStartedPayload converts to metadata dict."""
         payload = IndexingStartedPayload(
-            path="/path/to/file",
-            content_type="code",
-            file_count=42
+            path="/path/to/file", content_type="code", file_count=42
         )
         metadata = payload.to_metadata()
         assert metadata == {
             "path": "/path/to/file",
             "content_type": "code",
-            "file_count": 42
+            "file_count": 42,
         }
 
     def test_indexing_progress_payload(self):
         """Test IndexingProgressPayload with partial data."""
-        payload = IndexingProgressPayload(
-            files_processed=10,
-            chunks_created=50
-        )
+        payload = IndexingProgressPayload(files_processed=10, chunks_created=50)
         assert payload.files_processed == 10
         assert payload.chunks_created == 50
         assert payload.entities_created is None
@@ -106,7 +96,7 @@ class TestIndexingPayloads:
             entities_created=50,
             relationships_created=75,
             duration_seconds=12.5,
-            success=True
+            success=True,
         )
         assert payload.files_processed == 42
         assert payload.chunks_created == 100
@@ -118,7 +108,7 @@ class TestIndexingPayloads:
         payload = IndexingFailedPayload(
             error="File not found",
             error_type="FileNotFoundError",
-            path="/path/to/missing/file"
+            path="/path/to/missing/file",
         )
         assert payload.error == "File not found"
         assert payload.error_type == "FileNotFoundError"
@@ -130,7 +120,7 @@ class TestIndexingPayloads:
             file_path="/path/to/file.py",
             chunks_created=5,
             entities_created=10,
-            duration_ms=123.45
+            duration_ms=123.45,
         )
         assert payload.file_path == "/path/to/file.py"
         assert payload.chunks_created == 5
@@ -140,8 +130,7 @@ class TestIndexingPayloads:
     def test_indexing_file_skipped_payload(self):
         """Test IndexingFileSkippedPayload."""
         payload = IndexingFileSkippedPayload(
-            file_path="/path/to/file.pyc",
-            reason="ignored"
+            file_path="/path/to/file.pyc", reason="ignored"
         )
         assert payload.file_path == "/path/to/file.pyc"
         assert payload.reason == "ignored"
@@ -149,9 +138,7 @@ class TestIndexingPayloads:
     def test_indexing_file_failed_payload(self):
         """Test IndexingFileFailedPayload."""
         payload = IndexingFileFailedPayload(
-            file_path="/path/to/file.py",
-            error="Parse error",
-            error_type="SyntaxError"
+            file_path="/path/to/file.py", error="Parse error", error_type="SyntaxError"
         )
         assert payload.file_path == "/path/to/file.py"
         assert payload.error == "Parse error"
@@ -163,9 +150,7 @@ class TestSearchPayloads:
     def test_search_query_started_payload(self):
         """Test SearchQueryStartedPayload with literal types."""
         payload = SearchQueryStartedPayload(
-            search_type="vector",
-            query_text="test query",
-            limit=10
+            search_type="vector", query_text="test query", limit=10
         )
         assert payload.search_type == "vector"
         assert payload.query_text == "test query"
@@ -173,27 +158,19 @@ class TestSearchPayloads:
     def test_search_query_started_invalid_type(self):
         """Test SearchQueryStartedPayload fails with invalid search type."""
         with pytest.raises(ValidationError):
-            SearchQueryStartedPayload(
-                search_type="invalid_type",
-                query_text="test"
-            )
+            SearchQueryStartedPayload(search_type="invalid_type", query_text="test")
 
     def test_search_query_completed_payload(self):
         """Test SearchQueryCompletedPayload."""
         payload = SearchQueryCompletedPayload(
-            search_type="hybrid",
-            result_count=15,
-            duration_ms=45.67
+            search_type="hybrid", result_count=15, duration_ms=45.67
         )
         assert payload.search_type == "hybrid"
         assert payload.result_count == 15
 
     def test_search_results_returned_payload(self):
         """Test SearchResultsReturnedPayload."""
-        payload = SearchResultsReturnedPayload(
-            result_count=5,
-            search_type="fts"
-        )
+        payload = SearchResultsReturnedPayload(result_count=5, search_type="fts")
         assert payload.result_count == 5
         assert payload.search_type == "fts"
 
@@ -209,7 +186,7 @@ class TestMemoryPayloads:
             agent_id="agent_001",
             session_id="session_xyz",
             importance=0.8,
-            content_length=256
+            content_length=256,
         )
         assert payload.memory_id == "mem_123"
         assert payload.tier == "episodic"
@@ -223,7 +200,7 @@ class TestMemoryPayloads:
                 tier="working",
                 agent_id="agent_001",
                 importance=1.5,  # Invalid: > 1.0
-                content_length=100
+                content_length=100,
             )
         assert "importance" in str(exc_info.value)
 
@@ -234,7 +211,7 @@ class TestMemoryPayloads:
             result_count=10,
             strategy="adaptive",
             agent_id="agent_001",
-            session_id="session_xyz"
+            session_id="session_xyz",
         )
         assert payload.query == "user preferences"
         assert payload.result_count == 10
@@ -246,7 +223,7 @@ class TestMemoryPayloads:
             items_promoted=5,
             concepts_extracted=3,
             agent_id="agent_001",
-            duration_seconds=2.5
+            duration_seconds=2.5,
         )
         assert payload.items_promoted == 5
         assert payload.concepts_extracted == 3
@@ -260,7 +237,7 @@ class TestWatchingPayloads:
         payload = WatchingStartedPayload(
             path="/path/to/watch",
             recursive=True,
-            ignore_patterns=["*.pyc", "__pycache__"]
+            ignore_patterns=["*.pyc", "__pycache__"],
         )
         assert payload.path == "/path/to/watch"
         assert payload.recursive is True
@@ -269,9 +246,7 @@ class TestWatchingPayloads:
     def test_watching_file_changed_payload(self):
         """Test WatchingFileChangedPayload with event types."""
         payload = WatchingFileChangedPayload(
-            file_path="/path/to/file.py",
-            event_type="modified",
-            change_hash="abc123"
+            file_path="/path/to/file.py", event_type="modified", change_hash="abc123"
         )
         assert payload.file_path == "/path/to/file.py"
         assert payload.event_type == "modified"
@@ -280,8 +255,7 @@ class TestWatchingPayloads:
         """Test WatchingFileChangedPayload fails with invalid event type."""
         with pytest.raises(ValidationError):
             WatchingFileChangedPayload(
-                file_path="/path/to/file.py",
-                event_type="invalid"
+                file_path="/path/to/file.py", event_type="invalid"
             )
 
 
@@ -294,7 +268,7 @@ class TestParsingPayloads:
             file_path="/path/to/file.py",
             chunks_created=10,
             parser_type="unified_code",
-            duration_ms=50.0
+            duration_ms=50.0,
         )
         assert payload.file_path == "/path/to/file.py"
         assert payload.chunks_created == 10
@@ -305,7 +279,7 @@ class TestParsingPayloads:
         payload = ParserSelectedPayload(
             file_path="/path/to/file.py",
             parser_type="unified_code",
-            parser_priority=100
+            parser_priority=100,
         )
         assert payload.parser_priority == 100
 
@@ -319,7 +293,7 @@ class TestSystemPayloads:
             component="SearchService",
             error="Connection timeout",
             error_type="TimeoutError",
-            severity="high"
+            severity="high",
         )
         assert payload.component == "SearchService"
         assert payload.severity == "high"
@@ -327,11 +301,7 @@ class TestSystemPayloads:
     def test_system_error_payload_invalid_severity(self):
         """Test SystemErrorPayload fails with invalid severity."""
         with pytest.raises(ValidationError):
-            SystemErrorPayload(
-                component="test",
-                error="error",
-                severity="invalid"
-            )
+            SystemErrorPayload(component="test", error="error", severity="invalid")
 
 
 class TestEventIntegration:
@@ -340,16 +310,14 @@ class TestEventIntegration:
     def test_event_from_payload(self):
         """Test Event.from_payload() creates event with validated metadata."""
         payload = IndexingStartedPayload(
-            path="/path/to/file",
-            content_type="code",
-            file_count=42
+            path="/path/to/file", content_type="code", file_count=42
         )
         event = Event.from_payload(
             event_type="indexing.started",
             source="pipeline",
             payload=payload,
             project_id="test_project",
-            status=EventStatus.STARTED
+            status=EventStatus.STARTED,
         )
 
         assert event.event_type == "indexing.started"
@@ -367,8 +335,8 @@ class TestEventIntegration:
             metadata={
                 "path": "/path/to/file",
                 "content_type": "code",
-                "file_count": 42
-            }
+                "file_count": 42,
+            },
         )
 
         payload = event.validate_payload(IndexingStartedPayload)
@@ -384,7 +352,7 @@ class TestEventIntegration:
             metadata={
                 "path": "/path/to/file"
                 # Missing required field: content_type
-            }
+            },
         )
 
         with pytest.raises(ValidationError) as exc_info:
@@ -399,8 +367,8 @@ class TestEventIntegration:
                 "path": "/path/to/file",
                 "content_type": "code",
                 "extra_field": "extra_value",  # Extra field should be allowed
-                "another_extra": 123
-            }
+                "another_extra": 123,
+            },
         )
 
         payload = event.validate_payload(IndexingStartedPayload)
@@ -416,9 +384,7 @@ class TestPayloadMetadataRoundtrip:
     def test_indexing_started_roundtrip(self):
         """Test IndexingStartedPayload roundtrip conversion."""
         original = IndexingStartedPayload(
-            path="/path/to/file",
-            content_type="code",
-            file_count=42
+            path="/path/to/file", content_type="code", file_count=42
         )
 
         # Convert to metadata
@@ -438,7 +404,7 @@ class TestPayloadMetadataRoundtrip:
             tier="semantic",
             agent_id="agent_001",
             importance=0.9,
-            content_length=512
+            content_length=512,
         )
 
         metadata = original.to_metadata()
@@ -453,7 +419,7 @@ class TestPayloadMetadataRoundtrip:
         payload = IndexingStartedPayload(
             path="/path/to/file",
             content_type="code",
-            file_count=None  # Optional field set to None
+            file_count=None,  # Optional field set to None
         )
 
         metadata = payload.to_metadata()
@@ -477,9 +443,7 @@ class TestEventSystemTypedEmission:
         event_system = EventSystem(config, project_id="test_project")
 
         payload = IndexingStartedPayload(
-            path="/path/to/file",
-            content_type="code",
-            file_count=42
+            path="/path/to/file", content_type="code", file_count=42
         )
 
         # This should not raise any errors
@@ -487,7 +451,7 @@ class TestEventSystemTypedEmission:
             event_type="indexing.started",
             source="test",
             payload=payload,
-            status=EventStatus.STARTED
+            status=EventStatus.STARTED,
         )
 
         # Verify the event system is functional (basic smoke test)

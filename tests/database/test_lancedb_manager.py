@@ -1,4 +1,5 @@
 """Unit tests for the production LanceDB manager helpers."""
+
 from __future__ import annotations
 
 import asyncio
@@ -146,7 +147,9 @@ def test_manager_with_config(tmp_path):
 
     # Directories are NOT created at construction time (lazy initialization)
     # They are created when connect() or initialize() is called
-    assert not storage_root.exists(), "Directories should not exist at construction time"
+    assert not storage_root.exists(), (
+        "Directories should not exist at construction time"
+    )
 
     # Directories are created when connected
     asyncio.run(manager.connect())
@@ -157,46 +160,50 @@ def test_manager_with_config(tmp_path):
 def test_manager_project_id_filtering():
     """Test that queries automatically filter by project_id."""
     manager = InMemoryLanceDBManager(uri=":memory:", project_id="proj_a")
-    
+
     # Create tables
     asyncio.run(manager.create_tables_and_indexes())
-    
+
     # Add chunks for different projects
-    asyncio.run(manager.add_document_chunks([
-        {
-            "id": "chunk-1",
-            "doc_id": "doc-1",
-            "project_id": "proj_a",
-            "file_path": "test.py",
-            "content_type": "code",
-            "vector": [1.0, 0.0],
-            "content": "Project A content",
-        },
-        {
-            "id": "chunk-2",
-            "doc_id": "doc-2",
-            "project_id": "proj_b",
-            "file_path": "test.py",
-            "content_type": "code",
-            "vector": [0.0, 1.0],
-            "content": "Project B content",
-        },
-        {
-            "id": "chunk-3",
-            "doc_id": "doc-3",
-            "project_id": "proj_a",
-            "file_path": "test.py",
-            "content_type": "code",
-            "vector": [1.0, 1.0],
-            "content": "Another Project A content",
-        },
-    ]))
-    
+    asyncio.run(
+        manager.add_document_chunks(
+            [
+                {
+                    "id": "chunk-1",
+                    "doc_id": "doc-1",
+                    "project_id": "proj_a",
+                    "file_path": "test.py",
+                    "content_type": "code",
+                    "vector": [1.0, 0.0],
+                    "content": "Project A content",
+                },
+                {
+                    "id": "chunk-2",
+                    "doc_id": "doc-2",
+                    "project_id": "proj_b",
+                    "file_path": "test.py",
+                    "content_type": "code",
+                    "vector": [0.0, 1.0],
+                    "content": "Project B content",
+                },
+                {
+                    "id": "chunk-3",
+                    "doc_id": "doc-3",
+                    "project_id": "proj_a",
+                    "file_path": "test.py",
+                    "content_type": "code",
+                    "vector": [1.0, 1.0],
+                    "content": "Another Project A content",
+                },
+            ]
+        )
+    )
+
     # Search with default project_id (should use "current" = proj_a)
-    results = asyncio.run(manager.vector_search(
-        "document_chunks", [1.0, 0.0], "vector", 10, filters=None
-    ))
-    
+    results = asyncio.run(
+        manager.vector_search("document_chunks", [1.0, 0.0], "vector", 10, filters=None)
+    )
+
     # Should only return proj_a chunks
     assert len(results) == 2
     assert all(r["project_id"] == "proj_a" for r in results)
@@ -206,37 +213,48 @@ def test_manager_project_id_filtering():
 def test_manager_explicit_project_id_filtering():
     """Test explicit project_id filtering in queries."""
     manager = InMemoryLanceDBManager(uri=":memory:", project_id="proj_a")
-    
+
     # Create tables
     asyncio.run(manager.create_tables_and_indexes())
-    
+
     # Add chunks for different projects
-    asyncio.run(manager.add_document_chunks([
-        {
-            "id": "chunk-1",
-            "doc_id": "doc-1",
-            "project_id": "proj_a",
-            "file_path": "test_a.py",
-            "content_type": "code",
-            "vector": [1.0, 0.0],
-            "content": "Project A content",
-        },
-        {
-            "id": "chunk-2",
-            "doc_id": "doc-2",
-            "project_id": "proj_b",
-            "file_path": "test_b.py",
-            "content_type": "code",
-            "vector": [0.0, 1.0],
-            "content": "Project B content",
-        },
-    ]))
+    asyncio.run(
+        manager.add_document_chunks(
+            [
+                {
+                    "id": "chunk-1",
+                    "doc_id": "doc-1",
+                    "project_id": "proj_a",
+                    "file_path": "test_a.py",
+                    "content_type": "code",
+                    "vector": [1.0, 0.0],
+                    "content": "Project A content",
+                },
+                {
+                    "id": "chunk-2",
+                    "doc_id": "doc-2",
+                    "project_id": "proj_b",
+                    "file_path": "test_b.py",
+                    "content_type": "code",
+                    "vector": [0.0, 1.0],
+                    "content": "Project B content",
+                },
+            ]
+        )
+    )
 
     # Search with explicit project_id
-    results = asyncio.run(manager.vector_search(
-        "document_chunks", [1.0, 0.0], "vector", 10, filters=None, project_id="proj_b"
-    ))
-    
+    results = asyncio.run(
+        manager.vector_search(
+            "document_chunks",
+            [1.0, 0.0],
+            "vector",
+            10,
+            filters=None,
+            project_id="proj_b",
+        )
+    )
+
     # Should only return proj_b chunks
     assert len(results) == 1
     assert results[0]["project_id"] == "proj_b"
@@ -246,46 +264,52 @@ def test_manager_explicit_project_id_filtering():
 def test_manager_search_all_projects():
     """Test searching across all projects with project_id=None."""
     manager = InMemoryLanceDBManager(uri=":memory:", project_id="proj_a")
-    
+
     # Create tables
     asyncio.run(manager.create_tables_and_indexes())
-    
+
     # Add chunks for different projects
-    asyncio.run(manager.add_document_chunks([
-        {
-            "id": "chunk-1",
-            "doc_id": "doc-1",
-            "project_id": "proj_a",
-            "file_path": "test_a.py",
-            "content_type": "code",
-            "vector": [1.0, 0.0],
-            "content": "Project A content",
-        },
-        {
-            "id": "chunk-2",
-            "doc_id": "doc-2",
-            "project_id": "proj_b",
-            "file_path": "test_b.py",
-            "content_type": "code",
-            "vector": [0.0, 1.0],
-            "content": "Project B content",
-        },
-        {
-            "id": "chunk-3",
-            "doc_id": "doc-3",
-            "project_id": "proj_c",
-            "file_path": "test_c.py",
-            "content_type": "code",
-            "vector": [1.0, 1.0],
-            "content": "Project C content",
-        },
-    ]))
+    asyncio.run(
+        manager.add_document_chunks(
+            [
+                {
+                    "id": "chunk-1",
+                    "doc_id": "doc-1",
+                    "project_id": "proj_a",
+                    "file_path": "test_a.py",
+                    "content_type": "code",
+                    "vector": [1.0, 0.0],
+                    "content": "Project A content",
+                },
+                {
+                    "id": "chunk-2",
+                    "doc_id": "doc-2",
+                    "project_id": "proj_b",
+                    "file_path": "test_b.py",
+                    "content_type": "code",
+                    "vector": [0.0, 1.0],
+                    "content": "Project B content",
+                },
+                {
+                    "id": "chunk-3",
+                    "doc_id": "doc-3",
+                    "project_id": "proj_c",
+                    "file_path": "test_c.py",
+                    "content_type": "code",
+                    "vector": [1.0, 1.0],
+                    "content": "Project C content",
+                },
+            ]
+        )
+    )
 
     # Search with project_id=None (all projects)
-    results = asyncio.run(manager.vector_search(
-        "document_chunks", [1.0, 0.0], "vector", 10, filters=None, project_id=None
-    ))
-    
+    results = asyncio.run(
+        manager.vector_search(
+            "document_chunks", [1.0, 0.0], "vector", 10, filters=None, project_id=None
+        )
+    )
+
     # Should return all chunks
     assert len(results) == 3
     assert {r["id"] for r in results} == {"chunk-1", "chunk-2", "chunk-3"}
@@ -294,45 +318,49 @@ def test_manager_search_all_projects():
 def test_manager_cross_project_query():
     """Test query_across_projects method."""
     manager = InMemoryLanceDBManager(uri=":memory:", project_id="proj_a")
-    
+
     # Create tables
     asyncio.run(manager.create_tables_and_indexes())
-    
+
     # Add entities for different projects
-    asyncio.run(manager.add_graph_entities([
-        {
-            "id": "entity-1",
-            "name": "ClassA",
-            "type": "class",
-            "project_id": "proj_a",
-            "file_path": "test_a.py",
-            "vector": [1.0, 0.0],
-        },
-        {
-            "id": "entity-2",
-            "name": "ClassB",
-            "type": "class",
-            "project_id": "proj_b",
-            "file_path": "test_b.py",
-            "vector": [0.0, 1.0],
-        },
-        {
-            "id": "entity-3",
-            "name": "ClassC",
-            "type": "class",
-            "project_id": "proj_c",
-            "file_path": "test_c.py",
-            "vector": [1.0, 1.0],
-        },
-    ]))
-    
+    asyncio.run(
+        manager.add_graph_entities(
+            [
+                {
+                    "id": "entity-1",
+                    "name": "ClassA",
+                    "type": "class",
+                    "project_id": "proj_a",
+                    "file_path": "test_a.py",
+                    "vector": [1.0, 0.0],
+                },
+                {
+                    "id": "entity-2",
+                    "name": "ClassB",
+                    "type": "class",
+                    "project_id": "proj_b",
+                    "file_path": "test_b.py",
+                    "vector": [0.0, 1.0],
+                },
+                {
+                    "id": "entity-3",
+                    "name": "ClassC",
+                    "type": "class",
+                    "project_id": "proj_c",
+                    "file_path": "test_c.py",
+                    "vector": [1.0, 1.0],
+                },
+            ]
+        )
+    )
+
     # Query across specific projects
-    results = asyncio.run(manager.query_across_projects(
-        "graph_entities",
-        project_ids=["proj_a", "proj_c"],
-        limit=10
-    ))
-    
+    results = asyncio.run(
+        manager.query_across_projects(
+            "graph_entities", project_ids=["proj_a", "proj_c"], limit=10
+        )
+    )
+
     # Should only return entities from proj_a and proj_c
     assert len(results) == 2
     assert {r["id"] for r in results} == {"entity-1", "entity-3"}
@@ -342,39 +370,43 @@ def test_manager_cross_project_query():
 def test_manager_fts_search_with_project_filtering():
     """Test full-text search respects project_id filtering."""
     manager = InMemoryLanceDBManager(uri=":memory:", project_id="proj_a")
-    
+
     # Create tables
     asyncio.run(manager.create_tables_and_indexes())
-    
+
     # Add chunks for different projects
-    asyncio.run(manager.add_document_chunks([
-        {
-            "id": "chunk-1",
-            "doc_id": "doc-1",
-            "project_id": "proj_a",
-            "file_path": "test_a.py",
-            "content_type": "code",
-            "vector": [1.0, 0.0],
-            "content": "Python programming tutorial",
-            "fts_text": "Python programming tutorial",
-        },
-        {
-            "id": "chunk-2",
-            "doc_id": "doc-2",
-            "project_id": "proj_b",
-            "file_path": "test_b.py",
-            "content_type": "code",
-            "vector": [0.0, 1.0],
-            "content": "Python data science guide",
-            "fts_text": "Python data science guide",
-        },
-    ]))
-    
+    asyncio.run(
+        manager.add_document_chunks(
+            [
+                {
+                    "id": "chunk-1",
+                    "doc_id": "doc-1",
+                    "project_id": "proj_a",
+                    "file_path": "test_a.py",
+                    "content_type": "code",
+                    "vector": [1.0, 0.0],
+                    "content": "Python programming tutorial",
+                    "fts_text": "Python programming tutorial",
+                },
+                {
+                    "id": "chunk-2",
+                    "doc_id": "doc-2",
+                    "project_id": "proj_b",
+                    "file_path": "test_b.py",
+                    "content_type": "code",
+                    "vector": [0.0, 1.0],
+                    "content": "Python data science guide",
+                    "fts_text": "Python data science guide",
+                },
+            ]
+        )
+    )
+
     # FTS search with default project_id
-    results = asyncio.run(manager.fts_search(
-        "document_chunks", "Python", 10, filters=None
-    ))
-    
+    results = asyncio.run(
+        manager.fts_search("document_chunks", "Python", 10, filters=None)
+    )
+
     # Should only return proj_a chunks
     assert len(results) == 1
     assert results[0]["project_id"] == "proj_a"
@@ -384,45 +416,49 @@ def test_manager_fts_search_with_project_filtering():
 def test_manager_advanced_filter_with_project_filtering():
     """Test advanced_filter respects project_id filtering."""
     manager = InMemoryLanceDBManager(uri=":memory:", project_id="proj_a")
-    
+
     # Create tables
     asyncio.run(manager.create_tables_and_indexes())
-    
+
     # Add relationships for different projects
-    asyncio.run(manager.add_graph_relationships([
-        {
-            "id": "rel-1",
-            "source_id": "entity-1",
-            "target_id": "entity-2",
-            "type": "calls",
-            "project_id": "proj_a",
-            "vector": [1.0, 0.0],
-        },
-        {
-            "id": "rel-2",
-            "source_id": "entity-3",
-            "target_id": "entity-4",
-            "type": "imports",
-            "project_id": "proj_b",
-            "vector": [0.0, 1.0],
-        },
-        {
-            "id": "rel-3",
-            "source_id": "entity-5",
-            "target_id": "entity-6",
-            "type": "calls",
-            "project_id": "proj_a",
-            "vector": [1.0, 1.0],
-        },
-    ]))
-    
+    asyncio.run(
+        manager.add_graph_relationships(
+            [
+                {
+                    "id": "rel-1",
+                    "source_id": "entity-1",
+                    "target_id": "entity-2",
+                    "type": "calls",
+                    "project_id": "proj_a",
+                    "vector": [1.0, 0.0],
+                },
+                {
+                    "id": "rel-2",
+                    "source_id": "entity-3",
+                    "target_id": "entity-4",
+                    "type": "imports",
+                    "project_id": "proj_b",
+                    "vector": [0.0, 1.0],
+                },
+                {
+                    "id": "rel-3",
+                    "source_id": "entity-5",
+                    "target_id": "entity-6",
+                    "type": "calls",
+                    "project_id": "proj_a",
+                    "vector": [1.0, 1.0],
+                },
+            ]
+        )
+    )
+
     # Filter by type with default project_id
-    results = asyncio.run(manager.advanced_filter(
-        "graph_relationships",
-        filters={"type": "calls"},
-        limit=10
-    ))
-    
+    results = asyncio.run(
+        manager.advanced_filter(
+            "graph_relationships", filters={"type": "calls"}, limit=10
+        )
+    )
+
     # Should only return proj_a relationships of type "calls"
     assert len(results) == 2
     assert all(r["project_id"] == "proj_a" for r in results)
@@ -451,12 +487,13 @@ def test_manager_custom_storage_path(tmp_path):
     assert manager._project_id == "custom_proj"
 
     # Directories are NOT created at construction time (lazy initialization)
-    assert not custom_storage.exists(), "Directory should not exist at construction time"
+    assert not custom_storage.exists(), (
+        "Directory should not exist at construction time"
+    )
 
     # Directories are created when connected
     asyncio.run(manager.connect())
     assert custom_storage.exists()
-
 
 
 @pytest.mark.asyncio
@@ -464,24 +501,24 @@ async def test_connection_lifecycle(tmp_path):
     """Test connection lifecycle management (connect, close, reconnect)."""
     storage_root = tmp_path / "test_storage"
     uri = str(storage_root / "lancedb")
-    
+
     manager = LanceDBManager(uri=uri)
-    
+
     # Initially not connected
     assert not manager.is_connected()
-    
+
     # Connect
     await manager.connect()
     assert manager.is_connected()
-    
+
     # Close
     await manager.close()
     assert not manager.is_connected()
-    
+
     # Reconnect
     await manager.reconnect()
     assert manager.is_connected()
-    
+
     # Clean up
     await manager.close()
 
@@ -491,13 +528,13 @@ async def test_async_context_manager(tmp_path):
     """Test using LanceDBManager as async context manager."""
     storage_root = tmp_path / "test_storage"
     uri = str(storage_root / "lancedb")
-    
+
     # Use as context manager
     async with LanceDBManager(uri=uri) as manager:
         assert manager.is_connected()
         # Manager should be usable within context
         await manager.connect()  # Should be idempotent
-    
+
     # After exiting context, connection should be closed
     assert not manager.is_connected()
 
@@ -507,16 +544,16 @@ async def test_health_check(tmp_path):
     """Test database health check."""
     storage_root = tmp_path / "test_storage"
     uri = str(storage_root / "lancedb")
-    
+
     manager = LanceDBManager(uri=uri)
-    
+
     # Health check should fail when not connected
     assert not await manager.health_check()
-    
+
     # Connect and health check should pass
     await manager.connect()
     assert await manager.health_check()
-    
+
     # Close and health check should fail again
     await manager.close()
     assert not await manager.health_check()
@@ -525,7 +562,7 @@ async def test_health_check(tmp_path):
 @pytest.mark.asyncio
 async def test_query_entities_method(mock_db_manager):
     """Test query_entities convenience method."""
-    
+
     # Add some test entities
     test_entities = [
         {
@@ -543,22 +580,18 @@ async def test_query_entities_method(mock_db_manager):
             "project_id": "test_project",
         },
     ]
-    
+
     await mock_db_manager.add_graph_entities(test_entities, project_id="test_project")
-    
+
     # Query all entities
     results = await mock_db_manager.query_entities(
-        filters=None,
-        limit=10,
-        project_id="test_project"
+        filters=None, limit=10, project_id="test_project"
     )
     assert len(results) == 2
-    
+
     # Query by type
     results = await mock_db_manager.query_entities(
-        filters={"type": "class"},
-        limit=10,
-        project_id="test_project"
+        filters={"type": "class"}, limit=10, project_id="test_project"
     )
     assert len(results) == 1
     assert results[0]["name"] == "TestClass"
@@ -567,7 +600,7 @@ async def test_query_entities_method(mock_db_manager):
 @pytest.mark.asyncio
 async def test_query_relationships_method(mock_db_manager):
     """Test query_relationships convenience method."""
-    
+
     # Add test relationships
     test_relationships = [
         {
@@ -585,22 +618,20 @@ async def test_query_relationships_method(mock_db_manager):
             "project_id": "test_project",
         },
     ]
-    
-    await mock_db_manager.add_graph_relationships(test_relationships, project_id="test_project")
-    
+
+    await mock_db_manager.add_graph_relationships(
+        test_relationships, project_id="test_project"
+    )
+
     # Query all relationships
     results = await mock_db_manager.query_relationships(
-        filters=None,
-        limit=10,
-        project_id="test_project"
+        filters=None, limit=10, project_id="test_project"
     )
     assert len(results) == 2
-    
+
     # Query by source_id
     results = await mock_db_manager.query_relationships(
-        filters={"source_id": "entity_1"},
-        limit=10,
-        project_id="test_project"
+        filters={"source_id": "entity_1"}, limit=10, project_id="test_project"
     )
     assert len(results) == 1
     assert results[0]["type"] == "calls"
@@ -609,7 +640,7 @@ async def test_query_relationships_method(mock_db_manager):
 @pytest.mark.asyncio
 async def test_upsert_method(mock_db_manager):
     """Test upsert convenience method."""
-    
+
     # Insert new records
     test_data = [
         {
@@ -620,22 +651,18 @@ async def test_upsert_method(mock_db_manager):
             "project_id": "test_project",
         }
     ]
-    
+
     await mock_db_manager.upsert(
-        table_name="graph_entities",
-        data=test_data,
-        key_field="id"
+        table_name="graph_entities", data=test_data, key_field="id"
     )
-    
+
     # Verify insert
     results = await mock_db_manager.query_entities(
-        filters={"id": "entity_1"},
-        limit=1,
-        project_id="test_project"
+        filters={"id": "entity_1"}, limit=1, project_id="test_project"
     )
     assert len(results) == 1
     assert results[0]["name"] == "TestClass"
-    
+
     # Update existing record
     updated_data = [
         {
@@ -646,28 +673,20 @@ async def test_upsert_method(mock_db_manager):
             "project_id": "test_project",
         }
     ]
-    
+
     await mock_db_manager.upsert(
-        table_name="graph_entities",
-        data=updated_data,
-        key_field="id"
+        table_name="graph_entities", data=updated_data, key_field="id"
     )
-    
+
     # Verify update
     results = await mock_db_manager.query_entities(
-        filters={"id": "entity_1"},
-        limit=1,
-        project_id="test_project"
+        filters={"id": "entity_1"}, limit=1, project_id="test_project"
     )
     assert len(results) == 1
     assert results[0]["name"] == "UpdatedClass"
-    
+
     # Test empty data (should be no-op)
-    await mock_db_manager.upsert(
-        table_name="graph_entities",
-        data=[],
-        key_field="id"
-    )
+    await mock_db_manager.upsert(table_name="graph_entities", data=[], key_field="id")
 
 
 # ============================================================================
@@ -678,66 +697,71 @@ async def test_upsert_method(mock_db_manager):
 @pytest.mark.asyncio
 async def test_validate_record_rejects_forbidden_field_aliases(mock_db_manager):
     """Test that forbidden field aliases are rejected at write time."""
-    
+
     # Test entity_id (should use 'id' instead)
     with pytest.raises(ValueError, match="entity_id.*not allowed.*Use 'id' instead"):
         mock_db_manager._validate_record(
-            "graph_entities",
-            {"entity_id": "test", "name": "Test", "type": "class"}
+            "graph_entities", {"entity_id": "test", "name": "Test", "type": "class"}
         )
-    
+
     # Test chunk_id (should use 'id' instead)
     with pytest.raises(ValueError, match="chunk_id.*not allowed.*Use 'id' instead"):
         mock_db_manager._validate_record(
-            "document_chunks",
-            {"chunk_id": "test", "content": "Test"}
+            "document_chunks", {"chunk_id": "test", "content": "Test"}
         )
-    
+
     # Test relationship_type (should use 'type' instead)
-    with pytest.raises(ValueError, match="relationship_type.*not allowed.*Use 'type' instead"):
+    with pytest.raises(
+        ValueError, match="relationship_type.*not allowed.*Use 'type' instead"
+    ):
         mock_db_manager._validate_record(
             "graph_relationships",
-            {"relationship_type": "calls", "source_id": "a", "target_id": "b"}
+            {"relationship_type": "calls", "source_id": "a", "target_id": "b"},
         )
-    
+
     # Test entity_type (should use 'type' instead)
-    with pytest.raises(ValueError, match="entity_type.*not allowed.*Use 'type' instead"):
+    with pytest.raises(
+        ValueError, match="entity_type.*not allowed.*Use 'type' instead"
+    ):
         mock_db_manager._validate_record(
-            "graph_entities",
-            {"entity_type": "class", "id": "test", "name": "Test"}
+            "graph_entities", {"entity_type": "class", "id": "test", "name": "Test"}
         )
 
 
 @pytest.mark.asyncio
 async def test_validate_record_rejects_missing_required_fields(mock_db_manager):
     """Test that missing required fields are detected at write time."""
-    
+
     # Missing required fields for graph_entities
     with pytest.raises(ValueError, match="Missing required fields.*graph_entities"):
         mock_db_manager._validate_record(
             "graph_entities",
-            {"name": "Test"}  # Missing: id, type, file_path, project_id
+            {"name": "Test"},  # Missing: id, type, file_path, project_id
         )
-    
+
     # Missing required fields for document_chunks
     with pytest.raises(ValueError, match="Missing required fields.*document_chunks"):
         mock_db_manager._validate_record(
             "document_chunks",
-            {"content": "Test"}  # Missing: id, doc_id, file_path, project_id, content_type
+            {
+                "content": "Test"
+            },  # Missing: id, doc_id, file_path, project_id, content_type
         )
-    
+
     # Missing required fields for graph_relationships
-    with pytest.raises(ValueError, match="Missing required fields.*graph_relationships"):
+    with pytest.raises(
+        ValueError, match="Missing required fields.*graph_relationships"
+    ):
         mock_db_manager._validate_record(
             "graph_relationships",
-            {"type": "calls"}  # Missing: id, source_id, target_id, project_id
+            {"type": "calls"},  # Missing: id, source_id, target_id, project_id
         )
 
 
 @pytest.mark.asyncio
 async def test_validate_record_accepts_valid_records(mock_db_manager):
     """Test that valid records pass validation."""
-    
+
     # Valid graph entity
     mock_db_manager._validate_record(
         "graph_entities",
@@ -746,10 +770,10 @@ async def test_validate_record_accepts_valid_records(mock_db_manager):
             "name": "TestClass",
             "type": "class",
             "file_path": "test.py",
-            "project_id": "test_project"
-        }
+            "project_id": "test_project",
+        },
     )  # Should not raise
-    
+
     # Valid document chunk
     mock_db_manager._validate_record(
         "document_chunks",
@@ -759,10 +783,10 @@ async def test_validate_record_accepts_valid_records(mock_db_manager):
             "file_path": "test.py",
             "project_id": "test_project",
             "content": "Test content",
-            "content_type": "code"
-        }
+            "content_type": "code",
+        },
     )  # Should not raise
-    
+
     # Valid graph relationship
     mock_db_manager._validate_record(
         "graph_relationships",
@@ -771,8 +795,8 @@ async def test_validate_record_accepts_valid_records(mock_db_manager):
             "source_id": "entity_1",
             "target_id": "entity_2",
             "type": "calls",
-            "project_id": "test_project"
-        }
+            "project_id": "test_project",
+        },
     )  # Should not raise
 
 
@@ -783,20 +807,28 @@ async def test_add_rows_validates_before_write(mock_db_manager):
         FORBIDDEN_FIELD_ALIASES,
         REQUIRED_FIELDS,
     )
-    
+
     # Verify constants are properly defined
     assert "entity_id" in FORBIDDEN_FIELD_ALIASES
     assert "chunk_id" in FORBIDDEN_FIELD_ALIASES
     assert "relationship_type" in FORBIDDEN_FIELD_ALIASES
     assert "entity_type" in FORBIDDEN_FIELD_ALIASES
-    
+
     assert "graph_entities" in REQUIRED_FIELDS
     assert "document_chunks" in REQUIRED_FIELDS
     assert "graph_relationships" in REQUIRED_FIELDS
-    
+
     # Attempt to write with forbidden field should fail
     with pytest.raises(ValueError, match="entity_id.*not allowed"):
         await mock_db_manager._add_rows(
             "graph_entities",
-            [{"entity_id": "test", "name": "Test", "type": "class", "file_path": "t.py", "project_id": "p"}]
+            [
+                {
+                    "entity_id": "test",
+                    "name": "Test",
+                    "type": "class",
+                    "file_path": "t.py",
+                    "project_id": "p",
+                }
+            ],
         )

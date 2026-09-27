@@ -46,7 +46,9 @@ def test_assert_valid_chunks_raises_on_error():
 
 
 def test_assert_valid_parsed_document_raises_on_error():
-    doc = ParsedDocument(doc_id="doc", file_path="file.py", chunks=[ParserChunk(content=None)])
+    doc = ParsedDocument(
+        doc_id="doc", file_path="file.py", chunks=[ParserChunk(content=None)]
+    )
 
     with pytest.raises(ParsingError):
         assert_valid_parsed_document(doc)

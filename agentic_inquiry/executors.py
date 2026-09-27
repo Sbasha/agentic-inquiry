@@ -57,12 +57,10 @@ def get_lancedb_executor() -> ThreadPoolExecutor:
     global _lancedb_executor
     if _lancedb_executor is None:
         _lancedb_executor = ThreadPoolExecutor(
-            max_workers=LANCEDB_EXECUTOR_WORKERS,
-            thread_name_prefix="lancedb"
+            max_workers=LANCEDB_EXECUTOR_WORKERS, thread_name_prefix="lancedb"
         )
         logger.debug(
-            "Created LanceDB executor with %d workers",
-            LANCEDB_EXECUTOR_WORKERS
+            "Created LanceDB executor with %d workers", LANCEDB_EXECUTOR_WORKERS
         )
     return _lancedb_executor
 
@@ -83,12 +81,10 @@ def get_embedding_executor() -> ThreadPoolExecutor:
     global _embedding_executor
     if _embedding_executor is None:
         _embedding_executor = ThreadPoolExecutor(
-            max_workers=EMBEDDING_EXECUTOR_WORKERS,
-            thread_name_prefix="embedding"
+            max_workers=EMBEDDING_EXECUTOR_WORKERS, thread_name_prefix="embedding"
         )
         logger.debug(
-            "Created embedding executor with %d workers",
-            EMBEDDING_EXECUTOR_WORKERS
+            "Created embedding executor with %d workers", EMBEDDING_EXECUTOR_WORKERS
         )
     return _embedding_executor
 
@@ -105,6 +101,7 @@ def shutdown_executors(wait: bool = True, cancel_futures: bool = False) -> None:
     shutdown_kwargs = {"wait": wait}
     # cancel_futures parameter added in Python 3.9
     import sys
+
     if sys.version_info >= (3, 9):
         shutdown_kwargs["cancel_futures"] = cancel_futures
 
@@ -121,7 +118,9 @@ def shutdown_executors(wait: bool = True, cancel_futures: bool = False) -> None:
     logger.info("All executors shut down")
 
 
-async def shutdown_executors_async(wait: bool = True, cancel_futures: bool = False) -> None:
+async def shutdown_executors_async(
+    wait: bool = True, cancel_futures: bool = False
+) -> None:
     """Shutdown all executors asynchronously.
 
     Runs the synchronous shutdown in the default executor to avoid
@@ -134,7 +133,7 @@ async def shutdown_executors_async(wait: bool = True, cancel_futures: bool = Fal
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(
         None,  # Use default executor for shutdown
-        lambda: shutdown_executors(wait=wait, cancel_futures=cancel_futures)
+        lambda: shutdown_executors(wait=wait, cancel_futures=cancel_futures),
     )
 
 

@@ -111,7 +111,9 @@ class LanceDBSchemaManager:
                         exc_info=True,
                     )
                     existing_indices = []
-                await self._run_sync(self._ensure_indexes_sync, table_name, table, existing_indices)  # type: ignore[call-arg]
+                await self._run_sync(  # type: ignore[call-arg]
+                    self._ensure_indexes_sync, table_name, table, existing_indices
+                )
 
     def _check_vector_dimensions(
         self,
@@ -166,7 +168,7 @@ class LanceDBSchemaManager:
 
     async def validate_database_integrity(self) -> Dict[str, Any]:
         """Validate database integrity and return status.
-        
+
         Returns:
             Dictionary with validation results including:
             - valid: Overall validity status
@@ -192,7 +194,9 @@ class LanceDBSchemaManager:
                 # Check if table exists in our cache
                 table = self._tables.get(table_name)
                 if not table:
-                    table_result["errors"].append(f"Table {table_name} not found in cache")  # type: ignore[attr-defined]
+                    table_result["errors"].append(  # type: ignore[attr-defined]
+                        f"Table {table_name} not found in cache"
+                    )
                     results["valid"] = False
                 else:
                     table_result["exists"] = True
@@ -229,7 +233,7 @@ class LanceDBSchemaManager:
         existing_indices: List[Any],
     ) -> None:
         """Ensure indexes exist for configured columns.
-        
+
         Args:
             table_name: Name of the table
             table: LanceDB table object

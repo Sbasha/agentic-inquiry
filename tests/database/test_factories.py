@@ -3,6 +3,7 @@
 These tests verify that factories correctly instantiate adapters based on
 configuration and handle unsupported backends appropriately.
 """
+
 from __future__ import annotations
 
 import pytest
@@ -40,7 +41,9 @@ class TestVectorAdapterFactory:
 
     @pytest.mark.smoke
     @pytest.mark.asyncio
-    async def test_create_lancedb_adapter_default(self, integration_config: Config) -> None:
+    async def test_create_lancedb_adapter_default(
+        self, integration_config: Config
+    ) -> None:
         """Test that factory creates LanceDB adapter by default."""
         adapter = await create_vector_adapter(integration_config)
 
@@ -48,7 +51,9 @@ class TestVectorAdapterFactory:
         assert isinstance(adapter, LanceDBManager)
 
     @pytest.mark.asyncio
-    async def test_create_lancedb_adapter_explicit(self, integration_config: Config) -> None:
+    async def test_create_lancedb_adapter_explicit(
+        self, integration_config: Config
+    ) -> None:
         """Test that factory creates LanceDB adapter when explicitly configured."""
         # Explicitly set backend to lancedb
         integration_config.storage.backend = "lancedb"
@@ -59,7 +64,9 @@ class TestVectorAdapterFactory:
         assert isinstance(adapter, LanceDBManager)
 
     @pytest.mark.asyncio
-    async def test_unsupported_backend_raises_error(self, integration_config: Config) -> None:
+    async def test_unsupported_backend_raises_error(
+        self, integration_config: Config
+    ) -> None:
         """Test that unsupported backend raises ValueError."""
         # Set unsupported backend
         integration_config.storage.backend = "qdrant"
@@ -111,7 +118,9 @@ class TestEventStoreFactory:
         assert isinstance(event_store, EventStore)
 
     @pytest.mark.asyncio
-    async def test_unsupported_backend_raises_error(self, integration_config: Config) -> None:
+    async def test_unsupported_backend_raises_error(
+        self, integration_config: Config
+    ) -> None:
         """Test that unsupported backend raises ValueError."""
         # Set unsupported backend
         integration_config.storage.event_store_backend = "postgresql"
@@ -140,7 +149,9 @@ class TestFileTrackerFactory:
     """Tests for create_file_tracker factory."""
 
     @pytest.mark.asyncio
-    async def test_create_file_tracker_default(self, integration_config: Config) -> None:
+    async def test_create_file_tracker_default(
+        self, integration_config: Config
+    ) -> None:
         """Test that factory creates FileTracker by default."""
         file_tracker = await create_file_tracker(integration_config)
 
@@ -148,7 +159,9 @@ class TestFileTrackerFactory:
         assert isinstance(file_tracker, FileTracker)
 
     @pytest.mark.asyncio
-    async def test_create_file_tracker_explicit(self, integration_config: Config) -> None:
+    async def test_create_file_tracker_explicit(
+        self, integration_config: Config
+    ) -> None:
         """Test that factory creates FileTracker when explicitly configured."""
         # Explicitly set backend to sqlite
         integration_config.storage.file_tracker_backend = "sqlite"
@@ -159,7 +172,9 @@ class TestFileTrackerFactory:
         assert isinstance(file_tracker, FileTracker)
 
     @pytest.mark.asyncio
-    async def test_unsupported_backend_raises_error(self, integration_config: Config) -> None:
+    async def test_unsupported_backend_raises_error(
+        self, integration_config: Config
+    ) -> None:
         """Test that unsupported backend raises ValueError."""
         # Set unsupported backend
         integration_config.storage.file_tracker_backend = "postgresql"
@@ -186,7 +201,9 @@ class TestFactoryConfiguration:
     """Tests for factory configuration validation."""
 
     @pytest.mark.asyncio
-    async def test_config_roundtrip_with_backends(self, integration_config: Config) -> None:
+    async def test_config_roundtrip_with_backends(
+        self, integration_config: Config
+    ) -> None:
         """Test that backend config fields survive roundtrip to/from dict."""
         # Set all backend fields
         integration_config.storage.backend = "lancedb"
@@ -195,9 +212,9 @@ class TestFactoryConfiguration:
 
         # Convert to dict and back
         config_dict = integration_config.to_dict()
-        assert config_dict['storage']['backend'] == "lancedb"
-        assert config_dict['storage']['event_store_backend'] == "sqlite"
-        assert config_dict['storage']['file_tracker_backend'] == "sqlite"
+        assert config_dict["storage"]["backend"] == "lancedb"
+        assert config_dict["storage"]["event_store_backend"] == "sqlite"
+        assert config_dict["storage"]["file_tracker_backend"] == "sqlite"
 
         # Load from dict should preserve values
         loaded_config = Config._from_dict(config_dict)

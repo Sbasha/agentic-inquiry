@@ -96,8 +96,7 @@ async def query_active_indexing_operations(
 
     # Collect operation IDs from started events
     operation_ids = {
-        e.operation_id for e in started_events
-        if e.operation_id is not None
+        e.operation_id for e in started_events if e.operation_id is not None
     }
 
     if not operation_ids:
@@ -125,13 +124,11 @@ async def query_active_indexing_operations(
 
     # Collect operation IDs that have completed or failed
     finished_operation_ids = {
-        e.operation_id for e in completed_events
-        if e.operation_id is not None
+        e.operation_id for e in completed_events if e.operation_id is not None
     }
-    finished_operation_ids.update({
-        e.operation_id for e in failed_events
-        if e.operation_id is not None
-    })
+    finished_operation_ids.update(
+        {e.operation_id for e in failed_events if e.operation_id is not None}
+    )
 
     # Filter to only active operations
     active_operation_ids = operation_ids - finished_operation_ids
@@ -171,14 +168,16 @@ async def query_active_indexing_operations(
         # Convert start_time from Unix timestamp to datetime
         start_time = datetime.fromtimestamp(started_event.timestamp, tz=timezone.utc)
 
-        active_operations.append(ActiveIndexingOperation(
-            operation_id=started_event.operation_id,
-            project_id=project_id,
-            start_time=start_time,
-            files_discovered=files_discovered,
-            files_processed=files_processed,
-            last_progress_time=last_progress_time,
-        ))
+        active_operations.append(
+            ActiveIndexingOperation(
+                operation_id=started_event.operation_id,
+                project_id=project_id,
+                start_time=start_time,
+                files_discovered=files_discovered,
+                files_processed=files_processed,
+                last_progress_time=last_progress_time,
+            )
+        )
 
     return active_operations
 
@@ -329,7 +328,9 @@ async def get_operation_progress(
 
     last_progress_time = None
     if last_progress_timestamp > 0:
-        last_progress_time = datetime.fromtimestamp(last_progress_timestamp, tz=timezone.utc)
+        last_progress_time = datetime.fromtimestamp(
+            last_progress_timestamp, tz=timezone.utc
+        )
 
     return {
         "operation_id": operation_id,

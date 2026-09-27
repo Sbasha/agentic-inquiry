@@ -10,6 +10,7 @@ Security:
 
 See: docs/design/filter-ast.md
 """
+
 from __future__ import annotations
 
 from typing import Any, Optional

@@ -294,7 +294,10 @@ class ExternalEntityResolver:
         """
         # Replace common namespace separators with underscore
         normalized = (
-            name.replace("::", "_").replace(".", "_").replace("/", "_").replace("\\", "_")
+            name.replace("::", "_")
+            .replace(".", "_")
+            .replace("/", "_")
+            .replace("\\", "_")
         )
 
         # Replace other special characters

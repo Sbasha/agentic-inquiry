@@ -3,6 +3,7 @@
 Accepts StorageFacade as the storage interface. StorageFacade provides
 unified access to vector and graph storage through the provider framework.
 """
+
 from __future__ import annotations
 
 import logging
@@ -408,7 +409,10 @@ class GraphSearchService:
                     matches = [
                         e
                         for e in all_entities
-                        if (e["name"] == entity_name or e["name"].endswith("." + entity_name))
+                        if (
+                            e["name"] == entity_name
+                            or e["name"].endswith("." + entity_name)
+                        )
                     ]
 
                 # Apply context-based filtering if provided (requires embeddings)
@@ -421,14 +425,17 @@ class GraphSearchService:
                         entity_vector = match.get("vector", [])
                         if entity_vector:
                             similarity = np.dot(context_vector, entity_vector) / (
-                                np.linalg.norm(context_vector) * np.linalg.norm(entity_vector)
+                                np.linalg.norm(context_vector)
+                                * np.linalg.norm(entity_vector)
                             )
                             match["context_similarity"] = float(similarity)
                         else:
                             match["context_similarity"] = 0.0
 
                     # Sort by context similarity
-                    matches.sort(key=lambda x: x.get("context_similarity", 0.0), reverse=True)
+                    matches.sort(
+                        key=lambda x: x.get("context_similarity", 0.0), reverse=True
+                    )
 
                 # Rank by usage frequency (using pagerank if available)
                 for match in matches:
@@ -445,7 +452,9 @@ class GraphSearchService:
                         {
                             "id": match["id"],
                             "name": match["name"],
-                            "qualified_name": match["name"],  # Already qualified in graph
+                            "qualified_name": match[
+                                "name"
+                            ],  # Already qualified in graph
                             "type": match["type"],
                             "file_path": match.get("file_path", ""),
                             "doc_id": match["doc_id"],
@@ -462,8 +471,12 @@ class GraphSearchService:
                 suggestions = []
                 if not disambiguated_matches and self.embedding_service is not None:
                     # Use vector search to find similar entities
-                    query_vector_array = await self.embedding_service.embed_async(entity_name)
-                    query_vector = query_vector_array.tolist()  # Convert numpy array to list
+                    query_vector_array = await self.embedding_service.embed_async(
+                        entity_name
+                    )
+                    query_vector = (
+                        query_vector_array.tolist()
+                    )  # Convert numpy array to list
 
                     similar_entities = await self._storage_facade.vector_search_raw(
                         table="graph_entities",
@@ -611,10 +624,14 @@ class GraphSearchService:
                     limit = self.config.search.default_limit
                 if depth is None:
                     depth = self.config.search.graph_search.max_depth
-                    
+
                 if not await self._graph_ranking_supported():
                     # Fallback to regular search
-                    if search_query_vector is not None and search_query_fts is not None and hybrid_search_fn:
+                    if (
+                        search_query_vector is not None
+                        and search_query_fts is not None
+                        and hybrid_search_fn
+                    ):
                         results = await hybrid_search_fn(
                             query_vector=search_query_vector,
                             query_fts=search_query_fts,
@@ -689,7 +706,9 @@ class GraphSearchService:
                         limit=self.config.mcp.relationships.max_per_node,
                         project_id=resolved_project_id,
                     )
-                    target_ids = {relationship["target_id"] for relationship in relationships}
+                    target_ids = {
+                        relationship["target_id"] for relationship in relationships
+                    }
                     new_ids = target_ids - all_entity_ids
                     if not new_ids:
                         break
@@ -726,7 +745,11 @@ class GraphSearchService:
 
                 chunk_filters = {"doc_id": list(doc_ids)}
 
-                if search_query_vector is not None and search_query_fts is not None and hybrid_search_fn:
+                if (
+                    search_query_vector is not None
+                    and search_query_fts is not None
+                    and hybrid_search_fn
+                ):
                     results = await hybrid_search_fn(
                         query_vector=search_query_vector,
                         query_fts=search_query_fts,
@@ -821,7 +844,11 @@ class GraphSearchService:
         chunk_filters = {"doc_id": list(doc_ids)}
 
         # Perform search with filters
-        if search_query_vector is not None and search_query_fts is not None and hybrid_search_fn:
+        if (
+            search_query_vector is not None
+            and search_query_fts is not None
+            and hybrid_search_fn
+        ):
             return await hybrid_search_fn(
                 query_vector=search_query_vector,
                 query_fts=search_query_fts,
@@ -849,14 +876,18 @@ class GraphSearchService:
         )
         return self._enrich_results_with_project_id(results)
 
-    def _enrich_results_with_project_id(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _enrich_results_with_project_id(
+        self, results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Enrich results with project_id field."""
         for result in results:
             if "project_id" not in result:
                 result["project_id"] = result.get("_project_id", "unknown")
         return results
 
-    async def rerank_by_graph(self, search_results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def rerank_by_graph(
+        self, search_results: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Rerank search results by graph pagerank scores."""
         enriched_results = await self.enrich_with_graph_context(search_results)
 

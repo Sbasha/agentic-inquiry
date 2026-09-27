@@ -13,6 +13,7 @@ logger = logging.getLogger("ai.indexing.branch_discovery")
 @dataclass
 class DiscoveredBranch:
     """A branch discovered for indexing."""
+
     name: str
     short_name: str
     last_commit_date: datetime
@@ -46,7 +47,9 @@ def discover_branches(
     try:
         result = subprocess.run(
             [
-                "git", "branch", "-r",
+                "git",
+                "branch",
+                "-r",
                 "--sort=-committerdate",
                 # lstrip=2 keeps "origin/HEAD" intact; :short collapses it to
                 # "origin" on newer git, which would slip past the HEAD filter.
@@ -89,13 +92,15 @@ def discover_branches(
             if not is_default and commit_date < cutoff:
                 continue
 
-            branches.append(DiscoveredBranch(
-                name=ref_name,
-                short_name=short_name,
-                last_commit_date=commit_date,
-                last_commit_sha=sha,
-                is_default=is_default,
-            ))
+            branches.append(
+                DiscoveredBranch(
+                    name=ref_name,
+                    short_name=short_name,
+                    last_commit_date=commit_date,
+                    last_commit_sha=sha,
+                    is_default=is_default,
+                )
+            )
 
         return branches
 

@@ -61,9 +61,7 @@ def real_config(integration_config):
 
     integration_config.mcp = MCPConfig(
         server=MCPServerConfig(
-            name="Agentic Inquiry Test",
-            version="1.0.0",
-            description="Test MCP Server"
+            name="Agentic Inquiry Test", version="1.0.0", description="Test MCP Server"
         )
     )
 
@@ -73,20 +71,20 @@ def real_config(integration_config):
 class TestCreateMCPServices:
     """Test create_mcp_services factory function."""
 
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.mcp.factories.SearchService')
-    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
-    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
-    @patch('agentic_inquiry.mcp.factories.MemorySystem')
-    @patch('agentic_inquiry.events.system.EventSystem')
-    @patch('agentic_inquiry.mcp.factories.SessionManager')
-    @patch('agentic_inquiry.mcp.factories.EntityResolver')
-    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
-    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
-    @patch('agentic_inquiry.mcp.factories.LanceDBMemoryAdapter')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.mcp.factories.SearchService")
+    @patch("agentic_inquiry.mcp.factories.IndexingPipeline")
+    @patch("agentic_inquiry.embeddings.service.EmbeddingService")
+    @patch("agentic_inquiry.mcp.factories.MemorySystem")
+    @patch("agentic_inquiry.events.system.EventSystem")
+    @patch("agentic_inquiry.mcp.factories.SessionManager")
+    @patch("agentic_inquiry.mcp.factories.EntityResolver")
+    @patch("agentic_inquiry.mcp.factories.ImpactAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.ContextBuilder")
+    @patch("agentic_inquiry.mcp.factories.PatternAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.TemporalAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
+    @patch("agentic_inquiry.mcp.factories.LanceDBMemoryAdapter")
     async def test_creates_all_services(
         self,
         mock_memory_adapter,
@@ -103,7 +101,7 @@ class TestCreateMCPServices:
         mock_indexing_pipeline,
         mock_search_service,
         mock_storage_facade,
-        real_config
+        real_config,
     ):
         """Test factory creates all required services.
 
@@ -198,20 +196,20 @@ class TestCreateMCPServices:
         assert isinstance(services["token_optimizer"], TokenOptimizer)
         assert isinstance(services["cache_manager"], MCPCacheManager)
 
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.mcp.factories.SearchService')
-    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
-    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
-    @patch('agentic_inquiry.mcp.factories.MemorySystem')
-    @patch('agentic_inquiry.mcp.factories.LanceDBMemoryAdapter')
-    @patch('agentic_inquiry.events.system.EventSystem')
-    @patch('agentic_inquiry.mcp.factories.SessionManager')
-    @patch('agentic_inquiry.mcp.factories.EntityResolver')
-    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
-    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.mcp.factories.SearchService")
+    @patch("agentic_inquiry.mcp.factories.IndexingPipeline")
+    @patch("agentic_inquiry.embeddings.service.EmbeddingService")
+    @patch("agentic_inquiry.mcp.factories.MemorySystem")
+    @patch("agentic_inquiry.mcp.factories.LanceDBMemoryAdapter")
+    @patch("agentic_inquiry.events.system.EventSystem")
+    @patch("agentic_inquiry.mcp.factories.SessionManager")
+    @patch("agentic_inquiry.mcp.factories.EntityResolver")
+    @patch("agentic_inquiry.mcp.factories.ImpactAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.ContextBuilder")
+    @patch("agentic_inquiry.mcp.factories.PatternAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.TemporalAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
     async def test_passes_correct_dependencies(
         self,
         mock_embedding_registry,
@@ -228,7 +226,7 @@ class TestCreateMCPServices:
         mock_indexing_pipeline,
         mock_search_service,
         mock_storage_facade,
-        real_config
+        real_config,
     ):
         """Test factory passes correct dependencies to services.
 
@@ -278,10 +276,14 @@ class TestCreateMCPServices:
         services = await create_mcp_services(real_config, "test_project")
 
         # Verify StorageFacade was created with correct args
-        mock_storage_facade.from_config.assert_called_once_with(real_config, "test_project")
+        mock_storage_facade.from_config.assert_called_once_with(
+            real_config, "test_project"
+        )
 
         # Verify EventSystem was created and started
-        mock_event_system_class.from_config.assert_called_once_with(real_config, "test_project")
+        mock_event_system_class.from_config.assert_called_once_with(
+            real_config, "test_project"
+        )
         event_system.start.assert_called_once()
 
         # Verify SearchService receives correct dependencies
@@ -289,7 +291,7 @@ class TestCreateMCPServices:
             storage=storage,
             config=real_config,
             event_system=event_system,
-            project_id="test_project"
+            project_id="test_project",
         )
 
         mock_indexing_pipeline.assert_called_once()
@@ -308,13 +310,19 @@ class TestCreateMCPServices:
         assert mock_memory_adapter.call_count == 2
         calls = mock_memory_adapter.call_args_list
         # First call: episodic adapter
-        assert calls[0].kwargs['manager'] == db_manager
-        assert calls[0].kwargs['table_name'] == 'memory_episodic'
-        assert calls[0].kwargs['embedding_dims'] == real_config.embeddings.default_dimensions
+        assert calls[0].kwargs["manager"] == db_manager
+        assert calls[0].kwargs["table_name"] == "memory_episodic"
+        assert (
+            calls[0].kwargs["embedding_dims"]
+            == real_config.embeddings.default_dimensions
+        )
         # Second call: semantic adapter
-        assert calls[1].kwargs['manager'] == db_manager
-        assert calls[1].kwargs['table_name'] == 'memory_semantic'
-        assert calls[1].kwargs['embedding_dims'] == real_config.embeddings.default_dimensions
+        assert calls[1].kwargs["manager"] == db_manager
+        assert calls[1].kwargs["table_name"] == "memory_semantic"
+        assert (
+            calls[1].kwargs["embedding_dims"]
+            == real_config.embeddings.default_dimensions
+        )
 
         # Verify memory system was created with correct dependencies
         mock_memory_system.assert_called_once_with(
@@ -327,9 +335,7 @@ class TestCreateMCPServices:
 
         # Verify MCP services were created with correct dependencies
         mock_session_manager.assert_called_once_with(
-            db_manager=storage,
-            config=real_config,
-            event_system=event_system
+            db_manager=storage, config=real_config, event_system=event_system
         )
 
         mock_context_builder.assert_called_once_with(
@@ -338,31 +344,27 @@ class TestCreateMCPServices:
             db_manager=storage,
             session_manager=session_manager,
             config=real_config,
-            event_system=event_system
+            event_system=event_system,
         )
 
         mock_pattern_analyzer.assert_called_once_with(
             search_service=search_service,
             db_manager=storage,
-            embedding_service=embedding_service
+            embedding_service=embedding_service,
         )
 
         mock_temporal_analyzer.assert_called_once_with(
-            db_manager=storage,
-            config=real_config
+            db_manager=storage, config=real_config
         )
 
         # Verify REAL implementations were created correctly
         assert isinstance(services["token_optimizer"], TokenOptimizer)
         assert isinstance(services["cache_manager"], MCPCacheManager)
 
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
     async def test_propagates_creation_errors(
-        self,
-        mock_embedding_registry,
-        mock_storage_facade,
-        real_config
+        self, mock_embedding_registry, mock_storage_facade, real_config
     ):
         """Test factory propagates service creation errors.
 
@@ -373,25 +375,27 @@ class TestCreateMCPServices:
         mock_embedding_registry._default_configured = True
 
         # Make storage creation fail
-        mock_storage_facade.from_config = AsyncMock(side_effect=Exception("Storage creation failed"))
+        mock_storage_facade.from_config = AsyncMock(
+            side_effect=Exception("Storage creation failed")
+        )
 
         # Should propagate the error
         with pytest.raises(Exception, match="Storage creation failed"):
             await create_mcp_services(real_config, "test_project")
 
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.mcp.factories.SearchService')
-    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
-    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
-    @patch('agentic_inquiry.mcp.factories.MemorySystem')
-    @patch('agentic_inquiry.events.system.EventSystem')
-    @patch('agentic_inquiry.mcp.factories.SessionManager')
-    @patch('agentic_inquiry.mcp.factories.EntityResolver')
-    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
-    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.mcp.factories.SearchService")
+    @patch("agentic_inquiry.mcp.factories.IndexingPipeline")
+    @patch("agentic_inquiry.embeddings.service.EmbeddingService")
+    @patch("agentic_inquiry.mcp.factories.MemorySystem")
+    @patch("agentic_inquiry.events.system.EventSystem")
+    @patch("agentic_inquiry.mcp.factories.SessionManager")
+    @patch("agentic_inquiry.mcp.factories.EntityResolver")
+    @patch("agentic_inquiry.mcp.factories.ImpactAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.ContextBuilder")
+    @patch("agentic_inquiry.mcp.factories.PatternAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.TemporalAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
     async def test_config_accessible_in_services(
         self,
         mock_embedding_registry,
@@ -407,7 +411,7 @@ class TestCreateMCPServices:
         mock_indexing_pipeline,
         mock_search_service,
         mock_storage_facade,
-        real_config
+        real_config,
     ):
         """Test that config is accessible via services dictionary.
 
@@ -446,19 +450,19 @@ class TestCreateMCPServices:
         first_key = next(iter(services.keys()))
         assert first_key == "config"
 
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.mcp.factories.SearchService')
-    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
-    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
-    @patch('agentic_inquiry.mcp.factories.MemorySystem')
-    @patch('agentic_inquiry.events.system.EventSystem')
-    @patch('agentic_inquiry.mcp.factories.SessionManager')
-    @patch('agentic_inquiry.mcp.factories.EntityResolver')
-    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
-    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.mcp.factories.SearchService")
+    @patch("agentic_inquiry.mcp.factories.IndexingPipeline")
+    @patch("agentic_inquiry.embeddings.service.EmbeddingService")
+    @patch("agentic_inquiry.mcp.factories.MemorySystem")
+    @patch("agentic_inquiry.events.system.EventSystem")
+    @patch("agentic_inquiry.mcp.factories.SessionManager")
+    @patch("agentic_inquiry.mcp.factories.EntityResolver")
+    @patch("agentic_inquiry.mcp.factories.ImpactAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.ContextBuilder")
+    @patch("agentic_inquiry.mcp.factories.PatternAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.TemporalAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
     async def test_server_config_created_correctly(
         self,
         mock_embedding_registry,
@@ -474,7 +478,7 @@ class TestCreateMCPServices:
         mock_indexing_pipeline,
         mock_search_service,
         mock_storage_facade,
-        real_config
+        real_config,
     ):
         """Test that server_config is created with correct values from config.
 
@@ -517,19 +521,19 @@ class TestCreateMCPServices:
         assert server_config["server_version"] == real_config.mcp.server.version
         assert server_config["server_description"] == real_config.mcp.server.description
 
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.mcp.factories.SearchService')
-    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
-    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
-    @patch('agentic_inquiry.mcp.factories.MemorySystem')
-    @patch('agentic_inquiry.events.system.EventSystem')
-    @patch('agentic_inquiry.mcp.factories.SessionManager')
-    @patch('agentic_inquiry.mcp.factories.EntityResolver')
-    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
-    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.mcp.factories.SearchService")
+    @patch("agentic_inquiry.mcp.factories.IndexingPipeline")
+    @patch("agentic_inquiry.embeddings.service.EmbeddingService")
+    @patch("agentic_inquiry.mcp.factories.MemorySystem")
+    @patch("agentic_inquiry.events.system.EventSystem")
+    @patch("agentic_inquiry.mcp.factories.SessionManager")
+    @patch("agentic_inquiry.mcp.factories.EntityResolver")
+    @patch("agentic_inquiry.mcp.factories.ImpactAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.ContextBuilder")
+    @patch("agentic_inquiry.mcp.factories.PatternAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.TemporalAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
     async def test_server_config_accessible_in_services_dict(
         self,
         mock_embedding_registry,
@@ -545,7 +549,7 @@ class TestCreateMCPServices:
         mock_indexing_pipeline,
         mock_search_service,
         mock_storage_facade,
-        real_config
+        real_config,
     ):
         """Test that server_config is accessible in services dict."""
         # Configure embedding registry
@@ -576,23 +580,29 @@ class TestCreateMCPServices:
 
         # Verify it has the expected structure
         assert len(server_config) == 4
-        assert all(key in server_config for key in [
-            "default_project_id", "server_name", "server_version", "server_description"
-        ])
+        assert all(
+            key in server_config
+            for key in [
+                "default_project_id",
+                "server_name",
+                "server_version",
+                "server_description",
+            ]
+        )
 
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.mcp.factories.SearchService')
-    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
-    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
-    @patch('agentic_inquiry.mcp.factories.MemorySystem')
-    @patch('agentic_inquiry.events.system.EventSystem')
-    @patch('agentic_inquiry.mcp.factories.SessionManager')
-    @patch('agentic_inquiry.mcp.factories.EntityResolver')
-    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
-    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.mcp.factories.SearchService")
+    @patch("agentic_inquiry.mcp.factories.IndexingPipeline")
+    @patch("agentic_inquiry.embeddings.service.EmbeddingService")
+    @patch("agentic_inquiry.mcp.factories.MemorySystem")
+    @patch("agentic_inquiry.events.system.EventSystem")
+    @patch("agentic_inquiry.mcp.factories.SessionManager")
+    @patch("agentic_inquiry.mcp.factories.EntityResolver")
+    @patch("agentic_inquiry.mcp.factories.ImpactAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.ContextBuilder")
+    @patch("agentic_inquiry.mcp.factories.PatternAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.TemporalAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
     async def test_event_system_initialization(
         self,
         mock_embedding_registry,
@@ -608,7 +618,7 @@ class TestCreateMCPServices:
         mock_indexing_pipeline,
         mock_search_service,
         mock_storage_facade,
-        real_config
+        real_config,
     ):
         """Test that EventSystem is created and started correctly.
 
@@ -638,7 +648,9 @@ class TestCreateMCPServices:
         services = await create_mcp_services(real_config, "test_project")
 
         # Verify EventSystem.from_config was called with REAL config
-        mock_event_system_class.from_config.assert_called_once_with(real_config, "test_project")
+        mock_event_system_class.from_config.assert_called_once_with(
+            real_config, "test_project"
+        )
 
         # Verify EventSystem.start() was called
         event_system.start.assert_called_once()
@@ -647,15 +659,15 @@ class TestCreateMCPServices:
         assert "event_system" in services
         assert services["event_system"] == event_system
 
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.events.system.EventSystem')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.events.system.EventSystem")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
     async def test_event_system_initialization_failure(
         self,
         mock_embedding_registry,
         mock_event_system_class,
         mock_storage_facade,
-        real_config
+        real_config,
     ):
         """Test that EventSystem initialization failure is handled correctly.
 
@@ -672,7 +684,9 @@ class TestCreateMCPServices:
 
         # Mock event system to fail on start
         event_system = Mock()
-        event_system.start = AsyncMock(side_effect=Exception("EventSystem start failed"))
+        event_system.start = AsyncMock(
+            side_effect=Exception("EventSystem start failed")
+        )
         mock_event_system_class.from_config = AsyncMock(return_value=event_system)
 
         # Should propagate the error and clean up storage
@@ -691,19 +705,19 @@ class TestRealImplementations:
     This ensures the pure logic is exercised in tests.
     """
 
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.mcp.factories.SearchService')
-    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
-    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
-    @patch('agentic_inquiry.mcp.factories.MemorySystem')
-    @patch('agentic_inquiry.events.system.EventSystem')
-    @patch('agentic_inquiry.mcp.factories.SessionManager')
-    @patch('agentic_inquiry.mcp.factories.EntityResolver')
-    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
-    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.mcp.factories.SearchService")
+    @patch("agentic_inquiry.mcp.factories.IndexingPipeline")
+    @patch("agentic_inquiry.embeddings.service.EmbeddingService")
+    @patch("agentic_inquiry.mcp.factories.MemorySystem")
+    @patch("agentic_inquiry.events.system.EventSystem")
+    @patch("agentic_inquiry.mcp.factories.SessionManager")
+    @patch("agentic_inquiry.mcp.factories.EntityResolver")
+    @patch("agentic_inquiry.mcp.factories.ImpactAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.ContextBuilder")
+    @patch("agentic_inquiry.mcp.factories.PatternAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.TemporalAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
     async def test_token_optimizer_is_real_implementation(
         self,
         mock_embedding_registry,
@@ -719,7 +733,7 @@ class TestRealImplementations:
         mock_indexing_pipeline,
         mock_search_service,
         mock_storage_facade,
-        real_config
+        real_config,
     ):
         """Test that TokenOptimizer is a real instance with working functionality."""
         mock_embedding_registry._default_configured = True
@@ -746,28 +760,28 @@ class TestRealImplementations:
         assert isinstance(token_optimizer, TokenOptimizer)
 
         # Verify it has real functionality (not a mock)
-        assert hasattr(token_optimizer, 'truncate_to_tokens')
-        assert hasattr(token_optimizer, 'create_snippet')
-        assert hasattr(token_optimizer, 'estimate_tokens')
+        assert hasattr(token_optimizer, "truncate_to_tokens")
+        assert hasattr(token_optimizer, "create_snippet")
+        assert hasattr(token_optimizer, "estimate_tokens")
 
         # Test actual functionality works
         snippet = token_optimizer.create_snippet("This is a test string", max_tokens=5)
         assert isinstance(snippet, str)
         assert len(snippet) > 0
 
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.mcp.factories.SearchService')
-    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
-    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
-    @patch('agentic_inquiry.mcp.factories.MemorySystem')
-    @patch('agentic_inquiry.events.system.EventSystem')
-    @patch('agentic_inquiry.mcp.factories.SessionManager')
-    @patch('agentic_inquiry.mcp.factories.EntityResolver')
-    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
-    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.mcp.factories.SearchService")
+    @patch("agentic_inquiry.mcp.factories.IndexingPipeline")
+    @patch("agentic_inquiry.embeddings.service.EmbeddingService")
+    @patch("agentic_inquiry.mcp.factories.MemorySystem")
+    @patch("agentic_inquiry.events.system.EventSystem")
+    @patch("agentic_inquiry.mcp.factories.SessionManager")
+    @patch("agentic_inquiry.mcp.factories.EntityResolver")
+    @patch("agentic_inquiry.mcp.factories.ImpactAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.ContextBuilder")
+    @patch("agentic_inquiry.mcp.factories.PatternAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.TemporalAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
     async def test_cache_manager_is_real_implementation(
         self,
         mock_embedding_registry,
@@ -783,7 +797,7 @@ class TestRealImplementations:
         mock_indexing_pipeline,
         mock_search_service,
         mock_storage_facade,
-        real_config
+        real_config,
     ):
         """Test that MCPCacheManager is a real instance with working functionality."""
         mock_embedding_registry._default_configured = True
@@ -810,10 +824,10 @@ class TestRealImplementations:
         assert isinstance(cache_manager, MCPCacheManager)
 
         # Verify it has real functionality (not a mock)
-        assert hasattr(cache_manager, 'get')
-        assert hasattr(cache_manager, 'set')
-        assert hasattr(cache_manager, 'invalidate')
-        assert hasattr(cache_manager, 'get_stats')
+        assert hasattr(cache_manager, "get")
+        assert hasattr(cache_manager, "set")
+        assert hasattr(cache_manager, "invalidate")
+        assert hasattr(cache_manager, "get_stats")
 
         # Test actual functionality works
         cache_manager.set("test_key", "test_value")
@@ -838,19 +852,19 @@ class TestIntegrationFactoryWithRealStorage:
     """
 
     @pytest.mark.integration
-    @patch('agentic_inquiry.mcp.factories.StorageFacade')
-    @patch('agentic_inquiry.mcp.factories.SearchService')
-    @patch('agentic_inquiry.mcp.factories.IndexingPipeline')
-    @patch('agentic_inquiry.embeddings.service.EmbeddingService')
-    @patch('agentic_inquiry.mcp.factories.MemorySystem')
-    @patch('agentic_inquiry.events.system.EventSystem')
-    @patch('agentic_inquiry.mcp.factories.SessionManager')
-    @patch('agentic_inquiry.mcp.factories.EntityResolver')
-    @patch('agentic_inquiry.mcp.factories.ImpactAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.ContextBuilder')
-    @patch('agentic_inquiry.mcp.factories.PatternAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.TemporalAnalyzer')
-    @patch('agentic_inquiry.mcp.factories.embedding_registry')
+    @patch("agentic_inquiry.mcp.factories.StorageFacade")
+    @patch("agentic_inquiry.mcp.factories.SearchService")
+    @patch("agentic_inquiry.mcp.factories.IndexingPipeline")
+    @patch("agentic_inquiry.embeddings.service.EmbeddingService")
+    @patch("agentic_inquiry.mcp.factories.MemorySystem")
+    @patch("agentic_inquiry.events.system.EventSystem")
+    @patch("agentic_inquiry.mcp.factories.SessionManager")
+    @patch("agentic_inquiry.mcp.factories.EntityResolver")
+    @patch("agentic_inquiry.mcp.factories.ImpactAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.ContextBuilder")
+    @patch("agentic_inquiry.mcp.factories.PatternAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.TemporalAnalyzer")
+    @patch("agentic_inquiry.mcp.factories.embedding_registry")
     async def test_factory_creates_working_real_utilities(
         self,
         mock_embedding_registry,
@@ -866,7 +880,7 @@ class TestIntegrationFactoryWithRealStorage:
         mock_indexing_pipeline,
         mock_search_service,
         mock_storage_facade,
-        real_config
+        real_config,
     ):
         """Test that factory creates working real utility instances.
 
@@ -902,7 +916,9 @@ class TestIntegrationFactoryWithRealStorage:
 
         # Test TokenOptimizer functionality
         assert isinstance(token_optimizer, TokenOptimizer)
-        test_text = "This is a long text that needs to be truncated to fit within token limits"
+        test_text = (
+            "This is a long text that needs to be truncated to fit within token limits"
+        )
         snippet = token_optimizer.create_snippet(test_text, max_tokens=10)
         assert isinstance(snippet, str)
         assert len(snippet) < len(test_text)  # Should be truncated
@@ -921,11 +937,11 @@ class TestIntegrationFactoryWithRealStorage:
         # Test utilities work together (integration)
         # Simulate caching a truncated snippet
         long_content = "x" * 10000
-        optimized_content = token_optimizer.truncate_to_tokens(long_content, max_tokens=100)
+        optimized_content = token_optimizer.truncate_to_tokens(
+            long_content, max_tokens=100
+        )
         cache_key = MCPCacheManager.generate_cache_key(
-            tool_name="test_tool",
-            session_id="test_session",
-            query="test_query"
+            tool_name="test_tool", session_id="test_session", query="test_query"
         )
         cache_manager.set(cache_key, optimized_content)
 
@@ -946,10 +962,7 @@ class TestMCPServerShutdown:
         event_system = Mock()
         event_system.stop = AsyncMock()
 
-        services = {
-            "event_system": event_system,
-            "storage": Mock()
-        }
+        services = {"event_system": event_system, "storage": Mock()}
 
         # Create server with mock services
         server = MCPServer(config=Mock(), project_id="test")
@@ -974,10 +987,7 @@ class TestMCPServerShutdown:
         event_system = Mock()
         event_system.stop = AsyncMock(side_effect=Exception("Stop failed"))
 
-        services = {
-            "event_system": event_system,
-            "storage": Mock()
-        }
+        services = {"event_system": event_system, "storage": Mock()}
 
         # Create server with mock services
         server = MCPServer(config=Mock(), project_id="test")
@@ -999,9 +1009,7 @@ class TestMCPServerShutdown:
         from agentic_inquiry.mcp.server import MCPServer
 
         # Create services without event_system
-        services = {
-            "storage": Mock()
-        }
+        services = {"storage": Mock()}
 
         # Create server with mock services
         server = MCPServer(config=Mock(), project_id="test")
@@ -1077,7 +1085,9 @@ class TestCloseMCPServices:
     async def test_cancelled_service_still_closes_the_rest(self):
         calls: list[str] = []
         services = self._services(calls)
-        services["memory_system"].shutdown = AsyncMock(side_effect=asyncio.CancelledError())
+        services["memory_system"].shutdown = AsyncMock(
+            side_effect=asyncio.CancelledError()
+        )
         await asyncio.sleep(0)  # let the maintenance task start
 
         with pytest.raises(asyncio.CancelledError):
@@ -1114,7 +1124,9 @@ class TestCloseMCPServicesReleasesStores:
         assert services["maintenance_task"].done()
         assert_no_new_aiosqlite_threads(before)
 
-    async def test_close_consolidates_active_contexts(self, hashing_config, monkeypatch):
+    async def test_close_consolidates_active_contexts(
+        self, hashing_config, monkeypatch
+    ):
         from agentic_inquiry.memory.consolidation import ConsolidationEngine
 
         consolidate = AsyncMock()
@@ -1130,8 +1142,12 @@ class TestCloseMCPServicesReleasesStores:
         consolidate.assert_awaited_once_with(context)
         assert_no_new_aiosqlite_threads(before)
 
-    @pytest.mark.parametrize("error", [RuntimeError("initialize failed"), asyncio.CancelledError()])
-    async def test_failed_create_leaves_no_connection_thread(self, hashing_config, error):
+    @pytest.mark.parametrize(
+        "error", [RuntimeError("initialize failed"), asyncio.CancelledError()]
+    )
+    async def test_failed_create_leaves_no_connection_thread(
+        self, hashing_config, error
+    ):
         before = aiosqlite_threads()
         tasks_before = asyncio.all_tasks()
 
@@ -1144,4 +1160,3 @@ class TestCloseMCPServicesReleasesStores:
 
         assert_no_new_aiosqlite_threads(before)
         assert all(task.done() for task in asyncio.all_tasks() - tasks_before)
-

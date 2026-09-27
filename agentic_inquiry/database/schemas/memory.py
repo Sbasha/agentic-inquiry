@@ -6,6 +6,7 @@ This module defines the canonical schemas for memory tables:
 
 See: docs/design/logical-schema-reference.md
 """
+
 from __future__ import annotations
 
 from .base import FieldType, LogicalSchema, SchemaField
@@ -242,7 +243,6 @@ def get_memory_schema(name: str) -> LogicalSchema:
     """
     if name not in MEMORY_SCHEMAS:
         raise KeyError(
-            f"Unknown memory schema: {name}. "
-            f"Available: {list(MEMORY_SCHEMAS.keys())}"
+            f"Unknown memory schema: {name}. Available: {list(MEMORY_SCHEMAS.keys())}"
         )
     return MEMORY_SCHEMAS[name]

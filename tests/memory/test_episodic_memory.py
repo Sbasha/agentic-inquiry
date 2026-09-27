@@ -18,7 +18,12 @@ from agentic_inquiry.config import Config
 from agentic_inquiry.database.lancedb_manager import LanceDBManager
 from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 from agentic_inquiry.memory.layers.episodic import EpisodicMemory
-from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryStatus, MemoryTier
+from agentic_inquiry.memory.models import (
+    MemoryContext,
+    MemoryItem,
+    MemoryStatus,
+    MemoryTier,
+)
 
 
 @pytest.fixture
@@ -44,7 +49,9 @@ async def episodic_adapter(db_manager: LanceDBManager) -> LanceDBMemoryAdapter:
 
 
 @pytest.fixture
-async def temp_episodic_memory(episodic_adapter: LanceDBMemoryAdapter) -> EpisodicMemory:
+async def temp_episodic_memory(
+    episodic_adapter: LanceDBMemoryAdapter,
+) -> EpisodicMemory:
     """Create a temporary episodic memory instance."""
     memory = EpisodicMemory(storage=episodic_adapter, limit=100)
     await memory.initialize()
@@ -85,7 +92,9 @@ def sample_memory_item(sample_context: MemoryContext) -> MemoryItem:
 
 
 @pytest.mark.asyncio
-async def test_episodic_memory_initialization(temp_episodic_memory: EpisodicMemory) -> None:
+async def test_episodic_memory_initialization(
+    temp_episodic_memory: EpisodicMemory,
+) -> None:
     """Test episodic memory initialization."""
     assert temp_episodic_memory._initialized
     assert temp_episodic_memory.limit == 100
@@ -160,7 +169,9 @@ async def test_update_item(
     await temp_episodic_memory.update(sample_memory_item)
 
     # Retrieve and verify (without updating access to avoid overwriting)
-    retrieved = await temp_episodic_memory.get_by_id(sample_memory_item.id, update_access=False)
+    retrieved = await temp_episodic_memory.get_by_id(
+        sample_memory_item.id, update_access=False
+    )
 
     assert retrieved is not None
     assert retrieved.importance == 0.95
@@ -177,7 +188,9 @@ async def test_delete_item(
     await temp_episodic_memory.store(sample_memory_item)
 
     # Verify it exists (without updating access)
-    retrieved = await temp_episodic_memory.get_by_id(sample_memory_item.id, update_access=False)
+    retrieved = await temp_episodic_memory.get_by_id(
+        sample_memory_item.id, update_access=False
+    )
     assert retrieved is not None
 
     # Delete item
@@ -185,7 +198,9 @@ async def test_delete_item(
     assert deleted is True
 
     # Verify it's gone (without updating access)
-    retrieved = await temp_episodic_memory.get_by_id(sample_memory_item.id, update_access=False)
+    retrieved = await temp_episodic_memory.get_by_id(
+        sample_memory_item.id, update_access=False
+    )
     assert retrieved is None
 
     # Try deleting again
@@ -201,7 +216,7 @@ async def test_retrieve_with_vector_search(
     """Test retrieving items using vector similarity search."""
     # Create items with similar embeddings
     base_embedding = np.random.rand(384).astype(np.float32)
-    
+
     items = []
     for i in range(3):
         # Add small noise to create similar embeddings

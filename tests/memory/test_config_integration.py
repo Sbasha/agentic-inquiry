@@ -30,16 +30,11 @@ class TestConfigLoading:
 
         # Verify episodic memory config
         assert config.memory.episodic_memory.capacity == 1000
-        assert (
-            config.memory.episodic_memory.table_name
-            == "memory_episodic_medium"
-        )
+        assert config.memory.episodic_memory.table_name == "memory_episodic_medium"
 
         # Verify semantic memory config
         assert config.memory.semantic_memory.capacity == 500
-        assert (
-            config.memory.semantic_memory.table_name == "memory_semantic_high"
-        )
+        assert config.memory.semantic_memory.table_name == "memory_semantic_high"
 
         # Verify consolidation config
         assert config.memory.consolidation.enabled is True
@@ -63,11 +58,13 @@ class TestConfigLoading:
         """Test loading custom configuration file."""
         # Load default config as base
         import yaml as yaml_lib
-        
-        default_config_path = Path(__file__).parent.parent.parent / "config" / "default.yaml"
-        with open(default_config_path, 'r') as f:
+
+        default_config_path = (
+            Path(__file__).parent.parent.parent / "config" / "default.yaml"
+        )
+        with open(default_config_path, "r") as f:
             custom_config = yaml_lib.safe_load(f)
-        
+
         # Override specific values for testing
         custom_config["memory"]["working_memory"]["capacity"] = 50
         custom_config["memory"]["episodic_memory"]["capacity"] = 2000
@@ -86,10 +83,8 @@ class TestConfigLoading:
             "importance": 0.2,
         }
         custom_config["memory"]["summary"]["auto_threshold"] = 200
-        
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(custom_config, f)
             config_path = f.name
 
@@ -127,9 +122,7 @@ class TestEnvironmentVariableOverrides:
         """Test overriding consolidation settings via environment variables."""
         monkeypatch.setenv("INQUIRY_MEMORY_CONSOLIDATION_ENABLED", "false")
         monkeypatch.setenv("INQUIRY_MEMORY_CONSOLIDATION_INTERVAL_SECONDS", "600")
-        monkeypatch.setenv(
-            "INQUIRY_MEMORY_CONSOLIDATION_EPISODIC_THRESHOLD", "0.75"
-        )
+        monkeypatch.setenv("INQUIRY_MEMORY_CONSOLIDATION_EPISODIC_THRESHOLD", "0.75")
 
         config = Config.load()
 
@@ -140,9 +133,7 @@ class TestEnvironmentVariableOverrides:
 
     def test_retrieval_override(self, monkeypatch):
         """Test overriding retrieval settings via environment variables."""
-        monkeypatch.setenv(
-            "INQUIRY_MEMORY_RETRIEVAL_DEFAULT_STRATEGY", "importance"
-        )
+        monkeypatch.setenv("INQUIRY_MEMORY_RETRIEVAL_DEFAULT_STRATEGY", "importance")
         monkeypatch.setenv("INQUIRY_MEMORY_RETRIEVAL_CACHE_ENABLED", "false")
         monkeypatch.setenv("INQUIRY_MEMORY_RETRIEVAL_CACHE_TTL_SECONDS", "600")
 
@@ -154,7 +145,6 @@ class TestEnvironmentVariableOverrides:
         assert config.memory.retrieval.cache_ttl_seconds == 600
 
 
-
 class TestConfigValidation:
     """Test configuration validation."""
 
@@ -163,21 +153,21 @@ class TestConfigValidation:
         # Load default config as base
         import yaml as yaml_lib
         from agentic_inquiry.exceptions import ConfigurationError
-        
-        default_config_path = Path(__file__).parent.parent.parent / "config" / "default.yaml"
-        with open(default_config_path, 'r') as f:
+
+        default_config_path = (
+            Path(__file__).parent.parent.parent / "config" / "default.yaml"
+        )
+        with open(default_config_path, "r") as f:
             invalid_config = yaml_lib.safe_load(f)
-        
+
         # Override with invalid ranking weights (sum > 1.0)
         invalid_config["memory"]["retrieval"]["ranking_weights"] = {
             "relevance": 0.5,
             "recency": 0.5,
             "importance": 0.5,  # Sum = 1.5, should raise error
         }
-        
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(invalid_config, f)
             config_path = f.name
 
@@ -193,23 +183,25 @@ class TestConfigValidation:
         # Load default config as base
         import yaml as yaml_lib
         from agentic_inquiry.exceptions import ConfigurationError
-        
-        default_config_path = Path(__file__).parent.parent.parent / "config" / "default.yaml"
-        with open(default_config_path, 'r') as f:
+
+        default_config_path = (
+            Path(__file__).parent.parent.parent / "config" / "default.yaml"
+        )
+        with open(default_config_path, "r") as f:
             invalid_config = yaml_lib.safe_load(f)
-        
+
         # Override with invalid threshold (> 1.0)
         invalid_config["memory"]["consolidation"]["episodic_threshold"] = 1.5
-        
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(invalid_config, f)
             config_path = f.name
 
         try:
             # Should raise ConfigurationError due to schema validation
-            with pytest.raises(ConfigurationError, match="1.5 is greater than the maximum"):
+            with pytest.raises(
+                ConfigurationError, match="1.5 is greater than the maximum"
+            ):
                 Config.load(config_path)
         finally:
             os.unlink(config_path)
@@ -277,9 +269,7 @@ class TestConfigIntegrationWithMemorySystem:
 
         embedding_service = EmbeddingService(config)
 
-        memory_system = MemorySystem(
-            config=config, embedding_service=embedding_service
-        )
+        memory_system = MemorySystem(config=config, embedding_service=embedding_service)
 
         # Verify config is used
         assert memory_system.config == config
@@ -293,23 +283,23 @@ class TestConfigIntegrationWithMemorySystem:
         """Test that custom config affects memory system behavior."""
         # Load default config as base
         import yaml as yaml_lib
-        
-        default_config_path = Path(__file__).parent.parent.parent / "config" / "default.yaml"
-        with open(default_config_path, 'r') as f:
+
+        default_config_path = (
+            Path(__file__).parent.parent.parent / "config" / "default.yaml"
+        )
+        with open(default_config_path, "r") as f:
             custom_config = yaml_lib.safe_load(f)
-        
+
         # Override with small capacity for testing
         custom_config["memory"]["working_memory"]["capacity"] = 5
-        
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".yaml", delete=False
-        ) as f:
+
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
             yaml.dump(custom_config, f)
             config_path = f.name
 
         try:
             config = Config.load(config_path)
-            
+
             # Verify config has the custom value
             assert config.memory.working_memory.capacity == 5
 

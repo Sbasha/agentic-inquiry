@@ -7,6 +7,7 @@ logger = logging.getLogger("ai.server.routes.index")
 
 router = APIRouter()
 
+
 @router.get("/status")
 async def get_status(request: Request) -> dict:
     """Get indexing status and statistics."""
@@ -26,13 +27,19 @@ async def get_status(request: Request) -> dict:
         "indexed_at": "2026-03-12T00:00:00Z",
     }
 
+
 @router.get("/documents")
 async def list_documents(request: Request) -> dict:
     """List indexed documents."""
     # Dummy for now, ideally we query LanceDB for unique file_paths
     return {
         "documents": [
-            {"name": "demo_doc.md", "status": "Indexed", "chunks": 10, "modified": "2026-03-12"},
+            {
+                "name": "demo_doc.md",
+                "status": "Indexed",
+                "chunks": 10,
+                "modified": "2026-03-12",
+            },
         ]
     }
 
@@ -50,15 +57,19 @@ async def get_health(request: Request) -> dict:
     if health_tracker:
         try:
             health = health_tracker.get_overall_health()
-            result["status"] = health.status.value if hasattr(health, 'status') else str(health)
+            result["status"] = (
+                health.status.value if hasattr(health, "status") else str(health)
+            )
             result["components"] = {}
-            if hasattr(health, 'components'):
+            if hasattr(health, "components"):
                 for name, component in health.components.items():
                     result["components"][name] = {
-                        "status": component.status.value if hasattr(component, 'status') else str(component),
-                        "latency_p50": getattr(component, 'latency_p50', None),
-                        "latency_p95": getattr(component, 'latency_p95', None),
-                        "error_rate": getattr(component, 'error_rate', None),
+                        "status": component.status.value
+                        if hasattr(component, "status")
+                        else str(component),
+                        "latency_p50": getattr(component, "latency_p50", None),
+                        "latency_p95": getattr(component, "latency_p95", None),
+                        "error_rate": getattr(component, "error_rate", None),
                     }
             result["is_active"] = health_tracker.is_active()
         except Exception as e:
@@ -66,7 +77,11 @@ async def get_health(request: Request) -> dict:
 
     if perf_monitor:
         try:
-            stats = perf_monitor.get_all_stats() if hasattr(perf_monitor, 'get_all_stats') else {}
+            stats = (
+                perf_monitor.get_all_stats()
+                if hasattr(perf_monitor, "get_all_stats")
+                else {}
+            )
             result["performance"] = stats
         except Exception:
             pass

@@ -5,6 +5,7 @@ This package contains adapter implementations for different backends.
 Filter translation utilities have moved to agentic_inquiry.database.filters.
 For backward compatibility, they are re-exported from here.
 """
+
 # Re-export filter utilities from new location for backward compatibility
 from agentic_inquiry.database.filters import (
     FilterTranslationError,

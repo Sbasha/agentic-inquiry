@@ -186,8 +186,9 @@ class TestDictToSearchResult:
         assert result.id is not None
         # Verify it's a valid hash (non-empty, alphanumeric)
         assert len(result.id) > 0
-        assert result.id.replace("_", "").replace("-", "").isalnum(), \
+        assert result.id.replace("_", "").replace("-", "").isalnum(), (
             f"Generated ID should be alphanumeric, got: {result.id}"
+        )
 
     def test_data_contains_original_row(self) -> None:
         """Data field contains the original row dict."""

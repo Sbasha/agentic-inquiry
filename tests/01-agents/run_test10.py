@@ -1,4 +1,5 @@
 """Runner for TEST_10 Performance Investigation."""
+
 import asyncio
 import json
 import logging
@@ -29,6 +30,7 @@ ENV_PATH = str(PROJECT_ROOT / ".agentic-inquiry" / "envs" / "ai-prod" / "config.
 async def main():
     from agentic_inquiry.config import Config
     from agentic_inquiry.mcp.factories import create_mcp_services
+
     # Import via package to support relative imports in protocol module
     from protocols import test_10_perf as mod
 

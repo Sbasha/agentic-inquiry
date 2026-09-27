@@ -17,7 +17,9 @@ sys.path.insert(
     os.path.dirname(
         os.path.dirname(
             os.path.dirname(
-                os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                )
             )
         )
     ),
@@ -92,16 +94,12 @@ class TestOrchestratorAPI:
         assert orchestrator.classify_file_importance("vector.py") is None
 
     def test_classify_bash_test_pass(self, orchestrator):
-        result = orchestrator.classify_bash_command(
-            "pytest tests/", 0, "5 passed"
-        )
+        result = orchestrator.classify_bash_command("pytest tests/", 0, "5 passed")
         assert result["category"] == "test"
         assert result["exit_code"] == 0
 
     def test_classify_bash_test_fail(self, orchestrator):
-        result = orchestrator.classify_bash_command(
-            "pytest tests/", 1, "FAILED"
-        )
+        result = orchestrator.classify_bash_command("pytest tests/", 1, "FAILED")
         assert result["category"] == "test"
         assert result["should_capture"] is True
         assert "failed" in result["prompt"].lower()
@@ -137,7 +135,9 @@ class TestHookScriptExecution:
     @pytest.fixture
     def scripts_dir(self):
         return os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
+            os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            ),
             "hooks",
             "scripts",
         )
@@ -147,7 +147,9 @@ class TestHookScriptExecution:
         return os.path.dirname(
             os.path.dirname(
                 os.path.dirname(
-                    os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                    os.path.dirname(
+                        os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    )
                 )
             )
         )
@@ -224,7 +226,13 @@ class TestHookScriptExecution:
             scripts_dir,
             project_root,
             "post_task_update.py",
-            {"toolInput": {"taskId": "1", "status": "completed", "subject": "Test task"}},
+            {
+                "toolInput": {
+                    "taskId": "1",
+                    "status": "completed",
+                    "subject": "Test task",
+                }
+            },
         )
         assert "continue" in result
         assert result["continue"] is True

@@ -83,9 +83,7 @@ class FileWatchManager:
             ]
 
             self.watcher.watch_directory(
-                self.project_root,
-                recursive=True,
-                ignore_patterns=ignore_patterns
+                self.project_root, recursive=True, ignore_patterns=ignore_patterns
             )
 
             # Start the watcher
@@ -94,14 +92,14 @@ class FileWatchManager:
             logger.info(
                 "File watching enabled for %s using watcher: %s",
                 self.project_root,
-                watcher_name
+                watcher_name,
             )
         except (ValueError, KeyError) as e:
             logger.warning(
                 "Failed to set up file watcher '%s': %s. Proceeding without watcher.",
                 watcher_name,
                 e,
-                exc_info=True
+                exc_info=True,
             )
             self.watcher = None
         except Exception as e:
@@ -176,10 +174,7 @@ class FileWatchManager:
             logger.debug("Invalidated cache for %s", file_path)
         except Exception as e:
             logger.warning(
-                "Failed to invalidate cache for %s: %s",
-                file_path,
-                e,
-                exc_info=True
+                "Failed to invalidate cache for %s: %s", file_path, e, exc_info=True
             )
 
     def stop_watching(self) -> None:

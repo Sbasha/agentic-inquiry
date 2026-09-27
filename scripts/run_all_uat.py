@@ -11,6 +11,7 @@ Modes:
 Usage:
     uv run python scripts/run_all_uat.py [--tests 01,06,12] [--mode full] [--config PATH]
 """
+
 import asyncio
 import json
 import sys
@@ -80,11 +81,11 @@ async def run_test(
     """Run a single test using the shared services dict."""
     from protocols import get_protocol
 
-    log(f"\n{'='*60}")
+    log(f"\n{'=' * 60}")
     protocol_fn = get_protocol(test_id, mode)
     protocol_name = protocol_fn.__module__.split(".")[-1]
     log(f"TEST_{test_id}: {slug} (protocol: {protocol_name}, mode: {mode})")
-    log(f"{'='*60}")
+    log(f"{'=' * 60}")
 
     try:
         result = await protocol_fn(
@@ -98,6 +99,7 @@ async def run_test(
     except Exception as e:
         log(f"  EXCEPTION: {e}")
         import traceback
+
         traceback.print_exc()
         return {
             "test_id": test_id,
@@ -112,7 +114,9 @@ async def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Run ai UAT tests with shared server")
-    parser.add_argument("--tests", default="ALL", help="Comma-separated test IDs or ALL")
+    parser.add_argument(
+        "--tests", default="ALL", help="Comma-separated test IDs or ALL"
+    )
     parser.add_argument("--config", default=DEFAULT_CONFIG, help="Config overlay path")
     parser.add_argument("--parallel", type=int, default=3, help="Max parallel tests")
     parser.add_argument(
@@ -146,6 +150,7 @@ async def main():
     # Show which tests have full protocols
     if args.mode == "full":
         from protocols import FULL_PROTOCOLS
+
         full_ids = set(FULL_PROTOCOLS.keys()) & set(test_ids)
         smoke_ids = set(test_ids) - full_ids
         if full_ids:
@@ -165,7 +170,9 @@ async def main():
         async with semaphore:
             slug, _ = TESTS[test_id]
             output_dir = base_dir / slug
-            return await run_test(services, test_id, slug, run_id, output_dir, args.mode)
+            return await run_test(
+                services, test_id, slug, run_id, output_dir, args.mode
+            )
 
     # Run all tests concurrently (semaphore limits parallelism)
     tasks = [run_with_limit(tid) for tid in test_ids]
@@ -178,9 +185,9 @@ async def main():
             all_results[tid] = result
 
     # ── Summary ─────────────────────────────────────────────────
-    log(f"\n{'='*60}")
+    log(f"\n{'=' * 60}")
     log(f"RESULTS SUMMARY ({args.mode} mode)")
-    log(f"{'='*60}")
+    log(f"{'=' * 60}")
 
     total_checks = 0
     total_passed_checks = 0
@@ -200,16 +207,30 @@ async def main():
         adoption = r.get("adoption_score", "-")
         method = r.get("adoption_method", "?")
         icon = "+" if status == "pass" else "~" if status == "partial" else "-"
-        log(f"  [{icon}] TEST_{tid} {slug}: {status} ({rate}) adoption={adoption}/10 [{method}] [{elapsed}s]")
+        log(
+            f"  [{icon}] TEST_{tid} {slug}: {status} ({rate}) adoption={adoption}/10 [{method}] [{elapsed}s]"
+        )
 
-    log(f"\nOverall: {total_passed_checks}/{total_checks} checks passed across {len(test_ids)} tests")
+    log(
+        f"\nOverall: {total_passed_checks}/{total_checks} checks passed across {len(test_ids)} tests"
+    )
 
     passed_tests = sum(1 for r in all_results.values() if r.get("status") == "pass")
-    adoption_scores = [r.get("adoption_score", 0) for r in all_results.values() if r.get("adoption_score")]
-    avg_adoption = round(sum(adoption_scores) / len(adoption_scores), 1) if adoption_scores else 0
+    adoption_scores = [
+        r.get("adoption_score", 0)
+        for r in all_results.values()
+        if r.get("adoption_score")
+    ]
+    avg_adoption = (
+        round(sum(adoption_scores) / len(adoption_scores), 1) if adoption_scores else 0
+    )
     log(f"Tests: {passed_tests}/{len(all_results)} fully passed")
-    log(f"Adoption: avg={avg_adoption}/10 (min={min(adoption_scores) if adoption_scores else 0}, max={max(adoption_scores) if adoption_scores else 0})")
-    log(f"Adoption method: heuristic (agent scoring available via adoption_evidence in results.json)")
+    log(
+        f"Adoption: avg={avg_adoption}/10 (min={min(adoption_scores) if adoption_scores else 0}, max={max(adoption_scores) if adoption_scores else 0})"
+    )
+    log(
+        f"Adoption method: heuristic (agent scoring available via adoption_evidence in results.json)"
+    )
 
     # Write summary
     summary_path = base_dir / "SUMMARY.json"

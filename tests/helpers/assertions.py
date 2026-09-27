@@ -16,7 +16,7 @@ def assert_chunks_equal(chunk1, chunk2, ignore_fields=None):
         ignore_fields: List of field names to ignore in comparison
     """
     ignore_fields = ignore_fields or []
-    
+
     for field in ["content", "doc_id", "chunk_id", "metadata"]:
         if field not in ignore_fields:
             assert getattr(chunk1, field) == getattr(chunk2, field), (
@@ -64,4 +64,3 @@ def assert_no_new_aiosqlite_threads(
     for thread in aiosqlite_threads() - before:
         thread.join(max(0.0, deadline - time.monotonic()))
     assert aiosqlite_threads() - before == set()
-

@@ -5,6 +5,7 @@ All filter construction MUST use these types - no dict/tuple/SQL string formats.
 
 See: docs/design/filter-ast.md
 """
+
 from __future__ import annotations
 
 import re
@@ -192,9 +193,7 @@ class Filter:
                     f"{op.value.upper()} filter requires both 'left' and 'right' operands"
                 )
             if self.field is not None:
-                raise ValueError(
-                    f"{op.value.upper()} filter must not have 'field' set"
-                )
+                raise ValueError(f"{op.value.upper()} filter must not have 'field' set")
             return
 
         # All other operators require a field
@@ -228,12 +227,9 @@ class Filter:
         ):
             # Forbid EQ/NE with None - use IS_NULL/IS_NOT_NULL
             if self.value is None and op in (FilterOperator.EQ, FilterOperator.NE):
-                null_op = (
-                    "IS_NULL" if op == FilterOperator.EQ else "IS_NOT_NULL"
-                )
+                null_op = "IS_NULL" if op == FilterOperator.EQ else "IS_NOT_NULL"
                 raise ValueError(
-                    f"Cannot use {op.value.upper()} with None. "
-                    f"Use {null_op} instead."
+                    f"Cannot use {op.value.upper()} with None. Use {null_op} instead."
                 )
             validate_filter_value(self.value)
             return

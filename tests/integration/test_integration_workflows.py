@@ -39,11 +39,11 @@ def _create_mock_event_system():
 
 class _DummyEmbedder:
     """Dummy embedder for testing."""
-    
+
     def generate(self, texts):
         """Generate dummy embeddings."""
         return [[0.1] * 384 for _ in texts]
-    
+
     def ndims(self):
         """Return embedding dimensions."""
         return 384
@@ -52,12 +52,12 @@ class _DummyEmbedder:
 @pytest.fixture
 def temp_test_database(tmp_path):
     """Create a temporary test database that is cleaned up after test completion.
-    
+
     This fixture provides a temporary storage directory for LanceDB and ensures
     proper cleanup after each test.
-    
+
     Requirements: 10.4
-    
+
     Yields:
         Path: Temporary storage directory path
     """
@@ -91,13 +91,16 @@ async def test_db_manager(test_config):
 async def test_embedding_registry():
     """Create embedding registry with dummy embedder."""
     from agentic_inquiry.embeddings.registry import EmbeddingRegistry
+
     return EmbeddingRegistry(default_embedder=_DummyEmbedder())
 
 
 @pytest_asyncio.fixture
 async def test_storage_facade(test_config):
     """Create StorageFacade for tests."""
-    storage = await StorageFacade.from_config(test_config, project_id="test_integration")
+    storage = await StorageFacade.from_config(
+        test_config, project_id="test_integration"
+    )
     yield storage
     await storage.close()
 
@@ -110,7 +113,7 @@ async def test_search_service(test_storage_facade, test_config):
         storage=test_storage_facade,
         config=test_config,
         event_system=mock_event_system,
-        project_id="test_integration"
+        project_id="test_integration",
     )
 
 
@@ -160,31 +163,31 @@ class DataProcessor:
 @pytest.mark.asyncio
 class TestIndexingWorkflow:
     """Integration tests for indexing workflow.
-    
+
     Requirements: 10.1, 10.5
     """
-    
+
     async def test_indexing_creates_chunks_and_entities(
         self,
         test_db_manager,
         test_config,
         test_embedding_registry,
         sample_python_code,
-        monkeypatch
+        monkeypatch,
     ):
         """Test that indexing creates chunks and entities that are immediately queryable.
-        
+
         This test verifies:
         1. Files are successfully indexed
         2. Chunks are created and stored
         3. Entities are created and stored
         4. Data is immediately queryable after indexing
-        
+
         Requirements: 10.1, 10.5
         """
         # Change to sample code directory
         monkeypatch.chdir(sample_python_code)
-        
+
         # Create indexing pipeline with project_root set to sample code directory
         mock_event_system = _create_mock_event_system()
         test_indexing_pipeline = IndexingPipeline(
@@ -193,68 +196,70 @@ class TestIndexingWorkflow:
             project_id="test_integration",
             event_system=mock_event_system,
             registry=test_embedding_registry,
-            project_root=str(sample_python_code)
+            project_root=str(sample_python_code),
         )
-        
+
         # Index the file
         from agentic_inquiry.parsers.executor import get_parser_instance, execute_parser
-        
+
         parser = get_parser_instance("unified_code")
         test_file = sample_python_code / "sample_module.py"
-        
+
         # Parse and process the document
         parsed_doc = await execute_parser(parser, str(test_file))
         await test_indexing_pipeline.process_document(parsed_doc)
-        
+
         # Verify chunks were created
         chunks = await test_db_manager.advanced_filter(
             table_name="document_chunks",
             filters={"project_id": "test_integration"},
-            limit=100
+            limit=100,
         )
-        
+
         assert len(chunks) > 0, "Expected chunks to be created"
-        
+
         # Verify all chunks have required fields
         for chunk in chunks:
             assert "id" in chunk
             assert "content" in chunk
             assert "project_id" in chunk
             assert chunk["project_id"] == "test_integration"
-        
+
         # Verify entities were created
         entities = await test_db_manager.advanced_filter(
             table_name="graph_entities",
             filters={"project_id": "test_integration"},
-            limit=100
+            limit=100,
         )
-        
+
         assert len(entities) > 0, "Expected entities to be created"
-        
+
         # Verify entities include functions and classes
         entity_types = {e.get("type") for e in entities}
-        assert "function" in entity_types or "class" in entity_types, \
+        assert "function" in entity_types or "class" in entity_types, (
             f"Expected function or class entities, got types: {entity_types}"
-        
+        )
+
         # Verify data is immediately queryable (no delay needed)
         # Query again to ensure data persisted
         chunks_requery = await test_db_manager.advanced_filter(
             table_name="document_chunks",
             filters={"project_id": "test_integration"},
-            limit=100
+            limit=100,
         )
-        
-        assert len(chunks_requery) == len(chunks), \
+
+        assert len(chunks_requery) == len(chunks), (
             "Chunks should be immediately queryable after indexing"
+        )
 
 
 @pytest.mark.asyncio
 class TestSearchWorkflow:
     """Integration tests for search workflow.
-    
+
     Requirements: 10.2, 10.5
     """
-    
+
     async def test_search_returns_valid_results(
         self,
         test_db_manager,
@@ -262,21 +267,21 @@ class TestSearchWorkflow:
         test_search_service,
         test_embedding_registry,
         sample_python_code,
-        monkeypatch
+        monkeypatch,
     ):
         """Test that search returns results with valid scores.
-        
+
         This test verifies:
         1. Content can be indexed
         2. Search returns results
         3. Results have valid scores (> 0.0)
         4. Results are ordered by score (descending)
-        
+
         Requirements: 10.2, 10.5
         """
         # Change to sample code directory
         monkeypatch.chdir(sample_python_code)
-        
+
         # Create indexing pipeline with project_root set to sample code directory
         mock_event_system = _create_mock_event_system()
         test_indexing_pipeline = IndexingPipeline(
@@ -285,30 +290,30 @@ class TestSearchWorkflow:
             project_id="test_integration",
             event_system=mock_event_system,
             registry=test_embedding_registry,
-            project_root=str(sample_python_code)
+            project_root=str(sample_python_code),
         )
-        
+
         # Index the file
         from agentic_inquiry.parsers.executor import get_parser_instance, execute_parser
-        
+
         parser = get_parser_instance("unified_code")
         test_file = sample_python_code / "sample_module.py"
-        
+
         # Parse and process the document
         parsed_doc = await execute_parser(parser, str(test_file))
         await test_indexing_pipeline.process_document(parsed_doc)
-        
+
         # Perform search
         embedder = test_embedding_registry._default_embedder
         query_vector = embedder.generate(["calculator"])[0]
-        
+
         results = await test_search_service.hybrid_search(
             query_vector=query_vector,
             query_fts="calculator",
             limit=10,
-            rerank_by_graph=False
+            rerank_by_graph=False,
         )
-        
+
         # Verify results were returned
         assert len(results) > 0, "Expected search to return results"
 
@@ -319,17 +324,18 @@ class TestSearchWorkflow:
 
         # Verify results are ordered by score (descending)
         scores = [r.score for r in results]
-        assert scores == sorted(scores, reverse=True), \
+        assert scores == sorted(scores, reverse=True), (
             "Results should be ordered by descending score"
+        )
 
 
 @pytest.mark.asyncio
 class TestEntityQueryWorkflow:
     """Integration tests for entity query workflow.
-    
+
     Requirements: 10.3, 10.5
     """
-    
+
     async def test_entity_queries_work_end_to_end(
         self,
         test_config,
@@ -337,7 +343,7 @@ class TestEntityQueryWorkflow:
         test_search_service,
         test_embedding_registry,
         sample_python_code,
-        monkeypatch
+        monkeypatch,
     ):
         """Test that entity queries work end-to-end.
 
@@ -361,8 +367,7 @@ class TestEntityQueryWorkflow:
 
         # Create a test session
         session_info = await session_manager.create_session(
-            project_id="test_integration",
-            description="Integration test session"
+            project_id="test_integration", description="Integration test session"
         )
 
         # Configure default embedder in registry
@@ -389,64 +394,66 @@ class TestEntityQueryWorkflow:
             "embedding_service": embedding_service,
             "entity_resolver": entity_resolver,
             "test_session_id": session_info["session_id"],
-            "project_root": str(sample_python_code)  # Add project_root to services
+            "project_root": str(sample_python_code),  # Add project_root to services
         }
-        
+
         # Index the code using add_knowledge
         result = await add_knowledge(
             services=test_mcp_services,
             session_id=test_mcp_services["test_session_id"],
             content_type="file",
-            source="sample_module.py"
+            source="sample_module.py",
         )
-        
+
         # Verify indexing succeeded
         assert result["status"] == "completed", f"Indexing failed: {result}"
         assert result["chunks_created"] > 0, "Expected chunks to be created"
         assert result["entities_created"] > 0, "Expected entities to be created"
-        
+
         # Test list_entities
         entities_result = await list_entities(
             services=test_mcp_services,
             session_id=test_mcp_services["test_session_id"],
-            limit=50
+            limit=50,
         )
-        
+
         assert "entities" in entities_result, "Expected entities in result"
         assert len(entities_result["entities"]) > 0, "Expected entities to be listed"
-        
+
         # Find a function entity to test with
         function_entities = [
-            e for e in entities_result["entities"]
-            if e.get("type") == "function"
+            e for e in entities_result["entities"] if e.get("type") == "function"
         ]
-        
+
         if function_entities:
             entity_name = function_entities[0]["name"]
-            
+
             # Test understand_entity
             understand_result = await understand_entity(
                 services=test_mcp_services,
                 session_id=test_mcp_services["test_session_id"],
-                entity=entity_name
+                entity=entity_name,
             )
-            
+
             assert "entity" in understand_result, "Expected entity in result"
-            assert understand_result["entity"]["name"] == entity_name, \
+            assert understand_result["entity"]["name"] == entity_name, (
                 "Expected entity name to match"
-        
+            )
+
         # Test find_similar
         similar_result = await find_similar(
             services=test_mcp_services,
             session_id=test_mcp_services["test_session_id"],
             query="calculator function",
             search_scope="entities",
-            limit=5
+            limit=5,
         )
-        
+
         # find_similar should return a result structure (may be empty)
-        assert isinstance(similar_result, dict), "Expected dict result from find_similar"
-        
+        assert isinstance(similar_result, dict), (
+            "Expected dict result from find_similar"
+        )
+
         # Note: analyze_impact requires impact_analyzer service which is complex to set up
         # For this integration test, we've verified the core workflow:
         # - Indexing creates entities

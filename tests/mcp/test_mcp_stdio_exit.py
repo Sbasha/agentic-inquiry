@@ -36,7 +36,14 @@ def test_stdio_server_exits_after_stdin_closes(tmp_path: Path) -> None:
     log = tmp_path / "stderr.log"
     with log.open("wb") as stderr:
         server = subprocess.Popen(
-            [sys.executable, "-m", "agentic_inquiry.cli", "mcp", "--project-id", "demo"],
+            [
+                sys.executable,
+                "-m",
+                "agentic_inquiry.cli",
+                "mcp",
+                "--project-id",
+                "demo",
+            ],
             stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
             stderr=stderr,

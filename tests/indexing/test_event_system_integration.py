@@ -17,13 +17,17 @@ from hypothesis import given, strategies as st, settings
 from unittest.mock import MagicMock, AsyncMock
 
 from agentic_inquiry.indexing.graph_builder import GraphBuilder, GraphBuilderConfig
-from agentic_inquiry.indexing.external_entity_resolver import ExternalEntityInfo, ExternalCategory
+from agentic_inquiry.indexing.external_entity_resolver import (
+    ExternalEntityInfo,
+    ExternalCategory,
+)
 from agentic_inquiry.parsers.models import ParserRelationship
 
 
 # =============================================================================
 # Helpers for creating test data
 # =============================================================================
+
 
 def create_mock_relationship(
     source_name: str,
@@ -95,6 +99,7 @@ def create_mock_event_system() -> AsyncMock:
 # Validates: Requirements 11.2
 # =============================================================================
 
+
 class TestBatchCompleteEvent:
     """Tests for batch_complete event emission after each batch."""
 
@@ -156,7 +161,11 @@ class TestBatchCompleteEvent:
         builder.db_manager.add_graph_relationships = AsyncMock()
 
         relationships = [MagicMock() for _ in range(10)]
-        stats = {"committed_count": 50, "total_relationships": 200, "commit_failures": 0}
+        stats = {
+            "committed_count": 50,
+            "total_relationships": 200,
+            "commit_failures": 0,
+        }
 
         await builder._commit_batch(
             relationships=relationships,
@@ -215,6 +224,7 @@ class TestBatchCompleteEvent:
 # Property 35: Completion Event with Metrics
 # Validates: Requirements 11.4
 # =============================================================================
+
 
 class TestCompletionEventWithMetrics:
     """Tests for completion event emission with all metrics."""
@@ -293,6 +303,7 @@ class TestCompletionEventWithMetrics:
 # Property 36: Failure Event on Error
 # Validates: Requirements 11.6
 # =============================================================================
+
 
 class TestFailureEventOnError:
     """Tests for failure event emission on errors."""
@@ -381,6 +392,7 @@ class TestFailureEventOnError:
 # Property 38: External Entities Flushed Event
 # Validates: Requirements 11.7
 # =============================================================================
+
 
 class TestExternalEntitiesFlushedEvent:
     """Tests for external_entities.flushed event emission."""
@@ -483,6 +495,7 @@ class TestExternalEntitiesFlushedEvent:
 # Additional Event Tests
 # =============================================================================
 
+
 class TestEventEmissionErrorHandling:
     """Tests for error handling during event emission."""
 
@@ -544,6 +557,8 @@ class TestEventTypeNaming:
 
         for event_type in expected_event_types:
             parts = event_type.split(".")
-            assert len(parts) == 2, f"Event type '{event_type}' should have exactly 2 parts"
+            assert len(parts) == 2, (
+                f"Event type '{event_type}' should have exactly 2 parts"
+            )
             assert parts[0], f"Domain part of '{event_type}' should not be empty"
             assert parts[1], f"Event part of '{event_type}' should not be empty"

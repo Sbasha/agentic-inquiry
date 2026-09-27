@@ -77,9 +77,7 @@ async def _seed_entities(
     # every fixture backend will). When it doesn't, skip — the entity
     # vector search has nothing to search against.
     if not hasattr(vector_provider, "upsert_entities"):
-        pytest.skip(
-            f"{type(vector_provider).__name__} is vector-only in this fixture"
-        )
+        pytest.skip(f"{type(vector_provider).__name__} is vector-only in this fixture")
     await vector_provider.upsert_entities([auth_fn, other_fn, auth_cls], project_id)
     return auth_fn.id, other_fn.id, auth_cls.id
 
@@ -121,9 +119,7 @@ class TestEntityVectorSearchContract:
         assert auth_cls_id in ids
         assert auth_fn_id not in ids
 
-    async def test_respects_limit(
-        self, vector_provider, project_id, entity_factory
-    ):
+    async def test_respects_limit(self, vector_provider, project_id, entity_factory):
         await _seed_entities(vector_provider, project_id, entity_factory)
         query, _ = _orthogonal_pair(384)
 
@@ -151,9 +147,7 @@ class TestEntityVectorSearchContract:
             assert isinstance(entity._distance, (int, float))
             assert not math.isnan(entity._distance)
 
-    async def test_project_isolation(
-        self, vector_provider, project_id, entity_factory
-    ):
+    async def test_project_isolation(self, vector_provider, project_id, entity_factory):
         """Entities in a different project must not appear in results.
 
         A weaker version of this test (just asserting ``[] == []``) can

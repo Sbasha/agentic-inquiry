@@ -50,11 +50,15 @@ class TestSignalAnalysis:
         assert len(result.get("file_paths", [])) > 0
 
     def test_code_intent(self, analyzer):
-        result = analyzer.analyze_signals("implement the UserController class with REST endpoints")
+        result = analyzer.analyze_signals(
+            "implement the UserController class with REST endpoints"
+        )
         assert result["intent"] in ("CODE", "DEBUG", "ARCHITECTURAL")
 
     def test_architecture_intent(self, analyzer):
-        result = analyzer.analyze_signals("describe the overall architecture and design patterns used")
+        result = analyzer.analyze_signals(
+            "describe the overall architecture and design patterns used"
+        )
         assert result["intent"] in ("ARCHITECTURAL", "CODE")
 
     def test_debug_intent(self, analyzer):
@@ -131,7 +135,9 @@ class TestBashClassification:
         assert result["category"] == "git"
 
     def test_deploy_command(self, analyzer):
-        result = SignalAnalyzer.classify_bash_command("kubectl apply -f deploy.yaml", 0, "")
+        result = SignalAnalyzer.classify_bash_command(
+            "kubectl apply -f deploy.yaml", 0, ""
+        )
         assert result["category"] == "deploy"
 
     def test_general_command(self, analyzer):
@@ -168,17 +174,23 @@ class TestTaskTransition:
     """Test task update prompt generation."""
 
     def test_completed_task(self, analyzer):
-        prompt = SignalAnalyzer.get_task_transition_prompt("1", "completed", "Build auth module")
+        prompt = SignalAnalyzer.get_task_transition_prompt(
+            "1", "completed", "Build auth module"
+        )
         assert prompt is not None
         assert "completed" in prompt.lower() or "memory" in prompt.lower()
 
     def test_in_progress_task(self, analyzer):
-        prompt = SignalAnalyzer.get_task_transition_prompt("1", "in_progress", "Build auth module")
+        prompt = SignalAnalyzer.get_task_transition_prompt(
+            "1", "in_progress", "Build auth module"
+        )
         assert prompt is not None
         assert "starting" in prompt.lower() or "approach" in prompt.lower()
 
     def test_pending_task(self, analyzer):
-        prompt = SignalAnalyzer.get_task_transition_prompt("1", "pending", "Build auth module")
+        prompt = SignalAnalyzer.get_task_transition_prompt(
+            "1", "pending", "Build auth module"
+        )
         assert prompt is not None
 
     def test_unknown_status(self, analyzer):

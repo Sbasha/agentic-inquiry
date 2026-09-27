@@ -4,6 +4,7 @@ Adapter tests verify assumptions about third-party libraries.
 These tests ensure that library behavior matches our expectations
 and catch breaking changes in dependencies early.
 """
+
 from __future__ import annotations
 
 import importlib.util

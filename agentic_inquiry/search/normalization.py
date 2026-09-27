@@ -118,8 +118,7 @@ def normalize_scores_search_result(
         # Preserves relative quality - a set of high-quality results all
         # get high scores, while noise at the bottom stays proportionally low
         return [
-            r.with_score(min(1.0, scores[i] / max_score))
-            for i, r in enumerate(results)
+            r.with_score(min(1.0, scores[i] / max_score)) for i, r in enumerate(results)
         ]
     else:
         # Min-max normalization (legacy)

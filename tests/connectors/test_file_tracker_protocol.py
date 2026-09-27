@@ -1,5 +1,6 @@
 # tests/connectors/test_file_tracker_protocol.py
 """Tests for HashTrackerProtocol and implementations."""
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -24,6 +25,7 @@ class TestHashTrackerProtocol:
 
     def test_has_hash_tracker_with_non_conforming_object(self):
         """Test has_hash_tracker returns False for non-conforming objects."""
+
         class NotATracker:
             pass
 
@@ -32,9 +34,11 @@ class TestHashTrackerProtocol:
 
     def test_has_hash_tracker_with_partial_implementation(self):
         """Test has_hash_tracker returns False for partial implementations."""
+
         class PartialTracker:
             async def is_processed(self, file_hash: str) -> bool:
                 return False
+
             # Missing other required methods
 
         obj = PartialTracker()
@@ -64,9 +68,7 @@ class TestInMemoryFileTracker:
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_mark_processed_then_is_processed(
-        self, tracker: InMemoryFileTracker
-    ):
+    async def test_mark_processed_then_is_processed(self, tracker: InMemoryFileTracker):
         """Test that mark_processed makes is_processed return True."""
         file_hash = "abc123def456"
 
@@ -80,9 +82,7 @@ class TestInMemoryFileTracker:
         assert await tracker.is_processed(file_hash) is True
 
     @pytest.mark.asyncio
-    async def test_mark_processed_is_idempotent(
-        self, tracker: InMemoryFileTracker
-    ):
+    async def test_mark_processed_is_idempotent(self, tracker: InMemoryFileTracker):
         """Test that marking the same hash multiple times is safe."""
         file_hash = "abc123"
 
@@ -119,9 +119,7 @@ class TestInMemoryFileTracker:
         assert await tracker.get_processed_count() == 3
 
     @pytest.mark.asyncio
-    async def test_clear_removes_all_entries(
-        self, tracker: InMemoryFileTracker
-    ):
+    async def test_clear_removes_all_entries(self, tracker: InMemoryFileTracker):
         """Test that clear removes all tracked hashes."""
         # Add some hashes
         await tracker.mark_processed("hash1")
@@ -144,17 +142,13 @@ class TestInMemoryFileTracker:
         assert await tracker.is_processed("hash3") is False
 
     @pytest.mark.asyncio
-    async def test_clear_on_empty_tracker(
-        self, tracker: InMemoryFileTracker
-    ):
+    async def test_clear_on_empty_tracker(self, tracker: InMemoryFileTracker):
         """Test that clear on empty tracker returns zero."""
         cleared = await tracker.clear()
         assert cleared == 0
 
     @pytest.mark.asyncio
-    async def test_multiple_different_hashes(
-        self, tracker: InMemoryFileTracker
-    ):
+    async def test_multiple_different_hashes(self, tracker: InMemoryFileTracker):
         """Test tracking multiple different hashes independently."""
         hashes = ["hash_a", "hash_b", "hash_c", "hash_d", "hash_e"]
 

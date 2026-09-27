@@ -66,18 +66,20 @@ class TestRerankerConfigValidation:
         """The schema enum and the startup check accept the same reranker types."""
         schema_path = Path(__file__).parents[2] / "config" / "config.schema.json"
         schema = json.loads(schema_path.read_text())
-        enum = (
-            schema["properties"]["search"]["properties"]["hybrid_search"]
-            ["properties"]["reranker_type"]["enum"]
-        )
+        enum = schema["properties"]["search"]["properties"]["hybrid_search"][
+            "properties"
+        ]["reranker_type"]["enum"]
         assert set(enum) == VALID_RERANKER_TYPES
 
-    @pytest.mark.parametrize("reranker_type", [
-        "rrf",
-        "linear_combination",
-        "cross_encoder",
-        "colbert",
-    ])
+    @pytest.mark.parametrize(
+        "reranker_type",
+        [
+            "rrf",
+            "linear_combination",
+            "cross_encoder",
+            "colbert",
+        ],
+    )
     def test_valid_reranker_types_accepted(
         self,
         reranker_type: str,
@@ -98,11 +100,14 @@ class TestRerankerConfigValidation:
         assert isinstance(service, SearchService)
         assert service._hybrid_search is not None
 
-    @pytest.mark.parametrize("reranker_type", [
-        "RRF",          # Uppercase should be normalized to lowercase
-        "Rrf",          # Mixed case
-        "LINEAR_COMBINATION",  # Uppercase
-    ])
+    @pytest.mark.parametrize(
+        "reranker_type",
+        [
+            "RRF",  # Uppercase should be normalized to lowercase
+            "Rrf",  # Mixed case
+            "LINEAR_COMBINATION",  # Uppercase
+        ],
+    )
     def test_case_insensitive_reranker_types(
         self,
         reranker_type: str,
@@ -123,16 +128,19 @@ class TestRerankerConfigValidation:
         assert isinstance(service, SearchService)
         assert service._hybrid_search is not None
 
-    @pytest.mark.parametrize("invalid_type", [
-        "invalid",
-        "unknown",
-        "rfrf",         # Typo of rrf
-        "linear",       # Incomplete name
-        "cross-encoder",  # Wrong delimiter
-        "",             # Empty string (if config allows)
-        "none",         # Not supported
-        "cohere",       # Hosted API reranker; out of scope (CHARTER Principle 1)
-    ])
+    @pytest.mark.parametrize(
+        "invalid_type",
+        [
+            "invalid",
+            "unknown",
+            "rfrf",  # Typo of rrf
+            "linear",  # Incomplete name
+            "cross-encoder",  # Wrong delimiter
+            "",  # Empty string (if config allows)
+            "none",  # Not supported
+            "cohere",  # Hosted API reranker; out of scope (CHARTER Principle 1)
+        ],
+    )
     def test_invalid_reranker_types_rejected(
         self,
         invalid_type: str,
@@ -226,6 +234,7 @@ class TestValidRerankerTypesExport:
     def test_constant_is_exported(self):
         """Test that VALID_RERANKER_TYPES can be imported."""
         from agentic_inquiry.search.hybrid_search import VALID_RERANKER_TYPES
+
         assert VALID_RERANKER_TYPES is not None
         assert isinstance(VALID_RERANKER_TYPES, frozenset)
         assert len(VALID_RERANKER_TYPES) > 0

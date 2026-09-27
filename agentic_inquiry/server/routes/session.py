@@ -27,7 +27,9 @@ async def get_session_state(request: Request) -> dict:
 async def update_session_state(request: Request, body: SessionUpdateRequest) -> dict:
     """Update session state."""
     return request.app.state.session_state.update_state(
-        turn=body.turn, query=body.query, topic=body.topic,
+        turn=body.turn,
+        query=body.query,
+        topic=body.topic,
     )
 
 

@@ -1,5 +1,6 @@
 # tests/mcp/services/test_gatherers.py
 """Tests for context gatherer implementations."""
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -15,7 +16,12 @@ from agentic_inquiry.mcp.services.gatherers import (
 )
 from agentic_inquiry.database.results import SearchResult
 from agentic_inquiry.mcp.services.token_optimizer import TokenBudget, TokenOptimizer
-from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier, RetrievalResult
+from agentic_inquiry.memory.models import (
+    MemoryContext,
+    MemoryItem,
+    MemoryTier,
+    RetrievalResult,
+)
 
 
 def _search_result(data):
@@ -130,9 +136,7 @@ class TestCodeGatherer:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_gather_with_empty_results(
-        self, code_gatherer, mock_search_service
-    ):
+    async def test_gather_with_empty_results(self, code_gatherer, mock_search_service):
         """Test gather with empty search results."""
         mock_search_service.hybrid_search.return_value = []
 
@@ -149,20 +153,20 @@ class TestCodeGatherer:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_gather_with_code_results(
-        self, code_gatherer, mock_search_service
-    ):
+    async def test_gather_with_code_results(self, code_gatherer, mock_search_service):
         """Test gather with code search results."""
         # Create mock search results
-        mock_result = _search_result({
-            "id": "chunk_1",
-            "file_path": "src/test.py",
-            "name": "test_function",
-            "summary": "A test function",
-            "content": "def test_function(): pass",
-            "_distance": 0.2,
-            "language": "python",
-        })
+        mock_result = _search_result(
+            {
+                "id": "chunk_1",
+                "file_path": "src/test.py",
+                "name": "test_function",
+                "summary": "A test function",
+                "content": "def test_function(): pass",
+                "_distance": 0.2,
+                "language": "python",
+            }
+        )
         mock_search_service.hybrid_search.return_value = [mock_result]
 
         budget = TokenBudget(max_tokens=1000)
@@ -187,23 +191,27 @@ class TestCodeGatherer:
     ):
         """Test that gather filters out non-code files."""
         # Create mock results with both code and non-code files
-        code_result = _search_result({
-            "id": "code_1",
-            "file_path": "src/test.py",
-            "name": "test_function",
-            "summary": "A test function",
-            "content": "def test_function(): pass",
-            "_distance": 0.2,
-        })
+        code_result = _search_result(
+            {
+                "id": "code_1",
+                "file_path": "src/test.py",
+                "name": "test_function",
+                "summary": "A test function",
+                "content": "def test_function(): pass",
+                "_distance": 0.2,
+            }
+        )
 
-        doc_result = _search_result({
-            "id": "doc_1",
-            "file_path": "docs/readme.md",
-            "name": "readme",
-            "summary": "Documentation",
-            "content": "# Readme",
-            "_distance": 0.3,
-        })
+        doc_result = _search_result(
+            {
+                "id": "doc_1",
+                "file_path": "docs/readme.md",
+                "name": "readme",
+                "summary": "Documentation",
+                "content": "# Readme",
+                "_distance": 0.3,
+            }
+        )
 
         mock_search_service.hybrid_search.return_value = [code_result, doc_result]
 
@@ -230,14 +238,16 @@ class TestCodeGatherer:
         # Create many mock results
         results = []
         for i in range(20):
-            mock_result = _search_result({
-                "id": f"chunk_{i}",
-                "file_path": f"src/test_{i}.py",
-                "name": f"function_{i}",
-                "summary": f"Function {i}",
-                "content": f"def function_{i}(): pass",
-                "_distance": 0.2,
-            })
+            mock_result = _search_result(
+                {
+                    "id": f"chunk_{i}",
+                    "file_path": f"src/test_{i}.py",
+                    "name": f"function_{i}",
+                    "summary": f"Function {i}",
+                    "content": f"def function_{i}(): pass",
+                    "_distance": 0.2,
+                }
+            )
             results.append(mock_result)
 
         mock_search_service.hybrid_search.return_value = results
@@ -293,28 +303,30 @@ class TestDocsGatherer:
         assert isinstance(docs_gatherer, ContextGathererProtocol)
 
     @pytest.mark.asyncio
-    async def test_gather_filters_code_files(
-        self, docs_gatherer, mock_search_service
-    ):
+    async def test_gather_filters_code_files(self, docs_gatherer, mock_search_service):
         """Test that gather filters out code files."""
         # Create mock results with both doc and code files
-        doc_result = _search_result({
-            "id": "doc_1",
-            "file_path": "docs/readme.md",
-            "name": "readme",
-            "summary": "Documentation",
-            "content": "# Readme",
-            "_distance": 0.2,
-        })
+        doc_result = _search_result(
+            {
+                "id": "doc_1",
+                "file_path": "docs/readme.md",
+                "name": "readme",
+                "summary": "Documentation",
+                "content": "# Readme",
+                "_distance": 0.2,
+            }
+        )
 
-        code_result = _search_result({
-            "id": "code_1",
-            "file_path": "src/test.py",
-            "name": "test_function",
-            "summary": "A test function",
-            "content": "def test_function(): pass",
-            "_distance": 0.3,
-        })
+        code_result = _search_result(
+            {
+                "id": "code_1",
+                "file_path": "src/test.py",
+                "name": "test_function",
+                "summary": "A test function",
+                "content": "def test_function(): pass",
+                "_distance": 0.3,
+            }
+        )
 
         mock_search_service.hybrid_search.return_value = [doc_result, code_result]
 
@@ -380,9 +392,7 @@ class TestMemoryGatherer:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_gather_with_memories(
-        self, memory_gatherer, mock_memory_system
-    ):
+    async def test_gather_with_memories(self, memory_gatherer, mock_memory_system):
         """Test gather with memory results."""
         # Create mock memory result
         memory_item = MemoryItem(
@@ -390,7 +400,9 @@ class TestMemoryGatherer:
             content="The user mentioned they prefer Python for data analysis.",
             summary="User prefers Python",
             context=MemoryContext(
-                agent_id="agent", session_id="test_session", conversation_id="conversation"
+                agent_id="agent",
+                session_id="test_session",
+                conversation_id="conversation",
             ),
             importance=0.8,
             tier=MemoryTier.SEMANTIC,
@@ -429,11 +441,9 @@ class TestGraphGatherer:
     def mock_search_service(self):
         """Create a mock search service."""
         search_service = MagicMock()
-        search_service.traverse_relationships = AsyncMock(return_value={
-            "relationships": [],
-            "entities": {},
-            "entity": {"name": ""}
-        })
+        search_service.traverse_relationships = AsyncMock(
+            return_value={"relationships": [], "entities": {}, "entity": {"name": ""}}
+        )
         return search_service
 
     @pytest.fixture
@@ -496,9 +506,7 @@ class TestGraphGatherer:
         assert result == []
 
     @pytest.mark.asyncio
-    async def test_gather_with_relationships(
-        self, graph_gatherer, mock_search_service
-    ):
+    async def test_gather_with_relationships(self, graph_gatherer, mock_search_service):
         """Test gather with relationship results."""
         # Create mock relationship response
         mock_search_service.traverse_relationships.return_value = {
@@ -520,7 +528,7 @@ class TestGraphGatherer:
                     "file_path": "src/helpers.py",
                     "summary": "A helper function",
                 }
-            }
+            },
         }
 
         budget = TokenBudget(max_tokens=1000)

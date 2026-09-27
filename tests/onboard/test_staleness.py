@@ -44,9 +44,7 @@ class TestStalenessCheck:
         mock_service = AsyncMock()
         mock_service.get_latest_onboard.return_value = None
 
-        result = await check_onboard_staleness(
-            mock_service, Path("/tmp/workspace")
-        )
+        result = await check_onboard_staleness(mock_service, Path("/tmp/workspace"))
 
         assert result.is_stale is True
         assert result.reason == "no_onboard"
@@ -59,9 +57,7 @@ class TestStalenessCheck:
         mock_service = AsyncMock()
         mock_service.get_latest_onboard.return_value = _make_run(days_ago=1)
 
-        result = await check_onboard_staleness(
-            mock_service, Path("/tmp/workspace")
-        )
+        result = await check_onboard_staleness(mock_service, Path("/tmp/workspace"))
 
         assert result.is_stale is False
         assert result.days_since_onboard == 1
@@ -74,9 +70,7 @@ class TestStalenessCheck:
         mock_service = AsyncMock()
         mock_service.get_latest_onboard.return_value = _make_run(days_ago=30)
 
-        result = await check_onboard_staleness(
-            mock_service, Path("/tmp/workspace")
-        )
+        result = await check_onboard_staleness(mock_service, Path("/tmp/workspace"))
 
         assert result.is_stale is True
         assert result.reason == "days_elapsed"
@@ -89,9 +83,7 @@ class TestStalenessCheck:
         mock_service = AsyncMock()
         mock_service.get_latest_onboard.return_value = _make_run(days_ago=1)
 
-        result = await check_onboard_staleness(
-            mock_service, Path("/tmp/workspace")
-        )
+        result = await check_onboard_staleness(mock_service, Path("/tmp/workspace"))
 
         assert result.is_stale is True
         assert result.reason == "file_changes"
@@ -105,9 +97,7 @@ class TestStalenessCheck:
         mock_service = AsyncMock()
         mock_service.get_latest_onboard.return_value = _make_run(days_ago=1)
 
-        result = await check_onboard_staleness(
-            mock_service, Path("/tmp/workspace")
-        )
+        result = await check_onboard_staleness(mock_service, Path("/tmp/workspace"))
 
         assert result.is_stale is True
         assert result.reason == "commits"
@@ -122,9 +112,7 @@ class TestStalenessCheck:
             days_ago=1, commit_sha=None
         )
 
-        result = await check_onboard_staleness(
-            mock_service, Path("/tmp/workspace")
-        )
+        result = await check_onboard_staleness(mock_service, Path("/tmp/workspace"))
 
         assert result.is_stale is False
         mock_files.assert_not_called()
@@ -134,9 +122,7 @@ class TestStalenessCheck:
         mock_service = AsyncMock()
         mock_service.get_latest_onboard.return_value = None
 
-        result = await check_onboard_staleness(
-            mock_service, Path("/tmp/workspace")
-        )
+        result = await check_onboard_staleness(mock_service, Path("/tmp/workspace"))
 
         assert "No onboard documentation" in result.message
         assert "/ai:onboard" in result.message
@@ -147,13 +133,9 @@ class TestGitHelpers:
 
     async def test_count_changed_files_nonexistent_commit(self) -> None:
         # Should return 0 for invalid commit
-        count = await _count_changed_files(
-            Path("/tmp"), "nonexistent_commit_sha"
-        )
+        count = await _count_changed_files(Path("/tmp"), "nonexistent_commit_sha")
         assert count == 0
 
     async def test_count_commits_nonexistent_commit(self) -> None:
-        count = await _count_commits_since(
-            Path("/tmp"), "nonexistent_commit_sha"
-        )
+        count = await _count_commits_since(Path("/tmp"), "nonexistent_commit_sha")
         assert count == 0

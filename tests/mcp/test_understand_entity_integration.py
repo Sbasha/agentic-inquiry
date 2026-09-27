@@ -18,18 +18,15 @@ async def test_services(tmp_path):
     # Create test config
     config = Config.load()
     config.storage.root = str(tmp_path / "storage")
-    
+
     # Create services
-    services = await create_mcp_services(
-        config=config,
-        project_id="test_project"
-    )
-    
+    services = await create_mcp_services(config=config, project_id="test_project")
+
     # Mock event system to avoid actual event emission
     event_system = services["event_system"]
     services["event_system"] = MagicMock()
     services["event_system"].emit = AsyncMock(return_value=None)
-    
+
     yield services
 
     await close_mcp_services({**services, "event_system": event_system})
@@ -39,7 +36,7 @@ async def test_services(tmp_path):
 async def indexed_services(test_services):
     """Create services with test entities in database."""
     db_manager = test_services["storage"]
-    
+
     # Create test entities directly in database (matching test_entity_tool.py pattern)
     entities = [
         GraphEntity(
@@ -93,10 +90,10 @@ async def indexed_services(test_services):
             pagerank=0.5,
         ),
     ]
-    
+
     # Add entities to database
     await db_manager.upsert_entities(entities)
-    
+
     yield test_services
 
 
@@ -105,28 +102,27 @@ async def test_session(indexed_services):
     """Create a test session."""
     session_manager = indexed_services["session_manager"]
     session_info = await session_manager.create_session(
-        project_id="test_project",
-        description="Test session for understand_entity"
+        project_id="test_project", description="Test session for understand_entity"
     )
     return session_info["session_id"]
 
 
 @pytest.mark.asyncio
-async def test_understand_entity_returns_non_empty_results(indexed_services, test_session):
+async def test_understand_entity_returns_non_empty_results(
+    indexed_services, test_session
+):
     """Test that understand_entity returns non-empty results for known entities."""
     result = await understand_entity(
-        services=indexed_services,
-        session_id=test_session,
-        entity="SearchService"
+        services=indexed_services, session_id=test_session, entity="SearchService"
     )
-    
+
     # Verify entity information is present
     assert "entity" in result
     assert result["entity"]["name"] == "SearchService"
     assert result["entity"]["entity_type"] in ["class"]
     assert result["entity"]["file_path"]
     assert "line_start" in result["entity"]
-    
+
     # Verify structure is correct (content or documentation may be empty for test data)
     assert "content" in result["entity"]
     assert "documentation" in result["entity"]
@@ -139,13 +135,13 @@ async def test_understand_entity_with_dependencies(indexed_services, test_sessio
         services=indexed_services,
         session_id=test_session,
         entity="SearchService",
-        include_dependencies=True
+        include_dependencies=True,
     )
-    
+
     # Verify dependencies structure
     assert "dependencies" in result
     assert isinstance(result["dependencies"], list)
-    
+
     # If dependencies exist, verify structure
     if result["dependencies"]:
         dep = result["dependencies"][0]
@@ -162,13 +158,13 @@ async def test_understand_entity_with_usage_examples(indexed_services, test_sess
         services=indexed_services,
         session_id=test_session,
         entity="SearchService",
-        include_usage=True
+        include_usage=True,
     )
-    
+
     # Verify usage examples structure
     assert "usage_examples" in result
     assert isinstance(result["usage_examples"], list)
-    
+
     # If usage examples exist, verify structure
     if result["usage_examples"]:
         usage = result["usage_examples"][0]
@@ -185,26 +181,26 @@ async def test_understand_entity_with_type_filter(indexed_services, test_session
         services=indexed_services,
         session_id=test_session,
         entity="SearchService",
-        entity_type="class"  # Use the actual type stored in database
+        entity_type="class",  # Use the actual type stored in database
     )
-    
+
     # Verify entity was found with correct type
     assert "entity" in result
     assert result["entity"]["entity_type"] == "class"
 
 
 @pytest.mark.asyncio
-async def test_understand_entity_not_found_with_suggestions(indexed_services, test_session):
+async def test_understand_entity_not_found_with_suggestions(
+    indexed_services, test_session
+):
     """Test that entity not found returns suggestions."""
     result = await understand_entity(
-        services=indexed_services,
-        session_id=test_session,
-        entity="NonExistentEntity"
+        services=indexed_services, session_id=test_session, entity="NonExistentEntity"
     )
-    
+
     # Verify error response structure
     assert "error" in result or "message" in result
-    
+
     # Should include suggestions if available
     if "suggestions" in result:
         assert isinstance(result["suggestions"], list)
@@ -216,9 +212,9 @@ async def test_understand_entity_case_insensitive(indexed_services, test_session
     result = await understand_entity(
         services=indexed_services,
         session_id=test_session,
-        entity="searchservice"  # lowercase
+        entity="searchservice",  # lowercase
     )
-    
+
     # Should still find SearchService
     if "entity" in result:
         assert result["entity"]["name"] == "SearchService"
@@ -228,11 +224,9 @@ async def test_understand_entity_case_insensitive(indexed_services, test_session
 async def test_understand_entity_method(indexed_services, test_session):
     """Test understanding a method entity."""
     result = await understand_entity(
-        services=indexed_services,
-        session_id=test_session,
-        entity="search"
+        services=indexed_services, session_id=test_session, entity="search"
     )
-    
+
     # Verify method information if found
     if "entity" in result:
         assert result["entity"]["entity_type"] in ["function", "method"]
@@ -246,15 +240,15 @@ async def test_understand_entity_correct_structure(indexed_services, test_sessio
         session_id=test_session,
         entity="SearchService",
         include_dependencies=True,
-        include_usage=True
+        include_usage=True,
     )
-    
+
     # Verify all required fields are present
     assert "entity" in result
     assert "dependencies" in result
     assert "usage_examples" in result
     assert "metadata" in result
-    
+
     # Verify entity structure
     entity = result["entity"]
     assert "name" in entity
@@ -270,9 +264,9 @@ async def test_understand_entity_invalid_session(indexed_services):
     result = await understand_entity(
         services=indexed_services,
         session_id="invalid_session_id",
-        entity="SearchService"
+        entity="SearchService",
     )
-    
+
     # Should return error response
     assert "error" in result or "message" in result
 
@@ -286,25 +280,23 @@ async def test_understand_entity_success_rate(indexed_services, test_session):
         "IndexingPipeline",
         "search",
         "hybrid_search",
-        "index_file"
+        "index_file",
     ]
-    
+
     successful = 0
     total = len(entities_to_test)
-    
+
     for entity_name in entities_to_test:
         result = await understand_entity(
-            services=indexed_services,
-            session_id=test_session,
-            entity=entity_name
+            services=indexed_services, session_id=test_session, entity=entity_name
         )
-        
+
         # Count as successful if entity was found
         if "entity" in result and result["entity"].get("name"):
             successful += 1
-    
+
     success_rate = successful / total
-    
+
     # Verify >80% success rate (requirement 1.5)
     assert success_rate > 0.8, f"Success rate {success_rate:.1%} is below 80% threshold"
 
@@ -316,9 +308,9 @@ async def test_understand_entity_without_dependencies(indexed_services, test_ses
         services=indexed_services,
         session_id=test_session,
         entity="SearchService",
-        include_dependencies=False
+        include_dependencies=False,
     )
-    
+
     # Dependencies should be empty list when not requested
     assert "dependencies" in result
     assert result["dependencies"] == []
@@ -331,9 +323,9 @@ async def test_understand_entity_without_usage(indexed_services, test_session):
         services=indexed_services,
         session_id=test_session,
         entity="SearchService",
-        include_usage=False
+        include_usage=False,
     )
-    
+
     # Usage examples should be empty list when not requested
     assert "usage_examples" in result
     assert result["usage_examples"] == []

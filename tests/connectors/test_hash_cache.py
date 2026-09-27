@@ -1,5 +1,6 @@
 # tests/connectors/test_hash_cache.py
 """Tests for BoundedHashCache implementation."""
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -86,17 +87,13 @@ class TestBoundedHashCacheBasic:
         assert cache.has_tracker is False
 
     @pytest.mark.asyncio
-    async def test_is_processed_returns_false_initially(
-        self, cache: BoundedHashCache
-    ):
+    async def test_is_processed_returns_false_initially(self, cache: BoundedHashCache):
         """Test that new files are not processed."""
         result = await cache.is_processed("/path/file.py", "hash123")
         assert result is False
 
     @pytest.mark.asyncio
-    async def test_mark_processed_then_is_processed(
-        self, cache: BoundedHashCache
-    ):
+    async def test_mark_processed_then_is_processed(self, cache: BoundedHashCache):
         """Test mark and check workflow."""
         file_path = "/path/file.py"
         file_hash = "abc123def456"
@@ -111,9 +108,7 @@ class TestBoundedHashCacheBasic:
         assert await cache.is_processed(file_path, file_hash) is True
 
     @pytest.mark.asyncio
-    async def test_different_hash_not_processed(
-        self, cache: BoundedHashCache
-    ):
+    async def test_different_hash_not_processed(self, cache: BoundedHashCache):
         """Test that different hash for same path returns False."""
         file_path = "/path/file.py"
 
@@ -176,9 +171,7 @@ class TestBoundedHashCacheBasic:
         assert await cache.is_processed("/file3.py", "hash3") is False
 
     @pytest.mark.asyncio
-    async def test_get_processed_count_without_tracker(
-        self, cache: BoundedHashCache
-    ):
+    async def test_get_processed_count_without_tracker(self, cache: BoundedHashCache):
         """Test get_processed_count without tracker."""
         assert await cache.get_processed_count() == 0
 

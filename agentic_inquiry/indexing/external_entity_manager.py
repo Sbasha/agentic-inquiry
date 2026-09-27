@@ -66,7 +66,10 @@ class ExternalEntityManager:
         if capabilities is not None:
             _caps = capabilities
         else:
-            from agentic_inquiry.storage.capabilities import get_capabilities_for_backend
+            from agentic_inquiry.storage.capabilities import (
+                get_capabilities_for_backend,
+            )
+
             _caps = get_capabilities_for_backend(backend_type)
         self._capabilities = _caps
         self._skip_local_embedding = _caps.uses_server_side_embedding
@@ -75,7 +78,10 @@ class ExternalEntityManager:
         if external_resolver is not None:
             self._external_resolver = external_resolver
         else:
-            from agentic_inquiry.indexing.external_entity_resolver import ExternalEntityResolver
+            from agentic_inquiry.indexing.external_entity_resolver import (
+                ExternalEntityResolver,
+            )
+
             self._external_resolver = ExternalEntityResolver(project_hash)
 
         # Track pending external entities for batch processing
@@ -119,7 +125,10 @@ class ExternalEntityManager:
             self._pending_external_entities[info.entity_id] = info
             logger.debug(
                 "Queued external entity: %s -> %s (lang=%s, category=%s)",
-                target_name, info.entity_id, language, info.category.value
+                target_name,
+                info.entity_id,
+                language,
+                info.category.value,
             )
 
         return info
@@ -184,7 +193,9 @@ class ExternalEntityManager:
                     file_path=ext_info.virtual_path or "external",
                     doc_id=f"external::{ext_info.entity_id}",
                     project_id=self.project_id,
-                    vector=all_vectors[i] if i < len(all_vectors) else [0.0] * self._embedding_dimensions,
+                    vector=all_vectors[i]
+                    if i < len(all_vectors)
+                    else [0.0] * self._embedding_dimensions,
                 )
                 graph_entities.append(entity)
 
@@ -212,7 +223,9 @@ class ExternalEntityManager:
                         external_count=category_counts.get("external", 0),
                     )
                 except Exception as emit_err:
-                    logger.error("Failed to emit external_entities.flushed event: %s", emit_err)
+                    logger.error(
+                        "Failed to emit external_entities.flushed event: %s", emit_err
+                    )
 
         except Exception as e:
             logger.error("Failed to flush external entities: %s", e)
@@ -242,8 +255,10 @@ class ExternalEntityManager:
         if self._skip_local_embedding:
             entity_embedder, entity_dims = None, 768
         else:
-            entity_embedder, entity_dims = self.embedding_service.get_embedder_configuration(
-                "graph_entities", "vector"
+            entity_embedder, entity_dims = (
+                self.embedding_service.get_embedder_configuration(
+                    "graph_entities", "vector"
+                )
             )
 
         external_entities = []
@@ -257,9 +272,7 @@ class ExternalEntityManager:
             else:
                 # Generate embedding for the entity name (in executor to avoid blocking)
                 vectors = await loop.run_in_executor(
-                    get_embedding_executor(),
-                    entity_embedder.generate,
-                    [info.name]
+                    get_embedding_executor(), entity_embedder.generate, [info.name]
                 )
                 vector = vectors[0]
                 document_processor._validate_vector(
@@ -290,7 +303,9 @@ class ExternalEntityManager:
 
         logger.info(
             "Created %d external entities (builtin: %d, external: %d)",
-            len(external_entities), builtin_count, external_count
+            len(external_entities),
+            builtin_count,
+            external_count,
         )
 
         # Clear the queue
@@ -312,7 +327,11 @@ class ExternalEntityManager:
         """
         counts: Dict[str, int] = {}
         for entity in entities:
-            category = entity.category.value if hasattr(entity.category, "value") else str(entity.category)
+            category = (
+                entity.category.value
+                if hasattr(entity.category, "value")
+                else str(entity.category)
+            )
             counts[category] = counts.get(category, 0) + 1
         return counts
 
@@ -391,47 +410,78 @@ class ExternalEntityManager:
 
         ext_to_lang = {
             # Python
-            ".py": "python", ".pyi": "python", ".pyw": "python",
+            ".py": "python",
+            ".pyi": "python",
+            ".pyw": "python",
             # JavaScript/TypeScript
-            ".js": "javascript", ".mjs": "javascript", ".cjs": "javascript",
+            ".js": "javascript",
+            ".mjs": "javascript",
+            ".cjs": "javascript",
             ".jsx": "javascript",
-            ".ts": "typescript", ".tsx": "typescript", ".mts": "typescript",
+            ".ts": "typescript",
+            ".tsx": "typescript",
+            ".mts": "typescript",
             # JVM
-            ".java": "java", ".kt": "kotlin", ".kts": "kotlin",
-            ".scala": "scala", ".sc": "scala",
-            ".groovy": "groovy", ".gradle": "groovy",
-            ".clj": "clojure", ".cljs": "clojure", ".cljc": "clojure",
+            ".java": "java",
+            ".kt": "kotlin",
+            ".kts": "kotlin",
+            ".scala": "scala",
+            ".sc": "scala",
+            ".groovy": "groovy",
+            ".gradle": "groovy",
+            ".clj": "clojure",
+            ".cljs": "clojure",
+            ".cljc": "clojure",
             # Systems
             ".go": "go",
             ".rs": "rust",
-            ".c": "c", ".h": "c",
-            ".cpp": "cpp", ".cc": "cpp", ".cxx": "cpp",
-            ".hpp": "cpp", ".hh": "cpp", ".hxx": "cpp",
-            ".m": "objc", ".mm": "objcpp",
+            ".c": "c",
+            ".h": "c",
+            ".cpp": "cpp",
+            ".cc": "cpp",
+            ".cxx": "cpp",
+            ".hpp": "cpp",
+            ".hh": "cpp",
+            ".hxx": "cpp",
+            ".m": "objc",
+            ".mm": "objcpp",
             ".swift": "swift",
             ".zig": "zig",
             ".nim": "nim",
-            ".v": "v", ".vv": "v",
+            ".v": "v",
+            ".vv": "v",
             # .NET
-            ".cs": "csharp", ".csx": "csharp",
-            ".fs": "fsharp", ".fsx": "fsharp",
+            ".cs": "csharp",
+            ".csx": "csharp",
+            ".fs": "fsharp",
+            ".fsx": "fsharp",
             ".vb": "vb",
             # Scripting
-            ".rb": "ruby", ".rake": "ruby",
+            ".rb": "ruby",
+            ".rake": "ruby",
             ".php": "php",
-            ".pl": "perl", ".pm": "perl",
+            ".pl": "perl",
+            ".pm": "perl",
             ".lua": "lua",
-            ".r": "r", ".R": "r",
+            ".r": "r",
+            ".R": "r",
             ".jl": "julia",
             # Shell
-            ".sh": "bash", ".bash": "bash",
-            ".zsh": "zsh", ".fish": "fish",
-            ".ps1": "powershell", ".psm1": "powershell",
+            ".sh": "bash",
+            ".bash": "bash",
+            ".zsh": "zsh",
+            ".fish": "fish",
+            ".ps1": "powershell",
+            ".psm1": "powershell",
             # Functional
-            ".hs": "haskell", ".lhs": "haskell",
-            ".ml": "ocaml", ".mli": "ocaml",
-            ".ex": "elixir", ".exs": "elixir",
-            ".erl": "erlang", ".hrl": "erlang",
+            ".hs": "haskell",
+            ".lhs": "haskell",
+            ".ml": "ocaml",
+            ".mli": "ocaml",
+            ".ex": "elixir",
+            ".exs": "elixir",
+            ".erl": "erlang",
+            ".hrl": "erlang",
             # Other
             ".dart": "dart",
             ".cr": "crystal",
@@ -439,10 +489,16 @@ class ExternalEntityManager:
             ".purs": "purescript",
             ".rkt": "racket",
             ".d": "d",
-            ".ada": "ada", ".adb": "ada", ".ads": "ada",
-            ".pas": "pascal", ".pp": "pascal",
-            ".f90": "fortran", ".f95": "fortran", ".f03": "fortran",
-            ".cob": "cobol", ".cbl": "cobol",
+            ".ada": "ada",
+            ".adb": "ada",
+            ".ads": "ada",
+            ".pas": "pascal",
+            ".pp": "pascal",
+            ".f90": "fortran",
+            ".f95": "fortran",
+            ".f03": "fortran",
+            ".cob": "cobol",
+            ".cbl": "cobol",
         }
 
         return ext_to_lang.get(ext, "")

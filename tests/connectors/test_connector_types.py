@@ -6,6 +6,7 @@ Tests cover:
 - URI parsing and conventions
 - Hash computation
 """
+
 from __future__ import annotations
 
 from datetime import datetime

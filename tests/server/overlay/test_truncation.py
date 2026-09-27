@@ -24,9 +24,12 @@ from agentic_inquiry.server.overlay.truncation import truncate_diff
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_file(path: str, n_lines: int, status: str = "modified") -> LocalDiffFile:
     """Create a LocalDiffFile with n_lines synthetic changed_lines."""
-    return LocalDiffFile(path=path, changed_lines=list(range(1, n_lines + 1)), status=status)
+    return LocalDiffFile(
+        path=path, changed_lines=list(range(1, n_lines + 1)), status=status
+    )
 
 
 def _make_diff(files: list[LocalDiffFile], branch: str | None = None) -> LocalDiff:
@@ -36,6 +39,7 @@ def _make_diff(files: list[LocalDiffFile], branch: str | None = None) -> LocalDi
 # ---------------------------------------------------------------------------
 # T44-1: No truncation under limits
 # ---------------------------------------------------------------------------
+
 
 class TestNoTruncation:
     """When content is within limits, output must equal input."""
@@ -85,6 +89,7 @@ class TestNoTruncation:
 # T44-2: Per-file cap (100 lines default)
 # ---------------------------------------------------------------------------
 
+
 class TestPerFileCap:
     """changed_lines is capped at max_per_file per file."""
 
@@ -132,6 +137,7 @@ class TestPerFileCap:
 # ---------------------------------------------------------------------------
 # T44-3: Total cap (500 lines default)
 # ---------------------------------------------------------------------------
+
 
 class TestTotalCap:
     """Files are dropped once max_total changed_lines accumulates."""
@@ -189,6 +195,7 @@ class TestTotalCap:
 # T44-4: Alphabetical ordering
 # ---------------------------------------------------------------------------
 
+
 class TestAlphabeticalOrdering:
     """Files are sorted alphabetically before processing."""
 
@@ -209,9 +216,9 @@ class TestAlphabeticalOrdering:
     def test_alphabetically_first_files_preserved_on_total_overflow(self):
         """When total cap is hit, files that come first alphabetically must be kept."""
         files = [
-            _make_file("z_big.py", 100),   # alphabetically last
-            _make_file("a_big.py", 100),   # alphabetically first
-            _make_file("m_big.py", 100),   # alphabetically middle
+            _make_file("z_big.py", 100),  # alphabetically last
+            _make_file("a_big.py", 100),  # alphabetically first
+            _make_file("m_big.py", 100),  # alphabetically middle
         ]
         diff = _make_diff(files)
 
@@ -226,6 +233,7 @@ class TestAlphabeticalOrdering:
 # ---------------------------------------------------------------------------
 # T44-5: Truncation flag
 # ---------------------------------------------------------------------------
+
 
 class TestTruncationFlag:
     """truncated is set correctly based on whether any omissions happened."""
@@ -268,6 +276,7 @@ class TestTruncationFlag:
 # T44-6: Empty diff passthrough
 # ---------------------------------------------------------------------------
 
+
 class TestEmptyDiffPassthrough:
     """An empty LocalDiff (no modified files) must pass through unchanged."""
 
@@ -292,6 +301,7 @@ class TestEmptyDiffPassthrough:
 # ---------------------------------------------------------------------------
 # T44-7: Original object not mutated
 # ---------------------------------------------------------------------------
+
 
 class TestNoMutation:
     """The original LocalDiff must not be mutated by truncate_diff."""
@@ -319,6 +329,7 @@ class TestNoMutation:
 # ---------------------------------------------------------------------------
 # T44-8: File status preserved
 # ---------------------------------------------------------------------------
+
 
 class TestFileStatusPreserved:
     """The status field on LocalDiffFile must be preserved through truncation."""

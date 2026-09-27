@@ -48,7 +48,7 @@ class MaintenanceManager:
     def __init__(
         self,
         event_system: Optional["EventSystem"] = None,
-        storage: Optional["StorageFacade"] = None
+        storage: Optional["StorageFacade"] = None,
     ):
         """Initialize maintenance manager.
 
@@ -73,9 +73,16 @@ class MaintenanceManager:
         # Subscribe to events if event_system provided
         if event_system is not None:
             from agentic_inquiry.events.types import EventTypes
-            event_system.bus.subscribe(EventTypes.Project.CLOSED, self._on_project_closed)
-            event_system.bus.subscribe(EventTypes.Indexing.COMPLETED, self._on_indexing_completed)
-            logger.debug("MaintenanceManager subscribed to project.closed and indexing.completed events")
+
+            event_system.bus.subscribe(
+                EventTypes.Project.CLOSED, self._on_project_closed
+            )
+            event_system.bus.subscribe(
+                EventTypes.Indexing.COMPLETED, self._on_indexing_completed
+            )
+            logger.debug(
+                "MaintenanceManager subscribed to project.closed and indexing.completed events"
+            )
 
     def _get_lock(self, project_id: str) -> asyncio.Lock:
         """Get or create per-project lock to prevent concurrent maintenance.
@@ -119,7 +126,7 @@ class MaintenanceManager:
                 "Provider db_manager missing maintenance methods: "
                 "compact_tables=%s, cleanup_old_versions=%s",
                 has_compact,
-                has_cleanup
+                has_cleanup,
             )
             return False
 
@@ -127,10 +134,7 @@ class MaintenanceManager:
         return True
 
     async def _run_maintenance_task(
-        self,
-        project_id: str,
-        db_manager,
-        retention_minutes: int
+        self, project_id: str, db_manager, retention_minutes: int
     ) -> dict:
         """Execute maintenance with lock serialization.
 
@@ -153,19 +157,15 @@ class MaintenanceManager:
                 logger.info(
                     "Starting maintenance for project %s (retention: %d minutes)",
                     project_id,
-                    retention_minutes
+                    retention_minutes,
                 )
 
                 # Call run_maintenance with proper retention
                 retention = timedelta(minutes=retention_minutes)
-                result = await db_manager.run_maintenance(
-                    cleanup_older_than=retention
-                )
+                result = await db_manager.run_maintenance(cleanup_older_than=retention)
 
                 logger.info(
-                    "Maintenance completed for project %s: %s",
-                    project_id,
-                    result
+                    "Maintenance completed for project %s: %s", project_id, result
                 )
 
                 return result
@@ -175,17 +175,14 @@ class MaintenanceManager:
                     "Auto-maintenance failed for project %s: %s",
                     project_id,
                     e,
-                    exc_info=True
+                    exc_info=True,
                 )
                 # Return error dict without propagating exception
                 # This ensures maintenance failures don't corrupt data
                 return {"error": str(e)}
 
     def schedule_maintenance(
-        self,
-        project_id: str,
-        db_manager,
-        retention_minutes: int
+        self, project_id: str, db_manager, retention_minutes: int
     ) -> None:
         """Schedule maintenance as background task (non-blocking).
 
@@ -203,8 +200,7 @@ class MaintenanceManager:
             task = self._running_tasks[project_id]
             if not task.done():
                 logger.debug(
-                    "Maintenance already scheduled for project %s, skipping",
-                    project_id
+                    "Maintenance already scheduled for project %s, skipping", project_id
                 )
                 return
 
@@ -241,27 +237,30 @@ class MaintenanceManager:
         if config.maintenance.trigger != "project.closed":
             logger.debug(
                 "Maintenance trigger is %s, not project.closed, skipping",
-                config.maintenance.trigger
+                config.maintenance.trigger,
             )
             return
 
         # Extract project_id from event data
         project_id = event_data.get("project_id")
         if not project_id:
-            logger.warning("project.closed event missing project_id, cannot trigger maintenance")
+            logger.warning(
+                "project.closed event missing project_id, cannot trigger maintenance"
+            )
             return
 
         # Verify we have storage
         if self._storage is None:
-            logger.warning("MaintenanceManager has no storage, cannot trigger maintenance")
+            logger.warning(
+                "MaintenanceManager has no storage, cannot trigger maintenance"
+            )
             return
 
         # Use facade to run maintenance
         # Facade handles capability check internally or we can try/except
         try:
             logger.info(
-                "project.closed event triggered maintenance for project %s",
-                project_id
+                "project.closed event triggered maintenance for project %s", project_id
             )
             # Run maintenance directly via storage facade
             await self._storage.run_maintenance(
@@ -270,7 +269,7 @@ class MaintenanceManager:
                     minutes=config.maintenance.cleanup_retention_minutes
                 ),
             )
-            
+
         except Exception as e:
             logger.error("Failed to run maintenance for project %s: %s", project_id, e)
 
@@ -297,26 +296,30 @@ class MaintenanceManager:
         if config.maintenance.trigger != "indexing.completed":
             logger.debug(
                 "Maintenance trigger is %s, not indexing.completed, skipping",
-                config.maintenance.trigger
+                config.maintenance.trigger,
             )
             return
 
         # Extract project_id from event data
         project_id = event_data.get("project_id")
         if not project_id:
-            logger.warning("indexing.completed event missing project_id, cannot trigger maintenance")
+            logger.warning(
+                "indexing.completed event missing project_id, cannot trigger maintenance"
+            )
             return
 
         # Verify we have storage
         if self._storage is None:
-            logger.warning("MaintenanceManager has no storage, cannot trigger maintenance")
+            logger.warning(
+                "MaintenanceManager has no storage, cannot trigger maintenance"
+            )
             return
 
         # Use facade to run maintenance
         try:
             logger.info(
                 "indexing.completed event triggered maintenance for project %s",
-                project_id
+                project_id,
             )
             # Run maintenance directly via storage facade
             await self._storage.run_maintenance(
@@ -325,10 +328,9 @@ class MaintenanceManager:
                     minutes=config.maintenance.cleanup_retention_minutes
                 ),
             )
-            
+
         except Exception as e:
             logger.error("Failed to run maintenance for project %s: %s", project_id, e)
-
 
 
 # Global instance for use by event handlers

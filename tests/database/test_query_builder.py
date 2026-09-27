@@ -19,16 +19,20 @@ def mock_table():
 @pytest.fixture
 async def mock_get_table(mock_table):
     """Create a mock get_table function."""
+
     async def _get_table(table_name: str):
         return mock_table
+
     return _get_table
 
 
 @pytest.fixture
 async def mock_run_sync():
     """Create a mock run_sync function."""
+
     async def _run_sync(fn, *args):
         return fn(*args) if args else fn()
+
     return _run_sync
 
 
@@ -112,7 +116,9 @@ class TestQueryConstruction:
         assert len(results) == 1
         mock_table.search.assert_called_once_with("search term", query_type="fts")
 
-    async def test_fts_search_retries_stale_table(self, mock_get_table, mock_run_sync, mock_table):
+    async def test_fts_search_retries_stale_table(
+        self, mock_get_table, mock_run_sync, mock_table
+    ):
         """A stale-table error invalidates the cache and reruns the same query."""
         query_mock = MagicMock()
         query_mock.limit = MagicMock(return_value=query_mock)
@@ -173,6 +179,7 @@ class TestFilterConstruction:
     def test_filter_builder_string(self):
         """Test filter with string value."""
         from agentic_inquiry.database.filters import FilterBuilder
+
         builder = FilterBuilder()
         builder.add_field_filter("name", "test")
         expr = builder.build()
@@ -181,6 +188,7 @@ class TestFilterConstruction:
     def test_filter_builder_int(self):
         """Test filter with integer value."""
         from agentic_inquiry.database.filters import FilterBuilder
+
         builder = FilterBuilder()
         builder.add_field_filter("count", 42)
         expr = builder.build()
@@ -189,6 +197,7 @@ class TestFilterConstruction:
     def test_filter_builder_bool(self):
         """Test filter with boolean value."""
         from agentic_inquiry.database.filters import FilterBuilder
+
         builder = FilterBuilder()
         builder.add_field_filter("active", True)
         expr = builder.build()
@@ -197,6 +206,7 @@ class TestFilterConstruction:
     def test_filter_builder_null(self):
         """Test filter with null value."""
         from agentic_inquiry.database.filters import FilterBuilder
+
         builder = FilterBuilder()
         builder.add_field_filter("value", None)
         expr = builder.build()
@@ -205,6 +215,7 @@ class TestFilterConstruction:
     def test_filter_builder_list(self):
         """Test filter with list value."""
         from agentic_inquiry.database.filters import FilterBuilder
+
         builder = FilterBuilder()
         builder.add_field_filter("type", ["a", "b", "c"])
         expr = builder.build()
@@ -241,7 +252,7 @@ class TestFilterConstruction:
             "active": True,
         }
         expr = query_builder._filters_to_expression(filters)
-        
+
         # Check all filters are present
         assert "name = 'test'" in expr
         assert "count = 42" in expr
@@ -256,6 +267,7 @@ class TestFilterConstruction:
     def test_filter_builder_escapes_quotes(self):
         """Test that single quotes are escaped."""
         from agentic_inquiry.database.filters import FilterBuilder
+
         builder = FilterBuilder()
         builder.add_field_filter("name", "test'value")
         expr = builder.build()
@@ -284,8 +296,7 @@ class TestProjectFiltering:
     async def test_add_project_filter_preserves_existing(self, query_builder):
         """Test that existing filters are preserved."""
         filters = query_builder._add_project_filter(
-            {"type": "doc", "count": 5},
-            "current"
+            {"type": "doc", "count": 5}, "current"
         )
         assert filters == {"type": "doc", "count": 5, "project_id": "test-project"}
 
@@ -346,7 +357,9 @@ class TestStaleTableRetry:
     test_query_builder_stale_retry.py.
     """
 
-    _STALE = RuntimeError("lance error: LanceError(IO): Object at docs.lance/data/x.lance not found")
+    _STALE = RuntimeError(
+        "lance error: LanceError(IO): Object at docs.lance/data/x.lance not found"
+    )
 
     @staticmethod
     def _builder(get_table, run_sync, invalidate=None) -> LanceDBQueryBuilder:

@@ -1075,7 +1075,9 @@ class LanceDBManager:
 
         async def _do_write() -> None:
             nonlocal rows_updated
-            result = await self._run_sync(lambda: table.update(where=clause, values=values))
+            result = await self._run_sync(
+                lambda: table.update(where=clause, values=values)
+            )
             rows_updated = result.rows_updated
 
         async with self._locked(table_name):
@@ -1858,7 +1860,9 @@ class LanceDBManager:
                     # ``Table.optimize`` compacts, refreshes indexes, and
                     # prunes versions older than the window in one call.
                     await self._run_sync(
-                        lambda t=table, d=older_than, unverified=delete_unverified: t.optimize(
+                        lambda t=table,
+                        d=older_than,
+                        unverified=delete_unverified: t.optimize(
                             cleanup_older_than=d,
                             delete_unverified=unverified,
                         )

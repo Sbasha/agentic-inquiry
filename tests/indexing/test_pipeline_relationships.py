@@ -6,6 +6,7 @@ These tests verify that:
 3. Import relationships are properly created
 4. Class-method relationships (defines) are created
 """
+
 import pytest
 
 pytestmark = pytest.mark.integration
@@ -17,7 +18,11 @@ from agentic_inquiry.embeddings.base import Embedder
 from agentic_inquiry.embeddings.registry import EmbeddingRegistry
 from agentic_inquiry.indexing.pipeline import IndexingPipeline
 from agentic_inquiry.indexing.models import IndexingResult
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
@@ -44,7 +49,7 @@ def _create_mock_event_system():
 @pytest.fixture
 def sample_python_with_imports(tmp_path: Path) -> Path:
     """Create a Python file with import statements."""
-    code = '''
+    code = """
 from typing import List, Dict
 import os
 import json
@@ -55,7 +60,7 @@ class MyClass:
 
     def my_method(self):
         return os.path.exists("test")
-'''
+"""
     file_path = tmp_path / "sample.py"
     file_path.write_text(code)
     return file_path

@@ -146,10 +146,20 @@ class SQLiteOnboardMetadataProvider:
         await db.commit()
 
     # Allowed column names for update_run to prevent SQL injection
-    _UPDATABLE_COLUMNS = frozenset({
-        "status", "is_latest", "commit_sha", "file_count", "chunk_count",
-        "entity_count", "artifact_path", "error_message", "metadata", "timestamp",
-    })
+    _UPDATABLE_COLUMNS = frozenset(
+        {
+            "status",
+            "is_latest",
+            "commit_sha",
+            "file_count",
+            "chunk_count",
+            "entity_count",
+            "artifact_path",
+            "error_message",
+            "metadata",
+            "timestamp",
+        }
+    )
 
     async def update_run(self, run_id: str, updates: Dict[str, Any]) -> None:
         """Update fields on an existing run."""
@@ -167,7 +177,9 @@ class SQLiteOnboardMetadataProvider:
                 values.append(int(value))
             elif key == "timestamp":
                 set_clauses.append("timestamp = ?")
-                values.append(value.timestamp() if isinstance(value, datetime) else value)
+                values.append(
+                    value.timestamp() if isinstance(value, datetime) else value
+                )
             else:
                 set_clauses.append(f"{key} = ?")
                 values.append(value)
@@ -201,9 +213,7 @@ class SQLiteOnboardMetadataProvider:
         row = await cursor.fetchone()
         return self._row_to_run(row) if row else None
 
-    async def list_runs(
-        self, project_id: str, limit: int = 10
-    ) -> List[OnboardRun]:
+    async def list_runs(self, project_id: str, limit: int = 10) -> List[OnboardRun]:
         """List recent runs for a project."""
         db = self._ensure_db()
         cursor = await db.execute(

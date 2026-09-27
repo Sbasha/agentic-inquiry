@@ -1,4 +1,5 @@
 """In-memory LanceDB manager used to isolate tests from the real backend."""
+
 from __future__ import annotations
 
 import asyncio
@@ -21,6 +22,7 @@ class _MockVectorProvider:
     Provides the nested structure expected by SessionManager:
     db_manager.vector_provider._db_manager
     """
+
     def __init__(self, db_manager: "InMemoryLanceDBManager"):
         self._db_manager = db_manager
 
@@ -37,20 +39,16 @@ class InMemoryLanceDBManager:
         # Provide vector_provider for StorageFacade compatibility
         self.vector_provider = _MockVectorProvider(self)
 
-
     def _validate_record(
-        self, 
-        table_name: str, 
-        record: Dict[str, Any],
-        strict: bool = True
+        self, table_name: str, record: Dict[str, Any], strict: bool = True
     ) -> None:
         """Validate a record against schema requirements before write.
-        
+
         Args:
             table_name: Name of the target table
             record: Dictionary to validate
             strict: If True, raise error on forbidden fields; if False, log warning
-            
+
         Raises:
             ValueError: If record contains forbidden field aliases or missing required fields
         """
@@ -65,7 +63,7 @@ class InMemoryLanceDBManager:
                     raise ValueError(msg)
                 else:
                     logger.warning(msg)
-        
+
         # Check for required fields
         if table_name in REQUIRED_FIELDS:
             required = REQUIRED_FIELDS[table_name]
@@ -289,7 +287,7 @@ class InMemoryLanceDBManager:
                     row.update(deepcopy(record))
                 if not matches:
                     table.append(deepcopy(record))
-    
+
     async def query_across_projects(
         self,
         table_name: str,
@@ -300,20 +298,20 @@ class InMemoryLanceDBManager:
         """Query across multiple projects."""
         if not project_ids:
             return []
-        
+
         # Build filter with project_ids using IN clause
         project_filter = {"project_id": ("IN", project_ids)}
-        
+
         if filters is None:
             filters = project_filter
         else:
             filters = {**filters, **project_filter}
-        
+
         rows = await self._get_rows(table_name, filters)
         if limit is not None:
             rows = rows[:limit]
         return rows
-    
+
     def _add_project_filter(
         self,
         filters: Optional[Dict[str, Any]],
@@ -323,20 +321,20 @@ class InMemoryLanceDBManager:
         # If project_id is None, search all projects (no filter)
         if project_id is None:
             return filters
-        
+
         # If project_id is "current", use the configured project_id
         if project_id == "current":
             if self._project_id is None:
                 # No project_id configured, don't filter
                 return filters
             project_id = self._project_id
-        
+
         # Add project_id filter
         project_filter = {"project_id": project_id}
-        
+
         if filters is None:
             return project_filter
-        
+
         # Merge with existing filters
         return {**filters, **project_filter}
 
@@ -350,7 +348,7 @@ class InMemoryLanceDBManager:
                     record = item.model_dump()
                 else:
                     record = deepcopy(item)
-                
+
                 # Validate record against schema requirements before adding
                 self._validate_record(table_name, record)
                 table.append(record)
@@ -359,7 +357,9 @@ class InMemoryLanceDBManager:
         async with self._lock:
             table = self._tables.get(table_name, [])
             id_set = set(ids)
-            self._tables[table_name] = [row for row in table if row.get("id") not in id_set]
+            self._tables[table_name] = [
+                row for row in table if row.get("id") not in id_set
+            ]
 
     async def add_rows(self, table_name: str, items: List[Dict[str, Any]]) -> None:
         """Public API for adding rows - delegates to _add_rows."""
@@ -369,7 +369,9 @@ class InMemoryLanceDBManager:
         """Public API for deleting rows by ID - delegates to _delete_rows."""
         await self._delete_rows(table_name, ids)
 
-    async def _get_rows(self, table_name: str, filters: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    async def _get_rows(
+        self, table_name: str, filters: Optional[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         async with self._lock:
             rows = [deepcopy(row) for row in self._tables.get(table_name, [])]
         if not filters:

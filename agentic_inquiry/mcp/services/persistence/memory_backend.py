@@ -36,7 +36,8 @@ class InMemorySessionStorage(SessionStorageProtocol):
         self._sessions[session.session_id] = session
         logger.debug(
             "Persisted session %s to memory (total: %d)",
-            session.session_id, len(self._sessions)
+            session.session_id,
+            len(self._sessions),
         )
 
     async def load_session(self, session_id: str) -> Optional[Session]:
@@ -74,7 +75,7 @@ class InMemorySessionStorage(SessionStorageProtocol):
         self,
         project_id: Optional[str] = None,
         include_expired: bool = False,
-        limit: int = 50
+        limit: int = 50,
     ) -> List[Dict[str, Any]]:
         """List sessions with optional filtering.
 
@@ -96,16 +97,18 @@ class InMemorySessionStorage(SessionStorageProtocol):
             if not include_expired and session.is_expired:
                 continue
 
-            sessions.append({
-                "session_id": session.session_id,
-                "project_id": session.project_id,
-                "created_at": session.created_at.isoformat(),
-                "last_active": session.last_active.isoformat(),
-                "description": session.description,
-                "is_expired": session.is_expired,
-                "age_hours": session.get_age_hours(),
-                "inactive_hours": session.get_inactive_hours()
-            })
+            sessions.append(
+                {
+                    "session_id": session.session_id,
+                    "project_id": session.project_id,
+                    "created_at": session.created_at.isoformat(),
+                    "last_active": session.last_active.isoformat(),
+                    "description": session.description,
+                    "is_expired": session.is_expired,
+                    "age_hours": session.get_age_hours(),
+                    "inactive_hours": session.get_inactive_hours(),
+                }
+            )
 
         # Sort by last_active (most recent first)
         sessions.sort(key=lambda s: str(s["last_active"]), reverse=True)
@@ -114,9 +117,7 @@ class InMemorySessionStorage(SessionStorageProtocol):
         return sessions[:limit]
 
     async def find_expired_sessions(
-        self,
-        ttl_hours: float,
-        limit: int = 1000
+        self, ttl_hours: float, limit: int = 1000
     ) -> List[Dict[str, Any]]:
         """Find sessions that have exceeded TTL.
 
@@ -136,12 +137,14 @@ class InMemorySessionStorage(SessionStorageProtocol):
                 continue
 
             if session.last_active < cutoff_time:
-                expired.append({
-                    "session_id": session.session_id,
-                    "project_id": session.project_id,
-                    "age_hours": session.get_age_hours(),
-                    "inactive_hours": session.get_inactive_hours()
-                })
+                expired.append(
+                    {
+                        "session_id": session.session_id,
+                        "project_id": session.project_id,
+                        "age_hours": session.get_age_hours(),
+                        "inactive_hours": session.get_inactive_hours(),
+                    }
+                )
 
                 if len(expired) >= limit:
                     break

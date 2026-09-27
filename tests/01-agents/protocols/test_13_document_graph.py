@@ -5,6 +5,7 @@ Validates: document entity extraction (section/header/file), structural
 relationship creation (contains, follows), hierarchy navigation,
 multi-document handling, and edge cases.
 """
+
 import time
 from pathlib import Path
 from typing import Any, Dict
@@ -48,18 +49,38 @@ async def run(
     log(test_id, "Setup: Creating session")
     try:
         session_id, project_id = await create_test_session(
-            services, test_id, slug, run_id,
+            services,
+            test_id,
+            slug,
+            run_id,
             description="Document graph extraction and structural navigation test",
         )
         log(test_id, f"Session: {session_id}, project: {project_id}")
     except Exception as e:
-        check(results, issues, "setup_session", False, severity="CRITICAL", fail_msg=str(e))
-        return summarize(test_id, slug, results, issues, time.time() - t_start, adoption_journal=journal)
+        check(
+            results,
+            issues,
+            "setup_session",
+            False,
+            severity="CRITICAL",
+            fail_msg=str(e),
+        )
+        return summarize(
+            test_id,
+            slug,
+            results,
+            issues,
+            time.time() - t_start,
+            adoption_journal=journal,
+        )
 
     # ── Setup: Index document samples ────────────────────────────
     log(test_id, f"Setup: Indexing documents from {DOC_SAMPLES_PATH}")
     idx = await index_and_wait(
-        services, session_id, project_id, test_id,
+        services,
+        session_id,
+        project_id,
+        test_id,
         source=DOC_SAMPLES_PATH,
         content_type="directory",
         max_wait=1800,
@@ -67,26 +88,45 @@ async def run(
         wait_for_embeddings=True,
     )
     check(
-        results, issues, "setup_indexing",
+        results,
+        issues,
+        "setup_indexing",
         idx.get("completed", False),
         detail=idx,
         fail_msg=idx.get("error", "Indexing failed"),
     )
     if not idx.get("completed"):
-        return summarize(test_id, slug, results, issues, time.time() - t_start, project_id, adoption_journal=journal)
+        return summarize(
+            test_id,
+            slug,
+            results,
+            issues,
+            time.time() - t_start,
+            project_id,
+            adoption_journal=journal,
+        )
 
-    log(test_id, f"Indexing done: chunks={idx.get('chunks_created', '?')}, "
-        f"rels={idx.get('relationships_created', '?')}")
+    log(
+        test_id,
+        f"Indexing done: chunks={idx.get('chunks_created', '?')}, "
+        f"rels={idx.get('relationships_created', '?')}",
+    )
 
     # ── Threshold check ──────────────────────────────────────────
     log(test_id, "Threshold verification via list_entities")
     sections_r, _ = await call_tool(
-        list_entities, services=services, session_id=session_id,
-        entity_type="section", limit=5,
+        list_entities,
+        services=services,
+        session_id=session_id,
+        entity_type="section",
+        limit=5,
     )
     files_r, _ = await call_tool(
-        list_entities, services=services, session_id=session_id,
-        entity_type="file", limit=5,
+        list_entities,
+        services=services,
+        session_id=session_id,
+        entity_type="file",
+        limit=5,
     )
 
     section_ents = sections_r.get("entities", [])
@@ -97,32 +137,63 @@ async def run(
     has_files = len(file_ents) >= 2
 
     thresholds_met = has_sections and has_files
-    check(results, issues, "thresholds", thresholds_met, {
-        "section_count": len(section_ents),
-        "file_count": len(file_ents),
-        "sample_sections": [e.get("name") for e in section_ents[:5]],
-        "sample_files": [e.get("name") for e in file_ents[:5]],
-    }, severity="CRITICAL", fail_msg=f"Insufficient entities: sections={len(section_ents)} (min 5), files={len(file_ents)} (min 2)")
+    check(
+        results,
+        issues,
+        "thresholds",
+        thresholds_met,
+        {
+            "section_count": len(section_ents),
+            "file_count": len(file_ents),
+            "sample_sections": [e.get("name") for e in section_ents[:5]],
+            "sample_files": [e.get("name") for e in file_ents[:5]],
+        },
+        severity="CRITICAL",
+        fail_msg=f"Insufficient entities: sections={len(section_ents)} (min 5), files={len(file_ents)} (min 2)",
+    )
 
     if not thresholds_met:
-        note_adoption(journal, "failed to extract minimum document entities — document graph unusable without entity extraction", "blocker")
-        info_r, _ = await call_tool(get_project_info, services=services, session_id=session_id)
+        note_adoption(
+            journal,
+            "failed to extract minimum document entities — document graph unusable without entity extraction",
+            "blocker",
+        )
+        info_r, _ = await call_tool(
+            get_project_info, services=services, session_id=session_id
+        )
         log(test_id, f"  Diagnostic: entity_counts={info_r.get('entity_counts', {})}")
-        return summarize(test_id, slug, results, issues, time.time() - t_start, project_id, adoption_journal=journal)
+        return summarize(
+            test_id,
+            slug,
+            results,
+            issues,
+            time.time() - t_start,
+            project_id,
+            adoption_journal=journal,
+        )
 
     # ── T1.1: Document Entity Extraction ─────────────────────────
     log(test_id, "T1.1: Document entity extraction")
     sections_r, _ = await call_tool(
-        list_entities, services=services, session_id=session_id,
-        entity_type="section", limit=20,
+        list_entities,
+        services=services,
+        session_id=session_id,
+        entity_type="section",
+        limit=20,
     )
     headers_r, _ = await call_tool(
-        list_entities, services=services, session_id=session_id,
-        entity_type="header", limit=20,
+        list_entities,
+        services=services,
+        session_id=session_id,
+        entity_type="header",
+        limit=20,
     )
     files_r, _ = await call_tool(
-        list_entities, services=services, session_id=session_id,
-        entity_type="file", limit=20,
+        list_entities,
+        services=services,
+        session_id=session_id,
+        entity_type="file",
+        limit=20,
     )
 
     section_ents = sections_r.get("entities", [])
@@ -136,22 +207,38 @@ async def run(
         entity_types_found.add(e.get("entity_type", e.get("type", "")))
     has_no_code_entities = not code_types.intersection(entity_types_found)
 
-    check(results, issues, "T1_1_entity_extraction",
-        len(section_ents) > 0 and len(file_ents) > 0, {
-        "sections": len(section_ents),
-        "headers": len(header_ents),
-        "files": len(file_ents),
-        "entity_types_found": list(entity_types_found),
-        "no_code_entities": has_no_code_entities,
-        "sample_sections": [e.get("name") for e in section_ents[:5]],
-        "sample_files": [e.get("name") for e in file_ents[:5]],
-    })
-    log(test_id, f"T1.1: sections={len(section_ents)}, headers={len(header_ents)}, files={len(file_ents)}")
+    check(
+        results,
+        issues,
+        "T1_1_entity_extraction",
+        len(section_ents) > 0 and len(file_ents) > 0,
+        {
+            "sections": len(section_ents),
+            "headers": len(header_ents),
+            "files": len(file_ents),
+            "entity_types_found": list(entity_types_found),
+            "no_code_entities": has_no_code_entities,
+            "sample_sections": [e.get("name") for e in section_ents[:5]],
+            "sample_files": [e.get("name") for e in file_ents[:5]],
+        },
+    )
+    log(
+        test_id,
+        f"T1.1: sections={len(section_ents)}, headers={len(header_ents)}, files={len(file_ents)}",
+    )
     total_doc_ents = len(section_ents) + len(header_ents) + len(file_ents)
     if total_doc_ents > 0:
-        note_adoption(journal, f"extracted {total_doc_ents} document entities (sections/headers/files) — structured document understanding vs raw text", "positive")
+        note_adoption(
+            journal,
+            f"extracted {total_doc_ents} document entities (sections/headers/files) — structured document understanding vs raw text",
+            "positive",
+        )
     else:
-        note_adoption(journal, "no document entities extracted — document graph adds no value over raw text search", "blocker")
+        note_adoption(
+            journal,
+            "no document entities extracted — document graph adds no value over raw text search",
+            "blocker",
+        )
 
     # ── T1.2: Structural Relationships (Functional) ───────────────
     log(test_id, "T1.2: Structural relationships via functional tools")
@@ -175,7 +262,10 @@ async def run(
             if not section_id:
                 continue
 
-            log(test_id, f"  Traversing from section: {section.get('name')} (id={section_id[:60]}...)")
+            log(
+                test_id,
+                f"  Traversing from section: {section.get('name')} (id={section_id[:60]}...)",
+            )
 
             # Test contains relationship (section contains child sections)
             traverse_r, _ = await call_tool(
@@ -188,7 +278,11 @@ async def run(
                 direction="both",
             )
             rels = traverse_r.get("edges", traverse_r.get("relationships", []))
-            c_rels = [r for r in rels if r.get("relationship_type", r.get("type", "")) == "contains"]
+            c_rels = [
+                r
+                for r in rels
+                if r.get("relationship_type", r.get("type", "")) == "contains"
+            ]
             if c_rels:
                 contains_found = True
                 contains_sample = c_rels[0]
@@ -210,7 +304,10 @@ async def run(
                 if all_edges:
                     contains_found = True
                     contains_sample = all_edges[0]
-                    log(test_id, f"  contains found via untyped traversal: {len(all_edges)} edges")
+                    log(
+                        test_id,
+                        f"  contains found via untyped traversal: {len(all_edges)} edges",
+                    )
                     break
 
         # Test follows relationship
@@ -228,17 +325,24 @@ async def run(
                 max_depth=1,
             )
             f_rels = [
-                r for r in follows_r.get("edges", follows_r.get("relationships", []))
+                r
+                for r in follows_r.get("edges", follows_r.get("relationships", []))
                 if r.get("relationship_type", r.get("type", "")) == "follows"
             ]
             if f_rels:
                 follows_found = True
                 follows_sample = f_rels[0]
-                log(test_id, f"  follows found from {section.get('name')}: {len(f_rels)} rels")
+                log(
+                    test_id,
+                    f"  follows found from {section.get('name')}: {len(f_rels)} rels",
+                )
                 break
 
     if not follows_found:
-        log(test_id, "  follows: not found from any section (may be first sections only)")
+        log(
+            test_id,
+            "  follows: not found from any section (may be first sections only)",
+        )
 
     # Test understand_entity for a section
     understand_result = None
@@ -254,23 +358,45 @@ async def run(
             )
             understand_result = understand_r
             has_understand = not understand_r.get("error")
-            log(test_id, f"  understand_entity: {'OK' if has_understand else understand_r.get('error', 'failed')}")
+            log(
+                test_id,
+                f"  understand_entity: {'OK' if has_understand else understand_r.get('error', 'failed')}",
+            )
 
-    check(results, issues, "T1_2_structural_relationships",
-        contains_found or follows_found, {
-        "contains_found": contains_found,
-        "follows_found": follows_found,
-        "contains_sample": contains_sample,
-        "follows_sample": follows_sample,
-        "understand_entity_ok": understand_result and not understand_result.get("error"),
-    }, severity="HIGH",
-    fail_msg="No structural relationships (contains or follows) found via graph_traverse")
+    check(
+        results,
+        issues,
+        "T1_2_structural_relationships",
+        contains_found or follows_found,
+        {
+            "contains_found": contains_found,
+            "follows_found": follows_found,
+            "contains_sample": contains_sample,
+            "follows_sample": follows_sample,
+            "understand_entity_ok": understand_result
+            and not understand_result.get("error"),
+        },
+        severity="HIGH",
+        fail_msg="No structural relationships (contains or follows) found via graph_traverse",
+    )
     if contains_found or follows_found:
-        note_adoption(journal, "found contains/follows relationships — document hierarchy navigation grep can't do", "positive")
+        note_adoption(
+            journal,
+            "found contains/follows relationships — document hierarchy navigation grep can't do",
+            "positive",
+        )
     else:
-        note_adoption(journal, "no structural relationships found — document graph is flat, no hierarchy advantage over grep", "negative")
+        note_adoption(
+            journal,
+            "no structural relationships found — document graph is flat, no hierarchy advantage over grep",
+            "negative",
+        )
     if understand_result and not understand_result.get("error"):
-        note_adoption(journal, "understand_entity returned document hierarchy — navigable document structure", "positive")
+        note_adoption(
+            journal,
+            "understand_entity returned document hierarchy — navigable document structure",
+            "positive",
+        )
 
     # ── T2.1: Parent-Child Traversal ─────────────────────────────
     log(test_id, "T2.1: Parent-child hierarchy traversal")
@@ -305,7 +431,8 @@ async def run(
         all_rels = deps + rels if isinstance(deps, list) else rels
 
         has_structural = any(
-            rel.get("relationship_type", rel.get("type", "")) in ("contains", "follows", "is_contained_by")
+            rel.get("relationship_type", rel.get("type", ""))
+            in ("contains", "follows", "is_contained_by")
             for rel in all_rels
         )
         hierarchy_works = not r.get("error") and (has_structural or len(all_rels) > 0)
@@ -315,10 +442,19 @@ async def run(
             "structural_found": has_structural,
             "error": r.get("error"),
         }
-        log(test_id, f"  Hierarchy: {len(all_rels)} relationships, structural={has_structural}")
+        log(
+            test_id,
+            f"  Hierarchy: {len(all_rels)} relationships, structural={has_structural}",
+        )
 
-    check(results, issues, "T2_1_parent_child_traversal", hierarchy_works, hierarchy_detail,
-        fail_msg="Parent-child hierarchy traversal failed or returned no relationships")
+    check(
+        results,
+        issues,
+        "T2_1_parent_child_traversal",
+        hierarchy_works,
+        hierarchy_detail,
+        fail_msg="Parent-child hierarchy traversal failed or returned no relationships",
+    )
 
     # ── T2.2: Sibling Navigation (next_sibling / previous_sibling) ──
     log(test_id, "T2.2: Sibling navigation (next_sibling/previous_sibling)")
@@ -326,7 +462,10 @@ async def run(
     # This test documents the current state and is expected to show N/A
 
     sibling_found = False
-    sibling_detail = {"status": "not_implemented", "note": "next_sibling/previous_sibling not yet implemented per spec"}
+    sibling_detail = {
+        "status": "not_implemented",
+        "note": "next_sibling/previous_sibling not yet implemented per spec",
+    }
 
     if section_ents:
         section_id = section_ents[0].get("entity_id") or section_ents[0].get("id")
@@ -346,12 +485,21 @@ async def run(
             sibling_detail["error"] = r.get("error")
 
     # This is expected NOT to work per implementation status — mark as informational
-    check(results, issues, "T2_2_sibling_navigation", True, {  # Always pass (feature not implemented)
-        "implemented": sibling_found,
-        "detail": sibling_detail,
-        "note": "Feature not yet implemented — expected result is 0 sibling relationships",
-    })
-    log(test_id, f"T2.2: sibling_found={sibling_found} (expected False — not implemented)")
+    check(
+        results,
+        issues,
+        "T2_2_sibling_navigation",
+        True,
+        {  # Always pass (feature not implemented)
+            "implemented": sibling_found,
+            "detail": sibling_detail,
+            "note": "Feature not yet implemented — expected result is 0 sibling relationships",
+        },
+    )
+    log(
+        test_id,
+        f"T2.2: sibling_found={sibling_found} (expected False — not implemented)",
+    )
 
     # ── T3.1: Document Isolation ──────────────────────────────────
     log(test_id, "T3.1: Document isolation")
@@ -361,12 +509,18 @@ async def run(
 
     # Try to get entities filtered by specific files
     sample_md_r, _ = await call_tool(
-        list_entities, services=services, session_id=session_id,
-        file_path="sample.md", limit=10,
+        list_entities,
+        services=services,
+        session_id=session_id,
+        file_path="sample.md",
+        limit=10,
     )
     outline_md_r, _ = await call_tool(
-        list_entities, services=services, session_id=session_id,
-        file_path="outline.md", limit=10,
+        list_entities,
+        services=services,
+        session_id=session_id,
+        file_path="outline.md",
+        limit=10,
     )
 
     sample_ents = sample_md_r.get("entities", [])
@@ -377,26 +531,50 @@ async def run(
     doc_isolation_ok = len(file_ents) >= 2  # At minimum, multiple file entities exist
 
     # Check entity IDs are unique (no duplicates across docs)
-    all_ids = [e.get("entity_id") or e.get("id") for e in section_ents + file_ents if e.get("entity_id") or e.get("id")]
+    all_ids = [
+        e.get("entity_id") or e.get("id")
+        for e in section_ents + file_ents
+        if e.get("entity_id") or e.get("id")
+    ]
     unique_ids = len(set(all_ids)) == len(all_ids) if all_ids else True
 
-    check(results, issues, "T3_1_document_isolation", doc_isolation_ok, {
-        "file_entities": len(file_ents),
-        "file_names": file_entity_names[:5],
-        "sample_md_entities": len(sample_ents),
-        "outline_md_entities": len(outline_ents),
-        "unique_entity_ids": unique_ids,
-    }, fail_msg="Document isolation failed: insufficient file entities")
-    log(test_id, f"T3.1: files={len(file_ents)}, sample_md={len(sample_ents)}, outline_md={len(outline_ents)}")
+    check(
+        results,
+        issues,
+        "T3_1_document_isolation",
+        doc_isolation_ok,
+        {
+            "file_entities": len(file_ents),
+            "file_names": file_entity_names[:5],
+            "sample_md_entities": len(sample_ents),
+            "outline_md_entities": len(outline_ents),
+            "unique_entity_ids": unique_ids,
+        },
+        fail_msg="Document isolation failed: insufficient file entities",
+    )
+    log(
+        test_id,
+        f"T3.1: files={len(file_ents)}, sample_md={len(sample_ents)}, outline_md={len(outline_ents)}",
+    )
     if doc_isolation_ok and unique_ids:
-        note_adoption(journal, "document isolation works — separate document contexts don't leak", "positive")
+        note_adoption(
+            journal,
+            "document isolation works — separate document contexts don't leak",
+            "positive",
+        )
     elif not unique_ids:
-        note_adoption(journal, "duplicate entity IDs across documents — document isolation is broken", "negative")
+        note_adoption(
+            journal,
+            "duplicate entity IDs across documents — document isolation is broken",
+            "negative",
+        )
 
-    note_adoption(journal,
+    note_adoption(
+        journal,
         "document graph captures heading structure but not semantic relationships between sections "
         "— 'contains' and 'follows' are positional, not conceptual; the agent still needs to read content to understand cross-references",
-        "neutral")
+        "neutral",
+    )
 
     # ── T3.2: Different Document Types ───────────────────────────
     log(test_id, "T3.2: Multi-format document support")
@@ -412,27 +590,45 @@ async def run(
     # At minimum, Markdown should work
     multi_format_ok = has_md
 
-    check(results, issues, "T3_2_multi_format", multi_format_ok, {
-        "markdown": has_md,
-        "pdf": has_pdf,
-        "docx": has_docx,
-        "pptx": has_pptx,
-        "file_names_sample": file_names[:8],
-    }, fail_msg="No Markdown file entities found — multi-format support failed")
+    check(
+        results,
+        issues,
+        "T3_2_multi_format",
+        multi_format_ok,
+        {
+            "markdown": has_md,
+            "pdf": has_pdf,
+            "docx": has_docx,
+            "pptx": has_pptx,
+            "file_names_sample": file_names[:8],
+        },
+        fail_msg="No Markdown file entities found — multi-format support failed",
+    )
     log(test_id, f"T3.2: md={has_md}, pdf={has_pdf}, docx={has_docx}, pptx={has_pptx}")
     format_count = sum([has_md, has_pdf, has_docx, has_pptx])
     if format_count >= 2:
-        note_adoption(journal, f"multi-format support ({format_count} types: MD/PDF/DOCX/PPTX) — unified document intelligence", "positive")
+        note_adoption(
+            journal,
+            f"multi-format support ({format_count} types: MD/PDF/DOCX/PPTX) — unified document intelligence",
+            "positive",
+        )
     elif has_md:
-        note_adoption(journal, "only Markdown supported — limited document intelligence, binary formats not parsed", "neutral")
+        note_adoption(
+            journal,
+            "only Markdown supported — limited document intelligence, binary formats not parsed",
+            "neutral",
+        )
 
     # ── T4.1: Flat Document Handling ─────────────────────────────
     log(test_id, "T4.1: Flat document (no_structure.md) handling")
 
     # Check if no_structure.md was indexed (it should be, even without headers)
     no_struct_r, _ = await call_tool(
-        list_entities, services=services, session_id=session_id,
-        file_path="no_structure.md", limit=10,
+        list_entities,
+        services=services,
+        session_id=session_id,
+        file_path="no_structure.md",
+        limit=10,
     )
     no_struct_ents = no_struct_r.get("entities", [])
 
@@ -443,15 +639,23 @@ async def run(
         session_id=session_id,
         entity="no_structure.md",
     )
-    flat_ok = not flat_r.get("error") or "not found" in str(flat_r.get("error", "")).lower()
+    flat_ok = (
+        not flat_r.get("error") or "not found" in str(flat_r.get("error", "")).lower()
+    )
 
     # Either the file entity exists or understand_entity handles gracefully
     flat_handled = True  # Any response without crash is ok
-    check(results, issues, "T4_1_flat_document", flat_handled, {
-        "entities_for_flat_doc": len(no_struct_ents),
-        "understand_entity_response": flat_r.get("error", "OK"),
-        "graceful_handling": flat_ok,
-    })
+    check(
+        results,
+        issues,
+        "T4_1_flat_document",
+        flat_handled,
+        {
+            "entities_for_flat_doc": len(no_struct_ents),
+            "understand_entity_response": flat_r.get("error", "OK"),
+            "graceful_handling": flat_ok,
+        },
+    )
     log(test_id, f"T4.1: flat doc entities={len(no_struct_ents)}, graceful={flat_ok}")
 
     # ── T4.2: Deep Nesting ────────────────────────────────────────
@@ -485,14 +689,24 @@ async def run(
             # If we got 3+ nodes, some nesting chain exists
             deep_chain_found = len(deep_nodes) >= 3
 
-    check(results, issues, "T4_2_deep_nesting", True, {  # Informational
-        "max_header_level_found": max_level_found,
-        "deep_section": deep_section.get("name") if deep_section else None,
-        "deep_chain_via_traverse": deep_chain_found,
-    })
+    check(
+        results,
+        issues,
+        "T4_2_deep_nesting",
+        True,
+        {  # Informational
+            "max_header_level_found": max_level_found,
+            "deep_section": deep_section.get("name") if deep_section else None,
+            "deep_chain_via_traverse": deep_chain_found,
+        },
+    )
     log(test_id, f"T4.2: max_level={max_level_found}, deep_chain={deep_chain_found}")
     if deep_chain_found:
-        note_adoption(journal, f"deep nesting traversal works (level {max_level_found}) — can navigate complex document hierarchies", "positive")
+        note_adoption(
+            journal,
+            f"deep nesting traversal works (level {max_level_found}) — can navigate complex document hierarchies",
+            "positive",
+        )
 
     # ── T4.3: Non-Existent Entity ─────────────────────────────────
     log(test_id, "T4.3: Non-existent entity graceful handling")
@@ -505,21 +719,37 @@ async def run(
     # Should not crash — any response is OK as long as no exception
     graceful = True  # If we got here, no exception was raised
     has_error_msg = bool(nonexist_r.get("error") or nonexist_r.get("message"))
-    check(results, issues, "T4_3_nonexistent_entity", graceful, {
-        "no_crash": True,
-        "returned_error_message": has_error_msg,
-        "response_keys": list(nonexist_r.keys())[:5],
-    })
+    check(
+        results,
+        issues,
+        "T4_3_nonexistent_entity",
+        graceful,
+        {
+            "no_crash": True,
+            "returned_error_message": has_error_msg,
+            "response_keys": list(nonexist_r.keys())[:5],
+        },
+    )
     log(test_id, f"T4.3: graceful={graceful}, error_msg={has_error_msg}")
 
     # Honest assessment: document graph scope
-    note_adoption(journal,
+    note_adoption(
+        journal,
         "document graph only supports Markdown headings natively — PDF/DOCX parsing relies on 'unstructured' library "
         "which is a heavy dependency (~2GB) and still produces flat text, not true document structure",
-        "neutral")
+        "neutral",
+    )
 
     # ── Write results ─────────────────────────────────────────────
-    summary = summarize(test_id, slug, results, issues, time.time() - t_start, project_id, adoption_journal=journal)
+    summary = summarize(
+        test_id,
+        slug,
+        results,
+        issues,
+        time.time() - t_start,
+        project_id,
+        adoption_journal=journal,
+    )
     write_results(output_dir, summary)
     log(test_id, f"Done: {summary['pass_rate']} passed in {summary['elapsed']}s")
     return summary

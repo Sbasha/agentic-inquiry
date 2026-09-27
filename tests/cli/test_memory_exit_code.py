@@ -321,4 +321,3 @@ def test_memory_commands_exit_after_printing(tmp_path: Path) -> None:
             stderr = (exc.stderr or b"").decode(errors="replace")
             pytest.fail(f"ai memory {args[0]} did not exit:\n{stderr}")
         assert completed.returncode == 0, completed.stderr.decode(errors="replace")
-

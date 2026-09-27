@@ -14,13 +14,17 @@ from agentic_inquiry.indexing.embedding_service import EmbeddingService
 from agentic_inquiry.indexing.graph_builder import GraphBuilder
 from agentic_inquiry.indexing.relationship_resolver import RelationshipResolver
 from agentic_inquiry.indexing.symbol_registry import SymbolRegistry
-from agentic_inquiry.parsers.models import ParsedDocument, ParserChunk, ParserRelationship
+from agentic_inquiry.parsers.models import (
+    ParsedDocument,
+    ParserChunk,
+    ParserRelationship,
+)
 from tests.utils.in_memory_lancedb_manager import InMemoryLanceDBManager
 
 
 class _DummyEmbedder(Embedder):
     """Dummy embedder for testing."""
-    
+
     def __init__(self):
         self._ndims = 1
         self.generated_texts = []
@@ -37,7 +41,7 @@ class _DummyEmbedder(Embedder):
 async def graph_builder_setup():
     """Set up GraphBuilder with dependencies."""
     import uuid
-    
+
     from pathlib import Path
 
     Config.load()
@@ -49,7 +53,7 @@ async def graph_builder_setup():
     project_id = f"test_{uuid.uuid4().hex[:8]}"
     project_hash = project_id
     project_root = str(Path.cwd())
-    
+
     symbol_registry = SymbolRegistry(project_root, project_hash)
     relationship_resolver = RelationshipResolver(
         symbol_registry=symbol_registry,
@@ -57,8 +61,10 @@ async def graph_builder_setup():
         db_manager=mock_db_manager,
     )
     embedding_service = EmbeddingService(registry=registry)
-    document_processor = DocumentProcessor(project_hash=project_hash, project_id=project_id)
-    
+    document_processor = DocumentProcessor(
+        project_hash=project_hash, project_id=project_id
+    )
+
     graph_builder = GraphBuilder(
         db_manager=mock_db_manager,
         symbol_registry=symbol_registry,
@@ -68,7 +74,7 @@ async def graph_builder_setup():
         project_hash=project_hash,
         project_root=project_root,
     )
-    
+
     yield {
         "graph_builder": graph_builder,
         "mock_db_manager": mock_db_manager,
@@ -85,7 +91,7 @@ async def test_create_graph_entities_with_document_entities(graph_builder_setup)
     graph_builder = setup["graph_builder"]
     document_processor = setup["document_processor"]
     project_id = setup["project_id"]
-    
+
     # Create a parsed document with document entities
     parsed_document = ParsedDocument(
         doc_id="doc-1",
@@ -105,14 +111,14 @@ async def test_create_graph_entities_with_document_entities(graph_builder_setup)
             ),
         ],
     )
-    
+
     # Create graph entities
     entities, stats = await graph_builder.create_graph_entities(
         parsed_document=parsed_document,
         chunks=parsed_document.chunks,
         document_processor=document_processor,
     )
-    
+
     # Verify entities were created (1 file entity + 2 document entities)
     assert len(entities) == 3
     assert stats["file_entities"] == 1
@@ -143,7 +149,7 @@ async def test_create_graph_entities_with_code_entities(graph_builder_setup):
     graph_builder = setup["graph_builder"]
     document_processor = setup["document_processor"]
     setup["project_id"]
-    
+
     # Create a parsed document with code entities
     parsed_document = ParsedDocument(
         doc_id="doc-2",
@@ -163,14 +169,14 @@ async def test_create_graph_entities_with_code_entities(graph_builder_setup):
             ),
         ],
     )
-    
+
     # Create graph entities
     entities, stats = await graph_builder.create_graph_entities(
         parsed_document=parsed_document,
         chunks=parsed_document.chunks,
         document_processor=document_processor,
     )
-    
+
     # Verify entities were created (1 file entity + 2 code entities)
     assert len(entities) == 3
     assert stats["file_entities"] == 1
@@ -191,13 +197,12 @@ async def test_create_graph_entities_with_code_entities(graph_builder_setup):
     assert entities[2].pagerank == 0.8
 
 
-
 @pytest.mark.asyncio
 async def test_add_and_clear_pending_relationships(graph_builder_setup):
     """Test adding and clearing pending relationships."""
     setup = graph_builder_setup
     graph_builder = setup["graph_builder"]
-    
+
     # Create test relationships
     rel1 = ParserRelationship(
         source_name="foo",
@@ -213,17 +218,17 @@ async def test_add_and_clear_pending_relationships(graph_builder_setup):
         target_type="class",
         type="imports",
     )
-    
+
     # Add relationships
     graph_builder.add_pending_relationship(rel1, "test1.py")
     graph_builder.add_pending_relationship(rel2, "test2.py")
-    
+
     # Verify relationships were added
     assert len(graph_builder._pending_relationships) == 2
-    
+
     # Clear relationships
     graph_builder.clear_pending_relationships()
-    
+
     # Verify relationships were cleared
     assert len(graph_builder._pending_relationships) == 0
 
@@ -234,18 +239,20 @@ async def test_flush_pending_relationships_empty(graph_builder_setup, caplog):
     setup = graph_builder_setup
     graph_builder = setup["graph_builder"]
     document_processor = setup["document_processor"]
-    
+
     caplog.set_level(logging.INFO)
-    
+
     # Flush with no pending relationships
     count = await graph_builder.flush_pending_relationships(
         document_processor=document_processor,
         use_two_pass=False,
     )
-    
+
     # Verify no relationships were created
     assert count == 0
-    assert any("No pending relationships" in record.message for record in caplog.records)
+    assert any(
+        "No pending relationships" in record.message for record in caplog.records
+    )
 
 
 @pytest.mark.asyncio
@@ -253,11 +260,11 @@ async def test_get_resolution_stats(graph_builder_setup):
     """Test getting resolution statistics."""
     setup = graph_builder_setup
     graph_builder = setup["graph_builder"]
-    
+
     # Initially, stats should be None (no resolution performed yet)
     stats = graph_builder.get_resolution_stats()
     assert stats is None
-    
+
     # Add a pending relationship
     rel = ParserRelationship(
         source_name="foo",
@@ -267,14 +274,14 @@ async def test_get_resolution_stats(graph_builder_setup):
         type="imports",
     )
     graph_builder.add_pending_relationship(rel, "test.py")
-    
+
     # After flushing, stats should be populated
     document_processor = setup["document_processor"]
     await graph_builder.flush_pending_relationships(
         document_processor=document_processor,
         use_two_pass=False,
     )
-    
+
     stats = graph_builder.get_resolution_stats()
     assert "total" in stats
     assert "resolved_cross_file" in stats
@@ -288,7 +295,7 @@ async def test_create_graph_entities_with_relationships(graph_builder_setup):
     setup = graph_builder_setup
     graph_builder = setup["graph_builder"]
     document_processor = setup["document_processor"]
-    
+
     # Create a parsed document with relationships
     parsed_document = ParsedDocument(
         doc_id="doc-3",
@@ -310,14 +317,14 @@ async def test_create_graph_entities_with_relationships(graph_builder_setup):
             ),
         ],
     )
-    
+
     # Create graph entities
     entities, stats = await graph_builder.create_graph_entities(
         parsed_document=parsed_document,
         chunks=parsed_document.chunks,
         document_processor=document_processor,
     )
-    
+
     # Verify relationship was added to pending queue
     assert len(graph_builder._pending_relationships) == 1
     assert stats["code_entities"] == 1

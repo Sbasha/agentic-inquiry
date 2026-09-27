@@ -46,7 +46,7 @@ class TestSchemaProcessorInitialization:
             fields=(
                 SchemaField(name="id", field_type=FieldType.STRING, required=True),
                 SchemaField(name="content", field_type=FieldType.STRING, required=True),
-            )
+            ),
         )
 
         processor = SchemaProcessor(mock_db, schema=custom_schema)
@@ -184,7 +184,7 @@ class TestChunkValidation:
 
     def test_complex_metadata_accepted_by_pydantic(self):
         """Verify ParserChunk accepts complex metadata types.
-        
+
         ParserChunk now allows lists and dicts in metadata, relying on JSON serialization
         at the storage layer. This test verifies lists are accepted.
         """
@@ -197,7 +197,7 @@ class TestChunkValidation:
 
     def test_dict_metadata_accepted_by_pydantic(self):
         """Verify ParserChunk accepts nested dict metadata.
-        
+
         ParserChunk now allows lists and dicts in metadata, relying on JSON serialization
         at the storage layer. This test verifies nested dicts are accepted.
         """
@@ -325,7 +325,7 @@ class TestTransformChunk:
             chunk_index=0,
             total_chunks=1,
             vector=vector,
-            project_id="test_project"
+            project_id="test_project",
         )
 
         # Check required fields - ID now includes project_id prefix
@@ -364,7 +364,7 @@ class TestTransformChunk:
             chunk_index=0,
             total_chunks=1,
             vector=vector,
-            project_id="test_project"
+            project_id="test_project",
         )
 
         # Optional fields should have sentinel/default values
