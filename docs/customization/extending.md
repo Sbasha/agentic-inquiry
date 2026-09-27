@@ -9,8 +9,6 @@ last_updated: 2026-02-16
 
 # Extending Agentic Inquiry
 
-> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
-
 ## Overview
 
 Agentic Inquiry is designed to be extensible at multiple levels. You can customize parsers to handle new file formats, implement custom embedding models for domain-specific search, tune search behavior for your use case, and even integrate alternative storage backends.
@@ -565,33 +563,9 @@ search:
 
 ### Overview
 
-Agentic Inquiry supports multiple storage backends for different deployment scenarios. Choose based on your requirements for scale, infrastructure, and embedding strategy.
+Storage is local: LanceDB holds chunks, embeddings and the entity graph, SQLite holds events, file tracking and onboarding metadata, and an in-memory provider serves tests. [storage-backends.md](../storage-backends.md) lists the shipped providers and the provider contract an alternative backend must satisfy.
 
-**Use cases:**
-- Local development with embedded database (LanceDB)
-- Self-hosted production with PostgreSQL
-- GCP managed databases (CloudSQL, AlloyDB)
-- Integrate with existing database infrastructure
-- Scale to distributed deployments
-
-### Available Backends
-
-| Backend | Type | Embedding Strategy | Best For |
-|---------|------|--------------------|----------|
-| **LanceDB** | Embedded | Local (SentenceTransformer) | Development, prototyping |
-| **PostgreSQL** | Self-hosted | Local (SentenceTransformer) | Self-hosted production |
-| **CloudSQL** | GCP managed | Local (SentenceTransformer) | GCP deployments with connection pooling constraints |
-| **AlloyDB** | GCP managed | Server-side (Vertex AI text-embedding-005) | GCP production, fastest indexing |
-
-**Embedding Strategies:**
-- **Local**: Uses SentenceTransformer `all-MiniLM-L6-v2` model (384 dimensions) on client side
-- **Server-side**: Uses Vertex AI `text-embedding-005` (768 dimensions) via database extension (AlloyDB only)
-
-**Unified PostgreSQL Provider**: CloudSQL and AlloyDB use the same provider implementation (`storage/providers/postgresql/`) with different configuration. The `embedding_strategy` setting determines whether embeddings are generated locally or server-side.
-
-### LanceDB (Default)
-
-Best for local development and prototyping:
+### LanceDB
 
 - **Embedded**: No separate server process required
 - **Fast**: Optimized for vector and full-text search
@@ -603,89 +577,15 @@ Configure LanceDB via `agentic-inquiry.yaml`:
 
 ```yaml
 storage:
-  backend: lancedb
+  root: "./.agentic-inquiry"
   backends:
-    lancedb:
+    default:
       type: lancedb
-      uri: "./vector_db"  # Local path or cloud URI
+      # Required but not read: LanceDB lives at <root>/<lancedb.path>.
+      database_path: "./.agentic-inquiry/lancedb"
+  vector_backend: default
+  graph_backend: default
 ```
-
-### PostgreSQL
-
-Best for self-hosted production deployments:
-
-```yaml
-storage:
-  backend: postgresql
-  backends:
-    postgresql:
-      type: postgresql
-      embedding_strategy: local  # Client-side embedding
-      embedding_model: all-MiniLM-L6-v2
-      embedding_dim: 384
-      host: localhost
-      port: 5432
-      database: agentic-inquiry
-      user: ai_user
-      password: ${POSTGRES_PASSWORD}
-      pool_size: 10
-      max_overflow: 5
-```
-
-### CloudSQL (GCP)
-
-Best for GCP deployments with connection pooling:
-
-```yaml
-storage:
-  backend: cloudsql
-  backends:
-    cloudsql:
-      type: cloudsql
-      embedding_strategy: local  # Client-side embedding
-      embedding_model: all-MiniLM-L6-v2
-      embedding_dim: 384
-      instance_connection_name: project:region:instance
-      database: agentic-inquiry
-      user: ai_user
-      password: ${GCP_PASSWORD}
-      pool_size: 5  # CloudSQL has max_connections=25
-      max_overflow: 2
-```
-
-**Note**: CloudSQL has connection limit constraints (max_connections=25). Use conservative pool settings.
-
-### AlloyDB (GCP Production)
-
-Best for GCP production with fastest indexing:
-
-```yaml
-storage:
-  backend: alloydb
-  backends:
-    alloydb:
-      type: alloydb
-      embedding_strategy: server_side  # Vertex AI embedding
-      embedding_model: text-embedding-005
-      embedding_dim: 768
-      instance_connection_name: projects/PROJECT/locations/REGION/clusters/CLUSTER/instances/INSTANCE
-      database: agentic-inquiry
-      user: postgres
-      password: ${ALLOYDB_PASSWORD}
-      pool_size: 10
-      max_overflow: 5
-```
-
-**Server-side embedding benefits:**
-- 10-27x faster indexing (no client-side embedding overhead)
-- Batch embedding via `ai.initialize_embeddings()` at ~400 chunks/sec
-- Automatic embedding generation after indexing
-- Higher dimensional embeddings (768 vs 384)
-
-**AlloyDB requirements:**
-- Database flag: `google_ml_integration.enable_faster_embedding_generation=on`
-- Extension: `google_ml_integration` (auto-installed by provider)
-- Vertex AI API enabled for the GCP project
 
 ### Storage Facade Interface
 
@@ -713,11 +613,7 @@ class StorageFacade:
         limit: int = 10,
         filters: Optional[Dict[str, Any]] = None,
     ) -> List[SearchResult]:
-        """Perform hybrid search combining vector + FTS.
-
-        Note: query_vector can be a string for server-side embedding backends
-        (AlloyDB) or a List[float] for local embedding backends.
-        """
+        """Perform hybrid search combining vector + FTS."""
         pass
 
     async def close(self) -> None:
@@ -727,7 +623,7 @@ class StorageFacade:
 
 **Embedding Strategy Handling:**
 
-For local embedding (LanceDB, PostgreSQL, CloudSQL):
+Queries are embedded locally before the search:
 ```python
 # Generate embedding locally
 from agentic_inquiry.embeddings.service import EmbeddingService
@@ -737,16 +633,6 @@ query_vector = await embedding_service.embed_async(query_text)
 # Search with vector
 results = await facade.hybrid_search(
     query_vector=query_vector,  # List[float]
-    query_fts=query_text,
-    limit=10,
-)
-```
-
-For server-side embedding (AlloyDB):
-```python
-# Pass query text directly - server generates embedding
-results = await facade.hybrid_search(
-    query_vector=query_text,  # str - server-side embedding
     query_fts=query_text,
     limit=10,
 )
@@ -769,262 +655,42 @@ Backends are implemented as pairs of providers:
 - **VectorProvider**: Handles document chunks, vector search, FTS, hybrid search
 - **GraphProvider**: Handles entities, relationships, graph traversal
 
-See `storage/providers/postgresql/` for the reference implementation used by PostgreSQL, CloudSQL, and AlloyDB backends.
+See `storage/providers/lancedb/` for the reference implementation.
 
 **Schema Configuration:**
 
 Backend schemas are defined in `storage/schemas/*.schema.json`:
 - `lancedb.schema.json` - LanceDB schema
-- `postgresql.schema.json` - PostgreSQL/CloudSQL base schema
-- `alloydb.schema.json` - AlloyDB extensions (embedding_strategy, GCP connection params)
+- `sqlite.schema.json` - SQLite schema
+- `memory.schema.json` - in-memory provider schema
 
 Each schema defines required tables, columns, indexes, and backend-specific features.
 
 ### Implementing a Custom Backend
 
-Create provider classes implementing the storage protocols. You need both a VectorProvider and a GraphProvider.
+A provider implements the protocols in `agentic_inquiry/storage/protocols/` for each role it serves (`vector`, `graph`, `events`, `file_tracker`). [The provider contract](../storage-backends.md#the-provider-contract) lists every protocol and its required operations. `BaseProvider` in `agentic_inquiry/storage/providers/base.py` supplies lifecycle guards and declares the `from_config(config, project_id, **kwargs)` factory; subclassing it is optional because the protocols are structural.
 
-**VectorProvider Example:**
-
-```python
-from typing import Any, Dict, List, Optional, Union
-from agentic_inquiry.storage.base import BaseVectorProvider
-from agentic_inquiry.search.results import SearchResult
-from agentic_inquiry.config import BackendConfig
-
-class CustomVectorProvider(BaseVectorProvider):
-    """Custom vector storage backend implementation.
-
-    Must implement:
-    - initialize() / close()
-    - upsert_chunks()
-    - vector_search() / fts_search() / hybrid_search()
-    - delete_by_project()
-    - get_chunk_count()
-    """
-
-    def __init__(self, config: BackendConfig):
-        super().__init__(config)
-        self._client = None
-
-    @classmethod
-    async def from_config(cls, config: BackendConfig) -> "CustomVectorProvider":
-        """Create provider from configuration."""
-        provider = cls(config)
-        await provider.initialize()
-        return provider
-
-    async def initialize(self) -> None:
-        """Initialize connection to storage backend."""
-        if self._initialized:
-            return
-        self._client = await self._create_client()
-        self._initialized = True
-
-    async def upsert_chunks(self, chunks: List[Dict[str, Any]]) -> None:
-        """Upsert chunks to storage.
-
-        Chunks must have:
-        - id: str
-        - content: str
-        - embedding: List[float] (unless server-side embedding)
-        - project_id: str
-        - file_path: str
-        - Additional metadata fields
-        """
-        if not chunks:
-            return
-
-        records = [self._convert_chunk(chunk) for chunk in chunks]
-        await self._client.upsert("chunks", records)
-
-    async def vector_search(
-        self,
-        query_vector: Union[List[float], str],
-        limit: int = 10,
-        filters: Optional[Dict[str, Any]] = None,
-        vector_column: str = "embedding",
-    ) -> List[SearchResult]:
-        """Perform vector search.
-
-        Args:
-            query_vector: Embedding vector OR query text (for server-side embedding)
-            limit: Max results to return
-            filters: Metadata filters
-            vector_column: Column containing embeddings
-
-        Returns:
-            List of SearchResult with normalized scores (0.0-1.0)
-        """
-        query = self._build_vector_query(query_vector, limit, filters)
-        results = await self._client.search(query)
-        return [self._convert_result(r) for r in results]
-
-    async def close(self) -> None:
-        """Close connections."""
-        if self._client:
-            await self._client.close()
-            self._client = None
-        self._initialized = False
-
-    @property
-    def capabilities(self) -> Dict[str, Any]:
-        """Return backend capabilities."""
-        return {
-            "embedding_strategy": self.config.embedding_strategy,
-            "supports_fts": True,
-            "supports_hybrid": True,
-            "supports_server_embedding": False,
-        }
-
-    def _convert_chunk(self, chunk: Dict[str, Any]) -> Dict[str, Any]:
-        """Convert chunk to backend format."""
-        # Your conversion logic
-        pass
-
-    def _convert_result(self, result: Any) -> SearchResult:
-        """Convert backend result to SearchResult."""
-        # Your conversion logic
-        pass
-
-    async def _create_client(self):
-        """Create backend client."""
-        # Your client creation logic
-        pass
-```
-
-**GraphProvider Example:**
+Register the class for each role, then add its `ProviderCapabilities` to `get_capabilities_for_backend` in `agentic_inquiry/storage/capabilities.py`; an unlisted backend type falls back to LanceDB's capabilities:
 
 ```python
-from agentic_inquiry.storage.base import BaseGraphProvider
+from agentic_inquiry.storage.registry import register_provider
 
-class CustomGraphProvider(BaseGraphProvider):
-    """Custom graph storage backend implementation.
-
-    Must implement:
-    - initialize() / close()
-    - upsert_entities()
-    - upsert_relationships()
-    - entity_vector_search()
-    - get_relationships()
-    - delete_by_project()
-    - get_entity_count() / get_relationship_count()
-    """
-
-    # Similar structure to VectorProvider
-    # See storage/providers/postgresql/graph.py for reference
-    pass
-```
-
-### Integrating with StorageFacade
-
-Register your custom provider and use it via StorageFacade:
-
-```python
-from agentic_inquiry.storage.facade import StorageFacade
-from agentic_inquiry.storage.registry import StorageRegistry
-
-# Register your custom providers
-registry = StorageRegistry()
-registry.register_backend(
-    backend_type="custom",
-    vector_provider_class=CustomVectorProvider,
-    graph_provider_class=CustomGraphProvider,
-)
-
-# Configure in agentic-inquiry.yaml
-# storage:
-#   backend: custom
-#   backends:
-#     custom:
-#       type: custom
-#       embedding_strategy: local  # or server_side
-#       embedding_model: all-MiniLM-L6-v2
-#       embedding_dim: 384
-#       connection_string: "..."
-
-# Use via facade
-from agentic_inquiry.config import Config
-
-config = Config.load()
-facade = await StorageFacade.from_config(config, project_id="my-project")
-
-# Use normally
-results = await facade.hybrid_search(
-    query_vector=embedding,  # List[float] for local, str for server-side
-    query_fts="search query",
-    limit=10,
-)
-await facade.close()
-```
-
-**Configuration Schema:**
-
-Add your backend to `storage/schemas/custom.schema.json`:
-
-```json
-{
-  "$schema": "http://json-schema.org/draft-07/schema#",
-  "type": "object",
-  "required": ["type"],
-  "properties": {
-    "type": {
-      "type": "string",
-      "const": "custom"
-    },
-    "embedding_strategy": {
-      "type": "string",
-      "enum": ["local", "server_side"],
-      "default": "local"
-    },
-    "embedding_model": {
-      "type": "string",
-      "default": "all-MiniLM-L6-v2"
-    },
-    "embedding_dim": {
-      "type": "integer",
-      "default": 384
-    },
-    "connection_string": {
-      "type": "string"
-    }
-  }
-}
+register_provider("custom_db", "vector", "myproject.storage.custom", "CustomVectorProvider")
+register_provider("custom_db", "graph", "myproject.storage.custom", "CustomGraphProvider")
 ```
 
 ### Storage Best Practices
 
-1. **Choose the right backend**:
-   - LanceDB for local development and prototyping
-   - PostgreSQL for self-hosted production
-   - AlloyDB for GCP production with fastest indexing
-   - CloudSQL for GCP deployments with connection constraints
-
-2. **Understand embedding strategies**:
-   - Local: Client-side embedding, works everywhere, 384 dims
-   - Server-side: Database-side embedding, AlloyDB only, 768 dims, 10-27x faster indexing
-
-3. **Configure connection pools**:
-   - LanceDB: No pooling needed (embedded)
-   - PostgreSQL: pool_size=10, max_overflow=5 (typical)
-   - CloudSQL: pool_size=5, max_overflow=2 (max_connections=25 limit)
-   - AlloyDB: pool_size=10, max_overflow=5 (no connection limit)
-
-4. **Test thoroughly**: Verify all operations work correctly
-5. **Monitor performance**: Track latency and throughput
-6. **Handle errors**: Implement retry logic and fallbacks
-7. **Batch operations**: Reduce network overhead
-8. **Version your data**: Track schema changes
-9. **Backup regularly**: Ensure data durability
+1. **Test thoroughly**: Verify all operations work correctly
+2. **Monitor performance**: Track latency and throughput
+3. **Handle errors**: Implement retry logic and fallbacks
+4. **Batch operations**: Reduce network overhead
+5. **Version your data**: Track schema changes
+6. **Backup regularly**: Ensure data durability
 
 **Provider Implementation Reference:**
 
-See `storage/providers/postgresql/` for the production-ready implementation used by PostgreSQL, CloudSQL, and AlloyDB backends. This is the canonical example of:
-- Unified provider supporting multiple backends
-- Local vs server-side embedding strategy
-- Connection pooling and lifecycle management
-- Hybrid search with RRF reranking
-- Schema management and migrations
+See `storage/providers/lancedb/` (vector and graph roles) and `storage/providers/sqlite/` (events and file tracking) for the shipped implementations.
 
 ## Testing Your Extensions
 
@@ -1100,4 +766,4 @@ def test_search_configuration():
 - [Architecture Overview](../architecture/overview.md) - System architecture
 - [API Reference](../api-reference/api.md) - Complete API documentation
 - [Adapter Implementation Guide](../development/adapter-implementation-guide.md) - Detailed backend implementation guide
-- [Storage Providers](../../agentic-inquiry/storage/providers/) - Reference implementations
+- [Storage Providers](../../agentic_inquiry/storage/providers/) - Reference implementations

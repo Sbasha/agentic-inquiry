@@ -4,8 +4,6 @@
 
 The server binds to 127.0.0.1 by default. In short, a non-loopback bind requires an API key. MCP http and sse bind loopback only in 0.3.0. A non-loopback MCP bind without authentication is withdrawn; use a reverse proxy.
 
-> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
-
 ## Overview
 
 The Agentic Inquiry MCP Server implements multiple security layers to protect against common vulnerabilities and ensure safe operation in production environments. This guide documents security features, best practices, and configuration options.
