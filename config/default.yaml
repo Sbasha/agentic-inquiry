@@ -153,12 +153,13 @@ search:
     # RRF (Reciprocal Rank Fusion) is the standard for hybrid search
     reranker_type: "rrf"
     
-    # Parameters for the selected reranker
+    # Parameters for the selected reranker, passed to it as keyword arguments
     # For RRF: k controls the ranking fusion (default: 60)
     # For linear_combination: weight controls vector vs FTS balance (default: 0.7)
     # For cross_encoder/colbert: model_name optional
-    reranker_params:
-      k: 60  # RRF constant
+    # Empty here because a user config file merges over this one and cannot
+    # remove keys: a default RRF k would reach rerankers that reject it.
+    reranker_params: {}
     
     # Fallback to vector-only search when hybrid search fails or returns no results
     fallback_to_vector: true
@@ -653,6 +654,7 @@ connectors:
       - ".svn"
       - ".DS_Store"
       - "*.egg-info"
+      - "*.egg"
       - ".venv"
       - "venv"
       - "node_modules"
@@ -668,15 +670,30 @@ connectors:
       - ".exe"
       - ".dll"
       - ".so"
+      - ".dylib"
+      - ".a"
+      - ".lib"
+      - ".o"
+      - ".obj"
+      - ".class"
+      - ".pyc"
+      - ".pyo"
       - ".bin"
       - ".zip"
       - ".tar"
       - ".gz"
       - ".bz2"
+      - ".xz"
+      - ".7z"
+      - ".rar"
+      - ".jar"
+      - ".war"
+      - ".ear"
       - ".png"
       - ".jpg"
       - ".jpeg"
       - ".gif"
+      - ".bmp"
       - ".ico"
       - ".webp"
       - ".svg"
@@ -685,6 +702,8 @@ connectors:
       - ".avi"
       - ".mov"
       - ".wav"
+      - ".flac"
+      - ".mkv"
       # Note: .pdf, .doc, .docx are NOT included - they have dedicated parsers
       - ".woff"
       - ".woff2"
