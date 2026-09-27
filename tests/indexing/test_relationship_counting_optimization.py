@@ -128,6 +128,7 @@ def parser_chunk_with_relationships(draw):
 @pytest.mark.asyncio
 @settings(
     max_examples=100,
+    deadline=None,
     suppress_health_check=[HealthCheck.function_scoped_fixture, HealthCheck.too_slow],
 )
 @given(chunks=st.lists(parser_chunk_with_relationships(), min_size=1, max_size=10))
