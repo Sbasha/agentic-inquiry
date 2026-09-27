@@ -61,6 +61,7 @@ Working without a tool is tested where it is meaningful: C1 (full history in the
 
 - One model for all ingestion and answering: `claude-haiku-4-5-20251001`. One judge for every arm: `claude-sonnet-5`, checked against a second judge from another model family and against a person's review of 100 sampled verdicts.
 - One agent model for C3, `claude-sonnet-5`, with the same prompt, turn limit and tools apart from the one under test.
+- Calls that stand in for a direct API call (ingestion, answering, judging) run without extended thinking, as the API does by default. The Claude Code CLI turns thinking on unless told otherwise, so these calls switch it off. C3's agent runs are Claude Code sessions and keep its defaults.
 - One embedding model (BGE-m3) wherever a tool allows the choice.
 - One context budget for every retrieval arm in C1 and C2: 2,000 tokens, counted by one tokenizer. The no-tool arm has no budget by definition; its cost is what it pays for that.
 - One answer prompt for every arm, neutral about whether the context is excerpts, facts or notes.
