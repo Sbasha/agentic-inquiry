@@ -8,3 +8,6 @@ aa91eec5365425f1f9186f07a91c743e46b5d229
 
 # Merge main into feature/apply-ruff-format (reformats code main added)
 ad65de2be8f31ff40e02648823dbc2b814fb4cb2
+
+# Merge main into feature/apply-ruff-format, after #8
+4541ff77913f66e35c6ce717f5c054aa00a52029
