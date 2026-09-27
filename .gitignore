@@ -242,3 +242,6 @@ results/
 
 # Committed evaluation results and the test-run ledger (RFC-0003)
 !evals/results/
+
+# LoCoMo answer records quote a non-commercial research dataset; keep them local
+evals/results/locomo/
