@@ -3,7 +3,7 @@ UAT protocol registry.
 
 Maps test IDs to full protocol modules or falls back to generic smoke.
 """
-from typing import Callable, Optional
+from typing import Callable
 
 from . import smoke
 from . import test_01_core
