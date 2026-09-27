@@ -11,7 +11,7 @@ are implemented.
 import logging
 from typing import Any, Dict, List, Optional
 
-from agentic_inquiry.memory.protocols import MemoryStorageProtocol
+from agentic_inquiry.memory.protocols import UPDATABLE_FIELDS, MemoryStorageProtocol
 from agentic_inquiry.memory.models import MemoryItem
 
 logger = logging.getLogger(__name__)
@@ -154,16 +154,22 @@ class InMemoryMemoryAdapter(MemoryStorageProtocol):
 
         Returns:
             True if updated
+
+        Raises:
+            ValueError: If updates name a field outside UPDATABLE_FIELDS
         """
+        invalid = sorted(set(updates) - UPDATABLE_FIELDS)
+        if invalid:
+            raise ValueError(
+                f"Cannot update memory fields in place: {', '.join(invalid)}"
+            )
         entry = self._items.get(item_id)
         if not entry:
             return False
 
         item, vector = entry
-        # Update item fields directly (MemoryItem is a dataclass)
         for key, value in updates.items():
-            if hasattr(item, key):
-                setattr(item, key, value)
+            setattr(item, key, value)
         return True
 
     async def delete(

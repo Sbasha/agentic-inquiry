@@ -103,7 +103,7 @@ async def trace_command(args: argparse.Namespace) -> int:
             except ValueError:
                 print(f"Error: Invalid layer '{args.target_layer}'", file=sys.stderr)
                 print(
-                    f"Valid layers: {[l.value for l in ArchitecturalLayer]}",
+                    f"Valid layers: {[layer.value for layer in ArchitecturalLayer]}",
                     file=sys.stderr,
                 )
                 return 1
@@ -243,7 +243,7 @@ async def impact_command(args: argparse.Namespace) -> int:
             print(f"Affected Files: {len(impact.affected_files)}")
 
             if impact.affected_files:
-                print(f"\nFiles that may need changes:")
+                print("\nFiles that may need changes:")
                 for f in impact.affected_files[:10]:
                     print(f"  • {f}")
                 if len(impact.affected_files) > 10:

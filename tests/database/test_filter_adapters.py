@@ -19,7 +19,6 @@ from agentic_inquiry.database.filters import (
     eq,
     gt,
     is_in,
-    is_not_null,
     is_null,
     lt,
     ne,

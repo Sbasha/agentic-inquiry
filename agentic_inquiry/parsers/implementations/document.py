@@ -15,7 +15,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import logging
 import hashlib
-import threading
 from concurrent.futures import ThreadPoolExecutor
 
 from unstructured.partition.auto import partition
@@ -185,8 +184,9 @@ class DocumentParser:
                     file_path,
                 )
                 return ParsedDocument(
+                    doc_id=self._generate_doc_id(path),
+                    file_path=path,
                     chunks=[],
-                    relationships=[],
                     metadata={"skipped": True, "reason": "file_too_large"},
                 )
         except OSError:

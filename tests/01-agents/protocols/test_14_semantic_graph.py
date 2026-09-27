@@ -153,7 +153,6 @@ async def run(
     verify_count = verify_r.get("total", verify_r.get("total_results", 0))
 
     chunks_ok = total_chunks >= 100
-    data_ok = entities_count >= 20 or total_chunks >= 100
     embeddings_ok = verify_count > 0
 
     check(
@@ -488,7 +487,7 @@ async def run(
             if sg001_active
             else "mixed results",
         },
-        fail_msg=f"Cross-content search returned 0 results for 'embedding generation'",
+        fail_msg="Cross-content search returned 0 results for 'embedding generation'",
     )
     if t22_pass and not sg001_active:
         note_adoption(
@@ -893,8 +892,8 @@ async def run(
     )
     note_adoption(
         journal,
-        f"semantic similarity depends on embedding quality — conceptually related code that uses different "
-        f"terminology (e.g., 'cache' vs 'memoize') may not surface as similar, while grep finds exact terms reliably",
+        "semantic similarity depends on embedding quality — conceptually related code that uses different "
+        "terminology (e.g., 'cache' vs 'memoize') may not surface as similar, while grep finds exact terms reliably",
         "neutral",
     )
     log(test_id, f"T5.2: chunks={total_chunks}, entities={entities_count} -> PASS")

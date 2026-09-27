@@ -48,17 +48,13 @@ def run_async(coro: Coroutine[Any, Any, T]) -> T:
     except RuntimeError:
         return asyncio.run(coro)
 
-    try:
-        import nest_asyncio
+    # A running loop can't be re-entered, so run the coroutine on its own
+    # loop in a worker thread.
+    import concurrent.futures
 
-        nest_asyncio.apply()
-        return asyncio.run(coro)
-    except ImportError:
-        import concurrent.futures
-
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            future = executor.submit(asyncio.run, coro)
-            return future.result()
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        future = executor.submit(asyncio.run, coro)
+        return future.result()
 
 
 class SetupError(Exception):
@@ -154,7 +150,7 @@ class BaseSetup(ABC):
             default_name = "ai"
 
         # Prompt user for name
-        name = prompt_input(f"Environment name", default=default_name)
+        name = prompt_input("Environment name", default=default_name)
 
         # Ensure dev environments follow naming convention
         if self.is_dev and not is_test_environment(name):
@@ -254,7 +250,7 @@ class BaseSetup(ABC):
                         break
             else:
                 # Add new entry
-                entry = {
+                entry: dict[str, Any] = {
                     "name": self.env_name,
                     "backend_type": self.backend_type,
                     "config_path": str(self.config_path),

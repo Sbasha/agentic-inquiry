@@ -10,7 +10,7 @@ import asyncio
 import logging
 import time
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING, Union, cast
+from typing import Any, Dict, List, Tuple, TYPE_CHECKING, Union
 
 import numpy as np
 

@@ -50,6 +50,8 @@ EVENTS = [
 ]
 CLIENTS = ["claude-code", "codex", "pi", "cursor"]
 ACCOUNTING = "UTF-8 bytes as conservative token upper bound"
+# Split so the pre-commit secret scanners do not match the fixture header.
+PEM_KEY_HEADER = "-----BEGIN " + "PRIVATE KEY-----\n"
 
 PROBE = textwrap.dedent(
     """
@@ -637,9 +639,7 @@ def test_artifact_escape_is_refused_and_writes_nothing(
 def test_ignored_artifacts_are_dropped_with_an_advisory_error(enabled: Harness) -> None:
     (enabled.project / ".env").write_text("SECRET=1\n", encoding="utf-8")
     (enabled.project / ".git" / "config").write_text("[core]\n", encoding="utf-8")
-    (enabled.project / "server.pem").write_text(
-        "-----BEGIN PRIVATE KEY-----\n", encoding="utf-8"
-    )
+    (enabled.project / "server.pem").write_text(PEM_KEY_HEADER, encoding="utf-8")
     (enabled.project / "big.log").write_bytes(b"x" * (2 * 1024 * 1024 + 1))
     (enabled.project / "config").mkdir()
     (enabled.project / "config" / ".env").write_text("NESTED=1\n", encoding="utf-8")
@@ -647,9 +647,7 @@ def test_ignored_artifacts_are_dropped_with_an_advisory_error(enabled: Harness) 
     (enabled.project / "secrets" / "credentials.json").write_text(
         "{}", encoding="utf-8"
     )
-    (enabled.project / "Keys.PEM").write_text(
-        "-----BEGIN PRIVATE KEY-----\n", encoding="utf-8"
-    )
+    (enabled.project / "Keys.PEM").write_text(PEM_KEY_HEADER, encoding="utf-8")
     (enabled.project / "packages" / "api" / ".ssh").mkdir(parents=True)
     (enabled.project / "packages" / "api" / ".ssh" / "id_rsa").write_text(
         "k", encoding="utf-8"

@@ -427,19 +427,18 @@
             },
             "reranker_type": {
               "type": "string",
-              "description": "Reranking strategy to use for hybrid search. Options: rrf (recommended, lightweight), linear_combination (weighted scores), cross_encoder (requires sentence-transformers), colbert (requires colbert-ai), cohere (requires API key)",
+              "description": "Reranking strategy to use for hybrid search. Options: rrf (recommended, lightweight), linear_combination (weighted scores), cross_encoder (requires sentence-transformers), colbert (requires colbert-ai). All rerankers run locally.",
               "enum": [
                 "rrf",
                 "linear_combination",
                 "cross_encoder",
-                "colbert",
-                "cohere"
+                "colbert"
               ],
               "default": "rrf"
             },
             "reranker_params": {
               "type": "object",
-              "description": "Parameters for the selected reranker (e.g., k for RRF, api_key for API-based rerankers)",
+              "description": "Parameters for the selected reranker (e.g., k for RRF, model_name for cross_encoder)",
               "additionalProperties": true,
               "default": {}
             },

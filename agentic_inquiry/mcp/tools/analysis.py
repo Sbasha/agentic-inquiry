@@ -989,7 +989,6 @@ async def compare_patterns(
     """
     session_manager = services["session_manager"]
     entity_resolver = services["entity_resolver"]
-    db_manager = services["storage"]
 
     if not await session_manager.validate_session(session_id):
         from agentic_inquiry.mcp.utils.errors import MCPErrorHandler
@@ -1009,7 +1008,6 @@ async def compare_patterns(
             entity_id=target, project_id=project_id, depth=1
         )
         target_sig = {(d.relationship_type, d.name) for d in target_deps}
-        target_types = {d.relationship_type for d in target_deps}
 
         # Find reference entities matching pattern
         from agentic_inquiry.mcp.tools.info import list_entities
@@ -1035,7 +1033,9 @@ async def compare_patterns(
 
         # Build aggregate signature from reference entities
         ref_sigs = []
-        common_relationships = {}  # relationship -> count of refs that have it
+        common_relationships: dict[
+            str, int
+        ] = {}  # relationship -> count of refs that have it
         for ref in ref_entities[:5]:
             ref_name = ref.get("name", "")
             try:

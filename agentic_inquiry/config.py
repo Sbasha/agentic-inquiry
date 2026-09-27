@@ -4,8 +4,8 @@ This module provides a comprehensive configuration system with:
 - YAML configuration file loading
 - JSON schema validation
 - Environment variable overrides
-- Configuration priority: env vars > project root > defaults
-- Automatic detection of agentic-inquiry.yaml in project root
+- Configuration priority: env vars > user config file > packaged defaults
+- Automatic detection of agentic-inquiry.yaml in the current directory
 """
 
 from __future__ import annotations
@@ -18,7 +18,7 @@ import warnings
 from dataclasses import dataclass, field
 from importlib.resources import files as _resource_files
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional, Set, Tuple
 
 try:
     import yaml
@@ -350,7 +350,7 @@ class HybridSearchConfig:
     rerank_by_graph: bool = True
 
     # Reranking strategy configuration
-    reranker_type: str = "linear_combination"
+    reranker_type: str = "rrf"
     reranker_params: Dict[str, Any] = field(default_factory=dict)
 
     # RRF (Reciprocal Rank Fusion) configuration
@@ -1187,9 +1187,9 @@ class Config:
     """Main configuration class for Agentic Inquiry.
 
     Configuration is loaded with the following priority (highest to lowest):
-    1. Environment variables (AI_*)
-    2. Project root configuration (agentic-inquiry.yaml)
-    3. Default configuration (config/default.yaml)
+    1. Environment variables (INQUIRY_*)
+    2. One user config file (see ``_find_config_file``), merged key by key
+    3. Packaged default configuration (config/default.yaml)
 
     Example:
         >>> config = Config.load()
@@ -1231,16 +1231,20 @@ class Config:
         """Load configuration from file with environment variable overrides.
 
         Configuration loading priority:
-        1. Environment variables (AI_*)
-        2. Specified config_path or auto-detected agentic-inquiry.yaml
-        3. Default configuration (config/default.yaml)
+        1. Environment variables (INQUIRY_*)
+        2. Specified config_path or the auto-detected user config file
+        3. Packaged default configuration (config/default.yaml)
+
+        The user config file is merged over the packaged defaults before
+        validation, so it only needs the keys it changes. Mappings merge key
+        by key; lists and scalars replace the default.
 
         Args:
-            config_path: Optional path to configuration file. If None, automatically
-                searches for agentic-inquiry.yaml in project root, then falls back to
-                config/default.yaml.
-            skip_schema_validation: If True, skip JSON schema validation. Useful for
-                loading partial/overlay configs from environment directories.
+            config_path: Optional path to configuration file. If None, uses
+                INQUIRY_CONFIG, ./agentic-inquiry.yaml or
+                ~/.agentic-inquiry/config.yaml, whichever is found first.
+            skip_schema_validation: If True, skip JSON schema validation of the
+                merged configuration.
 
         Returns:
             Config instance with loaded configuration
@@ -1255,18 +1259,7 @@ class Config:
                     "Install it with: pip install pyyaml"
                 )
 
-            # Determine configuration file to load
-            config_file = cls._find_config_file(config_path)
-            logger.debug("Loading configuration from: %s", config_file)
-
-            # Load configuration data
-            try:
-                with open(config_file, "r") as f:
-                    config_data = yaml.safe_load(f) or {}
-            except Exception as e:
-                raise ConfigurationError(
-                    f"Failed to load configuration from {config_file}: {e}"
-                )
+            config_data, config_file = cls._load_layered_data(config_path)
 
             # Validate against schema if jsonschema is available
             if skip_schema_validation:
@@ -1310,8 +1303,8 @@ class Config:
 
         Args:
             overlay_path: Path to overlay configuration file (e.g., environment config)
-            base_config_path: Path to base configuration. If None, uses the default
-                configuration (config/default.yaml).
+            base_config_path: User config file merged over the packaged defaults
+                to form the base. If None, it is auto-detected as in ``load``.
 
         Returns:
             Config instance with merged configuration
@@ -1332,33 +1325,17 @@ class Config:
                     "Install it with: pip install pyyaml"
                 )
 
-            # Load base configuration
-            base_file = cls._find_config_file(base_config_path)
-            logger.debug("Loading base configuration from: %s", base_file)
+            base_data, base_file = cls._load_layered_data(base_config_path)
 
-            try:
-                with open(base_file, "r") as f:
-                    base_data = yaml.safe_load(f) or {}
-            except Exception as e:
-                raise ConfigurationError(f"Failed to load base configuration: {e}")
-
-            # Load overlay configuration
             overlay_file = Path(overlay_path)
             if not overlay_file.exists():
                 raise ConfigurationError(
                     f"Overlay configuration not found: {overlay_path}"
                 )
 
-            logger.debug("Loading overlay configuration from: %s", overlay_file)
-
-            try:
-                with open(overlay_file, "r") as f:
-                    overlay_data = yaml.safe_load(f) or {}
-            except Exception as e:
-                raise ConfigurationError(f"Failed to load overlay configuration: {e}")
-
-            # Deep merge overlay onto base
-            merged_data = cls._deep_merge(base_data, overlay_data)
+            merged_data = cls._deep_merge(
+                base_data, cls._read_yaml_mapping(overlay_file)
+            )
 
             # Validate merged configuration
             if jsonschema is not None:
@@ -1620,14 +1597,57 @@ class Config:
         return None
 
     @classmethod
-    def _find_config_file(cls, config_path: Optional[str] = None) -> Path:
-        """Find configuration file to load.
+    def _load_layered_data(
+        cls, config_path: Optional[str] = None
+    ) -> Tuple[Dict[str, Any], Path]:
+        """Read the packaged default.yaml with the user config file merged on top.
 
-        Priority:
+        Returns the merged data and the file it came from: the user file when
+        one was found, otherwise the packaged default.
+        """
+        default_file = cls._packaged_config_file("default.yaml")
+        if default_file is None:
+            raise ConfigurationError(
+                "Default configuration not found (looked for "
+                f"{Path(__file__).parent.parent / 'config' / 'default.yaml'}). "
+                "Package installation may be corrupted."
+            )
+        data = cls._read_yaml_mapping(default_file)
+
+        user_file = cls._find_config_file(config_path)
+        if user_file is None:
+            logger.debug("Using default configuration: %s", default_file)
+            return data, default_file
+
+        logger.debug("Merging %s over default configuration", user_file)
+        return cls._deep_merge(data, cls._read_yaml_mapping(user_file)), user_file
+
+    @staticmethod
+    def _read_yaml_mapping(path: Path) -> Dict[str, Any]:
+        """Parse a config file whose top level must be a mapping (empty reads as {})."""
+        try:
+            with open(path, "r") as f:
+                data = yaml.safe_load(f)
+        except Exception as e:
+            raise ConfigurationError(f"Failed to load configuration from {path}: {e}")
+        if data is None:
+            return {}
+        if not isinstance(data, dict):
+            raise ConfigurationError(
+                f"Configuration file {path} must be a YAML mapping of sections "
+                f"(storage:, search:, ...), got {type(data).__name__}"
+            )
+        return data
+
+    @classmethod
+    def _find_config_file(cls, config_path: Optional[str] = None) -> Optional[Path]:
+        """Find the user configuration file, or None when there is none.
+
+        The first match wins; files are not stacked on each other:
         1. Specified config_path
         2. INQUIRY_CONFIG environment variable
-        3. agentic-inquiry.yaml in project root
-        4. config/default.yaml (package default)
+        3. agentic-inquiry.yaml in the current directory
+        4. ~/.agentic-inquiry/config.yaml
         """
         if config_path is not None:
             path = Path(config_path)
@@ -1658,23 +1678,7 @@ class Config:
             logger.debug("Found global configuration: %s", global_config)
             return global_config
 
-        # Fall back to the package default config. In an installed wheel this
-        # ships inside the package (agentic_inquiry/config_defaults/) and is found
-        # via importlib.resources; in a source checkout it lives in the
-        # top-level config/ dir, which the resolver falls back to.
-        default_config = cls._packaged_config_file("default.yaml")
-
-        if default_config is None or not default_config.exists():
-            searched = default_config or (
-                Path(__file__).parent.parent / "config" / "default.yaml"
-            )
-            raise ConfigurationError(
-                f"Default configuration not found (looked for {searched}). "
-                "Package installation may be corrupted."
-            )
-
-        logger.debug("Using default configuration: %s", default_config)
-        return default_config
+        return None
 
     @classmethod
     def _validate_config(cls, config_data: Dict[str, Any]) -> None:

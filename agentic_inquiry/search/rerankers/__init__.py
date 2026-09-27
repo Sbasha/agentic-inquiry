@@ -8,7 +8,6 @@ Available rerankers:
 - LinearCombinationReranker: Weighted score combination
 - CrossEncoderReranker: Joint query-document encoding (requires sentence-transformers)
 - ColBERTReranker: Late interaction reranking (requires colbert-ai)
-- CohereReranker: Cohere API reranking (requires API key)
 
 Usage:
     from agentic_inquiry.search.rerankers import get_reranker, RRFReranker
@@ -45,11 +44,6 @@ try:
 except ImportError:
     ColBERTReranker = None  # type: ignore[misc, assignment]
 
-try:
-    from agentic_inquiry.search.rerankers.cohere import CohereReranker
-except ImportError:
-    CohereReranker = None  # type: ignore[misc, assignment]
-
 __all__ = [
     # Protocol and types
     "RerankerProtocol",
@@ -63,5 +57,4 @@ __all__ = [
     "LinearCombinationReranker",
     "CrossEncoderReranker",
     "ColBERTReranker",
-    "CohereReranker",
 ]

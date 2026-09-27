@@ -51,10 +51,12 @@ if TYPE_CHECKING:
     from agentic_inquiry.models.document_chunk import DocumentChunk
     from agentic_inquiry.models.graph_entity import GraphEntity
     from agentic_inquiry.models.graph_relationship import GraphRelationship
+    from agentic_inquiry.storage.capabilities import ProviderCapabilities
     from agentic_inquiry.storage.protocols.vector import VectorStorageProtocol
     from agentic_inquiry.storage.protocols.graph import GraphStorageProtocol
     from agentic_inquiry.storage.protocols.events import EventStorageProtocol
     from agentic_inquiry.storage.protocols.file_tracker import FileTrackerProtocol
+    from agentic_inquiry.storage.capabilities import ProviderCapabilities
     from agentic_inquiry.storage.pool import BackendPoolManager
 
 logger = logging.getLogger(__name__)
@@ -143,7 +145,7 @@ class StorageFacade:
             return obj
         if hasattr(obj, "model_dump"):
             return obj.model_dump()
-        if dataclasses.is_dataclass(obj):
+        if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
             return dataclasses.asdict(obj)
         # asyncpg.Record and similar mapping types
         if hasattr(obj, "keys"):
