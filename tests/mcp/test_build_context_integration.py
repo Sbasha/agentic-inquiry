@@ -23,7 +23,7 @@ from agentic_inquiry.config import Config
 from agentic_inquiry.indexing.pipeline import IndexingPipeline
 from agentic_inquiry.mcp.tools.context import build_context
 from agentic_inquiry.mcp.tools.memory import save_memory
-from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.factories import close_mcp_services, create_mcp_services
 
 
 @pytest_asyncio.fixture
@@ -171,16 +171,7 @@ async def indexed_services(test_project_dir):
 
     yield services, session["session_id"], project_id
 
-    # Cleanup - stop all services with background tasks
-    event_system = services.get("event_system")
-    if event_system:
-        await event_system.stop()
-
-    memory_system = services.get("memory_system")
-    if memory_system:
-        await memory_system.shutdown()
-
-    await db_manager.close()
+    await close_mcp_services(services)
     shutil.rmtree(temp_db)
 
 
