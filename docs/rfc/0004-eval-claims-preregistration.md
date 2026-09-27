@@ -85,8 +85,9 @@ Working without a tool is tested where it is meaningful: C1 (full history in the
   - `cognee` is not applicable. Its released code search answers structured symbol operations, not issue text, and its text pipeline would run LLM extraction over every file of every repository snapshot.
 - **C3.**
   - The agent gets at most 14 turns and must end with up to five `path:line` locations. A task counts as solved when one of them falls inside a changed function.
-  - Each tool arm gets that tool's own published agent instructions.
-  - Each arm's tool-call rate is reported.
+  - Every arm has Read, Grep and Glob. Each tool arm adds Bash limited to that tool's own command line, which is how both tools integrate with Claude Code: `graphify query`, `graphify path` and `graphify explain` for Graphify, `ai search` for `inquiry`.
+  - Graphify's arm gets Graphify's published `CLAUDE.md` rules (`graphify/always_on/claude-md.md`) verbatim, with its graph at `graphify-out/graph.json`. `inquiry` ships its guidance as a Grep hook that suggests its search; hooks and slash commands do not run in a headless session, so that advice is given as a standing instruction (`INQUIRY_GUIDANCE` in `evals/claims.py`).
+  - Each arm's share of runs that used its tool is reported.
 - **Time.**
   - Wall-clock time is measured at one fixed concurrency for every tool.
   - LLM time is the sum of provider-reported API durations. Calls made through the Claude Code CLI carry a fixed per-call overhead (its system prompt and start-up), measured once on an empty prompt and subtracted from token counts and time.
@@ -106,7 +107,7 @@ Working without a tool is tested where it is meaningful: C1 (full history in the
 
 - This RFC is committed before any run. Each claim runs once. Every result is published, including failures.
 - A run records its start before any computation and its results file's sha256 at the end, and the next run cannot start until both are committed.
-- `inquiry` is frozen at `code_hash` `490bf507edf061b0` (commit `e32fb55`).
+- `inquiry` is frozen at commit `e32fb55` plus one fix, `111d4ca`: `ai search` closed no storage, so the process never exited after printing results. The fix changes no retrieval output (C1 and C2 query the search service directly, not the command line). Frozen `code_hash` `a45c43efd352e8db`; the index key is unchanged.
 
 **Already known, disclosed:**
 - `inquiry`'s settings were chosen on the dev splits of LongMemEval, LOCOMO, SciFact and SWE-bench.
