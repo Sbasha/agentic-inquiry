@@ -5,3 +5,6 @@
 
 # chore(format): apply ruff format repo-wide
 aa91eec5365425f1f9186f07a91c743e46b5d229
+
+# Merge main into feature/apply-ruff-format (reformats code main added)
+ad65de2be8f31ff40e02648823dbc2b814fb4cb2
