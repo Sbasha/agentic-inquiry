@@ -263,6 +263,7 @@ class TestConfigurationIntegration:
 
 @pytest.mark.asyncio
 class TestIntegrationPerformance:
+    @pytest.mark.perf
     async def test_indexing_performance(
         self, indexing_pipeline_fixture, temp_project_root
     ):

@@ -45,7 +45,7 @@ async def _wait_for_indexing_completion(
     return {"status": "timeout", "error": "Indexing did not complete in time"}
 
 
-from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.factories import close_mcp_services, create_mcp_services
 from agentic_inquiry.mcp.tools.knowledge import add_knowledge
 from agentic_inquiry.mcp.tools.analysis import understand_entity, analyze_impact
 
@@ -61,14 +61,13 @@ async def test_services(tmp_path):
     services = await create_mcp_services(config=config, project_id="test_entity_ops")
 
     # Mock event system to avoid actual event emission
+    event_system = services["event_system"]
     services["event_system"] = MagicMock()
     services["event_system"].emit = AsyncMock(return_value=None)
 
     yield services
 
-    # Cleanup
-    if "storage" in services:
-        await services["storage"].close()
+    await close_mcp_services({**services, "event_system": event_system})
 
 
 @pytest_asyncio.fixture

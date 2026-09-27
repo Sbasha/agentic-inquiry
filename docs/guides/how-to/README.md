@@ -5,10 +5,9 @@ for solving specific problems.
 
 This directory is **empty pending the first migration.** Today, the
 operational how-to content lives under
-[`../../backends/`](../../backends/) (per-backend setup),
-[`../../storage/`](../../storage/) (index configuration / maintenance /
-schema migration), and [`../../mcp/`](../../mcp/) (MCP server
-configuration / deployment / troubleshooting).
+[`../../backends/`](../../backends/) (per-backend setup) and
+[`../../mcp/`](../../mcp/) (MCP server configuration / deployment /
+troubleshooting).
 
 **First-fill target.** Move one of the per-backend setup pages (e.g.
 `backends/lancedb.md` → `how-to/set-up-lancedb.md`) the next time it is

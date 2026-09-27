@@ -192,8 +192,11 @@ class FallbackTextParser:
             )
         total = len(chunks)
         for index, chunk in enumerate(chunks):
-            chunk.metadata["chunk_index"] = index
-            chunk.metadata["total_chunks"] = total
+            chunk.metadata = {
+                **(chunk.metadata or {}),
+                "chunk_index": index,
+                "total_chunks": total,
+            }
         return chunks
 
     async def can_parse(self, file_path: str) -> bool:

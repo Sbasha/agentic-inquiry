@@ -120,7 +120,7 @@ This creates a local LanceDB environment; it works out of the box with zero conf
 /ai:index /path/to/your/project
 ```
 
-This parses all source files (10+ languages via [tree-sitter](https://tree-sitter.github.io/tree-sitter/) AST parsing) and documents (DOCX, PDF, DOC), extracts entities and relationships, generates embeddings, and stores everything in your chosen backend. Indexing speed depends on backend — LanceDB runs locally, AlloyDB can index 16K files in ~17 minutes with server-side embedding.
+This parses all source files (10+ languages via [tree-sitter](https://tree-sitter.github.io/tree-sitter/) AST parsing) and documents (DOCX, PDF, DOC), extracts entities and relationships, generates embeddings, and stores everything locally: LanceDB for chunks, embeddings and the entity graph, SQLite for events and file tracking.
 
 ### 5. Start Searching
 
@@ -193,7 +193,7 @@ Save and recall project insights across Claude Code sessions:
 /ai:memory recall "authentication"
 ```
 
-Memory has three tiers: working (current session), episodic (weeks), and semantic (permanent). Important insights are automatically promoted to longer-lived tiers through a consolidation engine that runs in the background.
+Memory has three tiers: working (current session), episodic (weeks), and semantic (long-term). Important insights are automatically promoted to longer-lived tiers through a consolidation engine that runs in the background.
 
 ### Onboarding
 
@@ -273,23 +273,22 @@ Documents and code share the same search index, so queries like `/ai:search "dep
 
 ### Configuration
 
-Configuration loads with precedence: **env vars > YAML > defaults**.
+Configuration loads with precedence: **env vars > environment overlay > config file > packaged defaults**.
 
-Create `agentic-inquiry.yaml` in your project root to override defaults:
+Create `agentic-inquiry.yaml` in your project root with only the keys you want to change:
 
 ```yaml
-storage:
-  root: "./.agentic-inquiry"
-  backend: lancedb
-
 search:
   hybrid_search:
-    reranker_type: rrf
     reranker_params:
-      k: 60
+      k: 30
   deduplication:
-    max_results_per_file: 1
+    max_results_per_file: 2
 ```
+
+The config file is merged over the packaged defaults. Mappings merge key by key, and lists and scalars replace the default value, so a config file can add or change keys but cannot remove one the defaults define.
+
+Only one config file is used: the first found of a `--config` path, `$INQUIRY_CONFIG`, `./agentic-inquiry.yaml`, and `~/.agentic-inquiry/config.yaml`. A project file hides the global one entirely. A `--config` path inside an `envs/` directory is the exception: it is applied as an environment overlay on top of the auto-detected config file.
 
 For per-environment config (e.g., different backends for dev vs production), use overlays:
 
@@ -510,7 +509,6 @@ Governance and process documents:
 | [docs/backends/](docs/backends/) | Storage backend setup (LanceDB) |
 | [docs/design/](docs/design/) | Normative specs (filter AST, query semantics, schema, embedding strategy) |
 | [docs/development/](docs/development/) | Async best practices, parser guidelines, security, adapters |
-| [docs/storage/](docs/storage/) | Index configuration, maintenance, schema migration |
 | [docs/mcp/](docs/mcp/) | MCP server configuration, deployment, troubleshooting |
 | [docs/guides/](docs/guides/) | User docs (Diátaxis-organized; topic dirs above migrate here as touched) |
 | [docs/product/](docs/product/) | Roadmap / changelog hub (empty — root [CHANGELOG.md](CHANGELOG.md) serves this role today) |

@@ -56,8 +56,9 @@ class TestIsTestEnvironment:
 class TestGetDataDir:
     """Tests for get_data_dir and get_global_dir functions."""
 
-    def test_default_returns_global(self):
+    def test_default_returns_global(self, monkeypatch):
         """Default (no workspace) returns global ~/.agentic-inquiry/ directory."""
+        monkeypatch.delenv("INQUIRY_HOME", raising=False)
         data_dir = get_data_dir()
         assert data_dir == Path.home() / GLOBAL_DIR_NAME
 
@@ -66,8 +67,9 @@ class TestGetDataDir:
         data_dir = get_data_dir(tmp_path)
         assert data_dir == tmp_path / GLOBAL_DIR_NAME
 
-    def test_global_dir(self):
+    def test_global_dir(self, monkeypatch):
         """get_global_dir returns ~/.agentic-inquiry/."""
+        monkeypatch.delenv("INQUIRY_HOME", raising=False)
         assert get_global_dir() == Path.home() / GLOBAL_DIR_NAME
 
     def test_global_dir_ai_home_override(self, tmp_path):

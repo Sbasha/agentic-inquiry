@@ -34,10 +34,18 @@ import warnings
 
 import pytest
 import pytest_asyncio
+from hypothesis import settings
+
+# Property tests assert behaviour, not speed; a per-example deadline only
+# fails them when the machine is loaded.
+settings.register_profile("agentic-inquiry", deadline=None)
+settings.load_profile(os.environ.get("HYPOTHESIS_PROFILE", "agentic-inquiry"))
 
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
+
+pytest_plugins = ["tests.helpers.thread_watchdog"]
 
 # Runtime state (ledgers, the persistent embedding cache) lives under
 # INQUIRY_HOME; tests must never write into the developer's real home.
@@ -80,6 +88,9 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: tests exceeding time budget")
     config.addinivalue_line("markers", "model: tests that load neural network models")
     config.addinivalue_line("markers", "contracts: storage provider contract tests")
+    config.addinivalue_line(
+        "markers", "perf: wall-clock budget tests; run with INQUIRY_PERF_TESTS=1"
+    )
 
 
 def pytest_collection_modifyitems(items):
@@ -95,8 +106,17 @@ def pytest_collection_modifyitems(items):
     - tests/golden/     -> @pytest.mark.golden
     - tests/stress/     -> @pytest.mark.stress
     - tests/adapters/   -> @pytest.mark.adapters
+
+    Tests marked ``perf`` assert wall-clock budgets that a loaded machine
+    misses, so they are skipped unless INQUIRY_PERF_TESTS=1.
     """
+    run_perf = os.environ.get("INQUIRY_PERF_TESTS") == "1"
+    skip_perf = pytest.mark.skip(
+        reason="wall-clock budget test; set INQUIRY_PERF_TESTS=1"
+    )
     for item in items:
+        if not run_perf and item.get_closest_marker("perf"):
+            item.add_marker(skip_perf)
         path = str(item.fspath)
         if "/unit/" in path:
             item.add_marker(pytest.mark.unit)
@@ -110,95 +130,6 @@ def pytest_collection_modifyitems(items):
             item.add_marker(pytest.mark.stress)
         elif "/adapters/" in path:
             item.add_marker(pytest.mark.adapters)
-
-
-def pytest_sessionfinish(session, exitstatus):
-    """Clean up all resources after test session completes.
-
-    This ensures proper shutdown of:
-    - agentic-inquiry executors (LanceDB, embedding thread pools)
-    - LanceDB old versions (prevents disk space bloat)
-    - Any remaining asyncio resources
-    - Stray non-daemon threads
-    """
-    import gc
-    import threading
-    import time
-
-    # 1. Shutdown agentic-inquiry executors (primary source of stuck threads)
-    try:
-        from agentic_inquiry.executors import shutdown_executors
-
-        shutdown_executors(wait=True, cancel_futures=True)
-    except Exception:
-        pass
-
-    # 2. Clean up LanceDB old versions to prevent disk space bloat
-    # Tests create thousands of versions; cleanup with aggressive timing
-    try:
-        from datetime import timedelta
-        import lancedb
-        import os
-
-        lancedb_path = ".agentic-inquiry/lancedb"
-        if os.path.exists(lancedb_path):
-            db = lancedb.connect(lancedb_path)
-            for table_name in db.table_names():
-                try:
-                    table = db.open_table(table_name)
-                    # Compact fragments first
-                    table.optimize.compact_files()
-                    # Aggressive cleanup: 60 seconds (removes almost all test versions)
-                    table.cleanup_old_versions(
-                        older_than=timedelta(seconds=60), delete_unverified=True
-                    )
-                except Exception:
-                    pass  # Ignore individual table errors
-    except Exception:
-        pass  # Ignore if lancedb not available or path doesn't exist
-
-    # 3. Force garbage collection
-    gc.collect()
-
-    # 4. Shutdown any remaining ThreadPoolExecutors
-    try:
-        import concurrent.futures.thread
-
-        for executor in list(concurrent.futures.thread._threads_queues.keys()):
-            try:
-                executor.shutdown(wait=False, cancel_futures=True)
-            except Exception:
-                pass
-        concurrent.futures.thread._threads_queues.clear()
-    except Exception:
-        pass
-
-    # 5. Wait briefly for threads to clean up
-    start = time.time()
-    while time.time() - start < 3.0:
-        non_daemon = [
-            t
-            for t in threading.enumerate()
-            if t is not threading.main_thread()
-            and not t.daemon
-            and t.is_alive()
-            and not t.name.startswith("pytest")
-        ]
-        if not non_daemon:
-            break
-        time.sleep(0.1)
-
-    # 6. Force exit if threads still stuck (prevents hanging in CI)
-    non_daemon = [
-        t
-        for t in threading.enumerate()
-        if t is not threading.main_thread() and not t.daemon and t.is_alive()
-    ]
-    if non_daemon:
-        import os
-
-        # Don't print - just exit cleanly
-        os._exit(exitstatus)
 
 
 class _DummyEmbedder:
@@ -243,11 +174,25 @@ def reset_embedding_registry():
 
 
 @pytest.fixture
-def mock_config():
-    """Provide a test configuration instance."""
+def mock_config(tmp_path):
+    """Provide the loaded configuration with every store under ``tmp_path``.
+
+    ``Config.load()`` roots storage at the cwd's ``./.agentic-inquiry`` and
+    may carry named ``backends`` from a developer's ``ai setup``; either
+    would put test data in a real store.
+    """
     from agentic_inquiry.config import Config
 
-    return Config.load()
+    config = Config.load()
+    config.storage.root = str(tmp_path)
+    config.storage.backends = None
+    for path in (
+        config.storage.get_lancedb_path(),
+        config.storage.get_event_store_path(),
+        config.storage.get_file_tracker_path(),
+    ):
+        assert path.is_relative_to(tmp_path.resolve()), path
+    return config
 
 
 @pytest.fixture
@@ -314,6 +259,8 @@ def integration_config(tmp_path):
         SentenceTransformerConfig,
         ParsersConfig,
         ParserConfig,
+        UnifiedCodeParserConfig,
+        FallbackTextParserConfig,
         MemoryConfig,
         WorkingMemoryConfig,
         EpisodicMemoryConfig,
@@ -374,9 +321,9 @@ def integration_config(tmp_path):
 
     # Parsers configuration (required)
     config.parsers = ParsersConfig(
-        unified_code=ParserConfig(enabled=True, priority=100),
+        unified_code=UnifiedCodeParserConfig(enabled=True, priority=100),
         document=ParserConfig(enabled=True, priority=50),
-        fallback_text=ParserConfig(enabled=True, priority=0),
+        fallback_text=FallbackTextParserConfig(enabled=True, priority=0),
     )
 
     # Memory configuration (optional but commonly used)

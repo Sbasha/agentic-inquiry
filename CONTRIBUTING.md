@@ -6,6 +6,7 @@
 git clone https://github.com/sbasha/agentic-inquiry.git
 cd agentic-inquiry
 uv sync
+uvx pre-commit install             # Git hooks: secret scan, ruff, file hygiene
 uv run --env-file .env pytest -x   # Verify setup
 ```
 
@@ -41,6 +42,39 @@ uv run --env-file .env ruff check . && \
 uv run --env-file .env mypy agentic_inquiry/ && \
 uv run --env-file .env pytest
 ```
+
+### Pre-commit hooks
+
+`uvx pre-commit install` points the Git hook at uv's cache. If commits fail
+with "`pre-commit` not found" after `uv cache clean`, run it again. The ruff
+hooks call `uv`, so it must be on the `PATH` your Git client uses.
+
+The ruff hooks format and lint only the files you stage. Lint findings ruff
+cannot fix on its own must be fixed by hand before the commit passes, even when
+you did not introduce them.
+
+### Secret scanning
+
+The detect-secrets hook compares staged files with `.secrets.baseline`, which
+lists audited false positives. The hook suppresses every entry in the baseline,
+so each one must be audited; a second hook rejects a baseline with unaudited
+entries or entries marked as real secrets.
+
+When the hook blocks a string that is not a secret, either add
+`# pragma: allowlist secret` to that line, or add it to the baseline with the
+detect-secrets version the hook pins and audit it:
+
+```bash
+uvx --from detect-secrets==1.4.0 detect-secrets scan --baseline .secrets.baseline
+uvx --from detect-secrets==1.4.0 detect-secrets audit .secrets.baseline   # "y" marks a false positive
+```
+
+If the string is a real secret, remove it and rotate it; never add it to the
+baseline.
+
+If the hook reports that the baseline file was updated, it only moved line
+numbers or dropped entries for strings that no longer exist: stage
+`.secrets.baseline` and commit again.
 
 ## Code Style
 
@@ -80,6 +114,7 @@ uv run --env-file .env pytest tests/path/test_file.py  # Specific file
 uv run --env-file .env pytest -k parser                # By pattern
 uv run --env-file .env pytest -m unit                  # By marker (unit/integration/golden/stress/adapters)
 uv run --env-file .env pytest --cov=agentic_inquiry       # With coverage
+INQUIRY_PERF_TESTS=1 uv run --env-file .env pytest -m perf  # Wall-clock budget tests (skipped by default)
 ```
 
 ### Fixture naming

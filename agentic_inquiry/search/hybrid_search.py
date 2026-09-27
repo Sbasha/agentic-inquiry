@@ -6,7 +6,7 @@ import asyncio
 import logging
 import time
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, FrozenSet, List, Optional, Union
 
 from agentic_inquiry.config import Config
 from agentic_inquiry.constants import CURRENT_PROJECT_ID
@@ -69,7 +69,6 @@ VALID_RERANKER_TYPES: FrozenSet[str] = frozenset(
         "linear_combination",  # Weighted score combination (lightweight)
         "cross_encoder",  # Joint query-document encoding (requires model)
         "colbert",  # Late interaction reranking (requires model)
-        "cohere",  # Cohere API reranking (requires API key)
     }
 )
 
@@ -192,7 +191,7 @@ class HybridSearchService:
             RerankerProtocol implementation. Always returns a valid reranker,
             falling back to RRF if the configured type is unavailable.
             For RRF and linear_combination, returns our protocol-based rerankers.
-            For ML-based rerankers (cohere, colbert, cross_encoder), returns
+            For ML-based rerankers (colbert, cross_encoder), returns
             our protocol-based wrappers.
         """
         hybrid_config = self.config.search.hybrid_search
@@ -217,7 +216,7 @@ class HybridSearchService:
                 vector_weight=vector_weight, fts_weight=fts_weight
             )
 
-        # For ML-based rerankers (cross_encoder, colbert, cohere), use registry
+        # For ML-based rerankers (cross_encoder, colbert), use registry
         # These may fail to load if optional dependencies are not installed
         reranker = get_reranker(reranker_type, params)
         if reranker is not None:
@@ -226,7 +225,7 @@ class HybridSearchService:
 
         # Fallback to RRF if reranker fails to initialize
         # This can happen when optional dependencies (e.g., sentence-transformers,
-        # colbert-ai, cohere) are not installed
+        # colbert-ai) are not installed
         logger.warning(
             "Reranker '%s' failed to initialize (missing dependencies?), "
             "falling back to RRF. Install required packages for %s support.",
@@ -343,7 +342,7 @@ class HybridSearchService:
 
     async def hybrid_search(
         self,
-        query_vector: List[float],
+        query_vector: Union[List[float], str],
         query_fts: str,
         sanitized_fts_query: str,
         vector_search_fn,
@@ -367,7 +366,8 @@ class HybridSearchService:
         results whenever enough candidates exist.
 
         Args:
-            query_vector: Query embedding for vector search.
+            query_vector: Query embedding, or raw query text for server-side
+                embedding; passed through to ``vector_search_fn``.
             query_fts: Query text for full-text search.
             sanitized_fts_query: Sanitized query text passed to the reranker.
             vector_search_fn: Coroutine returning ``List[SearchResult]``.

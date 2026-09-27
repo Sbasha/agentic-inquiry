@@ -5,7 +5,7 @@ database schemas, tables, and indexes.
 """
 
 import logging
-from typing import Any, Callable, Dict, List, Optional, Sequence
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Sequence
 
 from agentic_inquiry.database.tables import remove_legacy_fts_index
 from agentic_inquiry.storage.errors import DimensionMismatch, SchemaMismatchError
@@ -28,7 +28,7 @@ class LanceDBSchemaManager:
     def __init__(
         self,
         ensure_db_fn: Callable[[], Any],
-        run_sync_fn: Callable[[Callable, ...], Any],  # type: ignore[misc]
+        run_sync_fn: Callable[..., Awaitable[Any]],
         tables: Dict[str, Any],
         table_configs: Dict[str, Dict[str, Sequence[str]]],
         similarity_metric: str = DEFAULT_SIMILARITY_METRIC,
@@ -73,7 +73,7 @@ class LanceDBSchemaManager:
         as an opaque arrow/schema error at first write. Raising
         :class:`SchemaMismatchError` here gives operators a clear signal.
         """
-        db = await self._run_sync(self._ensure_db)  # type: ignore[call-arg]
+        db = await self._run_sync(self._ensure_db)
 
         for table_name, config in self._table_configs.items():
             try:
@@ -111,9 +111,9 @@ class LanceDBSchemaManager:
                         exc_info=True,
                     )
                     existing_indices = []
-                await self._run_sync(
+                await self._run_sync(  # type: ignore[call-arg]
                     self._ensure_indexes_sync, table_name, table, existing_indices
-                )  # type: ignore[call-arg]
+                )
 
     def _check_vector_dimensions(
         self,
@@ -194,9 +194,9 @@ class LanceDBSchemaManager:
                 # Check if table exists in our cache
                 table = self._tables.get(table_name)
                 if not table:
-                    table_result["errors"].append(
+                    table_result["errors"].append(  # type: ignore[attr-defined]
                         f"Table {table_name} not found in cache"
-                    )  # type: ignore[attr-defined]
+                    )
                     results["valid"] = False
                 else:
                     table_result["exists"] = True

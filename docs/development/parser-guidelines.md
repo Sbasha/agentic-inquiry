@@ -2,171 +2,22 @@
 
 This document provides essential guidelines for implementing parsers that work correctly with the indexing pipeline and LanceDB storage.
 
-## Critical Constraints
+## Chunk metadata
 
-### Metadata Field Constraints
+`ParserChunk.metadata` accepts any JSON-serializable values: strings,
+numbers, booleans, `None`, lists and nested dicts. The indexing pipeline
+serializes the whole dict to a JSON string in the `metadata.data` column of
+`document_chunks` (`agentic_inquiry/indexing/schema_processor.py`), so the
+table schema does not change with the keys a parser emits.
 
-**IMPORTANT**: The `metadata` dict in `ParserChunk` has strict constraints due to how LanceDB handles schema evolution. These constraints are now **enforced programmatically using Pydantic validators**.
+If the dict holds a value `json.dumps` cannot encode (a `Path`, a `datetime`,
+an arbitrary object), the pipeline logs a warning and stores `{}` for that
+chunk's metadata: every key is lost, not only the bad one. Convert such values
+to strings before building the chunk.
 
-#### The Problem
-
-LanceDB infers the schema from the first document indexed. When subsequent documents have different metadata fields, LanceDB will reject them with schema mismatch errors like:
-```
-ValueError: Field 'complexity' not found in target schema
-```
-
-#### The Solution
-
-**Only include simple, consistent fields in `metadata`:**
-
-✅ **ALLOWED in metadata:**
-- `str` - Simple strings
-- `int` - Simple integers  
-- `float` - Simple floats
-- `bool` - Booleans
-- `None` - Null values
-
-❌ **NOT ALLOWED in metadata:**
-- `list` - Lists (even of simple types)
-- `dict` - Nested dictionaries
-- Complex objects
-- Fields that vary between file types
-
-#### Automatic Validation
-
-The `ParserChunk` model uses Pydantic validators to enforce these constraints at parse time:
-
-```python
-from pydantic import BaseModel, field_validator
-
-class ParserChunk(BaseModel):
-    content: str
-    metadata: Dict[str, Union[str, int, float, bool, None]]
-    
-    @field_validator("metadata")
-    @classmethod
-    def validate_metadata_types(cls, v: Dict) -> Dict:
-        """Ensure metadata contains only simple types."""
-        for key, value in v.items():
-            if isinstance(value, (list, dict)):
-                raise ValueError(
-                    f"Metadata field '{key}' contains complex type {type(value).__name__}. "
-                    f"Only str, int, float, bool, and None are allowed. "
-                    f"See docs/development/parser-guidelines.md for details."
-                )
-        return v
-```
-
-**What this means for parser developers:**
-- Invalid metadata is caught immediately when creating `ParserChunk` instances
-- Clear error messages reference this guideline document
-- No need to wait for database insertion to discover schema issues
-- Faster development cycle with immediate feedback
-
-#### Best Practices
-
-1. **Use top-level ParserChunk fields when possible:**
-   ```python
-   ParserChunk(
-       content=text,
-       symbols=["function1", "class1"],  # ✅ Use top-level field
-       language="python",                 # ✅ Use top-level field
-       line_start=10,                     # ✅ Use top-level field
-       metadata={
-           "element_type": "code_semantic",  # ✅ Simple string
-           "content_type": "CODE",           # ✅ Simple string
-       }
-   )
-   ```
-
-2. **Store complex data in `ranking_signals`:**
-   ```python
-   ParserChunk(
-       content=text,
-       metadata={
-           "element_type": "function",  # ✅ Simple
-       },
-       ranking_signals={
-           "complexity": 5.2,           # ✅ Complexity goes here
-           "importance": 0.8,           # ✅ Scores go here
-       }
-   )
-   ```
-
-3. **Serialize complex structures as JSON strings:**
-   ```python
-   import json
-   
-   ParserChunk(
-       content=text,
-       metadata={
-           "element_type": "function",
-       },
-       symbol_metadata={                    # ✅ Use dedicated field
-           "func1": {"type": "function"},
-       },
-       # OR if you must store in metadata:
-       # metadata={
-       #     "imports_json": json.dumps(imports_list),  # ✅ Serialize to string
-       # }
-   )
-   ```
-
-4. **Keep metadata fields consistent across all chunks:**
-   - If you set `"element_type"` in one chunk, use it in all chunks
-   - Use the same field names across different file types
-   - Avoid file-type-specific fields in metadata
-
-#### Common Mistakes
-
-❌ **DON'T DO THIS:**
-```python
-# BAD: Lists in metadata
-ParserChunk(
-    content=text,
-    metadata={
-        "imports": ["os", "sys"],        # ❌ List will cause schema issues
-        "elements": [{"name": "func"}],  # ❌ List of dicts
-    }
-)
-
-# BAD: Nested dicts in metadata
-ParserChunk(
-    content=text,
-    metadata={
-        "symbol_info": {                 # ❌ Nested dict
-            "name": "func",
-            "type": "function"
-        }
-    }
-)
-
-# BAD: File-type-specific fields
-ParserChunk(
-    content=text,
-    metadata={
-        "complexity": 5,                 # ❌ Only in code files
-        "page_number": 3,                # ❌ Only in PDF files
-    }
-)
-```
-
-✅ **DO THIS INSTEAD:**
-```python
-# GOOD: Use top-level fields
-ParserChunk(
-    content=text,
-    symbols=["os", "sys"],               # ✅ Top-level field
-    page_number=3,                       # ✅ Top-level field
-    metadata={
-        "element_type": "import",        # ✅ Simple, consistent
-        "content_type": "CODE",          # ✅ Simple, consistent
-    },
-    ranking_signals={
-        "complexity": 5,                 # ✅ In ranking_signals
-    }
-)
-```
+Prefer a top-level `ParserChunk` field when one exists for the data (below):
+top-level fields are real columns that search and filtering can use, while
+`metadata` is an opaque JSON blob.
 
 ## ParserChunk Field Reference
 
@@ -188,14 +39,10 @@ Use these fields instead of putting data in metadata:
 - `child_ids` (List[str]) - IDs of child chunks
 - `relationships` (List[ParserRelationship]) - Relationships to other entities
 
-### Metadata Dict (Use Sparingly)
+### Metadata Dict
 
-Only for simple, consistent fields:
-
-- `"element_type"` (str) - Consistent across all chunks
-- `"content_type"` (str) - Consistent across all chunks
-- `"start_line"` (int) - If not using top-level line_start
-- `"end_line"` (int) - If not using top-level line_end
+Parser-specific detail with no top-level field. Stored as one JSON string, so
+it is returned with the chunk but not searchable or filterable by key.
 
 ### Ranking Signals Dict
 
@@ -233,7 +80,8 @@ for file in files:
     await pipeline.process_document(parsed)
 ```
 
-If you get schema errors, check your metadata fields!
+If a chunk comes back with empty metadata, look for a "Failed to serialize
+chunk metadata" warning: a value in the dict was not JSON-serializable.
 
 ## Examples
 

@@ -1,7 +1,6 @@
 """Tests for AccuracyValidator."""
 
 import pytest
-from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 

@@ -115,7 +115,7 @@ async def search_command(args: argparse.Namespace) -> int:
         if caps.uses_server_side_embedding:
             # Server-side embedding: pass raw query text
             results = await search.hybrid_search(
-                query_vector=query,  # type: ignore[arg-type]
+                query_vector=query,
                 query_fts=query,
                 project_id=project_id,
                 limit=args.limit,
@@ -125,7 +125,7 @@ async def search_command(args: argparse.Namespace) -> int:
             embedding_service = EmbeddingService(config=config)
             query_vector = await embedding_service.embed_async(query)
             results = await search.hybrid_search(
-                query_vector=query_vector,
+                query_vector=query_vector.tolist(),
                 query_fts=query,
                 project_id=project_id,
                 limit=args.limit,
@@ -204,7 +204,7 @@ async def similar_command(args: argparse.Namespace) -> int:
 
         if caps.uses_server_side_embedding:
             results = await search.hybrid_search(
-                query_vector=args.entity,  # type: ignore[arg-type]
+                query_vector=args.entity,
                 query_fts=args.entity,
                 project_id=project_id,
                 limit=args.limit,
@@ -214,7 +214,7 @@ async def similar_command(args: argparse.Namespace) -> int:
             embedding_service = EmbeddingService(config=config)
             query_vector = await embedding_service.embed_async(args.entity)
             results = await search.hybrid_search(
-                query_vector=query_vector,
+                query_vector=query_vector.tolist(),
                 query_fts=args.entity,
                 project_id=project_id,
                 limit=args.limit,

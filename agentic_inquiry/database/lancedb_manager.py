@@ -959,22 +959,29 @@ class LanceDBManager:
         data: List[Dict[str, Any]],
         key_field: str = "id",
     ) -> None:
-        """Insert or update records in a table.
+        """Insert or update records in a table in one commit.
 
-        Checks if records exist by key_field and updates if found, inserts if not.
+        Rows whose ``key_field`` matches a record are updated and the other
+        records are inserted, in a single ``merge_insert``. Another upsert of
+        an existing key through this manager therefore never finds the key
+        briefly absent, so the two cannot leave a second row behind. The
+        commit lock is per manager: two managers (for example the CLI and the
+        MCP server) upserting the same new key at once can both insert it.
+        Columns a record omits keep their stored value, and when a key repeats
+        within ``data`` the last record wins.
 
         Args:
             table_name: Name of the table to upsert into
-            data: List of records to upsert
-            key_field: Field name to use for uniqueness check (default: "id")
+            data: Records to upsert, all with the same set of fields
+            key_field: Field that identifies a row (default: "id")
 
-        Performance Notes:
-            - This method checks existence for each record individually
-            - For large batches, consider using batch operations if available
-            - Empty data list is handled gracefully (no-op)
+        Raises:
+            ValueError: If a record's key is missing, None or empty, the
+                records do not all have the same fields, or a record fails
+                schema validation. Nothing is written.
+            StorageError: If the write fails
 
         Examples:
-            # Upsert sessions
             await db.upsert(
                 table_name="mcp_sessions",
                 data=[{
@@ -985,56 +992,27 @@ class LanceDBManager:
                 }],
                 key_field="session_id"
             )
-
-            # Upsert multiple entities
-            await db.upsert(
-                table_name="graph_entities",
-                data=[
-                    {"id": "e1", "name": "Foo", "type": "class"},
-                    {"id": "e2", "name": "Bar", "type": "function"}
-                ]
-            )
         """
         if not data:
             return
 
-        # Separate records into updates and inserts
-        to_insert = []
-        to_delete_ids = []
-
+        # merge_insert silently drops a row whose key is null and takes its
+        # columns from the first record, so either input would lose data.
         for record in data:
             key_value = record.get(key_field)
-            if not key_value:
-                # No key value, treat as insert
-                to_insert.append(record)
-                continue
-
-            # Check if record exists
-            existing = await self.advanced_filter(
-                table_name=table_name,
-                filters={key_field: key_value},
-                limit=1,
-                project_id=None,  # Don't filter by project for existence check
+            if key_value is None or key_value == "":
+                raise ValueError(
+                    f"Cannot upsert into {table_name}: a record has no {key_field}"
+                )
+        fields = set(data[0])
+        if any(set(record) != fields for record in data[1:]):
+            raise ValueError(
+                f"Cannot upsert into {table_name}: records must all have the same fields"
             )
+        for record in data:
+            self._validate_record(table_name, record)
 
-            if existing:
-                # Record exists - mark for deletion and re-insert
-                # Use the 'id' field for deletion (standard primary key)
-                existing_id = existing[0].get("id")
-                if existing_id:
-                    to_delete_ids.append(existing_id)
-                to_insert.append(record)
-            else:
-                # Record doesn't exist, insert it
-                to_insert.append(record)
-
-        # Delete existing records first
-        if to_delete_ids:
-            await self._delete_rows(table_name=table_name, ids=to_delete_ids)
-
-        # Insert all records (both new and updated)
-        if to_insert:
-            await self._add_rows(table_name=table_name, items=to_insert)
+        await self._upsert_rows(table_name=table_name, items=data, key_column=key_field)
 
     async def delete_by_ids(
         self,
@@ -1063,6 +1041,50 @@ class LanceDBManager:
             await db.delete_by_ids("episodic_memory", ["mem_1", "mem_2", "mem_3"])
         """
         await self._delete_rows(table_name=table_name, ids=ids)
+
+    async def update_by_ids(
+        self,
+        table_name: str,
+        ids: List[str],
+        values: Dict[str, Any],
+    ) -> int:
+        """Set columns on the rows with the given IDs in one commit.
+
+        Only the named columns change and no row is deleted or inserted, so
+        concurrent writers that touch other columns of the same row cannot
+        overwrite each other or leave a duplicate row behind.
+
+        Args:
+            table_name: Name of the table to update
+            ids: IDs of the rows to update
+            values: Column name to new value
+
+        Returns:
+            Number of rows updated (0 when the table or IDs do not exist)
+        """
+        if not ids or not values:
+            return 0
+
+        table = await self._get_table_async(table_name)
+        if table is None:
+            return 0
+
+        clause = format_in_clause("id", ids)
+        if clause is None:
+            return 0
+
+        rows_updated = 0
+
+        async def _do_write() -> None:
+            nonlocal rows_updated
+            result = await self._run_sync(
+                lambda: table.update(where=clause, values=values)
+            )
+            rows_updated = result.rows_updated
+
+        async with self._locked(table_name):
+            await _retry_lancedb_write(_do_write)
+        return rows_updated
 
     async def add_rows(
         self,

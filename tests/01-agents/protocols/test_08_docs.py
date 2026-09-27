@@ -12,7 +12,7 @@ Validates that MCP tools can support a documentation-generation workflow:
 
 import time
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from .base import (
     CODEBASE_PATH,
@@ -49,8 +49,6 @@ async def run(
 ) -> Dict[str, Any]:
     from agentic_inquiry.mcp.tools.search import search_knowledge
     from agentic_inquiry.mcp.tools.info import get_project_info, list_entities
-    from agentic_inquiry.mcp.tools.context import build_context
-    from agentic_inquiry.mcp.tools.analysis import understand_entity
 
     results: Dict[str, Any] = {}
     issues: list = []
@@ -666,7 +664,7 @@ async def run(
                 "elapsed_s": round(t, 2),
             },
             severity="MEDIUM",
-            fail_msg=f"list_entities returned no results",
+            fail_msg="list_entities returned no results",
         )
         note_adoption(
             journal,

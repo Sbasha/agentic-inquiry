@@ -93,40 +93,33 @@ class LanceDBQueryBuilder:
         self._lexical_root = lexical_root
         self._lexical: Dict[str, LexicalIndex] = {}
 
-    async def _execute_with_retry(
+    async def _search_with_stale_retry(
         self,
         table_name: str,
-        operation: Callable[[], List[Dict[str, Any]]],
+        table: Any,
+        run: Callable[[Any], List[Dict[str, Any]]],
     ) -> List[Dict[str, Any]]:
-        """Execute an operation with retry on stale table errors.
+        """Run ``run(table)``, retrying once on a re-opened table if it is stale.
 
-        If operation fails with a stale table error, invalidates the cache
-        and retries once.
-
-        Args:
-            table_name: Table being operated on (for cache invalidation)
-            operation: The operation to execute
-
-        Returns:
-            Operation result
+        A cached table handle goes stale when another process drops and
+        re-creates the table. ``run`` receives the table rather than closing
+        over it, so the retry cannot touch the stale handle.
         """
         try:
-            return await self._run_sync(operation)
+            return await self._run_sync(lambda: run(table))
         except Exception as e:
-            if _is_stale_table_error(e) and self._invalidate_cache:
-                logger.warning(
-                    "Stale table detected for '%s', invalidating cache and retrying: %s",
-                    table_name,
-                    str(e)[:100],
-                )
-                await self._invalidate_cache(table_name)
-                # Re-get table after cache invalidation
-                table = await self._get_table(table_name)
-                if table is None:
-                    return []
-                # Retry once - let any error propagate
-                return await self._run_sync(operation)
-            raise
+            if not (_is_stale_table_error(e) and self._invalidate_cache):
+                raise
+            logger.warning(
+                "Stale table detected for '%s', invalidating cache and retrying: %s",
+                table_name,
+                str(e)[:100],
+            )
+            await self._invalidate_cache(table_name)
+            fresh_table = await self._get_table(table_name)
+            if fresh_table is None:
+                return []
+            return await self._run_sync(lambda: run(fresh_table))
 
     def _vector_query(
         self,
@@ -184,36 +177,12 @@ class LanceDBQueryBuilder:
         filters = self._add_project_filter(filters, project_id)
         filter_expression = self._filters_to_expression(filters)
 
-        def _run_search() -> List[Dict[str, Any]]:
+        def _run_search(table: Any) -> List[Dict[str, Any]]:
             return self._vector_query(
                 table, query_vector, vector_column_name, filter_expression, limit
             )
 
-        try:
-            return await self._run_sync(_run_search)
-        except Exception as e:
-            if _is_stale_table_error(e) and self._invalidate_cache:
-                logger.warning(
-                    "Stale table detected for '%s', invalidating cache and retrying",
-                    table_name,
-                )
-                await self._invalidate_cache(table_name)
-                # Re-get table after cache invalidation
-                table = await self._get_table(table_name)
-                if table is None:
-                    return []
-
-                def _retry_search() -> List[Dict[str, Any]]:
-                    return self._vector_query(
-                        table,
-                        query_vector,
-                        vector_column_name,
-                        filter_expression,
-                        limit,
-                    )
-
-                return await self._run_sync(_retry_search)
-            raise
+        return await self._search_with_stale_retry(table_name, table, _run_search)
 
     def _lexical_query(
         self,
@@ -280,46 +249,21 @@ class LanceDBQueryBuilder:
         # Add project_id filter if specified
         filters = self._add_project_filter(filters, project_id)
         filter_expression = self._filters_to_expression(filters)
+        safe_query = _fts_sanitizer.sanitize(query)
 
-        def _run_search() -> List[Dict[str, Any]]:
-            if self._lexical_root is not None:
+        def _run_search(table: Any) -> List[Dict[str, Any]]:
+            # The Tantivy projection reads fts_text, which only chunk tables
+            # carry; other tables (memory tiers) use their native FTS index.
+            if self._lexical_root is not None and "fts_text" in table.schema.names:
                 return self._lexical_query(
                     table, table_name, query, filter_expression, limit
                 )
-            safe_query = _fts_sanitizer.sanitize(query)
-            query_builder = table.search(
-                safe_query,
-                query_type="fts",
-            )
+            query_builder = table.search(safe_query, query_type="fts")
             if filter_expression:
                 query_builder = query_builder.where(filter_expression)
             return query_builder.limit(limit).to_list()
 
-        try:
-            return await self._run_sync(_run_search)
-        except Exception as e:
-            if _is_stale_table_error(e) and self._invalidate_cache:
-                logger.warning(
-                    "Stale table detected for '%s', invalidating cache and retrying",
-                    table_name,
-                )
-                await self._invalidate_cache(table_name)
-                table = await self._get_table(table_name)
-                if table is None:
-                    return []
-
-                def _retry_search() -> List[Dict[str, Any]]:
-                    if self._lexical_root is not None:
-                        return self._lexical_query(
-                            table, table_name, query, filter_expression, limit
-                        )
-                    qb = table.search(_fts_sanitizer.sanitize(query), query_type="fts")
-                    if filter_expression:
-                        qb = qb.where(filter_expression)
-                    return qb.limit(limit).to_list()
-
-                return await self._run_sync(_retry_search)
-            raise
+        return await self._search_with_stale_retry(table_name, table, _run_search)
 
     async def hybrid_search(
         self,
@@ -355,7 +299,7 @@ class LanceDBQueryBuilder:
         filters = self._add_project_filter(filters, project_id)
         filter_expression = self._filters_to_expression(filters)
 
-        def _run_search() -> List[Dict[str, Any]]:
+        def _run_search(table: Any) -> List[Dict[str, Any]]:
             # For hybrid search with explicit vector and text, we use query_type="hybrid"
             # without a query string, then set text() and vector() explicitly
             query_builder = table.search(query_type="hybrid")
@@ -369,30 +313,7 @@ class LanceDBQueryBuilder:
 
             return query_builder.limit(limit).to_list()
 
-        try:
-            return await self._run_sync(_run_search)
-        except Exception as e:
-            if _is_stale_table_error(e) and self._invalidate_cache:
-                logger.warning(
-                    "Stale table detected for '%s', invalidating cache and retrying",
-                    table_name,
-                )
-                await self._invalidate_cache(table_name)
-                table = await self._get_table(table_name)
-                if table is None:
-                    return []
-
-                def _retry_search() -> List[Dict[str, Any]]:
-                    qb = table.search(query_type="hybrid")
-                    qb = qb.text(query).vector(query_vector)
-                    if filter_expression:
-                        qb = qb.where(filter_expression)
-                    if reranker:
-                        qb = qb.rerank(reranker=reranker)
-                    return qb.limit(limit).to_list()
-
-                return await self._run_sync(_retry_search)
-            raise
+        return await self._search_with_stale_retry(table_name, table, _run_search)
 
     async def advanced_filter(
         self,
@@ -420,33 +341,13 @@ class LanceDBQueryBuilder:
         combined_filters = self._add_project_filter(filters, project_id)
         filter_expression = self._filters_to_expression(combined_filters)
 
-        def _run_query() -> List[Dict[str, Any]]:
+        def _run_query(table: Any) -> List[Dict[str, Any]]:
             query = table.search()
             if filter_expression:
                 query = query.where(filter_expression)
             return query.limit(limit).to_list()
 
-        try:
-            return await self._run_sync(_run_query)
-        except Exception as e:
-            if _is_stale_table_error(e) and self._invalidate_cache:
-                logger.warning(
-                    "Stale table detected for '%s', invalidating cache and retrying",
-                    table_name,
-                )
-                await self._invalidate_cache(table_name)
-                table = await self._get_table(table_name)
-                if table is None:
-                    return []
-
-                def _retry_query() -> List[Dict[str, Any]]:
-                    query = table.search()
-                    if filter_expression:
-                        query = query.where(filter_expression)
-                    return query.limit(limit).to_list()
-
-                return await self._run_sync(_retry_query)
-            raise
+        return await self._search_with_stale_retry(table_name, table, _run_query)
 
     async def query_entities(
         self,

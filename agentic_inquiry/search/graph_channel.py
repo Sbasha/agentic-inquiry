@@ -111,13 +111,13 @@ async def graph_candidates(
     out: List[Dict[str, Any]] = []
     seen: set = set()
     for entity_id in ranked_ids:
-        entity = by_id.get(entity_id)
-        if entity is None:
+        target = by_id.get(entity_id)
+        if target is None:
             continue
         for row in rows:
             if (
-                row.get("file_path") == entity.get("file_path")
-                and _inside(entity, row)
+                row.get("file_path") == target.get("file_path")
+                and _inside(target, row)
                 and row["id"] not in seen
             ):
                 seen.add(row["id"])

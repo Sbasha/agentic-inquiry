@@ -9,6 +9,7 @@ from evals.data import Case
 
 
 def test_token_f1_matches_locomo_normalization() -> None:
+    pytest.importorskip("Stemmer", reason="needs the eval dependency group")
     assert token_f1("The 7 May 2023", "7 May 2023") == 1.0
     assert token_f1("painting", "She paints") == pytest.approx(2 * 0.5 * 1.0 / 1.5)
     assert token_f1("Not mentioned", "Sweden") == 0.0

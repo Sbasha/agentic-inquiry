@@ -7,9 +7,12 @@ Tests cover:
 - Validation of configuration limits
 """
 
+import os
+import re
 from pathlib import Path
 
 import pytest
+import yaml
 
 pytestmark = pytest.mark.unit
 
@@ -467,16 +470,201 @@ class TestPackagedConfigResolver:
         """A filename that exists in neither location returns None."""
         assert Config._packaged_config_file("definitely-not-a-config.yaml") is None
 
-    def test_find_config_file_falls_back_to_package_default(
-        self, tmp_path, monkeypatch
-    ) -> None:
-        """No env override and no cwd yaml: use the package default."""
+    def test_no_user_config_file_found(self, tmp_path, monkeypatch) -> None:
+        """No env override, no cwd yaml, no global yaml: only the package default applies."""
         monkeypatch.delenv("INQUIRY_CONFIG", raising=False)
         monkeypatch.chdir(tmp_path)
         # Isolate from a leftover ~/.agentic-inquiry/config.yaml on the developer machine.
         monkeypatch.setattr(Path, "home", lambda: tmp_path / "home")
         (tmp_path / "home").mkdir()
 
-        found = Config._find_config_file()
-        assert found.name == "default.yaml"
-        assert found.exists()
+        assert Config._find_config_file() is None
+
+
+def _readme_config_example() -> str:
+    """The YAML block under README "### Configuration", verbatim."""
+    readme = (Path(__file__).parents[2] / "README.md").read_text()
+    section = readme.split("### Configuration", 1)[1]
+    return section.split("```yaml\n", 1)[1].split("```", 1)[0]
+
+
+def _packaged_defaults() -> dict:
+    import yaml
+
+    return yaml.safe_load(Config._packaged_config_file("default.yaml").read_text())
+
+
+class TestUserConfigOverlaysPackagedDefaults:
+    """A user config file only needs the keys it changes."""
+
+    @pytest.fixture
+    def home(self, tmp_path, monkeypatch) -> Path:
+        """Empty cwd and HOME, and no INQUIRY_* variables, as on a fresh machine."""
+        for name in list(os.environ):
+            if name.startswith("INQUIRY_"):
+                monkeypatch.delenv(name)
+        project = tmp_path / "project"
+        home = tmp_path / "home"
+        project.mkdir()
+        home.mkdir()
+        monkeypatch.chdir(project)
+        monkeypatch.setattr(Path, "home", lambda: home)
+        return home
+
+    def test_readme_example_loads_from_project_root(self, home) -> None:
+        Path("agentic-inquiry.yaml").write_text(_readme_config_example())
+        defaults = _packaged_defaults()
+        # The omitted key must differ from the dataclass default, or this
+        # test could not tell a merge from the old fallback.
+        assert (
+            defaults["connectors"]["filesystem"]["watch_enabled"]
+            != Config().connectors.filesystem.watch_enabled
+        )
+
+        config = Config.load()
+
+        assert config.search.deduplication.max_results_per_file == 2
+        assert config.search.hybrid_search.reranker_params == {"k": 30}
+        assert (
+            config.connectors.filesystem.watch_enabled
+            == defaults["connectors"]["filesystem"]["watch_enabled"]
+        )
+
+    def test_partial_global_config_loads(self, home) -> None:
+        (home / ".agentic-inquiry").mkdir()
+        (home / ".agentic-inquiry" / "config.yaml").write_text(
+            "search:\n  deduplication:\n    max_results_per_file: 4\n"
+        )
+
+        config = Config.load()
+
+        assert config.search.deduplication.max_results_per_file == 4
+        assert (
+            config.search.hybrid_search.reranker_type
+            == (_packaged_defaults()["search"]["hybrid_search"]["reranker_type"])
+        )
+
+    def test_partial_explicit_config_path_loads(self, home, tmp_path) -> None:
+        explicit = tmp_path / "custom.yaml"
+        explicit.write_text("search:\n  deduplication:\n    max_results_per_file: 5\n")
+
+        config = Config.load(str(explicit))
+
+        assert config.search.deduplication.max_results_per_file == 5
+        assert (
+            config.storage.default_project_id
+            == (_packaged_defaults()["storage"]["default_project_id"])
+        )
+
+    def test_env_overlay_stacks_on_partial_project_config(self, home) -> None:
+        Path("agentic-inquiry.yaml").write_text(
+            "search:\n"
+            "  deduplication:\n"
+            "    max_results_per_file: 2\n"
+            "  hybrid_search:\n"
+            "    reranker_params:\n"
+            "      k: 30\n"
+        )
+        env_file = home / ".agentic-inquiry" / "envs" / "dev" / "config.yaml"
+        env_file.parent.mkdir(parents=True)
+        env_file.write_text(
+            "search:\n  hybrid_search:\n    reranker_params:\n      k: 90\n"
+        )
+
+        config = Config.load_with_overlay(str(env_file))
+
+        assert config.search.hybrid_search.reranker_params["k"] == 90
+        assert config.search.deduplication.max_results_per_file == 2
+        assert (
+            config.search.hybrid_search.reranker_type
+            == (_packaged_defaults()["search"]["hybrid_search"]["reranker_type"])
+        )
+
+    def test_reranker_params_carry_no_default_keys(self, home) -> None:
+        """Params are passed to the reranker as kwargs; an inherited RRF ``k``
+        would make cross_encoder/colbert construction fail."""
+        Path("agentic-inquiry.yaml").write_text(
+            "search:\n"
+            "  hybrid_search:\n"
+            "    reranker_type: cross_encoder\n"
+            "    reranker_params:\n"
+            "      model_name: my-model\n"
+        )
+
+        config = Config.load()
+
+        assert config.search.hybrid_search.reranker_params == {"model_name": "my-model"}
+
+    def test_packaged_skip_lists_cover_dataclass_defaults(self) -> None:
+        """Lists replace on merge, so a gap in default.yaml would drop skip
+        rules for every user who does not restate the list."""
+        packaged = _packaged_defaults()["connectors"]["filesystem"]
+        dataclass_defaults = Config().connectors.filesystem
+
+        assert set(dataclass_defaults.binary_extensions) <= set(
+            packaged["binary_extensions"]
+        )
+        assert set(dataclass_defaults.ignore_patterns) <= set(
+            packaged["ignore_patterns"]
+        )
+
+    def test_non_mapping_config_file_is_rejected(self, home) -> None:
+        Path("agentic-inquiry.yaml").write_text("- storage\n- search\n")
+
+        with pytest.raises(ConfigurationError, match="must be a YAML mapping"):
+            Config.load()
+
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
+
+
+class TestShippedConfigs:
+    """Every full config the repo ships loads the way a user would load it."""
+
+    # config/mcp.yaml is left out: it holds only an `mcp` section, so it is not
+    # a full config, and nothing in the runtime loads it.
+    @pytest.mark.parametrize(
+        "relative_path",
+        [
+            "config/default.yaml",
+            "config/test-lancedb.yaml",
+            "agentic-inquiry.yaml.example",
+        ],
+    )
+    def test_copied_to_project_root_loads(
+        self, relative_path: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Copying the file to agentic-inquiry.yaml in the project root passes Config.load."""
+        monkeypatch.delenv("INQUIRY_CONFIG", raising=False)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "agentic-inquiry.yaml").write_text(
+            (REPO_ROOT / relative_path).read_text()
+        )
+
+        config = Config.load()
+
+        assert config.storage.root
+
+    @pytest.mark.parametrize("snippet_index", [0, 1])
+    def test_storage_backends_doc_snippet_loads(
+        self, snippet_index: int, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Each storage block in docs/storage-backends.md loads over config/default.yaml."""
+        doc = (REPO_ROOT / "docs" / "storage-backends.md").read_text()
+        snippets = re.findall(r"```yaml\n(.*?)```", doc, re.S)
+        assert len(snippets) == 2
+        storage_root = tmp_path / "data"
+        storage_root.mkdir()
+        snippet = snippets[snippet_index].replace(
+            "/data/agentic-inquiry", str(storage_root)
+        )
+
+        data = yaml.safe_load((REPO_ROOT / "config" / "default.yaml").read_text())
+        data["storage"] = yaml.safe_load(snippet)["storage"]
+        monkeypatch.delenv("INQUIRY_CONFIG", raising=False)
+        monkeypatch.chdir(tmp_path)
+        (tmp_path / "agentic-inquiry.yaml").write_text(yaml.safe_dump(data))
+
+        config = Config.load()
+
+        assert config.storage.root == str(storage_root)

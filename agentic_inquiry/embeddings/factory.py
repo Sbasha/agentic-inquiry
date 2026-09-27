@@ -19,8 +19,8 @@ from agentic_inquiry.storage.capabilities import (
 )
 
 if TYPE_CHECKING:
-    from agentic_inquiry.embeddings.base import Embedder
     from agentic_inquiry.config import Config
+    from agentic_inquiry.embeddings.base import Embedder
 
 logger = logging.getLogger(__name__)
 

@@ -148,18 +148,20 @@ search:
     # RRF (Reciprocal Rank Fusion) is the standard for hybrid search
     reranker_type: "rrf"
     
-    # Parameters for the selected reranker
+    # Parameters for the selected reranker, passed to it as keyword arguments
     # For RRF: k controls the ranking fusion (default: 60)
     # For linear_combination: weight controls vector vs FTS balance (default: 0.7)
     # For cross_encoder/colbert: model_name optional
-    reranker_params:
-      k: 60  # RRF constant
+    # Empty here because a user config file merges over this one and cannot
+    # remove keys: a default RRF k would reach rerankers that reject it.
+    reranker_params: {}
     # Optional cross-encoder second stage over the fused top results ("" = off)
     rerank_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
     rerank_top_n: 30
     rerank_mode: "fuse"  # fuse: RRF with the fused order; replace: cross-encoder order alone
     # Optional graph channel: neighbours of the fused top N definitions (0 = off)
     graph_seeds: 0
+
   # Entity matching configuration (for find_similar tool)
   entity_matching:
     # Enable semantic bridge for entity discovery
@@ -605,6 +607,7 @@ connectors:
       - ".svn"
       - ".DS_Store"
       - "*.egg-info"
+      - "*.egg"
       - ".venv"
       - "venv"
       - "node_modules"
@@ -620,15 +623,30 @@ connectors:
       - ".exe"
       - ".dll"
       - ".so"
+      - ".dylib"
+      - ".a"
+      - ".lib"
+      - ".o"
+      - ".obj"
+      - ".class"
+      - ".pyc"
+      - ".pyo"
       - ".bin"
       - ".zip"
       - ".tar"
       - ".gz"
       - ".bz2"
+      - ".xz"
+      - ".7z"
+      - ".rar"
+      - ".jar"
+      - ".war"
+      - ".ear"
       - ".png"
       - ".jpg"
       - ".jpeg"
       - ".gif"
+      - ".bmp"
       - ".ico"
       - ".webp"
       - ".svg"
@@ -637,6 +655,8 @@ connectors:
       - ".avi"
       - ".mov"
       - ".wav"
+      - ".flac"
+      - ".mkv"
       # Note: .pdf, .doc, .docx are NOT included - they have dedicated parsers
       - ".woff"
       - ".woff2"
