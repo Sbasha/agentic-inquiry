@@ -324,6 +324,22 @@ Open items found while building [`specs/hybrid-reranker-default/spec.md`](specs/
   explains linear-combination arithmetic, but its service is built from
   `Config.load()` and runs RRF. Rewrite the docstring to the RRF ordering.
 
+## secrets-baseline
+
+Open items from [`specs/secrets-baseline/spec.md`](specs/secrets-baseline/spec.md).
+None is a deferred acceptance criterion; each is pre-existing debt the
+pre-commit hooks surface on the files a commit touches, or a gap in where the
+hooks run.
+
+- **Whitespace and end-of-file debt:** `trailing-whitespace` rewrites 272
+  tracked files (mostly `tests/` and `agentic_inquiry/`, plus `docs/`,
+  `scripts/` and a few others) and `end-of-file-fixer` 30 (mostly `.claude/`
+  and `tests/`). Unblocked by one normalization PR; pack content under
+  `.claude/` may need the fix upstream so reinstalls keep it.
+- **Secret scanning in CI:** the detect-secrets hooks run only on machines that
+  installed them, and `--no-verify` skips them. No `.github/workflows` exists.
+  Run the pre-commit secret hooks against every push once CI exists.
+
 <!-- Add one section per spec with open work, e.g.:
 
 ## <spec-name>
