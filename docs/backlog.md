@@ -141,17 +141,57 @@ Open items from [`specs/memory-update-atomicity/spec.md`](specs/memory-update-at
 None is a deferred acceptance criterion; each is a write path the spec
 leaves out.
 
-- **Whole-row memory writes:** `MemorySystem.negate_memory` and
-  `supersede_memory` still persist through `EpisodicMemory.update(item)` /
-  `SemanticMemory.update(item)`, a delete followed by an add. Two of those
-  writers overlapping on one id leave two rows. Unblocked by moving them to
-  `update_fields` and making the whole-row replace one `merge_insert`.
-  `LanceDBManager.upsert` has the same check, delete, add shape.
 - **Lost access increments:** access bookkeeping reads `access_count` and
   writes back the incremented value, so two accesses of one item that
   overlap count once. Unblocked by an increment expressed in the update
   itself (`values_sql` `access_count + 1`), which the storage protocol
   cannot express today.
+
+## lancedb-single-commit-upsert
+
+Open items from [`specs/lancedb-single-commit-upsert/spec.md`](specs/lancedb-single-commit-upsert/spec.md).
+None is a deferred acceptance criterion; each is a defect the spec found and
+leaves out.
+
+- **Eviction on re-store:** at capacity, `EpisodicMemory.store` and
+  `SemanticMemory.store` evict the oldest item before storing, even when the
+  item's id is already stored and the store only replaces it, deleting an
+  unrelated memory and leaving the tier one below its limit. Promotion moves
+  items between tiers, so this takes a caller that stores the same id twice
+  into one tier, or a promotion whose source delete failed. Unblocked by
+  skipping eviction when the id is already stored, at the cost of a lookup
+  per store.
+- **Working-memory writes resurrect removed items:** `MemorySystem._write_fields`
+  stores a working item back unconditionally. If consolidation removed it
+  from working memory while supersede awaited the new item's embedding, the
+  store re-inserts it and, at capacity, evicts an unrelated item. Unblocked
+  by a working-memory presence check that does not count as an access.
+- **Consolidation re-stores a stale read:** `consolidate()` reads the
+  episodic items once, embeds them one after another, then upserts that read
+  into semantic memory with every column and deletes the episodic row. A
+  negate or supersede that marks the episodic row in between is overwritten
+  by `status=ACTIVE` in semantic and erased with the episodic row. Unblocked
+  by re-reading the item, or carrying over its status, just before the
+  semantic store.
+- **Side effects of moving promoted items:** promoted items now live only in
+  semantic memory, so they are evicted by its capacity-500,
+  lowest-confidence rule rather than episodic's oldest-first one, and an
+  evicted item is gone for good; items recalled twice move at any importance
+  through the `access_count > 1` rule; recency-weighted retrieval scores them
+  at a flat 0.3; and later consolidations' concept extraction no longer sees
+  them. Each needs a product call: tune the promotion rules, semantic
+  capacity, or recency scoring.
+- **Working items lost on a failed episodic store:** `consolidate()` deletes
+  every working item at or above the episodic threshold whether or not
+  `promote_to_episodic` stored it, so a failed store loses the item.
+  Unblocked by having `promote_to_episodic` return the ids it stored and
+  deleting only those.
+- **Inferred `mcp_sessions` schema:** the table is created from the first
+  session's record, so a first session with `description` or `log_file`
+  unset makes those columns null-typed, and every later persist that sets
+  either fails with `StorageError`. Unblocked by creating `mcp_sessions` from
+  an explicit schema.
+
 ## mypy-clean
 
 Open items from [`specs/mypy-clean/spec.md`](specs/mypy-clean/spec.md).
