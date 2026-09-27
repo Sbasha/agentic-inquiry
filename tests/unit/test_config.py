@@ -498,7 +498,7 @@ class TestUserConfigOverlaysPackagedDefaults:
 
     def test_reranker_params_carry_no_default_keys(self, home) -> None:
         """Params are passed to the reranker as kwargs; an inherited RRF ``k``
-        would make cross_encoder/colbert/cohere construction fail."""
+        would make cross_encoder/colbert construction fail."""
         Path("agentic-inquiry.yaml").write_text(
             "search:\n"
             "  hybrid_search:\n"

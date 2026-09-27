@@ -117,7 +117,11 @@ class TestRerankerConfiguration:
         # Should not raise
         Config._validate_config(config_data)
     
-    def test_invalid_reranker_type(self):
+    @pytest.mark.parametrize("reranker_type", [
+        "not_a_reranker",
+        "cohere",  # hosted-API rerankers are out of scope (CHARTER Principle 1)
+    ])
+    def test_invalid_reranker_type(self, reranker_type):
         """Test that invalid reranker type is rejected."""
         config_data = {
             'storage': {
@@ -133,7 +137,7 @@ class TestRerankerConfiguration:
                 'hybrid_search': {
                     'vector_weight': 0.7,
                     'fts_weight': 0.3,
-                    'reranker_type': 'not_a_reranker',
+                    'reranker_type': reranker_type,
                     'reranker_params': {}
                 }
             },
@@ -141,7 +145,7 @@ class TestRerankerConfiguration:
             'parsers': {}
         }
         
-        with pytest.raises(ConfigurationError):
+        with pytest.raises(ConfigurationError, match=f"'{reranker_type}' is not one of"):
             Config._validate_config(config_data)
     
     def test_environment_variable_reranker_type(self, monkeypatch):
