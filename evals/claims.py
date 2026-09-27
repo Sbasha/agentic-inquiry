@@ -378,13 +378,15 @@ def run_c2(split: str, jobs: int, limit: int | None = None) -> Path:
     started = datetime.now(timezone.utc)
     retrieved, index_seconds = collect(suite, arms, cases, jobs)
     rows: list[dict[str, Any]] = []
-    for arm in arms:
-        for case in cases:
+    # Each task's two command-line queries run back to back, so both tools see
+    # the same machine load.
+    for case in cases:
+        root = suite.materialize(case.corpus)
+        for arm in arms:
             got = retrieved[(arm.name, case.id)]
             if isinstance(got, str):
                 rows.append(_fail(arm.name, case.id, got))
                 continue
-            root = suite.materialize(case.corpus)
             try:
                 seconds = cli_query_seconds(
                     arm.name, case.query, root, arm.index(case.corpus, root, suite)
