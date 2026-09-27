@@ -273,6 +273,7 @@ class TestResolutionSuccessLogging:
 class TestPerformanceDiagnostics:
     """Test that resolution performance is acceptable."""
 
+    @pytest.mark.perf
     @pytest.mark.asyncio
     async def test_single_resolution_performance(
         self, resolver: RelationshipResolver, mock_db_manager: AsyncMock
@@ -303,6 +304,7 @@ class TestPerformanceDiagnostics:
         # Single resolution should complete in under 100ms
         assert elapsed < 0.1, f"Resolution took {elapsed:.3f}s, expected < 0.1s"
 
+    @pytest.mark.perf
     @pytest.mark.asyncio
     async def test_batch_resolution_performance(
         self, resolver: RelationshipResolver, mock_db_manager: AsyncMock
@@ -345,6 +347,7 @@ class TestPerformanceDiagnostics:
             f"Average resolution time {avg_time:.3f}s, expected < 0.1s"
         )
 
+    @pytest.mark.perf
     @pytest.mark.asyncio
     async def test_cache_improves_performance(
         self, resolver: RelationshipResolver, mock_db_manager: AsyncMock
@@ -514,6 +517,7 @@ class TestErrorMessageQuality:
         assert any("No entities found" in msg for msg in messages)
 
 
+@pytest.mark.perf
 @pytest.mark.asyncio
 async def test_performance_summary(
     resolver: RelationshipResolver, mock_db_manager: AsyncMock

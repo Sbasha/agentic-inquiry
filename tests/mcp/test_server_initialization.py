@@ -176,12 +176,16 @@ class TestServiceCreation:
                 return_value=mcp_services,
             ) as mock_create,
         ):
-            server = MCPServer(config=mock_config, project_id="test_project")
+            server = MCPServer(
+                config=mock_config, project_id="test_project", project_root="/repo"
+            )
             await server.initialize()
 
             # Verify create_mcp_services was called
             mock_create.assert_called_once_with(
-                config=mock_config, project_id="test_project"
+                config=mock_config,
+                project_id="test_project",
+                project_root="/repo",
             )
 
             # Verify services are stored
@@ -365,6 +369,8 @@ class TestConfigurationHandling:
 
             # Verify override was used
             mock_create.assert_called_once_with(
-                config=mock_config, project_id="override_project"
+                config=mock_config,
+                project_id="override_project",
+                project_root=None,
             )
             assert server.project_id == "override_project"

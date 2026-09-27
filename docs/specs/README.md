@@ -33,6 +33,7 @@ files inside any feature dir are gitignored — see
 [`salesforce-intelligence`](salesforce-intelligence/spec.md) - Salesforce recognizer and metadata allowlist.
 
 [`ruff-format-baseline`](ruff-format-baseline/spec.md) - Repo-wide `ruff format` baseline and pre-commit ruff hooks pinned to `uv.lock`.
+[`main-suite-green`](main-suite-green/spec.md) - Root-cause fixes that make the full test suite pass deterministically.
 [`mypy-clean`](mypy-clean/spec.md) - Zero mypy errors on `agentic_inquiry/`, and the defects the type errors exposed.
 [`lazy-default-watcher`](lazy-default-watcher/spec.md) - Import `agentic_inquiry.watching` without creating files; build the default watcher on first lookup.
 

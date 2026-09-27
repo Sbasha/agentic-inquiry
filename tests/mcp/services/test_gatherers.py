@@ -14,7 +14,19 @@ from agentic_inquiry.mcp.services.gatherers import (
     MemoryGatherer,
     GraphGatherer,
 )
+from agentic_inquiry.database.results import SearchResult
 from agentic_inquiry.mcp.services.token_optimizer import TokenBudget, TokenOptimizer
+from agentic_inquiry.memory.models import (
+    MemoryContext,
+    MemoryItem,
+    MemoryTier,
+    RetrievalResult,
+)
+
+
+def _search_result(data):
+    """A hybrid-search hit carrying data, as SearchService returns it."""
+    return SearchResult(id=data["id"], data=data, score=0.8)
 
 
 class TestGatherContext:
@@ -144,16 +156,17 @@ class TestCodeGatherer:
     async def test_gather_with_code_results(self, code_gatherer, mock_search_service):
         """Test gather with code search results."""
         # Create mock search results
-        mock_result = MagicMock()
-        mock_result.data = {
-            "id": "chunk_1",
-            "file_path": "src/test.py",
-            "name": "test_function",
-            "summary": "A test function",
-            "content": "def test_function(): pass",
-            "_distance": 0.2,
-            "language": "python",
-        }
+        mock_result = _search_result(
+            {
+                "id": "chunk_1",
+                "file_path": "src/test.py",
+                "name": "test_function",
+                "summary": "A test function",
+                "content": "def test_function(): pass",
+                "_distance": 0.2,
+                "language": "python",
+            }
+        )
         mock_search_service.hybrid_search.return_value = [mock_result]
 
         budget = TokenBudget(max_tokens=1000)
@@ -178,25 +191,27 @@ class TestCodeGatherer:
     ):
         """Test that gather filters out non-code files."""
         # Create mock results with both code and non-code files
-        code_result = MagicMock()
-        code_result.data = {
-            "id": "code_1",
-            "file_path": "src/test.py",
-            "name": "test_function",
-            "summary": "A test function",
-            "content": "def test_function(): pass",
-            "_distance": 0.2,
-        }
+        code_result = _search_result(
+            {
+                "id": "code_1",
+                "file_path": "src/test.py",
+                "name": "test_function",
+                "summary": "A test function",
+                "content": "def test_function(): pass",
+                "_distance": 0.2,
+            }
+        )
 
-        doc_result = MagicMock()
-        doc_result.data = {
-            "id": "doc_1",
-            "file_path": "docs/readme.md",
-            "name": "readme",
-            "summary": "Documentation",
-            "content": "# Readme",
-            "_distance": 0.3,
-        }
+        doc_result = _search_result(
+            {
+                "id": "doc_1",
+                "file_path": "docs/readme.md",
+                "name": "readme",
+                "summary": "Documentation",
+                "content": "# Readme",
+                "_distance": 0.3,
+            }
+        )
 
         mock_search_service.hybrid_search.return_value = [code_result, doc_result]
 
@@ -223,15 +238,16 @@ class TestCodeGatherer:
         # Create many mock results
         results = []
         for i in range(20):
-            mock_result = MagicMock()
-            mock_result.data = {
-                "id": f"chunk_{i}",
-                "file_path": f"src/test_{i}.py",
-                "name": f"function_{i}",
-                "summary": f"Function {i}",
-                "content": f"def function_{i}(): pass",
-                "_distance": 0.2,
-            }
+            mock_result = _search_result(
+                {
+                    "id": f"chunk_{i}",
+                    "file_path": f"src/test_{i}.py",
+                    "name": f"function_{i}",
+                    "summary": f"Function {i}",
+                    "content": f"def function_{i}(): pass",
+                    "_distance": 0.2,
+                }
+            )
             results.append(mock_result)
 
         mock_search_service.hybrid_search.return_value = results
@@ -249,7 +265,7 @@ class TestCodeGatherer:
         result = await code_gatherer.gather(context)
 
         # Should stop before processing all results due to budget
-        assert len(result) < len(results)
+        assert 0 < len(result) < len(results)
 
 
 class TestDocsGatherer:
@@ -290,25 +306,27 @@ class TestDocsGatherer:
     async def test_gather_filters_code_files(self, docs_gatherer, mock_search_service):
         """Test that gather filters out code files."""
         # Create mock results with both doc and code files
-        doc_result = MagicMock()
-        doc_result.data = {
-            "id": "doc_1",
-            "file_path": "docs/readme.md",
-            "name": "readme",
-            "summary": "Documentation",
-            "content": "# Readme",
-            "_distance": 0.2,
-        }
+        doc_result = _search_result(
+            {
+                "id": "doc_1",
+                "file_path": "docs/readme.md",
+                "name": "readme",
+                "summary": "Documentation",
+                "content": "# Readme",
+                "_distance": 0.2,
+            }
+        )
 
-        code_result = MagicMock()
-        code_result.data = {
-            "id": "code_1",
-            "file_path": "src/test.py",
-            "name": "test_function",
-            "summary": "A test function",
-            "content": "def test_function(): pass",
-            "_distance": 0.3,
-        }
+        code_result = _search_result(
+            {
+                "id": "code_1",
+                "file_path": "src/test.py",
+                "name": "test_function",
+                "summary": "A test function",
+                "content": "def test_function(): pass",
+                "_distance": 0.3,
+            }
+        )
 
         mock_search_service.hybrid_search.return_value = [doc_result, code_result]
 
@@ -377,17 +395,26 @@ class TestMemoryGatherer:
     async def test_gather_with_memories(self, memory_gatherer, mock_memory_system):
         """Test gather with memory results."""
         # Create mock memory result
-        mock_item = MagicMock()
-        mock_item.id = "memory_1"
-        mock_item.summary = "User prefers Python"
-        mock_item.content = "The user mentioned they prefer Python for data analysis."
-        mock_item.importance = 0.8
-        mock_item.created_at = None
-        mock_item.metadata = {"tags": ["preference"]}
-
-        mock_result = MagicMock()
-        mock_result.item = mock_item
-        mock_result.relevance_score = 0.85
+        memory_item = MemoryItem(
+            id="memory_1",
+            content="The user mentioned they prefer Python for data analysis.",
+            summary="User prefers Python",
+            context=MemoryContext(
+                agent_id="agent",
+                session_id="test_session",
+                conversation_id="conversation",
+            ),
+            importance=0.8,
+            tier=MemoryTier.SEMANTIC,
+            creator_agent_id="agent",
+            modifier_agent_id="agent",
+            metadata={"tags": ["preference"]},
+        )
+        mock_result = RetrievalResult(
+            item=memory_item,
+            relevance_score=0.85,
+            retrieval_tier=MemoryTier.SEMANTIC,
+        )
 
         mock_memory_system.retrieve.return_value = [mock_result]
 

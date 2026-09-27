@@ -16,7 +16,8 @@ from tests.utils.commit_hook import commit_hook
 
 pytestmark = pytest.mark.integration
 
-_TABLE = "mcp_sessions"
+# A table with no declared schema: these tests add and omit columns freely.
+_TABLE = "upsert_semantics"
 
 
 def _session(session_id: str, state: str, **extra: Any) -> Dict[str, Any]:
