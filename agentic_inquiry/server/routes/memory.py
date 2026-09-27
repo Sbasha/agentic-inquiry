@@ -6,7 +6,7 @@ import uuid
 from fastapi import APIRouter, Request
 from pydantic import BaseModel
 
-from agentic_inquiry.memory.models import MemoryContext
+from agentic_inquiry.memory.models import MemoryContext, RetrievalResult
 
 logger = logging.getLogger("ai.server.routes.memory")
 
@@ -54,9 +54,11 @@ async def memory_store(request: Request, body: MemoryStoreRequest) -> dict:
 
     if memory_system:
         try:
+            session_id = str(uuid.uuid4())
             context = MemoryContext(
                 agent_id="rest_api",
-                session_id=str(uuid.uuid4()),
+                session_id=session_id,
+                conversation_id=session_id,
                 project_id=request.app.state.project_id,
             )
             result = await memory_system.store(
@@ -93,9 +95,11 @@ async def memory_recall(request: Request, body: MemoryRecallRequest) -> dict:
     memories = []
     if memory_system:
         try:
+            session_id = str(uuid.uuid4())
             context = MemoryContext(
                 agent_id="rest_api",
-                session_id=str(uuid.uuid4()),
+                session_id=session_id,
+                conversation_id=session_id,
                 project_id=request.app.state.project_id,
             )
             results = await memory_system.retrieve(
@@ -143,13 +147,13 @@ async def memory_list(request: Request) -> dict:
 def _format_memory(item) -> dict | None:
     """Format a memory retrieval result."""
     try:
-        if hasattr(item, "memory"):
-            mem = item.memory
-            meta = getattr(mem, "metadata", {}) or {}
+        if isinstance(item, RetrievalResult):
+            mem = item.item
+            meta = mem.metadata
             return {
-                "content": getattr(mem, "content", str(mem)),
-                "created": str(getattr(mem, "created_at", "unknown")),
-                "importance": getattr(mem, "importance", 0.5),
+                "content": mem.content,
+                "created": str(mem.created_at),
+                "importance": mem.importance,
                 "confidence": meta.get("confidence", 1.0),
                 "file_paths": meta.get("file_paths", []),
                 "category": meta.get("category", "unknown"),

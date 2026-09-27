@@ -60,18 +60,6 @@ Local providers and the external provider contract.
 
 ---
 
-## Storage Operations
-
-Day-to-day storage management — indexing config, maintenance, migrations.
-
-| Document | Description |
-|----------|-------------|
-| [storage/index-configuration.md](storage/index-configuration.md) | Index configuration — vector indexes, FTS indexes, performance tuning |
-| [storage/maintenance.md](storage/maintenance.md) | Maintenance — vacuuming, reindexing, monitoring, table health |
-| [storage/schema-migration.md](storage/schema-migration.md) | Schema migration — version upgrades, table changes, data migration |
-
----
-
 ## API Reference
 
 Programmatic interfaces for embedding Agentic Inquiry in your own code.

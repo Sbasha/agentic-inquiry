@@ -316,10 +316,6 @@ async def index_command(args: argparse.Namespace) -> int:
             project_id,
             project_root=str(index_path),
         )
-        # Set branch on the pipeline if specified (WS4)
-        if branch_name and branch_name != "main":
-            pipeline._branch_id = branch_name
-
         if not args.quiet:
             print("Starting indexing (this may take a while)...")
 

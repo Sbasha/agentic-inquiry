@@ -1,6 +1,5 @@
 """Tests for PrecomputedCache."""
 import pytest
-import tempfile
 from pathlib import Path
 from datetime import datetime, timedelta
 

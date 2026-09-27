@@ -12,8 +12,22 @@ from agentic_inquiry.config import Config
 from agentic_inquiry.utils.logging_setup import LoggingConfigurator
 
 
-def test_logging_path_relative_to_storage_root():
+@pytest.fixture(autouse=True)
+def restore_root_handlers():
+    """Remove and close the file handlers LoggingConfigurator.setup adds."""
+    root_logger = logging.getLogger()
+    before = list(root_logger.handlers)
+    yield
+    for handler in root_logger.handlers[:]:
+        if handler not in before:
+            root_logger.removeHandler(handler)
+            handler.close()
+
+
+def test_logging_path_relative_to_storage_root(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify logs are placed under storage.root when using relative path."""
+    # The default storage root is relative to the cwd.
+    monkeypatch.chdir(tmp_path)
     # Load default config
     config = Config.load()
     
@@ -22,11 +36,12 @@ def test_logging_path_relative_to_storage_root():
     
     # Get the actual log directory from handlers
     root_logger = logging.getLogger()
-    log_paths = []
-    for handler in root_logger.handlers:
-        if hasattr(handler, 'baseFilename'):
-            log_path = Path(handler.baseFilename)
-            log_paths.append(log_path)
+    # pytest's own log-file handler also carries a baseFilename (/dev/null).
+    log_paths = [
+        Path(handler.baseFilename)
+        for handler in root_logger.handlers
+        if getattr(handler, "baseFilename", "").endswith("main.log")
+    ]
     
     assert len(log_paths) > 0, "No log handlers found"
     
@@ -53,8 +68,10 @@ def test_logging_path_relative_to_storage_root():
 
 
 
-def test_default_logging_path():
+def test_default_logging_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Verify default config places logs under .agentic-inquiry/logs."""
+    # The default storage root is relative to the cwd.
+    monkeypatch.chdir(tmp_path)
     # Load default config
     config = Config.load()
     
@@ -63,11 +80,12 @@ def test_default_logging_path():
     
     # Get the actual log directory from handlers
     root_logger = logging.getLogger()
-    log_paths = []
-    for handler in root_logger.handlers:
-        if hasattr(handler, 'baseFilename'):
-            log_path = Path(handler.baseFilename)
-            log_paths.append(log_path)
+    # pytest's own log-file handler also carries a baseFilename (/dev/null).
+    log_paths = [
+        Path(handler.baseFilename)
+        for handler in root_logger.handlers
+        if getattr(handler, "baseFilename", "").endswith("main.log")
+    ]
     
     assert len(log_paths) > 0, "No log handlers found"
     

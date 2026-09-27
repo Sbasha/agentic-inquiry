@@ -84,6 +84,17 @@ def test_with_document():
     # Use document in test...
 ```
 
+### `thread_watchdog.py`
+
+A pytest plugin, loaded from `tests/conftest.py`. Interpreter shutdown waits
+for every non-daemon thread, so a resource a test leaves open (an
+`EventStore` or `StorageFacade`, whose aiosqlite connection runs a
+non-daemon thread) keeps the process alive after pytest has printed its
+summary. If such a thread is still alive 10 seconds into shutdown, the
+plugin prints each thread's name, type and stack and exits with pytest's
+status, or 1 when that was 0. Fix the leak by closing the resource in the
+test or fixture that opened it.
+
 ## Guidelines
 
 ### When to Add Helpers
