@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Any, Dict, FrozenSet, List, Optional
+from typing import Any, Dict, FrozenSet, List, Optional, Union
 
 from typing import TYPE_CHECKING
 
@@ -618,7 +618,7 @@ class HybridSearchService:
 
     async def hybrid_search(
         self,
-        query_vector: List[float],
+        query_vector: Union[List[float], str],
         query_fts: str,
         sanitized_fts_query: str,
         vector_search_fn,
@@ -638,7 +638,8 @@ class HybridSearchService:
         """Perform hybrid search combining vector and full-text search.
 
         Args:
-            query_vector: Query vector for semantic search
+            query_vector: Query vector for semantic search, or raw query text
+                for server-side embedding; passed through to ``vector_search_fn``
             query_fts: Original FTS query string
             sanitized_fts_query: Sanitized FTS query string
             vector_search_fn: Function returning List[SearchResult]

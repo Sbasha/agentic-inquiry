@@ -21,7 +21,7 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from agentic_inquiry.cli.env_resolver import load_config_for_environment
 
@@ -37,7 +37,7 @@ def get_test_files() -> list[tuple[str, str, Path]]:
     Returns:
         List of (test_id, test_name, file_path) tuples
     """
-    tests = []
+    tests: list[tuple[str, str, Path]] = []
     if not TESTS_DIR.exists():
         return tests
 
@@ -78,8 +78,8 @@ def parse_test_file(path: Path) -> dict:
             time_estimate = line.split(":**")[1].strip()
 
     # Extract test sections (## Test N: ...)
-    test_sections = []
-    current_section = None
+    test_sections: list[dict[str, Any]] = []
+    current_section: Optional[dict[str, Any]] = None
 
     for line in lines:
         if line.startswith("## Test ") or line.startswith("## T"):
@@ -229,18 +229,13 @@ async def run_test_scenario(
     from agentic_inquiry.embeddings.sentence_transformer import SentenceTransformerEmbedder
 
     # Find the test file
-    tests = get_test_files()
-    test_file = None
-    test_name = None
-
-    for tid, name, path in tests:
-        if tid == test_id.zfill(2):
-            test_file = path
-            test_name = name
-            break
-
-    if not test_file:
+    match = next(
+        ((name, path) for tid, name, path in get_test_files() if tid == test_id.zfill(2)),
+        None,
+    )
+    if match is None:
         return {"status": "error", "message": f"Test {test_id} not found"}
+    test_name, test_file = match
 
     # Parse test file
     parsed = parse_test_file(test_file)
@@ -267,7 +262,7 @@ async def run_test_scenario(
         log.write("| # | Severity | Description | Status |\n")
         log.write("|---|----------|-------------|--------|\n")
 
-    results = {
+    results: dict[str, Any] = {
         "test_id": test_id,
         "test_name": test_name,
         "project_id": project_id,
@@ -430,7 +425,7 @@ async def _run_smoke_test(storage, config, project_id: str, output_dir: Path, re
         query_vector = await embedding_service.embed_async(query)
 
         search_results = await search.hybrid_search(
-            query_vector=query_vector,
+            query_vector=query_vector.tolist(),
             query_fts=query,
             project_id=project_id,
             limit=5,

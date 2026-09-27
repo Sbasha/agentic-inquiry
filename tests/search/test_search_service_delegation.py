@@ -166,3 +166,24 @@ class TestSearchServiceDelegation:
         # Verify delegation
         search_service._graph_search.rerank_by_graph.assert_called_once_with(search_results)
         assert result == search_results
+
+
+class TestSearchServiceContracts:
+    """Return and argument contracts of SearchService entry points."""
+
+    @pytest.mark.unit
+    async def test_execute_filter_only_returns_search_results(self, search_service):
+        """A filter-only QuerySpec yields SearchResult objects, like the other branches."""
+        from agentic_inquiry.database.query_spec import QuerySpec
+        from agentic_inquiry.database.results import SearchResult
+
+        search_service.advanced_filter_search = AsyncMock(
+            return_value=[{"id": "chunk_1", "project_id": "test_project"}]
+        )
+
+        results = await search_service.execute(QuerySpec(table="document_chunks", limit=5))
+
+        assert len(results) == 1
+        assert isinstance(results[0], SearchResult)
+        assert results[0].id == "chunk_1"
+        assert results[0].source == "filter"

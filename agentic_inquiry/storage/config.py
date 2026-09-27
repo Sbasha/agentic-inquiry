@@ -43,7 +43,7 @@ BackendType = Literal[
 ]
 
 # Valid storage roles
-StorageRole = Literal["vector", "graph", "events", "file_tracker"]
+StorageRole = Literal["vector", "graph", "events", "file_tracker", "onboard_metadata"]
 
 
 class BackendConfig(BaseModel):
