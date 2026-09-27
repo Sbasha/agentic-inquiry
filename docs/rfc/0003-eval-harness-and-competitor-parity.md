@@ -196,14 +196,15 @@ Reported numbers come from other harnesses, models and labels, so every competit
   - `mem0`: mem0 with a local vector store; one `add` per session, queried with `search`
   - `cognee`: Cognee with its local graph and vector stores; `add` plus `cognify` per corpus, queried with its default search
 - **Ingestion model.** Every competitor LLM call goes to `claude-haiku-4-5-20251001` through the Claude subscription: Graphify's own `claude-cli` backend, and for the others a local OpenAI-compatible endpoint (`evals/claude_shim.py`) that forwards each chat completion to `claude -p`, with JSON mode and tool calls expressed in the prompt. Responses are cached by request hash. Tools that need embeddings use Ollama `bge-m3`, the dense baseline's model.
-- **Context.** Each arm's context is the text its native query path returns: Graphify's rendered subgraph, mem0's retrieved memories, Cognee's retrieved passages, and for OpenKB the wiki pages and source excerpts its agent read. It is cut at 2,000 tokens with the same renderer as every other arm.
+- **Context.** Each arm's context is the text its native query path returns: Graphify's rendered subgraph, mem0's retrieved memories, Cognee's retrieved passages, and for OpenKB the wiki pages and source excerpts its agent read. It is cut at 2,000 tokens with the same renderer as every other arm. OpenKB's reads are ordered source excerpts first, then summary, concept and entity pages, then `index.md`, so its listing page cannot crowd out evidence.
 - **Suites.** Level B only, since these tools rewrite content and cannot be scored on source spans:
-  - LOCOMO: the same 200 test questions as Level B.
-  - LongMemEval-S: 60 test questions, 10 per question type (fewer if a type has fewer), chosen by the lowest `sha256(question_id)` within each type. Every arm, `inquiry` and the baselines included, answers the same 60.
+  - LOCOMO, the primary comparison: the same 200 test questions as Level B.
+  - LongMemEval-S, a second stage: 30 test questions, 5 per question type, chosen by the lowest `sha256(question_id)` within each type. It runs for `inquiry`, the baselines and the competitor with the highest LOCOMO accuracy. With 30 paired questions only a gap of roughly 28 points is detectable, so this stage is reported as directional and is not part of H6.
+- **Why LOCOMO carries the claim.** Competitor cost scales with sessions ingested, not questions asked. The LOCOMO test split is 7 conversations and 190 sessions; every LongMemEval question has its own haystack of about 50 sessions. mem0 used about 13,000 input and 7,000 output tokens per session in the smoke run. 200 LOCOMO questions detect a gap of about 10 points.
 - **Answerer, judges and metrics** are Level B's, unchanged.
 - **Failures.** A corpus a competitor cannot ingest counts as an empty context for its questions and is reported per arm.
 
-**H6.** `inquiry` answer accuracy exceeds each live competitor's on LOCOMO and on the LongMemEval sample: paired bootstrap CI lower bound above 0, with conversations as clusters for LOCOMO and questions for LongMemEval.
+**H6.** `inquiry` answer accuracy on LOCOMO exceeds each live competitor's: paired bootstrap CI lower bound above 0, with conversations as clusters.
 
 ## Options considered
 

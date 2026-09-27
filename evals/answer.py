@@ -274,12 +274,34 @@ def _ollama_digest(model: str) -> str:
 # --------------------------------------------------------------------------
 
 
-def run_answers(arm_names: list[str], split: str, n: int, jobs: int = 3) -> Path:
+def lme_sample(cases: list[Case], per_type: int) -> list[Case]:
+    """LongMemEval questions pre-registered for Level B: the ``per_type`` lowest
+    ``sha256(question_id)`` within each question type (RFC-0003 amendment)."""
+    by_type: dict[str, list[Case]] = defaultdict(list)
+    for case in cases:
+        by_type[case.meta["type"]].append(case)
+    return [
+        case
+        for kind in sorted(by_type)
+        for case in sorted(
+            by_type[kind], key=lambda c: hashlib.sha256(c.id.encode()).hexdigest()
+        )[:per_type]
+    ]
+
+
+def run_answers(
+    arm_names: list[str], split: str, n: int, jobs: int = 3, suite_name: str = "locomo"
+) -> Path:
+    """Answer and judge ``n`` questions; for LongMemEval ``n`` is per question type."""
     guard_test_split(split)
-    suite = LOADERS["locomo"]()
+    suite = LOADERS[suite_name]()
     pool_cases = [c for c in suite.cases if c.split == split]
-    cases = stratified(pool_cases, n, "category")
-    arms = applicable_arms(suite, arm_names)
+    cases = (
+        lme_sample(pool_cases, n)
+        if suite_name == "longmemeval"
+        else stratified(pool_cases, n, "category")
+    )
+    arms = applicable_arms(suite, arm_names, answers=True)
     answerer = KIMI if os.environ.get("MOONSHOT_API_KEY") else ANSWERER
     judge = KIMI if os.environ.get("MOONSHOT_API_KEY") else JUDGE
     started = datetime.now(timezone.utc)
@@ -320,7 +342,7 @@ def run_answers(arm_names: list[str], split: str, n: int, jobs: int = 3) -> Path
         return {
             "arm": arm_name,
             "case": case.id,
-            "category": case.meta.get("category"),
+            "category": case.meta.get("category", case.meta.get("type")),
             "context_tokens": tokens,
             "gold": gold,
             "answer": answer["text"],
@@ -337,16 +359,17 @@ def run_answers(arm_names: list[str], split: str, n: int, jobs: int = 3) -> Path
                 print(f"  answered {number}/{len(work)}", file=sys.stderr)
 
     report = _answer_report(rows, arms, cases, split, started, answerer, judge)
+    report["suite"] = suite_name
     stamp = started.strftime("%Y%m%dT%H%M%SZ")
     target = (
         RESULTS
-        / "locomo"
+        / suite_name
         / f"answers-{split}-{stamp}-{_git('rev-parse', '--short=8', 'HEAD')}.json"
     )
     target.parent.mkdir(parents=True, exist_ok=True)
     target.write_text(json.dumps(report, indent=1, sort_keys=True) + "\n")
     if split == "test":
-        record_test_run("locomo-answers", [a.name for a in arms], report, target)
+        record_test_run(f"{suite_name}-answers", [a.name for a in arms], report, target)
     _print(report)
     print(f"results: {target.relative_to(REPO_ROOT)}", file=sys.stderr)
     return target
@@ -437,7 +460,7 @@ def _answer_report(
 
 def _print(report: dict[str, Any]) -> None:
     print(
-        f"\nlocomo answers / {report['split']}  kappa={report['judge_agreement']['cohen_kappa']:.3f}"
+        f"\n{report['suite']} answers / {report['split']}  kappa={report['judge_agreement']['cohen_kappa']:.3f}"
     )
     print(f"{'arm':12}  {'accuracy':>9}  {'judge2':>7}  {'f1':>6}  {'ctx tok':>7}  err")
     for arm, s in report["summary"].items():

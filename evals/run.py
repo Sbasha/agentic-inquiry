@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from evals.arms import REPO_ROOT, make_arm
+from evals.arms import COMPETITORS, REPO_ROOT, make_arm
 from evals.data import LOADERS, SEED, Case, Suite
 from evals.metrics import (
     Hit,
@@ -36,7 +36,7 @@ LEDGER = RESULTS / "test-ledger.jsonl"
 RFC = REPO_ROOT / "docs" / "rfc" / "0003-eval-harness-and-competitor-parity.md"
 MAX_FAILURE_SHARE = 0.05
 # Arms whose index build runs in a subprocess and can be built concurrently.
-PREFETCH = {"graphify", "inquiry"}
+PREFETCH = {"graphify", "inquiry", "graphify-text", "mem0", "openkb", "cognee"}
 
 # Metrics compared between arms, per suite family (RFC-0003 primary first).
 COMPARED = {
@@ -253,10 +253,18 @@ def select_cases(
     return cases[:limit] if limit else cases
 
 
-def applicable_arms(suite: Suite, arm_names: list[str]) -> list[Any]:
-    # Graphify builds graphs from code without an LLM; its text path needs a
-    # paid extraction model, so it runs live on code suites only (RFC-0003).
-    # bm25-paths is the pointer-output control for code localization only.
+def applicable_arms(
+    suite: Suite, arm_names: list[str], answers: bool = False
+) -> list[Any]:
+    # graphify is the AST-only code graph; its text path is the graphify-text
+    # competitor. bm25-paths is the pointer-output control for code localization.
+    # Competitors rewrite content, so they have no source spans to score outside
+    # Level B (RFC-0003 amendment).
+    rewriting = sorted(set(arm_names) & set(COMPETITORS))
+    if rewriting and not answers:
+        raise SystemExit(
+            f"{', '.join(rewriting)}: Level B only (python -m evals answer)"
+        )
     code_only = {"graphify", "bm25-paths"}
     return [make_arm(name) for name in arm_names if suite.code or name not in code_only]
 

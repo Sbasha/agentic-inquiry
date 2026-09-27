@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import pytest
 
-from evals.answer import cohen_kappa, parse_label, stratified, token_f1
+import hashlib
+
+from evals.answer import cohen_kappa, lme_sample, parse_label, stratified, token_f1
 from evals.data import Case
 
 
@@ -43,3 +45,23 @@ def test_stratified_is_proportional_and_seeded() -> None:
     assert len(pick) == 20
     assert sum(c.meta["category"] == 1 for c in pick) == 10
     assert [c.id for c in pick] == [c.id for c in stratified(cases, 20, "category")]
+
+
+def test_lme_sample_takes_lowest_question_hashes_per_type() -> None:
+    cases = [
+        Case(
+            id=f"q{i}",
+            suite="longmemeval",
+            corpus=f"q{i}",
+            query="",
+            gold_units={},
+            meta={"type": "a" if i % 3 else "b"},
+        )
+        for i in range(30)
+    ]
+    pick = lme_sample(cases, 4)
+    assert len(pick) == 8
+    for kind in ("a", "b"):
+        ids = [c.id for c in cases if c.meta["type"] == kind]
+        lowest = sorted(ids, key=lambda i: hashlib.sha256(i.encode()).hexdigest())[:4]
+        assert [c.id for c in pick if c.meta["type"] == kind] == lowest

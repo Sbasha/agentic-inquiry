@@ -34,10 +34,18 @@ def main() -> None:
         help="earlier results file whose arms are replayed (its inquiry becomes inquiry@sha)",
     )
 
-    answer = sub.add_parser("answer", help="Level B answer quality on LOCOMO")
+    answer = sub.add_parser(
+        "answer", help="Level B answer quality on LOCOMO or LongMemEval"
+    )
+    answer.add_argument("--suite", default="locomo", choices=["locomo", "longmemeval"])
     answer.add_argument("--arms", default="bm25,dense,hybrid,inquiry")
     answer.add_argument("--split", default="dev", choices=["dev", "test"])
-    answer.add_argument("--n", type=int, default=200)
+    answer.add_argument(
+        "--n",
+        type=int,
+        default=200,
+        help="questions; per question type for longmemeval",
+    )
     answer.add_argument("--jobs", type=int, default=3)
 
     agent = sub.add_parser("agent", help="Level C code-agent runs per arm")
@@ -76,7 +84,11 @@ def main() -> None:
         from evals.answer import run_answers
 
         run_answers(
-            [a for a in args.arms.split(",") if a], args.split, args.n, args.jobs
+            [a for a in args.arms.split(",") if a],
+            args.split,
+            args.n,
+            args.jobs,
+            args.suite,
         )
     elif args.command == "report":
         from evals.report import main as report_main

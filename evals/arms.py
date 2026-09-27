@@ -750,6 +750,105 @@ class Inquiry:
         return float(json.loads((target / "index.json").read_text())["seconds"])
 
 
+# --------------------------------------------------------------------------
+# Live competitors that rewrite content (RFC-0003 amendment: Level B only)
+# --------------------------------------------------------------------------
+
+# arm name -> (package spec, venv directory under CACHE/venvs)
+COMPETITORS = {
+    "graphify-text": ("graphifyy==0.9.68", "graphifyy-0.9.68"),
+    "mem0": ("mem0ai==2.2.1", "mem0ai"),
+    "openkb": ("openkb==0.4.5", "openkb"),
+    "cognee": ("cognee==1.6.1", "cognee"),
+}
+_WORKER = REPO_ROOT / "evals" / "competitor_worker.py"
+
+
+class Competitor:
+    """A released memory or knowledge tool, built and queried by ``competitor_worker.py``
+    inside its own virtualenv. Its context is the tool's native query output as text."""
+
+    def __init__(self, name: str) -> None:
+        self.name = name
+        self.spec, venv = COMPETITORS[name]
+        self.venv = CACHE / "venvs" / venv
+        self.worker_hash = hashlib.sha256(_WORKER.read_bytes()).hexdigest()[:8]
+
+    def config(self) -> dict[str, Any]:
+        return {
+            "package": self.spec,
+            "worker": f"evals/competitor_worker.py@{self.worker_hash}",
+            "llm": "claude-haiku-4-5-20251001 via the Claude subscription",
+            "embeddings": "ollama bge-m3",
+            "display": "native query output as text",
+        }
+
+    def _python(self) -> Path:
+        python = self.venv / "bin" / "python"
+        if not python.exists():
+            subprocess.run(
+                ["uv", "venv", "--quiet", "--python", "3.12", str(self.venv)],
+                check=True,
+            )
+            subprocess.run(
+                ["uv", "pip", "install", "--quiet", "--python", str(python), self.spec],
+                check=True,
+            )
+        return python
+
+    def _run(self, *args: str, stdin: str | None = None, timeout: int) -> str:
+        result = subprocess.run(
+            [str(self._python()), str(_WORKER), *args],
+            input=stdin,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"{self.name} worker {args[0]} failed: {result.stderr.strip()[-600:]}"
+            )
+        return result.stdout
+
+    def index(self, corpus: str, root: Path, suite: Suite) -> Any:
+        version = self.spec.split("==")[1]
+        target = (
+            CACHE
+            / "index"
+            / f"{self.name}-{version}-{self.worker_hash}"
+            / _safe(corpus)
+        )
+        if not (target / "build.json").exists():
+            shutil.rmtree(target, ignore_errors=True)
+            target.mkdir(parents=True)
+            self._run(
+                "index", self.name, str(root), str(target), timeout=INDEX_TIMEOUT_S
+            )
+        return target
+
+    def build_seconds(self, handle: Any) -> float | None:
+        return float(json.loads((Path(handle) / "build.json").read_text())["seconds"])
+
+    def search(
+        self, handle: Any, queries: list[str], k: int
+    ) -> list[tuple[list[Hit], float]]:
+        out = self._run(
+            "search",
+            self.name,
+            str(handle),
+            str(k),
+            stdin=json.dumps(queries),
+            timeout=QUERY_TIMEOUT_S * 5 * max(1, len(queries)),
+        )
+        return [
+            ([Hit("", 0, 0, line) for line in text.rstrip("\n").split("\n")], ms)
+            for text, ms in json.loads(out)
+        ]
+
+    def indexed_paths(self, handle: Any) -> set[str]:
+        return set()
+
+
 ARMS: dict[str, type] = {
     "bm25": Bm25,
     "dense": Dense,
@@ -760,6 +859,8 @@ ARMS: dict[str, type] = {
 
 
 def make_arm(name: str) -> Arm:
+    if name in COMPETITORS:
+        return Competitor(name)
     if name == "bm25-paths":
         return Bm25(pointers=True)
     return ARMS[name]()  # type: ignore[no-any-return]

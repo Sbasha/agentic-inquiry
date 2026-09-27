@@ -11,6 +11,7 @@ import json
 import sys
 from typing import Any, Optional
 
+from evals.arms import COMPETITORS
 from evals.run import LEDGER, REPO_ROOT
 
 MEMORY_BASELINES = ("bm25", "dense", "hybrid")
@@ -106,7 +107,7 @@ def verdicts() -> dict[str, Any]:
         report = answers["report"]
         kappa = report["judge_agreement"]["cohen_kappa"]
         best = report.get("best_baseline") or max(
-            (arm for arm in report["summary"] if arm != "inquiry"),
+            (arm for arm in report["summary"] if arm in MEMORY_BASELINES),
             key=lambda arm: report["summary"][arm]["accuracy"],
         )
         comp = _comparison(report, "accuracy", "inquiry", best)
@@ -118,6 +119,19 @@ def verdicts() -> dict[str, Any]:
         }
     else:
         out["H4"] = {"pass": None, "status": "not run"}
+
+    competitors = (
+        tuple(arm for arm in answers["report"]["summary"] if arm in COMPETITORS)
+        if answers
+        else ()
+    )
+    if answers and competitors:
+        out["H6"] = {
+            "suite": "locomo",
+            **_beats(answers["report"], "accuracy", competitors),
+        }
+    else:
+        out["H6"] = {"pass": None, "status": "not run"}
 
     agent = runs.get("agent")
     if agent:

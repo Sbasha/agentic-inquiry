@@ -131,7 +131,7 @@ def mcp_config(
     if arm == "graphify":
         graphify = Graphify()
         target = graphify.index(case.corpus, root, suite)
-        server = {
+        server: dict[str, Any] = {
             "command": str(graphify.venv / "bin" / "graphify-mcp"),
             "args": ["--graph", str(Path(target) / "graph.json")],
         }

@@ -11,7 +11,7 @@ dependency policy is [ADR-0006](../docs/adr/0006-eval-dependencies-and-isolated-
 | Level | Command | Cost | What it measures |
 | --- | --- | --- | --- |
 | A | `python -m evals run --suite <suite> --split dev` | $0, deterministic | Retrieval quality within a token budget, per arm |
-| B | `python -m evals answer --split dev --n 200` | subscription or Moonshot key | LOCOMO answer accuracy from each arm's context, two judges |
+| B | `python -m evals answer --split dev --n 200` | subscription or Moonshot key | LOCOMO (or `--suite longmemeval`, `--n` per question type) answer accuracy from each arm's context, two judges |
 | C | `python -m evals agent --split test` | subscription | A tool-using code agent per arm: localization and tokens |
 
 Run every command with the `eval` dependency group, `uv run --group eval python -m evals ...`. `make eval-dev` runs Level A dev for every suite.
@@ -36,6 +36,23 @@ Run every command with the `eval` dependency group, `uv run --group eval python 
 | `hybrid` | RRF (k=60) of `bm25` and `dense` |
 | `graphify` | `graphifyy==0.9.68` from an isolated venv; code suites only |
 | `inquiry` | The checked-out package: `IndexingPipeline` and `SearchService.hybrid_search` |
+
+Level B also takes live competitors that rewrite content, so they have no
+source spans for Level A. Each is built and queried by
+`evals/competitor_worker.py` inside its own venv, and its context is the
+tool's native query output:
+
+| Arm | Build | Context |
+| --- | --- | --- |
+| `graphify-text` | `graphifyy==0.9.68`, `graphify extract` with its `claude-cli` backend | `graphify query --budget 2000` |
+| `mem0` | `mem0ai==2.2.1`, one `add` per session, local Qdrant | `search` memories |
+| `openkb` | `openkb==0.4.5`, `openkb add` over the corpus | pages and excerpts its query agent read, source excerpts first |
+| `cognee` | `cognee==1.6.1`, `add` plus `cognify` | default `HYBRID_COMPLETION` search with `only_context` |
+
+Their LLM calls use `claude-haiku-4-5-20251001` on the Claude subscription.
+Graphify calls `claude -p` itself; the others need the OpenAI-compatible shim
+running first: `uv run --group eval python -m evals.claude_shim` (responses
+cached under `llm-shim/`). Embeddings come from Ollama `bge-m3`.
 
 Every arm's hits are rendered in rank order and cut at a token budget
 (tiktoken `cl100k_base`), so an arm pays for exactly what an agent would read.
