@@ -1,13 +1,10 @@
 """Interactive client for Agentic Inquiry MCP Server."""
 
-import sys
-import json
 import logging
 import urllib.request
 import urllib.error
 import urllib.parse
-from typing import Dict, Any, Optional, List
-from pathlib import Path
+from typing import Dict, Any, List
 
 from agentic_inquiry.cli.env_resolver import load_config_for_environment
 

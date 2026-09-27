@@ -12,23 +12,6 @@
         "--project-id", "test",
         "--transport", "stdio"
       ]
-    },
-    "ai-test-postgres": {
-      "command": "uv",
-      "args": [
-        "run",
-        "ai",
-        "--config", "config/test-postgresql.yaml",
-        "--project-id", "test",
-        "--transport", "stdio"
-      ],
-      "env": {
-        "CLOUDSQL_PROJECT": "${CLOUDSQL_PROJECT}",
-        "CLOUDSQL_REGION": "${CLOUDSQL_REGION}",
-        "CLOUDSQL_INSTANCE": "${CLOUDSQL_INSTANCE}",
-        "CLOUDSQL_DATABASE": "${CLOUDSQL_DATABASE}",
-        "CLOUDSQL_USER": "${CLOUDSQL_USER}"
-      }
     }
   }
 }

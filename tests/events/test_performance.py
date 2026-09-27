@@ -3,15 +3,18 @@
 Tests performance targets:
 - Event emission latency: < 1ms
 - Batch write throughput: > 1000 events/sec
-- Query performance: < 10ms for 1000 events
+- Queries by operation, type and time range are served by an index
 - Memory usage under load: < 10MB
 """
 
 import asyncio
+import re
+import sqlite3
 import time
 import tracemalloc
+from contextlib import closing
 from pathlib import Path
-from typing import List
+from typing import Any, Callable, List
 
 import pytest
 
@@ -23,6 +26,46 @@ from agentic_inquiry.events.models import Event, EventStatus
 from agentic_inquiry.events.store import EventStore
 
 
+@pytest.fixture
+def select_plans(monkeypatch: pytest.MonkeyPatch) -> Callable[[Path], List[List[str]]]:
+    """Record SELECTs on ``events`` and return a function that explains them.
+
+    Wraps ``sqlite3.connect`` (which aiosqlite calls on its worker thread) so
+    every statement the store runs is traced. The returned function runs
+    ``EXPLAIN QUERY PLAN`` for each recorded SELECT against the given database
+    and returns one list of plan steps per statement.
+    """
+    statements: List[str] = []
+    real_connect = sqlite3.connect
+
+    def tracing_connect(*args: Any, **kwargs: Any) -> sqlite3.Connection:
+        conn = real_connect(*args, **kwargs)
+        conn.set_trace_callback(statements.append)
+        return conn
+
+    monkeypatch.setattr(sqlite3, "connect", tracing_connect)
+
+    def explain(db_path: Path) -> List[List[str]]:
+        selects = [sql for sql in statements if re.match(r"\s*SELECT\b.*\bFROM events\b", sql, re.I | re.S)]
+        assert selects, "store issued no SELECT on events"
+        with closing(real_connect(db_path)) as conn:
+            # The trace may carry ``?`` placeholders instead of bound values;
+            # binding NULL does not change the plan without ANALYZE statistics.
+            return [
+                [row[3] for row in conn.execute(f"EXPLAIN QUERY PLAN {sql}", [None] * sql.count("?"))]
+                for sql in selects
+            ]
+
+    return explain
+
+
+def assert_indexed(plans: List[List[str]]) -> None:
+    """Assert every plan searches ``events`` through an index, never a full scan."""
+    for plan in plans:
+        assert any(step.startswith("SEARCH events USING") and "INDEX" in step for step in plan), plan
+        assert not any(step.startswith("SCAN events") for step in plan), plan
+
+
 class TestEventEmissionLatency:
     """Test event emission latency (target: < 1ms)."""
 
@@ -32,6 +75,7 @@ class TestEventEmissionLatency:
         """Test that single event emission is under 1ms."""
         # Setup
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test")
         async with system:
@@ -78,6 +122,7 @@ class TestEventEmissionLatency:
     async def test_concurrent_event_emission_latency(self, tmp_path: Path):
         """Test event emission latency under concurrent load."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test_concurrent")
         async with system:
@@ -132,6 +177,7 @@ class TestBatchWriteThroughput:
     async def test_batch_write_throughput(self, tmp_path: Path):
         """Test that batch writing achieves > 1000 events/sec."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test_throughput")
         async with system:
@@ -174,6 +220,7 @@ class TestBatchWriteThroughput:
     async def test_sustained_throughput(self, tmp_path: Path):
         """Test sustained throughput over longer period."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test_sustained")
         async with system:
@@ -213,21 +260,22 @@ class TestBatchWriteThroughput:
 
 
 class TestQueryPerformance:
-    """Test query performance (target: < 10ms for 1000 events)."""
+    """Test that event queries are served by an index, not a table scan.
 
-    @pytest.mark.slow
+    Wall-clock thresholds here sat inside run-to-run noise and failed at
+    random, so these tests check the SQLite query plan instead.
+    """
+
     @pytest.mark.asyncio
-    async def test_operation_query_performance(self, tmp_path: Path):
-        """Test querying events by operation_id is under 10ms for 1000 events."""
-        # Setup store with test data
+    async def test_operation_query_performance(self, tmp_path: Path, select_plans):
+        """Test that querying events by operation_id uses an index."""
         db_path = tmp_path / "query_perf.db"
         config = Config.load()
-        
+
         store = await EventStore.from_config(config=config, project_id="perf_test_query", db_path=db_path)
-        await store._ensure_initialized()
-        
-        # Insert 1000 events for same operation
+
         operation_id = "test_operation_123"
+        base_time = time.time()
         events = [
             Event(
                 project_id="perf_test_query",
@@ -235,146 +283,82 @@ class TestQueryPerformance:
                 event_type="test.query",
                 source="perf_test",
                 status=EventStatus.PROGRESS,
+                timestamp=base_time + i,
                 metadata={"index": i},
             )
             for i in range(1000)
         ]
-        
         await store.store_events(events)
-        
-        # Measure query performance
-        query_times: List[float] = []
-        num_queries = 50
-        
-        for _ in range(num_queries):
-            start = time.perf_counter()
-            results = await store.get_operation_events(operation_id)
-            end = time.perf_counter()
-            query_times.append((end - start) * 1000)  # Convert to ms
-            
-            assert len(results) == 1000
-        
-        avg_query_time = sum(query_times) / len(query_times)
-        max_query_time = max(query_times)
-        p95_query_time = sorted(query_times)[int(len(query_times) * 0.95)]
-        
-        print("\nOperation Query Performance (1000 events):")
-        print(f"  Queries: {num_queries}")
-        print(f"  Average: {avg_query_time:.2f}ms")
-        print(f"  P95: {p95_query_time:.2f}ms")
-        print(f"  Max: {max_query_time:.2f}ms")
-        
-        await store.close()
-        
-        # Verify target: < 10ms average
-        assert avg_query_time < 10.0, \
-            f"Average query time {avg_query_time:.2f}ms exceeds 10ms target"
 
-    @pytest.mark.slow
+        results = await store.get_operation_events(operation_id)
+        plans = select_plans(db_path)
+        await store.close()
+
+        assert [event.metadata["index"] for event in results] == list(range(1000))
+        assert_indexed(plans)
+        # The index also supplies the timestamp order, so SQLite never sorts.
+        assert not any("TEMP B-TREE" in step for plan in plans for step in plan), plans
+
     @pytest.mark.asyncio
-    async def test_type_filter_query_performance(self, tmp_path: Path):
-        """Test querying events by type is performant."""
+    async def test_type_filter_query_performance(self, tmp_path: Path, select_plans):
+        """Test that querying events by type uses an index."""
         db_path = tmp_path / "type_query_perf.db"
         config = Config.load()
-        
-        store = await EventStore.from_config(config=config, project_id="perf_test_type_query", db_path=db_path)
-        await store._ensure_initialized()
-        
-        # Insert events with different types
-        events = []
-        for i in range(2000):
-            event_type = f"test.type_{i % 5}"  # 5 different types
-            events.append(
-                Event(
-                    project_id="perf_test_type_query",
-                    operation_id=f"op_{i}",
-                    event_type=event_type,
-                    source="perf_test",
-                    status=EventStatus.PROGRESS,
-                )
-            )
-        
-        await store.store_events(events)
-        
-        # Query by specific type
-        query_times: List[float] = []
-        num_queries = 30
-        
-        for _ in range(num_queries):
-            start = time.perf_counter()
-            results = await store.get_events_by_type("test.type_0")
-            end = time.perf_counter()
-            query_times.append((end - start) * 1000)
-            
-            assert len(results) == 400  # 2000 / 5 types
-        
-        avg_query_time = sum(query_times) / len(query_times)
-        
-        print("\nType Filter Query Performance:")
-        print("  Total events: 2000")
-        print("  Matching events: 400")
-        print(f"  Average query time: {avg_query_time:.2f}ms")
-        
-        await store.close()
-        
-        # Should be fast with index
-        assert avg_query_time < 15.0, \
-            f"Type query time {avg_query_time:.2f}ms is too slow"
 
-    @pytest.mark.slow
+        store = await EventStore.from_config(config=config, project_id="perf_test_type_query", db_path=db_path)
+
+        events = [
+            Event(
+                project_id="perf_test_type_query",
+                operation_id=f"op_{i}",
+                event_type=f"test.type_{i % 5}",
+                source="perf_test",
+                status=EventStatus.PROGRESS,
+            )
+            for i in range(2000)
+        ]
+        await store.store_events(events)
+
+        results = await store.get_events_by_type("test.type_0")
+        plans = select_plans(db_path)
+        await store.close()
+
+        assert len(results) == 400  # 2000 / 5 types
+        assert {event.event_type for event in results} == {"test.type_0"}
+        assert_indexed(plans)
+
     @pytest.mark.asyncio
-    async def test_time_range_query_performance(self, tmp_path: Path):
-        """Test querying events by time range is performant."""
+    async def test_time_range_query_performance(self, tmp_path: Path, select_plans):
+        """Test that querying events by time range uses an index."""
         db_path = tmp_path / "time_query_perf.db"
         config = Config.load()
-        
+
         store = await EventStore.from_config(config=config, project_id="perf_test_time_query", db_path=db_path)
-        await store._ensure_initialized()
-        
-        # Insert events with different timestamps
+
         base_time = time.time()
-        events = []
-        for i in range(3000):
-            events.append(
-                Event(
-                    project_id="perf_test_time_query",
-                    operation_id=f"op_{i}",
-                    event_type="test.time",
-                    source="perf_test",
-                    status=EventStatus.PROGRESS,
-                    timestamp=base_time + i * 0.1,  # 0.1s apart
-                )
+        events = [
+            Event(
+                project_id="perf_test_time_query",
+                operation_id=f"op_{i}",
+                event_type="test.time",
+                source="perf_test",
+                status=EventStatus.PROGRESS,
+                timestamp=base_time + i * 0.1,
             )
-        
+            for i in range(3000)
+        ]
         await store.store_events(events)
-        
-        # Query time range (middle 1000 events)
+
+        # Middle 1000 events
         start_time = base_time + 1000 * 0.1
         end_time = base_time + 2000 * 0.1
-        
-        query_times: List[float] = []
-        num_queries = 30
-        
-        for _ in range(num_queries):
-            start = time.perf_counter()
-            results = await store.get_events_by_time_range(start_time, end_time)
-            end = time.perf_counter()
-            query_times.append((end - start) * 1000)
-            
-            assert len(results) == 1000
-        
-        avg_query_time = sum(query_times) / len(query_times)
-        
-        print("\nTime Range Query Performance:")
-        print("  Total events: 3000")
-        print("  Range events: 1000")
-        print(f"  Average query time: {avg_query_time:.2f}ms")
-        
+        results = await store.get_events_by_time_range(start_time, end_time)
+        plans = select_plans(db_path)
         await store.close()
-        
-        # Should be fast with index
-        assert avg_query_time < 15.0, \
-            f"Time range query time {avg_query_time:.2f}ms is too slow"
+
+        assert len(results) == 1000
+        assert all(start_time <= event.timestamp <= end_time for event in results)
+        assert_indexed(plans)
 
 
 class TestMemoryUsage:
@@ -385,6 +369,7 @@ class TestMemoryUsage:
     async def test_memory_usage_under_load(self, tmp_path: Path):
         """Test that memory usage stays under 10MB during normal operation."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         # Start memory tracking
         tracemalloc.start()
@@ -436,6 +421,7 @@ class TestMemoryUsage:
     async def test_queue_memory_limit(self, tmp_path: Path):
         """Test that queue doesn't grow unbounded."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test_queue")
         async with system:
@@ -475,6 +461,7 @@ class TestStressTest:
     async def test_high_volume_stress(self, tmp_path: Path):
         """Test system under high volume load."""
         config = Config.load()
+        config.storage.root = str(tmp_path)
         
         system = await EventSystem.from_config(config, project_id="perf_test_stress")
         async with system:

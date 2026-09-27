@@ -9,20 +9,17 @@ last_updated: 2025-10-28
 
 # Indexing Pipeline Architecture
 
-> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
-
 The indexing pipeline transforms parsed documents into searchable database records. This document explains how the pipeline works, its components, and how data flows through the system.
 
 ## Overview
 
 The `IndexingPipeline` is the core component that:
 1. Receives `ParsedDocument` from parsers
-2. Generates embeddings for content chunks (or defers to server-side for AlloyDB)
-3. Stores chunks in the database (LanceDB, PostgreSQL, CloudSQL, or AlloyDB)
+2. Generates embeddings for content chunks
+3. Stores chunks in LanceDB
 4. Extracts and stores entities
 5. Resolves and stores relationships
 6. Maintains symbol registry for cross-file linking
-7. Triggers auto-embedding for server-side backends after indexing completes
 
 ## Architecture
 
@@ -132,8 +129,7 @@ Manages embedding providers and generates vector embeddings.
 - Cache embeddings
 
 **Supported Providers:**
-- `sentence_transformer`: Local neural embeddings via HuggingFace (used for LanceDB, PostgreSQL, CloudSQL)
-- `noop`: No-op embedder for server-side embedding backends (AlloyDB)
+- `sentence_transformer`: Local neural embeddings via HuggingFace
 - `hashing`: Fast, deterministic hash-based embeddings (deprecated)
 
 **Example:**
@@ -589,142 +585,7 @@ def test_index_directory():
 
 ---
 
-## Server-Side Embedding Support
-
-Agentic Inquiry supports server-side embedding generation for cloud databases (AlloyDB, CloudSQL with google_ml_integration), eliminating local embedding overhead and achieving 27x indexing performance improvement.
-
-### Configuration
-
-Set `embedding_strategy: "server_side"` in backend configuration:
-
-```yaml
-storage:
-  backend: alloydb
-  backends:
-    alloydb:
-      type: alloydb
-      embedding_strategy: server_side  # Skip local embedding generation
-      embedding_model: text-embedding-005  # Vertex AI model
-      embedding_dim: 768  # Model dimension
-      pool_size: 5
-      max_overflow: 2
-```
-
-**Auto-configuration:** `validate_alloydb_config()` automatically sets server-side configuration for AlloyDB backends.
-
-**Storage Backend Support:**
-- **LanceDB** (`lancedb`): Local embeddings (SentenceTransformer, 384 dims)
-- **PostgreSQL** (`postgresql`): Local embeddings (SentenceTransformer, 384 dims)
-- **CloudSQL** (`cloudsql`): Local embeddings (requires high pool_size due to max_connections=25)
-- **AlloyDB** (`alloydb`): Server-side embeddings (Vertex AI text-embedding-005, 768 dims)
-
-### Pipeline Integration
-
-When `embedding_strategy == "server_side"`:
-
-1. **NoOpEmbedder**: Pipeline uses `agentic_inquiry.embeddings.noop.NoOpEmbedder` instead of local SentenceTransformer
-2. **Skip embedding column**: Providers skip the `embedding` column during `upsert_chunks()` and `upsert_entities()`
-3. **Auto-embed after indexing**: Pipeline calls `generate_embeddings()` method on the provider after indexing completes
-4. **String queries**: Search accepts raw query text; provider calls server-side `embedding()` function
-
-**Table Schema:**
-All storage backends use the `ai_*` table prefix:
-- `ai_v_chunks`: Vector chunks with content and embeddings
-- `ai_v_chunks_fts`: Full-text search index (PostgreSQL/CloudSQL/AlloyDB only)
-- `ai_g_entities`: Graph entities
-- `ai_g_relationships`: Graph relationships
-
-### Auto-Embedding Methods
-
-Providers implement `generate_embeddings()` to populate embeddings after indexing:
-
-```python
-async def generate_embeddings(
-    self,
-    project_id: str,
-    table_name: str,
-    content_column: str = "content",
-    embedding_column: str = "embedding",
-) -> int:
-    """Generate embeddings for rows with NULL embeddings."""
-```
-
-**Two strategies:**
-
-#### 1. Bulk Initialization (Fast Path)
-
-Uses `ai.initialize_embeddings()` stored procedure for fresh tables (no existing embeddings).
-
-**Performance:** ~136-400 embeddings/second
-
-**Requirements:**
-- All rows must have NULL embeddings
-- Content length < ~8000 characters (embedding model has ~2048 token limit)
-- Database flag: `google_ml_integration.enable_faster_embedding_generation = on`
-
-**SQL:**
-```sql
-CALL ai.initialize_embeddings(
-    model_id => 'text-embedding-005',
-    table_name => 'chunks',
-    content_column => 'content',
-    embedding_column => 'embedding',
-    batch_size => 250
-);
-```
-
-**Limitations:**
-- Vertex AI batch limit: 250 instances/request (batch_size <= 250)
-- Request size limit: 4MB (rows with content > ~10KB cause failure)
-- **CRITICAL**: Must run before ANY rows have embeddings. Once rows have embeddings, procedure serializes full row including 7.6KB vectors and hits 4MB limit.
-
-#### 2. Per-Row Fallback (Slow Path)
-
-Uses `UPDATE ... SET embedding = ai.embedding()` for tables with mixed embeddings.
-
-**Performance:** ~25-35 embeddings/second (7 parallel connections)
-
-**SQL:**
-```sql
-UPDATE chunks
-SET embedding = ai.embedding('text-embedding-005', LEFT(content, 8000))
-WHERE project_id = $1 AND embedding IS NULL
-LIMIT 1000;
-```
-
-**Features:**
-- Works with any row state (NULL or existing embeddings)
-- Content truncation: `LEFT(content, 8000)` prevents token limit errors
-- Batched updates (1000 rows/batch) with progress logging
-
-### Pipeline Hooks
-
-Auto-embedding triggers automatically:
-
-1. **Success path**: `_index_sync()` completion triggers `_trigger_auto_embed_if_needed()`
-2. **Timeout path**: Timeout handler also triggers auto-embed for partial results
-3. **Conditional**: Only runs when `embedding_strategy == "server_side"`
-
-```python
-# In pipeline._index_sync()
-if self._backend_type == "alloydb":
-    await self._trigger_auto_embed_if_needed()
-```
-
-### Performance Comparison
-
-| Configuration | Files/sec | Notes |
-|---------------|-----------|-------|
-| CloudSQL + local SentenceTransformer | 0.6 | Bottleneck: CPU-bound embedding |
-| AlloyDB + server-side (GENERATED ALWAYS AS) | 0.6 | Bottleneck: generated column overhead |
-| **AlloyDB + server-side (auto-embed)** | **16.6** | **27x improvement** |
-
-**Production benchmark (16.7K files → 526K chunks):**
-- Average: 16.6 files/sec
-- Peak: 19.7 files/sec
-- Total time: 17 minutes
-
-### Document Parsing Support
+## Document Parsing Support
 
 The indexing pipeline supports structured document formats (DOCX, PDF, DOC) through the `unstructured` library.
 

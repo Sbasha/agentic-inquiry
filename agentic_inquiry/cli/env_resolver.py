@@ -23,7 +23,7 @@ import logging
 import os
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, MutableMapping, Optional
+from typing import TYPE_CHECKING, Any, MutableMapping, Optional
 
 if TYPE_CHECKING:
     from agentic_inquiry.config import Config
@@ -213,16 +213,16 @@ def resolve_environment(workspace: Optional[Path] = None) -> ResolvedEnvironment
         )
 
     # 2. Named environment via INQUIRY_ENV env var
-    if env_name := os.environ.get("INQUIRY_ENV"):
+    if named_env := os.environ.get("INQUIRY_ENV"):
         # Check workspace-local first, then global ~/.agentic-inquiry/
-        config_path = get_env_config_path(env_name, workspace)
+        config_path = get_env_config_path(named_env, workspace)
         if not config_path.exists():
-            config_path = get_env_config_path(env_name, workspace=None)
+            config_path = get_env_config_path(named_env, workspace=None)
         return ResolvedEnvironment(
-            name=env_name,
+            name=named_env,
             config_path=config_path if config_path.exists() else None,
             source="env_var",
-            is_test=is_test_environment(env_name),
+            is_test=is_test_environment(named_env),
         )
 
     # 3. Check registry (workspace-local .agentic-inquiry/ first, then global ~/.agentic-inquiry/)
@@ -275,7 +275,7 @@ def list_environments(workspace: Optional[Path] = None) -> list[dict]:
     Returns:
         List of environment info dicts
     """
-    envs = []
+    envs: list[dict] = []
     data_dir = get_data_dir(workspace)
     envs_dir = data_dir / ENVS_DIR_NAME
 
@@ -473,7 +473,7 @@ def add_environment_to_registry(
             break
 
     # Build environment entry
-    entry = {
+    entry: dict[str, Any] = {
         "name": name,
         "backend_type": backend_type,
         "config_path": config_path,

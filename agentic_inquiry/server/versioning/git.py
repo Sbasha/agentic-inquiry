@@ -96,7 +96,7 @@ class GitVersionManager:
 
             commits = []
             current_sha = None
-            current_files = []
+            current_files: list[str] = []
 
             for line in result.stdout.strip().split("\n"):
                 line = line.strip()

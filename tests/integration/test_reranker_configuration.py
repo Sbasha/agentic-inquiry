@@ -11,10 +11,24 @@ class TestRerankerConfiguration:
     """Test reranker configuration loading and validation."""
     
     def test_default_reranker_type(self):
-        """Test that default reranker type is rrf."""
+        """Test that the default reranker is RRF with k=60."""
+        from unittest.mock import MagicMock
+
+        from agentic_inquiry.search.hybrid_search import HybridSearchService
+        from agentic_inquiry.search.rerankers.rrf import RRFReranker
+
         config = Config.load()
         assert config.search.hybrid_search.reranker_type == "rrf"
-        assert config.search.hybrid_search.reranker_params == {"k": 60}
+        # No default params: they are reranker kwargs, and a user config
+        # merged over default.yaml could not remove an RRF-only key.
+        assert config.search.hybrid_search.reranker_params == {}
+
+        service = HybridSearchService(
+            storage=MagicMock(), config=config, deduplicator=MagicMock()
+        )
+        reranker = service._create_reranker()
+        assert isinstance(reranker, RRFReranker)
+        assert reranker.k == 60
     
     def test_rrf_reranker_configuration(self):
         """Test RRF reranker configuration with k parameter."""
@@ -103,7 +117,11 @@ class TestRerankerConfiguration:
         # Should not raise
         Config._validate_config(config_data)
     
-    def test_invalid_reranker_type(self):
+    @pytest.mark.parametrize("reranker_type", [
+        "not_a_reranker",
+        "cohere",  # hosted-API rerankers are out of scope (CHARTER Principle 1)
+    ])
+    def test_invalid_reranker_type(self, reranker_type):
         """Test that invalid reranker type is rejected."""
         config_data = {
             'storage': {
@@ -119,7 +137,7 @@ class TestRerankerConfiguration:
                 'hybrid_search': {
                     'vector_weight': 0.7,
                     'fts_weight': 0.3,
-                    'reranker_type': 'cohere',  # API-based reranker not supported
+                    'reranker_type': reranker_type,
                     'reranker_params': {}
                 }
             },
@@ -127,7 +145,7 @@ class TestRerankerConfiguration:
             'parsers': {}
         }
         
-        with pytest.raises(ConfigurationError):
+        with pytest.raises(ConfigurationError, match=f"'{reranker_type}' is not one of"):
             Config._validate_config(config_data)
     
     def test_environment_variable_reranker_type(self, monkeypatch):
