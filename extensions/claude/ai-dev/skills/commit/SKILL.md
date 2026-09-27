@@ -26,7 +26,7 @@ uv run mypy agentic_inquiry/              # Type checking
 uv run --env-file .env pytest          # Tests
 
 # If parsers modified
-uv run --env-file .env pytest tests/parsers/test_parser_examples.py
+uv run --env-file .env pytest tests/parsers
 ```
 
 ## Documentation Review

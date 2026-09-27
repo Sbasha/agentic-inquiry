@@ -69,6 +69,7 @@ def create_populated_cache(size: int = 100) -> SimpleCache:
 class TestCacheHitPerformance:
     """Tests for cache hit resolution performance."""
 
+    @pytest.mark.perf
     @pytest.mark.asyncio
     async def test_cache_hit_under_10ms(self):
         """Cache hit resolution SHALL complete in less than 10 milliseconds."""
@@ -94,6 +95,7 @@ class TestCacheHitPerformance:
         assert result is not None
         assert elapsed_ms < 10.0, f"Cache hit took {elapsed_ms:.2f}ms, should be < 10ms"
 
+    @pytest.mark.perf
     @pytest.mark.asyncio
     async def test_multiple_cache_hits_performance(self):
         """Multiple cache hits should all be fast."""
@@ -126,6 +128,7 @@ class TestCacheHitPerformance:
         avg_time_ms = total_time_ms / 10
         assert avg_time_ms < 10.0, f"Average cache hit took {avg_time_ms:.2f}ms"
 
+    @pytest.mark.perf
     def test_simple_cache_get_performance(self):
         """SimpleCache.get() should be O(1)."""
         cache = create_populated_cache(size=1000)
@@ -145,6 +148,7 @@ class TestCacheHitPerformance:
         # Cache lookup should be under 1ms (1,000,000 ns)
         assert avg_ns < 1_000_000, f"Average cache lookup took {avg_ns:.0f}ns"
 
+    @pytest.mark.perf
     @given(
         target_name=st.text(min_size=1, max_size=30, alphabet=st.characters(whitelist_categories=('L', 'N'))),
         target_type=st.sampled_from(["function", "class", "module", "variable"]),
@@ -191,6 +195,7 @@ class TestCacheHitPerformance:
 class TestCacheMissPerformance:
     """Tests for cache miss resolution performance."""
 
+    @pytest.mark.perf
     @pytest.mark.asyncio
     async def test_cache_miss_under_100ms(self):
         """Cache miss resolution SHALL complete in less than 100 milliseconds."""
@@ -209,6 +214,7 @@ class TestCacheMissPerformance:
         # Result may be None (unresolved) but timing should be bounded
         assert elapsed_ms < 100.0, f"Cache miss took {elapsed_ms:.2f}ms, should be < 100ms"
 
+    @pytest.mark.perf
     @pytest.mark.asyncio
     async def test_cache_miss_with_db_query(self):
         """Cache miss with database query should still be bounded."""
@@ -228,6 +234,7 @@ class TestCacheMissPerformance:
 
         assert elapsed_ms < 100.0, f"Cache miss with DB took {elapsed_ms:.2f}ms"
 
+    @pytest.mark.perf
     @given(
         target_name=st.text(min_size=5, max_size=30, alphabet=st.characters(whitelist_categories=('L', 'N'))),
         source_file=st.text(min_size=5, max_size=30, alphabet=st.characters(whitelist_categories=('L', 'N'))),
@@ -455,6 +462,7 @@ class TestProfilingDataCompleteness:
 class TestSimpleCachePerformance:
     """Tests for SimpleCache performance characteristics."""
 
+    @pytest.mark.perf
     def test_repeated_lookup_performance(self):
         """Repeated lookups for same target should be fast."""
         cache = SimpleCache(max_size=1000)
@@ -487,6 +495,7 @@ class TestSimpleCachePerformance:
         avg_ns = sum(timings) / len(timings)
         assert avg_ns < 1_000_000, f"Cache lookup took {avg_ns:.0f}ns"
 
+    @pytest.mark.perf
     def test_cache_eviction_performance(self):
         """Cache eviction should not degrade performance."""
         cache = SimpleCache(max_size=100)

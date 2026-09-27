@@ -6,7 +6,10 @@ pytestmark = pytest.mark.unit
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import numpy as np
+
 from agentic_inquiry.mcp.tools.context import build_context, _generate_empty_context_suggestions
+from agentic_inquiry.storage.capabilities import get_capabilities_for_backend
 
 
 @pytest.fixture
@@ -17,6 +20,7 @@ def mcp_services():
         "context_builder": AsyncMock(),
         "event_system": AsyncMock(),
         "search_service": AsyncMock(),
+        "capabilities": get_capabilities_for_backend("lancedb"),
     }
     
     # Configure session manager
@@ -124,9 +128,8 @@ async def test_build_context_empty_with_fallback(mcp_services):
     })
     
     # Configure search service for fallback
-    mcp_services["search_service"].embedder = AsyncMock()
-    mcp_services["search_service"].embedder.embed_query = AsyncMock(
-        return_value=[0.1] * 128
+    mcp_services["search_service"].embedding_service.embed_async = AsyncMock(
+        return_value=np.array([0.1] * 128)
     )
     mcp_services["search_service"].hybrid_search = AsyncMock(return_value=[
         {
@@ -183,9 +186,8 @@ async def test_build_context_empty_with_failed_fallback(mcp_services):
     })
     
     # Configure search service for fallback - returns empty
-    mcp_services["search_service"].embedder = AsyncMock()
-    mcp_services["search_service"].embedder.embed_query = AsyncMock(
-        return_value=[0.1] * 128
+    mcp_services["search_service"].embedding_service.embed_async = AsyncMock(
+        return_value=np.array([0.1] * 128)
     )
     mcp_services["search_service"].hybrid_search = AsyncMock(return_value=[])
     

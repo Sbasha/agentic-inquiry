@@ -341,6 +341,8 @@ class RateLimiter:
 
         stats: Dict[str, Any] = {
             "session": {
+                "calls_in_minute": 0,
+                "remaining_per_minute": self.config.default_calls_per_minute,
                 "limit_per_minute": self.config.default_calls_per_minute,
             },
             "hourly": {

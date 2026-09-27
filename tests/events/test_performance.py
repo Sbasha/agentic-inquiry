@@ -69,6 +69,7 @@ def assert_indexed(plans: List[List[str]]) -> None:
 class TestEventEmissionLatency:
     """Test event emission latency (target: < 1ms)."""
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_single_event_emission_latency(self, tmp_path: Path):
@@ -117,6 +118,7 @@ class TestEventEmissionLatency:
             assert p95_latency < 2.0, \
                 f"P95 emission latency {p95_latency:.3f}ms exceeds 2ms threshold"
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_concurrent_event_emission_latency(self, tmp_path: Path):
@@ -172,6 +174,7 @@ class TestEventEmissionLatency:
 class TestBatchWriteThroughput:
     """Test batch write throughput (target: > 1000 events/sec)."""
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_batch_write_throughput(self, tmp_path: Path):
@@ -215,6 +218,7 @@ class TestBatchWriteThroughput:
             assert throughput > 1000, \
                 f"Throughput {throughput:.1f} events/sec is below 1000 events/sec target"
 
+    @pytest.mark.perf
     @pytest.mark.slow
     @pytest.mark.asyncio
     async def test_sustained_throughput(self, tmp_path: Path):

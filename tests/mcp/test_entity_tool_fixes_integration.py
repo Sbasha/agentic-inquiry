@@ -253,8 +253,9 @@ class TestProjectIdPropagation:
         assert provider._project_id == test_project_id
 
         # Verify the manager was created with the correct project_id
-        assert provider._db_manager is not None
-        assert provider._db_manager.project_id == test_project_id
+        db_manager = provider._connection_manager.db_manager
+        assert db_manager is not None
+        assert db_manager._project_id == test_project_id
 
     def test_lancedb_provider_init_stores_project_id(self):
         """LanceDBProvider.__init__() should store project_id for lazy init."""
@@ -269,7 +270,7 @@ class TestProjectIdPropagation:
 
         # Verify project_id is stored for later use in initialize()
         assert provider._project_id == test_project_id
-        assert provider._db_manager is None  # Not yet initialized
+        assert provider._connection_manager.db_manager is None  # Not yet initialized
 
 
 class TestEndToEndIntegration:

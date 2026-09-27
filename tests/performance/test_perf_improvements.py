@@ -160,6 +160,7 @@ async def populated_database(test_db_manager):
 class TestCountRecordsPerformance:
     """Test count_records performance (NFR-1.1)."""
 
+    @pytest.mark.perf
     @pytest.mark.asyncio
     async def test_count_records_under_100ms(self, test_db_manager, populated_database):
         """Test that count_records on graph_relationships completes in <100ms (p95).
@@ -304,6 +305,7 @@ class TestAnalyzeImpactPerformance:
             "config": test_config,
         }
 
+    @pytest.mark.perf
     @pytest.mark.asyncio
     async def test_analyze_impact_under_30s(self, test_services, populated_database):
         """Test that analyze_impact completes in <30s (p95) for 500 relationships at depth=2.

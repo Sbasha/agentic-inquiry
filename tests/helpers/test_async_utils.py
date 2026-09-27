@@ -175,6 +175,7 @@ class TestEnsureCleanup:
         # Should not raise
         await AsyncTestHelper.ensure_cleanup()
 
+    @pytest.mark.perf
     async def test_cleanup_order_independence(self):
         """Test that cleanup tasks run concurrently."""
         start_time = asyncio.get_running_loop().time()

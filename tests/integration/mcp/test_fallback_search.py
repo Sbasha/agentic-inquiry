@@ -308,19 +308,34 @@ async def test_ripgrep_search_timeout(tmp_path: Path) -> None:
 
 @pytest.mark.integration
 @pytest.mark.asyncio
+async def test_ripgrep_search_is_literal_and_case_insensitive(tmp_path: Path) -> None:
+    """Queries match as literal text, ignoring case, like the Python fallback."""
+    (tmp_path / "test.py").write_text("def hello_world(x):\n    return x\n")
+
+    try:
+        by_case = await ripgrep_search("HELLO_WORLD", tmp_path)
+        by_literal = await ripgrep_search("hello_world(x)", tmp_path)
+    except FileNotFoundError:
+        pytest.skip("ripgrep not installed")
+
+    assert [r.line_number for r in by_case] == [1]
+    assert [r.line_number for r in by_literal] == [1]
+
+
+@pytest.mark.integration
+@pytest.mark.asyncio
 async def test_ripgrep_flag_injection_prevented(tmp_path: Path) -> None:
     """Test that flag injection is prevented in queries.
 
-    Verifies that queries starting with '-' are properly escaped.
+    Verifies that queries starting with '-' are matched literally.
     """
     test_file = tmp_path / "test.py"
     test_file.write_text("-e malicious pattern\n")
 
     try:
-        # Query that starts with '-' should be escaped
+        # A query starting with '-' is searched for, not parsed as a flag
         results = await ripgrep_search("-e malicious", tmp_path)
-        # If ripgrep ran without treating -e as a flag, this passes
-        assert isinstance(results, list)
+        assert [r.content.strip() for r in results] == ["-e malicious pattern"]
     except FileNotFoundError:
         pytest.skip("ripgrep not installed")
 

@@ -595,7 +595,7 @@ class TestDetectIndexState:
     async def test_handles_db_manager_exception(
         self, mock_db_manager, mock_event_store
     ):
-        """Should return SPARSE with 0 chunks on db_manager error."""
+        """Should assume READY (not SPARSE) when the chunk count is unreadable."""
         mock_event_store.get_events_by_type = AsyncMock(return_value=[])
         mock_db_manager.count_records = AsyncMock(
             side_effect=Exception("Table not found")
@@ -607,7 +607,7 @@ class TestDetectIndexState:
             project_id="test_project",
         )
 
-        assert result.status == IndexState.SPARSE
+        assert result.status == IndexState.READY
         assert result.indexed_so_far == 0
 
     @pytest.mark.asyncio

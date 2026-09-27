@@ -8,59 +8,63 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from agentic_inquiry.database.filters import Filter, FilterOperator
 from agentic_inquiry.mcp.services.session_manager import SessionManager, SessionCleanupManager
 from agentic_inquiry.mcp.models.session import Session, SessionState
 from agentic_inquiry.config import Config
 
 
-def _filter_matches(filter_obj, field: str, value) -> bool:
-    """Check if a Filter AST matches a field=value condition.
+async def _seed_chunks(session_manager, file_paths, project_id="test_project"):
+    """Index one python chunk per entry in file_paths."""
+    from agentic_inquiry.models.document_chunk import DocumentChunk
 
-    Handles both simple EQ filters and AND combinations.
+    dims = session_manager.config.embeddings.default_dimensions
+    await session_manager.db_manager.upsert_chunks([
+        DocumentChunk(
+            id=f"chunk{i}",
+            doc_id=f"doc{i}",
+            file_path=file_path,
+            project_id=project_id,
+            content="x",
+            fts_text="x",
+            vector=[0.1] * dims,
+            content_type="CODE",
+            language="python",
+        )
+        for i, file_path in enumerate(file_paths)
+    ])
+
+
+def _session(session_id, project_id="project1"):
+    """Build a new active Session."""
+    return Session(session_id=session_id, project_id=project_id)
+
+
+async def _persist_idle_session(storage, session_id, inactive_hours):
+    """Store a session as it was last written, then left idle for inactive_hours.
+
+    ``is_expired`` is computed when a session is written, so a session that
+    goes idle after its last write is stored with ``is_expired`` False.
     """
-    if filter_obj is None:
-        return False
-
-    if isinstance(filter_obj, Filter):
-        # Check direct EQ match
-        if filter_obj.operator == FilterOperator.EQ:
-            return filter_obj.field == field and filter_obj.value == value
-        # Check AND - recursively check both sides
-        elif filter_obj.operator == FilterOperator.AND:
-            return (_filter_matches(filter_obj.left, field, value) or
-                    _filter_matches(filter_obj.right, field, value))
-    return False
+    last_active = datetime.now() - timedelta(hours=inactive_hours)
+    session = _session(session_id)
+    session.created_at = last_active
+    session.last_active = last_active
+    record = session.to_db_record()
+    record["is_expired"] = False
+    await storage.db_manager.upsert(
+        table_name="mcp_sessions", data=[record], key_field="session_id"
+    )
 
 
-@pytest.fixture
-def mock_db_manager():
-    """Create a mock database manager (raw LanceDBManager).
-
-    This mock represents the raw LanceDBManager obtained via get_db_manager().
-    The SessionManager uses this for:
-    - advanced_filter: gathering statistics (files, chunks, entities)
-    - count_records: counting records for statistics
-    """
-    mock_db_manager = MagicMock()
-    mock_db_manager.advanced_filter = AsyncMock(return_value=[])
-    mock_db_manager.count_records = AsyncMock(return_value=0)
-    mock_db_manager.upsert = AsyncMock()
-    return mock_db_manager
-
-
-@pytest.fixture
-def mock_storage_facade(mock_db_manager):
-    """Create a mock StorageFacade that wraps the mock_db_manager.
-
-    Note: LanceDBSessionStorage extracts the raw db_manager via get_db_manager()
-    and calls upsert/advanced_filter on it, not on the facade.
-    """
-    mock_storage = MagicMock()
-    mock_storage.get_db_manager = MagicMock(return_value=mock_db_manager)
-    # Configure backend type so SessionManager uses LanceDBSessionStorage
-    mock_storage.get_backend_type = MagicMock(return_value="lancedb")
-    return mock_storage
+async def _stored_is_expired(storage, session_id):
+    """Read the persisted is_expired flag, not the TTL-derived property."""
+    records = await storage.db_manager.advanced_filter(
+        table_name="mcp_sessions",
+        filters={"session_id": session_id},
+        limit=1,
+        project_id=None,
+    )
+    return records[0]["is_expired"]
 
 
 @pytest.fixture
@@ -70,19 +74,17 @@ def mock_config():
 
 
 @pytest_asyncio.fixture
-async def session_manager(mock_storage_facade, mock_db_manager, mock_config):
-    """Create a SessionManager instance for testing."""
-    return SessionManager(mock_storage_facade, mock_config)
+async def session_manager(lancedb_storage, mock_config):
+    """Create a SessionManager over a real temporary LanceDB."""
+    return SessionManager(lancedb_storage, mock_config)
 
 
 class TestSessionCreation:
     """Tests for session creation functionality."""
     
     @pytest.mark.asyncio
-    async def test_create_session_empty_project(self, session_manager, mock_db_manager):
+    async def test_create_session_empty_project(self, session_manager):
         """Test session creation for empty project."""
-        # Mock empty project (no chunks)
-        mock_db_manager.advanced_filter.return_value = []
 
         result = await session_manager.create_session(
             project_id="test_project",
@@ -103,43 +105,13 @@ class TestSessionCreation:
         assert stats["total_files"] == 0
         assert stats["index_health"] == "empty"
 
-        # Verify session was persisted via LanceDBSessionStorage
-        # LanceDBSessionStorage extracts db_manager via get_db_manager() and calls upsert on it
-        assert mock_db_manager.upsert.called
+        # Verify session was persisted
+        assert await session_manager.storage.load_session(result["session_id"]) is not None
     
     @pytest.mark.asyncio
-    async def test_create_session_indexed_project(self, session_manager, mock_db_manager):
+    async def test_create_session_indexed_project(self, session_manager):
         """Test session creation for indexed project."""
-        # Mock indexed project with chunks
-        mock_chunks = [
-            {
-                "id": "chunk1",
-                "file_path": "src/main.py",
-                "language": "python",
-                "created_at": datetime.now().isoformat()
-            },
-            {
-                "id": "chunk2",
-                "file_path": "src/utils.py",
-                "language": "python",
-                "created_at": datetime.now().isoformat()
-            }
-        ]
-        
-        async def mock_filter(*args, **kwargs):
-            table_name = kwargs.get("table_name")
-            if table_name == "document_chunks":
-                return mock_chunks
-            return []
-        
-        async def mock_count(*args, **kwargs):
-            table_name = kwargs.get("table_name")
-            if table_name == "document_chunks":
-                return len(mock_chunks)
-            return 0
-        
-        mock_db_manager.advanced_filter = mock_filter
-        mock_db_manager.count_records = mock_count
+        await _seed_chunks(session_manager, ["src/main.py", "src/utils.py"])
         
         result = await session_manager.create_session(
             project_id="test_project"
@@ -152,9 +124,8 @@ class TestSessionCreation:
         assert result["statistics"]["index_health"] == "healthy"
     
     @pytest.mark.asyncio
-    async def test_create_session_with_description(self, session_manager, mock_db_manager):
+    async def test_create_session_with_description(self, session_manager):
         """Test session creation with description."""
-        mock_db_manager.advanced_filter.return_value = []
         
         description = "Working on authentication feature"
         result = await session_manager.create_session(
@@ -174,10 +145,9 @@ class TestSessionValidation:
     """Tests for session validation."""
     
     @pytest.mark.asyncio
-    async def test_validate_existing_session(self, session_manager, mock_db_manager):
+    async def test_validate_existing_session(self, session_manager):
         """Test validation of existing session."""
         # Create a session first
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
         
@@ -186,18 +156,16 @@ class TestSessionValidation:
         assert is_valid is True
     
     @pytest.mark.asyncio
-    async def test_validate_nonexistent_session(self, session_manager, mock_db_manager):
+    async def test_validate_nonexistent_session(self, session_manager):
         """Test validation of non-existent session."""
-        mock_db_manager.advanced_filter.return_value = []
         
         is_valid = await session_manager.validate_session("nonexistent-id")
         assert is_valid is False
     
     @pytest.mark.asyncio
-    async def test_validate_expired_session(self, session_manager, mock_db_manager):
+    async def test_validate_expired_session(self, session_manager):
         """Test validation of expired session."""
         # Create a session
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
         
@@ -214,10 +182,9 @@ class TestSessionRetrieval:
     """Tests for session retrieval methods."""
     
     @pytest.mark.asyncio
-    async def test_get_session(self, session_manager, mock_db_manager):
+    async def test_get_session(self, session_manager):
         """Test retrieving a session."""
         # Create a session
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
         
@@ -228,10 +195,9 @@ class TestSessionRetrieval:
         assert session.project_id == "test_project"
     
     @pytest.mark.asyncio
-    async def test_get_session_without_history(self, session_manager, mock_db_manager):
+    async def test_get_session_without_history(self, session_manager):
         """Test retrieving session without history for efficiency."""
         # Create a session with history
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
         
@@ -244,45 +210,28 @@ class TestSessionRetrieval:
         assert len(retrieved.history) == 0
     
     @pytest.mark.asyncio
-    async def test_list_sessions(self, session_manager, mock_db_manager):
+    async def test_list_sessions(self, session_manager):
         """Test listing sessions."""
-        # Mock database response
-        mock_sessions = [
-            {
-                "session_id": "session1",
-                "project_id": "project1",
-                "created_at": datetime.now(),
-                "last_active": datetime.now(),
-                "description": "Session 1",
-                "state_json": "{}",
-                "history_json": "[]",
-                "log_file": "/path/to/log",
-                "is_expired": False
-            }
-        ]
-        mock_db_manager.advanced_filter.return_value = mock_sessions
-        
+        await session_manager.storage.persist_session(_session("session1"))
+
         sessions = await session_manager.list_sessions()
         assert len(sessions) == 1
         assert sessions[0]["session_id"] == "session1"
     
     @pytest.mark.asyncio
-    async def test_list_sessions_by_project(self, session_manager, mock_db_manager):
+    async def test_list_sessions_by_project(self, session_manager):
         """Test listing sessions filtered by project."""
-        mock_db_manager.advanced_filter.return_value = []
+        await session_manager.storage.persist_session(_session("s1", "test_project"))
+        await session_manager.storage.persist_session(_session("s2", "other_project"))
 
-        await session_manager.list_sessions(project_id="test_project")
+        sessions = await session_manager.list_sessions(project_id="test_project")
 
-        # Verify filter was applied (now uses Filter AST)
-        call_args = mock_db_manager.advanced_filter.call_args
-        filters = call_args[1]["filters"]
-        assert _filter_matches(filters, "project_id", "test_project")
+        assert [s["session_id"] for s in sessions] == ["s1"]
     
     @pytest.mark.asyncio
-    async def test_resume_session(self, session_manager, mock_db_manager):
+    async def test_resume_session(self, session_manager):
         """Test resuming an existing session."""
         # Create a session
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
         
@@ -294,9 +243,8 @@ class TestSessionRetrieval:
         assert "history_count" in resumed
     
     @pytest.mark.asyncio
-    async def test_resume_nonexistent_session(self, session_manager, mock_db_manager):
+    async def test_resume_nonexistent_session(self, session_manager):
         """Test resuming non-existent session raises error."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Use valid UUID format that doesn't exist in database
         nonexistent_uuid = "00000000-0000-4000-8000-000000000000"
@@ -304,10 +252,9 @@ class TestSessionRetrieval:
             await session_manager.resume_session(nonexistent_uuid)
     
     @pytest.mark.asyncio
-    async def test_get_session_history(self, session_manager, mock_db_manager):
+    async def test_get_session_history(self, session_manager):
         """Test retrieving session history."""
         # Create a session with history
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
         
@@ -322,10 +269,9 @@ class TestSessionRetrieval:
         assert history[1]["tool"] == "tool2"
     
     @pytest.mark.asyncio
-    async def test_get_session_history_with_limit(self, session_manager, mock_db_manager):
+    async def test_get_session_history_with_limit(self, session_manager):
         """Test retrieving limited session history."""
         # Create a session with history
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
         
@@ -344,10 +290,9 @@ class TestSessionPersistence:
     """Tests for session persistence (to_db_record and from_db_record)."""
     
     @pytest.mark.asyncio
-    async def test_to_db_record_format(self, session_manager, mock_db_manager):
+    async def test_to_db_record_format(self, session_manager):
         """Test to_db_record creates correct format."""
         # Create a session
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(
             project_id="test_project",
             description="Test session"
@@ -388,9 +333,8 @@ class TestSessionPersistence:
         assert isinstance(record["events_json"], str)  # Serialized to JSON string
     
     @pytest.mark.asyncio
-    async def test_to_db_record_datetime_conversion(self, session_manager, mock_db_manager):
+    async def test_to_db_record_datetime_conversion(self, session_manager):
         """Test to_db_record converts datetime to ISO 8601 strings."""
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
         
@@ -410,9 +354,8 @@ class TestSessionPersistence:
         assert isinstance(last_active, datetime)
     
     @pytest.mark.asyncio
-    async def test_to_db_record_state_conversion(self, session_manager, mock_db_manager):
+    async def test_to_db_record_state_conversion(self, session_manager):
         """Test to_db_record converts SessionState enum to string."""
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
         
@@ -427,9 +370,8 @@ class TestSessionPersistence:
         assert record["state"] == session.state.value
     
     @pytest.mark.asyncio
-    async def test_to_db_record_path_conversion(self, session_manager, mock_db_manager):
+    async def test_to_db_record_path_conversion(self, session_manager):
         """Test to_db_record converts Path to string."""
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
         
@@ -459,7 +401,7 @@ class TestSessionPersistence:
         assert record["log_file"] is None
     
     @pytest.mark.asyncio
-    async def test_from_db_record_reconstruction(self, session_manager, mock_db_manager):
+    async def test_from_db_record_reconstruction(self, session_manager):
         """Test from_db_record reconstructs Session correctly."""
         from datetime import datetime
         
@@ -550,11 +492,10 @@ class TestSessionPersistence:
             assert session.state.value == state_str
     
     @pytest.mark.asyncio
-    async def test_round_trip_persistence(self, session_manager, mock_db_manager):
+    async def test_round_trip_persistence(self, session_manager):
         """Test round-trip: to_db_record -> from_db_record."""
         
         # Create a session
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(
             project_id="test_project",
             description="Round trip test"
@@ -585,17 +526,18 @@ class TestSessionPersistence:
         assert time_diff < 1
     
     @pytest.mark.asyncio
-    async def test_persist_session_error_handling(self, session_manager, mock_db_manager):
+    async def test_persist_session_error_handling(self, session_manager):
         """Test _persist_session handles errors gracefully."""
         # Create a session
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
 
         session = session_manager.active_sessions[session_id]
 
-        # Make upsert fail - LanceDBSessionStorage extracts db_manager via get_db_manager()
-        mock_db_manager.upsert = AsyncMock(side_effect=Exception("Database error"))
+        # Make the underlying write fail
+        session_manager.storage.db_manager.upsert = AsyncMock(
+            side_effect=Exception("Database error")
+        )
 
         # Persist should not raise exception
         await session_manager._persist_session(session)
@@ -604,40 +546,26 @@ class TestSessionPersistence:
         assert session_id in session_manager.active_sessions
 
     @pytest.mark.asyncio
-    async def test_persist_session_uses_upsert(self, session_manager, mock_db_manager):
-        """Test _persist_session uses upsert with correct parameters."""
-        # Create a session
-        mock_db_manager.advanced_filter.return_value = []
+    async def test_persist_session_stores_serialized_record(self, session_manager):
+        """Test _persist_session writes one mcp_sessions record with serialized state."""
         result = await session_manager.create_session(project_id="test_project")
         session_id = result["session_id"]
-
         session = session_manager.active_sessions[session_id]
 
-        # Reset mock to clear previous calls
-        mock_db_manager.upsert.reset_mock()
-
-        # Persist session
         await session_manager._persist_session(session)
 
-        # Verify upsert was called with correct parameters
-        # LanceDBSessionStorage extracts db_manager via get_db_manager() and calls upsert on it
-        assert mock_db_manager.upsert.called
-        call_args = mock_db_manager.upsert.call_args
-
-        assert call_args[1]["table_name"] == "mcp_sessions"
-        assert isinstance(call_args[1]["data"], list)
-        assert len(call_args[1]["data"]) == 1
-        assert call_args[1]["key_field"] == "session_id"
-
-        # Verify record has correct structure
-        record = call_args[1]["data"][0]
-        assert record["session_id"] == session_id
-        assert "state" in record
-        assert isinstance(record["state"], str)
+        records = await session_manager.storage.db_manager.advanced_filter(
+            table_name="mcp_sessions",
+            filters={"session_id": session_id},
+            limit=10,
+            project_id=None,
+        )
+        assert len(records) == 1
+        assert isinstance(records[0]["state"], str)
 
 
     @pytest.mark.asyncio
-    async def test_all_required_fields_in_db_record(self, session_manager, mock_db_manager):
+    async def test_all_required_fields_in_db_record(self, session_manager):
         """Test that to_db_record includes ALL required fields for database schema.
         
         This test verifies that the database record includes all fields documented
@@ -647,7 +575,6 @@ class TestSessionPersistence:
         Requirements: Req 8.1-8.5, 8.6
         """
         # Create a session
-        mock_db_manager.advanced_filter.return_value = []
         result = await session_manager.create_session(
             project_id="test_project",
             description="Schema validation test"
@@ -711,7 +638,7 @@ class TestSessionPersistence:
 
 
     @pytest.mark.asyncio
-    async def test_session_loading_all_fields(self, session_manager, mock_db_manager):
+    async def test_session_loading_all_fields(self, session_manager):
         """Test that from_db_record correctly reconstructs ALL session fields.
         
         This test verifies that loading a session from the database correctly
@@ -787,7 +714,7 @@ class TestSessionPersistence:
         assert isinstance(session.is_expired, bool), "is_expired should be bool"
     
     @pytest.mark.asyncio
-    async def test_session_loading_with_missing_ttl_hours(self, session_manager, mock_db_manager):
+    async def test_session_loading_with_missing_ttl_hours(self, session_manager):
         """Test that from_db_record handles missing ttl_hours field.
         
         This test verifies backward compatibility when loading sessions
@@ -823,7 +750,7 @@ class TestSessionPersistence:
         assert session.project_id == "test_project"
     
     @pytest.mark.asyncio
-    async def test_session_loading_with_null_optional_fields(self, session_manager, mock_db_manager):
+    async def test_session_loading_with_null_optional_fields(self, session_manager):
         """Test that from_db_record handles null optional fields correctly.
         
         Requirements: Req 8.7
@@ -866,62 +793,21 @@ class TestSessionCleanup:
         return SessionCleanupManager(session_manager)
     
     @pytest.mark.asyncio
-    async def test_find_expired_sessions(self, cleanup_manager, mock_db_manager):
+    async def test_find_expired_sessions(self, cleanup_manager):
         """Test finding expired sessions."""
-        # Mock sessions with different ages
-        old_time = datetime.now() - timedelta(hours=50)
-        recent_time = datetime.now() - timedelta(hours=1)
-        
-        mock_sessions = [
-            {
-                "session_id": "old_session",
-                "project_id": "project1",
-                "created_at": old_time,
-                "last_active": old_time,
-                "description": "",
-                "state_json": "{}",
-                "history_json": "[]",
-                "log_file": "/path/to/log",
-                "is_expired": False
-            },
-            {
-                "session_id": "recent_session",
-                "project_id": "project1",
-                "created_at": recent_time,
-                "last_active": recent_time,
-                "description": "",
-                "state_json": "{}",
-                "history_json": "[]",
-                "log_file": "/path/to/log",
-                "is_expired": False
-            }
-        ]
-        mock_db_manager.advanced_filter.return_value = mock_sessions
-        
+        storage = cleanup_manager.storage
+        await _persist_idle_session(storage, "old_session", inactive_hours=50)
+        await _persist_idle_session(storage, "recent_session", inactive_hours=1)
+
         expired = await cleanup_manager._find_expired_sessions()
-        
-        # Only old session should be expired
-        assert len(expired) == 1
-        assert expired[0]["session_id"] == "old_session"
+
+        assert [s["session_id"] for s in expired] == ["old_session"]
     
     @pytest.mark.asyncio
-    async def test_cleanup_expired_sessions_dry_run(self, cleanup_manager, mock_db_manager):
+    async def test_cleanup_expired_sessions_dry_run(self, cleanup_manager):
         """Test dry run of cleanup."""
-        old_time = datetime.now() - timedelta(hours=50)
-        mock_sessions = [
-            {
-                "session_id": "old_session",
-                "project_id": "project1",
-                "created_at": old_time,
-                "last_active": old_time,
-                "description": "",
-                "state_json": "{}",
-                "history_json": "[]",
-                "log_file": "/path/to/log",
-                "is_expired": False
-            }
-        ]
-        mock_db_manager.advanced_filter.return_value = mock_sessions
+        storage = cleanup_manager.storage
+        await _persist_idle_session(storage, "old_session", inactive_hours=50)
 
         result = await cleanup_manager.cleanup_expired_sessions(dry_run=True)
 
@@ -930,34 +816,13 @@ class TestSessionCleanup:
         assert len(result["expired_sessions"]) == 1
 
         # Verify no actual cleanup was performed
-        assert not mock_db_manager.upsert.called
+        assert await _stored_is_expired(storage, "old_session") is False
     
     @pytest.mark.asyncio
-    async def test_cleanup_expired_sessions(self, cleanup_manager, mock_db_manager):
+    async def test_cleanup_expired_sessions(self, cleanup_manager):
         """Test actual cleanup of expired sessions."""
-        old_time = datetime.now() - timedelta(hours=50)
-        mock_sessions = [
-            {
-                "session_id": "old_session",
-                "project_id": "project1",
-                "created_at": old_time,
-                "last_active": old_time,
-                "description": "",
-                "state_json": "{}",
-                "history_json": "[]",
-                "log_file": "/path/to/log",
-                "is_expired": False
-            }
-        ]
-        
-        async def mock_filter(*args, **kwargs):
-            filters = kwargs.get("filters")
-            # Handle Filter AST - check for is_expired=False
-            if _filter_matches(filters, "is_expired", False):
-                return mock_sessions
-            return []
-
-        mock_db_manager.advanced_filter = mock_filter
+        storage = cleanup_manager.storage
+        await _persist_idle_session(storage, "old_session", inactive_hours=50)
         
         with patch.object(cleanup_manager, '_archive_session', return_value=True):
             result = await cleanup_manager.cleanup_expired_sessions(dry_run=False)
@@ -965,15 +830,15 @@ class TestSessionCleanup:
         assert result["dry_run"] is False
         assert result["cleaned_count"] == 1
         assert result["archived_count"] == 1
+        assert await _stored_is_expired(storage, "old_session") is True
 
 
 class TestProjectStatistics:
     """Tests for project statistics gathering."""
     
     @pytest.mark.asyncio
-    async def test_gather_statistics_empty_project(self, session_manager, mock_db_manager):
+    async def test_gather_statistics_empty_project(self, session_manager):
         """Test gathering statistics for empty project."""
-        mock_db_manager.advanced_filter.return_value = []
         
         stats = await session_manager._gather_project_statistics("test_project")
         
@@ -983,43 +848,9 @@ class TestProjectStatistics:
         assert stats.is_empty() is True
     
     @pytest.mark.asyncio
-    async def test_gather_statistics_with_content(self, session_manager, mock_db_manager):
+    async def test_gather_statistics_with_content(self, session_manager):
         """Test gathering statistics for project with content."""
-        mock_chunks = [
-            {
-                "id": "chunk1",
-                "file_path": "src/main.py",
-                "language": "python",
-                "created_at": datetime.now().isoformat()
-            },
-            {
-                "id": "chunk2",
-                "file_path": "src/main.py",
-                "language": "python",
-                "created_at": datetime.now().isoformat()
-            },
-            {
-                "id": "chunk3",
-                "file_path": "src/utils.py",
-                "language": "python",
-                "created_at": datetime.now().isoformat()
-            }
-        ]
-        
-        async def mock_filter(*args, **kwargs):
-            table_name = kwargs.get("table_name")
-            if table_name == "document_chunks":
-                return mock_chunks
-            return []
-        
-        async def mock_count(*args, **kwargs):
-            table_name = kwargs.get("table_name")
-            if table_name == "document_chunks":
-                return len(mock_chunks)
-            return 0
-        
-        mock_db_manager.advanced_filter = mock_filter
-        mock_db_manager.count_records = mock_count
+        await _seed_chunks(session_manager, ["src/main.py", "src/main.py", "src/utils.py"])
         
         stats = await session_manager._gather_project_statistics("test_project")
         
@@ -1027,6 +858,7 @@ class TestProjectStatistics:
         assert stats.total_files == 2
         assert stats.languages["python"] == 3
         assert stats.index_health == "healthy"
+        assert stats.last_indexed is not None
 
     @pytest.mark.asyncio
     async def test_gather_statistics_with_memory_system_none(
@@ -1174,16 +1006,9 @@ class TestProjectStatistics:
         assert count == 0
 
     @pytest.mark.asyncio
-    async def test_get_project_statistics_public_method(self, session_manager, mock_db_manager):
+    async def test_get_project_statistics_public_method(self, session_manager):
         """Test public get_project_statistics method."""
-        # Setup mock data
-        mock_db_manager.advanced_filter.return_value = [
-            {
-                "file_path": "test.py",
-                "language": "python",
-                "created_at": "2024-01-15T10:30:00"
-            }
-        ]
+        await _seed_chunks(session_manager, ["test.py"])
 
         # Call public method
         stats = await session_manager.get_project_statistics("test_project")
@@ -1207,9 +1032,8 @@ class TestSessionFixationPrevention:
     """
 
     @pytest.mark.asyncio
-    async def test_regenerate_session_creates_new_id(self, session_manager, mock_db_manager):
+    async def test_regenerate_session_creates_new_id(self, session_manager):
         """Test that regenerate_session creates a new session ID."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create a session
         result = await session_manager.create_session(project_id="test_project")
@@ -1225,10 +1049,9 @@ class TestSessionFixationPrevention:
 
     @pytest.mark.asyncio
     async def test_regenerate_session_preserves_history_same_project(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that history is preserved when regenerating for same project."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create a session with history
         result = await session_manager.create_session(project_id="test_project")
@@ -1250,10 +1073,9 @@ class TestSessionFixationPrevention:
 
     @pytest.mark.asyncio
     async def test_regenerate_session_clears_history_on_project_change(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that history is cleared when changing projects (SEC-005)."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create a session with history
         result = await session_manager.create_session(project_id="project_a")
@@ -1277,10 +1099,9 @@ class TestSessionFixationPrevention:
 
     @pytest.mark.asyncio
     async def test_regenerate_session_clears_context_on_project_change(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that context_state is cleared when changing projects."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create a session with context state
         result = await session_manager.create_session(project_id="project_a")
@@ -1302,10 +1123,9 @@ class TestSessionFixationPrevention:
 
     @pytest.mark.asyncio
     async def test_regenerate_session_marks_old_session_expired(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that old session is marked as expired after regeneration."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create a session
         result = await session_manager.create_session(project_id="test_project")
@@ -1319,10 +1139,9 @@ class TestSessionFixationPrevention:
 
     @pytest.mark.asyncio
     async def test_regenerate_session_rejects_nonexistent_session(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that regenerating non-existent session raises error."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Use valid UUID format
         with pytest.raises(ValueError, match="not found"):
@@ -1332,10 +1151,9 @@ class TestSessionFixationPrevention:
 
     @pytest.mark.asyncio
     async def test_regenerate_session_rejects_expired_session(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that regenerating expired session raises error."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create a session
         result = await session_manager.create_session(project_id="test_project")
@@ -1351,10 +1169,9 @@ class TestSessionFixationPrevention:
 
     @pytest.mark.asyncio
     async def test_regenerate_session_enforces_max_age(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that regeneration is rejected for sessions exceeding max age."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create a session
         result = await session_manager.create_session(project_id="test_project")
@@ -1370,10 +1187,9 @@ class TestSessionFixationPrevention:
 
     @pytest.mark.asyncio
     async def test_regenerate_session_includes_regeneration_reason(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that regeneration result includes reason."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create and regenerate a session
         result = await session_manager.create_session(project_id="test_project")
@@ -1388,10 +1204,9 @@ class TestSessionFixationPrevention:
 
     @pytest.mark.asyncio
     async def test_change_project_uses_regenerate_session(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that change_project delegates to regenerate_session."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create a session
         result = await session_manager.create_session(project_id="project_a")
@@ -1410,10 +1225,9 @@ class TestSessionFixationPrevention:
 
     @pytest.mark.asyncio
     async def test_regenerate_session_creates_fresh_log_file(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that regenerated session has new log file path."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create a session
         result = await session_manager.create_session(project_id="test_project")
@@ -1433,10 +1247,9 @@ class TestAuditLogging:
 
     @pytest.mark.asyncio
     async def test_create_session_emits_audit_log(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that create_session generates audit log entry."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create mock event system
         mock_event_system = MagicMock()
@@ -1463,10 +1276,9 @@ class TestAuditLogging:
 
     @pytest.mark.asyncio
     async def test_regenerate_session_emits_audit_log(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that regenerate_session generates audit log entry."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create mock event system
         mock_event_system = MagicMock()
@@ -1496,10 +1308,9 @@ class TestAuditLogging:
 
     @pytest.mark.asyncio
     async def test_audit_log_without_event_system(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that audit logging works without event system (logs to logger)."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Ensure no event system
         session_manager.event_system = None
@@ -1513,10 +1324,9 @@ class TestAuditLogging:
 
     @pytest.mark.asyncio
     async def test_audit_log_includes_timestamp(
-        self, session_manager, mock_db_manager, caplog
+        self, session_manager, caplog
     ):
         """Test that audit log entries include timestamp."""
-        mock_db_manager.advanced_filter.return_value = []
         session_manager.event_system = None
 
         import logging
@@ -1536,10 +1346,9 @@ class TestSessionSecurityValidation:
 
     @pytest.mark.asyncio
     async def test_get_session_rejects_invalid_uuid_format(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that get_session rejects invalid session ID formats."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Try to get session with invalid format
         with pytest.raises(ValueError):
@@ -1547,10 +1356,9 @@ class TestSessionSecurityValidation:
 
     @pytest.mark.asyncio
     async def test_get_session_rejects_sql_injection_attempt(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that get_session rejects SQL injection attempts in session ID."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Try SQL injection in session ID
         with pytest.raises(ValueError):
@@ -1558,10 +1366,9 @@ class TestSessionSecurityValidation:
 
     @pytest.mark.asyncio
     async def test_get_session_accepts_valid_uuid(
-        self, session_manager, mock_db_manager
+        self, session_manager
     ):
         """Test that get_session accepts valid UUID format."""
-        mock_db_manager.advanced_filter.return_value = []
 
         # Create a session first
         result = await session_manager.create_session(project_id="test_project")

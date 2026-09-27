@@ -145,25 +145,26 @@ async def test_end_to_end_async_indexing(pipeline):
     assert len(code_entities) == 3
 
 
+async def _process_concurrently(pipeline, num_docs: int) -> float:
+    """Process num_docs three-chunk documents concurrently; return seconds taken."""
+    docs = [
+        create_test_document(f"test_file_{i}.py", num_chunks=3)
+        for i in range(num_docs)
+    ]
+    start_time = time.time()
+    await asyncio.gather(*[pipeline.process_document(doc) for doc in docs])
+    return time.time() - start_time
+
+
 @pytest.mark.asyncio
 async def test_concurrent_document_processing(pipeline):
     """Test concurrent document processing with semaphore control.
     
     Requirement: 15.2 - Concurrent document processing
     """
-    # Create multiple test documents
     num_docs = 20
-    docs = [
-        create_test_document(f"test_file_{i}.py", num_chunks=3)
-        for i in range(num_docs)
-    ]
-    
-    # Process documents concurrently
-    start_time = time.time()
-    tasks = [pipeline.process_document(doc) for doc in docs]
-    await asyncio.gather(*tasks)
-    duration = time.time() - start_time
-    
+    await _process_concurrently(pipeline, num_docs)
+
     # Verify all documents were processed
     for i in range(num_docs):
         chunks = await pipeline.db_manager.advanced_filter(
@@ -171,14 +172,14 @@ async def test_concurrent_document_processing(pipeline):
             filters={"file_path": f"test_file_{i}.py"}
         )
         assert len(chunks) == 3
-    
-    # Verify concurrent processing was faster than sequential would be
-    # With 20 docs and semaphore of 10, we expect roughly 2 batches
-    # This should be significantly faster than sequential processing
-    print(f"Processed {num_docs} documents in {duration:.2f} seconds")
-    
-    # Sanity check: should complete in reasonable time
-    # (not a strict performance test, just ensuring concurrency works)
+
+
+@pytest.mark.perf
+@pytest.mark.asyncio
+async def test_concurrent_document_processing_time_budget(pipeline):
+    """Twenty documents under a semaphore of 10 finish well within 30 seconds."""
+    duration = await _process_concurrently(pipeline, num_docs=20)
+
     assert duration < 30.0, f"Processing took too long: {duration:.2f}s"
 
 

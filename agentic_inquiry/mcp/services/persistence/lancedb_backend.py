@@ -70,10 +70,26 @@ class LanceDBSessionStorage(SessionStorageProtocol):
             logger.debug("Persisted session %s to database", session.session_id)
         except Exception as e:
             logger.error("Error persisting session %s: %s", session.session_id, e)
-            raise StorageError(
-                f"Failed to persist session {session.session_id}",
-                cause=e
-            ) from e
+            message = f"Failed to persist session {session.session_id}"
+            null_columns = await self._null_typed_columns()
+            if null_columns:
+                message += (
+                    f": the {self.TABLE_NAME} table was created with null-typed "
+                    f"columns {null_columns} and rejects values in them. Delete "
+                    f"the {self.TABLE_NAME} table from the LanceDB directory; "
+                    "sessions are recreated on demand."
+                )
+            raise StorageError(message, cause=e) from e
+
+    async def _null_typed_columns(self) -> List[str]:
+        """Columns an older release inferred as null from a session without values."""
+        try:
+            table = await self.db_manager.get_table(self.TABLE_NAME)
+            if table is None:
+                return []
+            return [field.name for field in table.schema if str(field.type) == "null"]
+        except Exception:
+            return []
 
     async def load_session(self, session_id: str) -> Optional[Session]:
         """Load session from LanceDB by ID.
@@ -162,7 +178,8 @@ class LanceDBSessionStorage(SessionStorageProtocol):
             results = await self.db_manager.advanced_filter(
                 table_name=self.TABLE_NAME,
                 filters=filter_ast,
-                limit=limit
+                limit=limit,
+                project_id=None,  # project_id above is a column filter, not the manager scope
             )
 
             sessions = []
@@ -207,7 +224,8 @@ class LanceDBSessionStorage(SessionStorageProtocol):
             results = await self.db_manager.advanced_filter(
                 table_name=self.TABLE_NAME,
                 filters=eq("is_expired", False),
-                limit=limit
+                limit=limit,
+                project_id=None,  # Sessions of every project expire
             )
 
             # Check each for expiry

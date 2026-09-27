@@ -303,9 +303,9 @@ class HybridSearchService:
 
         # Tokenize query: split CamelCase, snake_case, and spaces
         raw_terms = re.split(r'[\s_\-]+', query)
-        terms: List[str] = []
+        terms: list[str] = []
         for t in raw_terms:
-            # Split CamelCase
+            # Split CamelCase, then acronym boundaries ("HTTPServer" -> "HTTP", "Server")
             for part in re.sub(r'(?<=[a-z])(?=[A-Z])', ' ', t).split():
                 terms.extend(re.sub(r'(?<=[A-Z])(?=[A-Z][a-z])', ' ', part).split())
 

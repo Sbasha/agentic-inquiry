@@ -32,9 +32,8 @@ class PatternAnalyzer:
             db_manager: StorageFacade instance providing unified storage access
             embedding_service: EmbeddingService instance for generating query embeddings
         """
-        # Note: db_manager is kept for API compatibility but not used
-        # PatternAnalyzer uses search_service and embedding_service only
-        self._storage = db_manager  # Keep reference for potential future use
+        # Architectural discovery clusters stored chunk vectors read from here
+        self._storage = db_manager
         self.search = search_service
         self.embedding_service = embedding_service
     
@@ -90,7 +89,7 @@ class PatternAnalyzer:
             labels = kmeans.fit_predict(X)
             
             # 3. Analyze clusters
-            patterns = []
+            patterns: List[Dict[str, Any]] = []
             for i in range(n_clusters):
                 cluster_indices = np.where(labels == i)[0]
                 cluster_records = [records[idx] for idx in cluster_indices]
@@ -118,8 +117,9 @@ class PatternAnalyzer:
                     "examples": examples,
                     "prevalence": len(cluster_records) / len(records)
                 })
-                
-            return patterns
+
+            patterns.sort(key=lambda x: x["count"], reverse=True)
+            return patterns[:limit]
             
         except Exception as e:
             logger.error("Architectural pattern discovery failed: %s", e, exc_info=True)

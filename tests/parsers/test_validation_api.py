@@ -265,9 +265,9 @@ def test_validate_relationships_circular_dependencies():
         )
 
         # Process documents and flush relationships
-        await pipeline.process_document(doc_a)
-        await pipeline.process_document(doc_b)
-        await pipeline.process_document(doc_c)
+        await pipeline.process_document(doc_a, flush_relationships=False)
+        await pipeline.process_document(doc_b, flush_relationships=False)
+        await pipeline.process_document(doc_c, flush_relationships=False)
         await pipeline.flush_pending_relationships()
 
         # Validate with circular dependency detection

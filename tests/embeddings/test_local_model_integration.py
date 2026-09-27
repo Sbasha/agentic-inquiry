@@ -324,16 +324,11 @@ class TestBatchSizePerformance:
         
         texts = ["text1", "text2", "text3", "text4", "text5"]
         
-        start_time = time.time()
         embeddings = integration_embedder.generate(texts)
-        elapsed_time = time.time() - start_time
         
         # Verify all embeddings generated
         assert len(embeddings) == 5
         assert all(len(emb) == 384 for emb in embeddings)
-        
-        # Should complete reasonably quickly even with small batches
-        assert elapsed_time < 5.0  # 5 seconds max
     
     @pytest.mark.integration
     def test_medium_batch_size(self, integration_embedder):
@@ -342,16 +337,11 @@ class TestBatchSizePerformance:
         
         texts = [f"test text {i}" for i in range(50)]
         
-        start_time = time.time()
         embeddings = integration_embedder.generate(texts)
-        elapsed_time = time.time() - start_time
         
         # Verify all embeddings generated
         assert len(embeddings) == 50
         assert all(len(emb) == 384 for emb in embeddings)
-        
-        # Should complete reasonably quickly
-        assert elapsed_time < 10.0  # 10 seconds max
     
     @pytest.mark.integration
     def test_large_batch_size(self, integration_embedder):
@@ -360,16 +350,11 @@ class TestBatchSizePerformance:
         
         texts = [f"test text {i}" for i in range(100)]
         
-        start_time = time.time()
         embeddings = integration_embedder.generate(texts)
-        elapsed_time = time.time() - start_time
         
         # Verify all embeddings generated
         assert len(embeddings) == 100
         assert all(len(emb) == 384 for emb in embeddings)
-        
-        # Large batches should be more efficient
-        assert elapsed_time < 15.0  # 15 seconds max
     
     @pytest.mark.asyncio
     async def test_async_batch_performance(self, integration_embedder):
@@ -383,20 +368,46 @@ class TestBatchSizePerformance:
             [f"batch3_text{i}" for i in range(20)],
         ]
         
-        start_time = time.time()
         results = await asyncio.gather(*[
             integration_embedder.generate_async(batch)
             for batch in batches
         ])
-        elapsed_time = time.time() - start_time
         
         # Verify all embeddings generated
         assert len(results) == 3
         assert all(len(result) == 20 for result in results)
-        
-        # Concurrent processing should be efficient
-        assert elapsed_time < 10.0  # 10 seconds max
     
+    @pytest.mark.perf
+    @pytest.mark.integration
+    @pytest.mark.parametrize(
+        ("batch_size", "count", "budget_seconds"),
+        [(2, 5, 5.0), (16, 50, 10.0), (64, 100, 15.0)],
+    )
+    def test_batch_generation_time_budget(
+        self, integration_embedder, batch_size, count, budget_seconds
+    ):
+        """Batch generation stays within its wall-clock budget."""
+        integration_embedder.batch_size = batch_size
+
+        start_time = time.time()
+        integration_embedder.generate([f"test text {i}" for i in range(count)])
+
+        assert time.time() - start_time < budget_seconds
+
+    @pytest.mark.perf
+    @pytest.mark.asyncio
+    async def test_async_batch_generation_time_budget(self, integration_embedder):
+        """Three concurrent 20-text batches finish within 10 seconds."""
+        integration_embedder.batch_size = 32
+
+        start_time = time.time()
+        await asyncio.gather(*[
+            integration_embedder.generate_async([f"batch{b}_text{i}" for i in range(20)])
+            for b in range(3)
+        ])
+
+        assert time.time() - start_time < 10.0
+
     @pytest.mark.integration
     def test_batch_size_consistency(self, integration_embedder):
         """Test that different batch sizes produce consistent embeddings."""

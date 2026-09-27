@@ -161,6 +161,37 @@ def get_graph_relationships_schema(vector_dims: int = 128) -> Optional[Any]:
     ])
 
 
+def get_mcp_sessions_schema() -> Optional[Any]:
+    """Get the PyArrow schema for the mcp_sessions table.
+
+    Declared rather than inferred: a first session without a description or
+    log file would otherwise type those columns as null and reject every
+    later session that has one.
+
+    Returns:
+        PyArrow schema or None if pyarrow is not available
+    """
+    if pa is None:
+        return None
+
+    return pa.schema([
+        pa.field("id", pa.string(), nullable=False),
+        pa.field("session_id", pa.string(), nullable=False),
+        pa.field("project_id", pa.string(), nullable=False),
+        pa.field("state", pa.string(), nullable=False),
+        pa.field("status", pa.string(), nullable=False),
+        pa.field("created_at", pa.string(), nullable=False),
+        pa.field("last_active", pa.string(), nullable=False),
+        pa.field("description", pa.string(), nullable=True),
+        pa.field("log_file", pa.string(), nullable=True),
+        pa.field("context_state_json", pa.string(), nullable=False),
+        pa.field("is_expired", pa.bool_(), nullable=False),
+        pa.field("history_json", pa.string(), nullable=False),
+        pa.field("events_json", pa.string(), nullable=False),
+        pa.field("ttl_hours", pa.int64(), nullable=False),
+    ])
+
+
 def get_memory_episodic_schema(
     content_vector_dims: int = 384,
     summary_vector_dims: int = 128,

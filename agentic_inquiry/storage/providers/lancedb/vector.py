@@ -22,6 +22,7 @@ from agentic_inquiry.storage.providers.lancedb.entity_rows import (
 )
 
 if TYPE_CHECKING:
+    from agentic_inquiry.database.filters import FilterInput
     from agentic_inquiry.storage.providers.lancedb.connection import (
         LanceDBConnectionManager,
     )
@@ -321,7 +322,7 @@ class LanceDBVectorProvider:
 
     async def query(
         self,
-        filters: Dict[str, Any],
+        filters: "FilterInput",
         limit: int = 100,
         offset: int = 0,
         project_id: Optional[str] = None,
@@ -342,15 +343,11 @@ class LanceDBVectorProvider:
 
         effective_project_id = project_id or self._project_id
 
-        # Add project_id to filters if provided
-        query_filters = dict(filters)
-        if effective_project_id:
-            query_filters["project_id"] = effective_project_id
-
         results = await self._db_manager.advanced_filter(
             table_name=DOCUMENT_CHUNKS_TABLE,
-            filters=query_filters,
+            filters=filters,
             limit=limit + offset,  # Offset handled manually
+            project_id=effective_project_id,
         )
 
         chunks = []

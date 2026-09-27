@@ -22,6 +22,7 @@ from agentic_inquiry.database.lancedb_schemas import (
     get_graph_entities_schema,
     get_graph_relationships_schema,
     get_memory_episodic_schema,
+    get_mcp_sessions_schema,
 )
 from agentic_inquiry.storage.similarity import (
     DEFAULT_SIMILARITY_METRIC,
@@ -310,6 +311,8 @@ class TableManager:
             return get_graph_entities_schema(vector_dims)
         elif table_name == "graph_relationships":
             return get_graph_relationships_schema(vector_dims)
+        elif table_name == "mcp_sessions":
+            return get_mcp_sessions_schema()
         elif table_name == "memory_episodic_medium":
             content_dims = len(rows[0].get("vector", [])) if rows else 384
             summary_dims = len(rows[0].get("summary_vector", [])) if rows else 128

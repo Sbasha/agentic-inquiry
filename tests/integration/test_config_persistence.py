@@ -48,6 +48,21 @@ def sample_config_data():
 class TestConfigPersistence:
     """Tests for configuration persistence (AC-4.1)."""
 
+    def test_default_config_round_trips_through_yaml(self, temp_config_file):
+        """Every key to_dict() emits is accepted by the schema on reload."""
+        config = Config.load()
+        config.mcp.tokens.default_budget = 6000
+        config.mcp.relationships.max_per_node = 250
+        config.mcp.behavior.cache_ttl_seconds = 60
+        with open(temp_config_file, "w") as f:
+            yaml.dump(config.to_dict(), f)
+
+        reloaded = Config.load(str(temp_config_file))
+
+        for section in ("relationships", "tokens", "defaults", "behavior"):
+            assert reloaded.to_dict()["mcp"][section] == config.to_dict()["mcp"][section]
+        assert reloaded.mcp.logging["level"] == config.mcp.logging["level"]
+
     def test_config_persistence_across_sessions(
         self, temp_config_file, sample_config_data
     ):

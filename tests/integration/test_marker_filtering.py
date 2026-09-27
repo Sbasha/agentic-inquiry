@@ -129,11 +129,11 @@ def test_marker_filtering_with_specific_file():
     When running pytest with a marker filter on a specific file,
     only matching tests from that file should be collected.
     """
-    # Run pytest on this specific file with unit marker
+    # Run pytest on this specific file with the marker its directory assigns
     test_file = Path(__file__)
     
     result = subprocess.run(
-        ["uv", "run", "pytest", str(test_file), "-m", "unit", "--collect-only", "-q"],
+        ["uv", "run", "pytest", str(test_file), "-m", "integration", "--collect-only", "-q"],
         capture_output=True,
         text=True,
         timeout=30
@@ -142,11 +142,11 @@ def test_marker_filtering_with_specific_file():
     # Check that the command succeeded
     assert result.returncode == 0, f"pytest collection failed: {result.stderr}"
     
-    # Should collect tests from this file (all are marked as unit)
+    # Should collect tests from this file (tests/integration/ tags them integration)
     output = result.stdout
     
-    assert "test_marker_filtering" in output or "test" in output.lower(), \
-        "Should collect unit tests from this file"
+    assert "test_marker_filtering.py::test_marker_filtering_with_specific_file" in output, \
+        "Should collect integration tests from this file"
 
 
 def test_invalid_marker_produces_warning():
@@ -174,24 +174,13 @@ def test_invalid_marker_produces_warning():
         "Should warn about or handle undefined marker"
 
 
-def test_markers_are_registered_in_config():
+def test_markers_are_registered_in_config(pytestconfig):
     """Test that required markers are registered in pytest configuration.
     
     **Validates: Requirements 9.4**
     
-    The pytest configuration should register the unit, integration,
-    and slow markers.
+    tests/conftest.py registers the unit, integration, and slow markers.
     """
-    # Check pyproject.toml for marker registration
-    pyproject_path = Path(__file__).parent.parent / "pyproject.toml"
-    
-    with open(pyproject_path, "r", encoding="utf-8") as f:
-        content = f.read()
-    
-    # Check that all required markers are registered
-    assert "unit:" in content or '"unit:' in content, \
-        "unit marker should be registered"
-    assert "integration:" in content or '"integration:' in content, \
-        "integration marker should be registered"
-    assert "slow:" in content or '"slow:' in content, \
-        "slow marker should be registered"
+    registered = {line.split(":", 1)[0] for line in pytestconfig.getini("markers")}
+
+    assert {"unit", "integration", "slow"} <= registered

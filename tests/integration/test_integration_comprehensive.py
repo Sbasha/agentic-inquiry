@@ -227,6 +227,7 @@ class TestConfigurationIntegration:
 @pytest.mark.asyncio
 class TestIntegrationPerformance:
     
+    @pytest.mark.perf
     async def test_indexing_performance(self, indexing_pipeline_fixture, temp_project_root):
         from agentic_inquiry.parsers.executor import get_parser_instance, execute_parser
         

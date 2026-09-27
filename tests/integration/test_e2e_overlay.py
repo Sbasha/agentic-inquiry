@@ -33,6 +33,7 @@ def _make_config(tmp_path_str: str, project_id: str = "test_e2e") -> Config:
     config.storage = StorageConfig(
         root=tmp_path_str,
         default_project_id=project_id,
+        backend="lancedb",
     )
     return config
 

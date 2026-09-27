@@ -29,7 +29,7 @@ def mock_db_manager():
     """Create a mock database manager."""
     mock_db_manager = AsyncMock()
     mock_db_manager.count_records = AsyncMock()
-    mock_db_manager.advanced_filter = AsyncMock()
+    mock_db_manager.query_raw = AsyncMock()
     # Add get_db_manager for StorageFacade compatibility
     mock_db_manager.get_db_manager = MagicMock(return_value=mock_db_manager)
     return mock_db_manager
@@ -180,7 +180,7 @@ class TestKeywordExtraction:
     ):
         """Test extracting top keywords from indexed content."""
         # Setup
-        mock_db_manager.advanced_filter.return_value = sample_chunks_for_keywords
+        mock_db_manager.query_raw.return_value = sample_chunks_for_keywords
         
         # Execute
         keywords = await keyword_extractor.extract_top_keywords(
@@ -258,7 +258,7 @@ class TestKeywordExtraction:
     ):
         """Test keyword extraction with no indexed content."""
         # Setup - no chunks
-        mock_db_manager.advanced_filter.return_value = []
+        mock_db_manager.query_raw.return_value = []
         
         # Execute
         keywords = await keyword_extractor.extract_top_keywords(
@@ -423,7 +423,7 @@ class TestIntegrationWorkflows:
             }
         ]
         
-        mock_db_manager.advanced_filter.return_value = sample_chunks
+        mock_db_manager.query_raw.return_value = sample_chunks
         
         keyword_extractor = KeywordExtractor()
         keywords = await keyword_extractor.extract_top_keywords(

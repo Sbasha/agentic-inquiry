@@ -264,10 +264,13 @@ class TestDiscoveredBranchFields:
         dt = datetime.now(timezone.utc) - timedelta(days=1)
         _initial_commit(local_repo, dt=dt)
         _git(["push", "--set-upstream", "origin", "main"], cwd=local_repo, check=False)
+        # Create the refs/remotes/origin/HEAD symref a normal clone has. Newer
+        # git shortens it to plain "origin", which must not pass as a branch.
+        _git(["remote", "set-head", "origin", "main"], cwd=local_repo)
 
         branches = discover_branches(str(local_repo), default_branch="main")
-        for b in branches:
-            assert "HEAD" not in b.name, f"HEAD tracking branch leaked: {b.name}"
+
+        assert [b.name for b in branches] == ["origin/main"]
 
 
 # ---------------------------------------------------------------------------
