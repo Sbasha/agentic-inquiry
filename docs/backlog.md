@@ -208,20 +208,11 @@ no acceptance criterion is deferred.
   it on every `get_cache()`, named lookups included, so a caller's
   `set_default=True` cache is replaced and a construction error breaks named
   lookups. Unblocked by applying the watcher fix (knowledge entry K-0008).
+
 ## hybrid-reranker-default
 
 Open items found while building [`specs/hybrid-reranker-default/spec.md`](specs/hybrid-reranker-default/spec.md).
 
-- **User config replaces the packaged defaults:** `Config.load()` loads one
-  file (`INQUIRY_CONFIG`, `./agentic-inquiry.yaml`,
-  `~/.agentic-inquiry/config.yaml`, then packaged `default.yaml`) and does not
-  merge a user file onto `default.yaml`. Keys a user omits fall to the
-  dataclass defaults, which can differ from the YAML (for example
-  `reranker_params` is `{}` in the dataclass and `{k: 60}` in the YAML), and
-  the README "override defaults" example fails schema validation with
-  `'cache' is a required property`. Unblocked by a product call: overlay user
-  files on the packaged defaults (`Config._deep_merge` already exists), or
-  document that the file must be complete.
 - **Scoring test docstring describes the wrong reranker:**
   `tests/search/test_hybrid_search_scoring.py::test_score_differences_reflected_in_ranking`
   explains linear-combination arithmetic, but its service is built from
