@@ -829,3 +829,25 @@ async def test_async_context_manager_handles_exception(
     assert memory is not None
     assert memory._initialized is False
     assert memory.context_manager._running is False
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("consolidate", [True, False])
+async def test_shutdown_stops_tasks_and_consolidates_only_when_asked(
+    memory_system: MemorySystem, consolidate: bool
+) -> None:
+    memory_system.create_agent_context(
+        agent_id="test_agent",
+        session_id="test_session",
+        conversation_id="test_conversation",
+    )
+    consolidation_task = memory_system._consolidation_task
+    cleanup_task = memory_system.context_manager._cleanup_task
+    assert consolidation_task is not None and cleanup_task is not None
+    memory_system.consolidation_engine.consolidate = AsyncMock()
+
+    await memory_system.shutdown(consolidate=consolidate)
+
+    assert consolidation_task.done()
+    assert cleanup_task.done()
+    assert memory_system.consolidation_engine.consolidate.await_count == int(consolidate)

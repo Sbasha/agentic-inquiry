@@ -56,7 +56,7 @@ def format_result(result: dict, index: int, verbose: bool = False) -> str:
     content = result.get("content", result.get("text", ""))
     if content:
         if verbose:
-            lines.append(f"   ---")
+            lines.append("   ---")
             for line in content.split("\n")[:10]:
                 lines.append(f"   {line}")
             if content.count("\n") > 10:
@@ -99,10 +99,8 @@ async def search_command(args: argparse.Namespace) -> int:
         # Configure embedder based on storage backend capabilities
         from agentic_inquiry.embeddings.factory import (
             configure_embedder_for_backend,
-            resolve_backend_type,
         )
         from agentic_inquiry.embeddings.service import EmbeddingService
-        from agentic_inquiry.storage.capabilities import get_capabilities_for_backend
 
         configure_embedder_for_backend(config, quiet=True)
 
@@ -120,7 +118,7 @@ async def search_command(args: argparse.Namespace) -> int:
         if caps.uses_server_side_embedding:
             # Server-side embedding: pass raw query text
             results = await search.hybrid_search(
-                query_vector=query,  # type: ignore[arg-type]
+                query_vector=query,
                 query_fts=query,
                 project_id=project_id,
                 limit=args.limit,
@@ -130,7 +128,7 @@ async def search_command(args: argparse.Namespace) -> int:
             embedding_service = EmbeddingService(config=config)
             query_vector = await embedding_service.embed_async(query)
             results = await search.hybrid_search(
-                query_vector=query_vector,
+                query_vector=query_vector.tolist(),
                 query_fts=query,
                 project_id=project_id,
                 limit=args.limit,
@@ -185,7 +183,6 @@ async def similar_command(args: argparse.Namespace) -> int:
     """
     from agentic_inquiry.storage.facade import StorageFacade
     from agentic_inquiry.search.service import SearchService
-    from agentic_inquiry.embeddings.registry import embedding_registry
 
     config = load_config_for_environment()
 
@@ -207,7 +204,7 @@ async def similar_command(args: argparse.Namespace) -> int:
 
         if caps.uses_server_side_embedding:
             results = await search.hybrid_search(
-                query_vector=args.entity,  # type: ignore[arg-type]
+                query_vector=args.entity,
                 query_fts=args.entity,
                 project_id=project_id,
                 limit=args.limit,
@@ -217,7 +214,7 @@ async def similar_command(args: argparse.Namespace) -> int:
             embedding_service = EmbeddingService(config=config)
             query_vector = await embedding_service.embed_async(args.entity)
             results = await search.hybrid_search(
-                query_vector=query_vector,
+                query_vector=query_vector.tolist(),
                 query_fts=args.entity,
                 project_id=project_id,
                 limit=args.limit,

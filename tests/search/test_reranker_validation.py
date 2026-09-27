@@ -4,6 +4,9 @@ This module tests that invalid reranker types are rejected at startup
 with clear error messages, as specified in DES-S4-002.
 """
 
+import json
+from pathlib import Path
+
 import pytest
 
 pytestmark = pytest.mark.unit
@@ -58,6 +61,16 @@ class TestRerankerConfigValidation:
         expected = {"rrf", "linear_combination", "cross_encoder", "colbert"}
         assert VALID_RERANKER_TYPES == expected
         assert isinstance(VALID_RERANKER_TYPES, frozenset)
+
+    def test_valid_reranker_types_match_config_schema(self):
+        """The schema enum and the startup check accept the same reranker types."""
+        schema_path = Path(__file__).parents[2] / "config" / "config.schema.json"
+        schema = json.loads(schema_path.read_text())
+        enum = (
+            schema["properties"]["search"]["properties"]["hybrid_search"]
+            ["properties"]["reranker_type"]["enum"]
+        )
+        assert set(enum) == VALID_RERANKER_TYPES
 
     @pytest.mark.parametrize("reranker_type", [
         "rrf",
@@ -118,6 +131,7 @@ class TestRerankerConfigValidation:
         "cross-encoder",  # Wrong delimiter
         "",             # Empty string (if config allows)
         "none",         # Not supported
+        "cohere",       # Hosted API reranker; out of scope (CHARTER Principle 1)
     ])
     def test_invalid_reranker_types_rejected(
         self,

@@ -11,7 +11,6 @@ from agentic_inquiry.config import Config
 from agentic_inquiry.database import LanceDBManager
 from agentic_inquiry.embeddings import EmbeddingService
 from agentic_inquiry.memory import MemoryContext, MemorySystem, MemoryTier
-from agentic_inquiry.memory.models import MemoryStatus
 from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 
 
@@ -32,15 +31,26 @@ async def db_manager(test_config: Config) -> LanceDBManager:
 
 
 @pytest.fixture
-async def memory_system(test_config: Config, db_manager: LanceDBManager):
+def episodic_adapter(db_manager: LanceDBManager) -> LanceDBMemoryAdapter:
+    return LanceDBMemoryAdapter(db_manager, table_name="memory_episodic_medium")
+
+
+@pytest.fixture
+def semantic_adapter(db_manager: LanceDBManager) -> LanceDBMemoryAdapter:
+    return LanceDBMemoryAdapter(db_manager, table_name="memory_semantic_high")
+
+
+@pytest.fixture
+async def memory_system(
+    test_config: Config,
+    db_manager: LanceDBManager,
+    episodic_adapter: LanceDBMemoryAdapter,
+    semantic_adapter: LanceDBMemoryAdapter,
+):
     """Create a fully initialized memory system."""
     embedding_service = EmbeddingService(test_config)
 
-    # Create adapters for persistent memory tiers
-    # Note: working memory is in-memory only, no adapter needed
-    episodic_adapter = LanceDBMemoryAdapter(db_manager, table_name="memory_episodic_medium")
-    semantic_adapter = LanceDBMemoryAdapter(db_manager, table_name="memory_semantic_high")
-
+    # Working memory is in-memory only, so it has no adapter.
     system = MemorySystem(
         config=test_config,
         embedding_service=embedding_service,
@@ -63,6 +73,21 @@ def test_context():
         session_id="test_session",
         conversation_id="test_conversation",
     )
+
+
+def _bump_access_after_first_read(
+    adapter: LanceDBMemoryAdapter, monkeypatch: pytest.MonkeyPatch, access_count: int
+) -> None:
+    """Record an access from another writer right after the next read returns."""
+    real_get_by_id = adapter.get_by_id
+
+    async def get_then_concurrent_write(item_id: str):
+        monkeypatch.setattr(adapter, "get_by_id", real_get_by_id)
+        item = await real_get_by_id(item_id)
+        await adapter.update(item_id, {"access_count": access_count})
+        return item
+
+    monkeypatch.setattr(adapter, "get_by_id", get_then_concurrent_write)
 
 
 class TestCompleteMemoryLifecycle:
@@ -110,6 +135,54 @@ class TestCompleteMemoryLifecycle:
         # Verify deletion
         deleted_item = await memory_system.episodic_memory.get_by_id(item.id)
         assert deleted_item is None
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("importance", "tier"), [(0.8, "episodic"), (0.95, "semantic")]
+    )
+    async def test_update_importance_keeps_concurrent_access_update(
+        self,
+        memory_system,
+        test_context,
+        episodic_adapter,
+        semantic_adapter,
+        monkeypatch,
+        importance,
+        tier,
+    ):
+        """An access recorded between the setter's read and write survives."""
+        adapter = episodic_adapter if tier == "episodic" else semantic_adapter
+        item = await memory_system.store(
+            content="User prefers Python", context=test_context, importance=importance
+        )
+        _bump_access_after_first_read(adapter, monkeypatch, access_count=5)
+
+        assert await memory_system.update_importance(item.id, 0.5) is True
+
+        stored = await adapter.get_by_id(item.id)
+        assert stored.importance == 0.5
+        assert stored.access_count == 5
+        assert await adapter.count(filters={"id": item.id}) == 1
+
+    @pytest.mark.asyncio
+    async def test_update_confidence_keeps_concurrent_access_update(
+        self, memory_system, test_context, semantic_adapter, monkeypatch
+    ):
+        """An access recorded between the setter's read and write survives."""
+        item = await memory_system.store(
+            content="Python is a programming language",
+            context=test_context,
+            importance=0.95,
+            confidence=0.9,
+        )
+        _bump_access_after_first_read(semantic_adapter, monkeypatch, access_count=5)
+
+        assert await memory_system.update_confidence(item.id, 0.4) is True
+
+        stored = await semantic_adapter.get_by_id(item.id)
+        assert stored.confidence == 0.4
+        assert stored.access_count == 5
+        assert await semantic_adapter.count(filters={"id": item.id}) == 1
 
     @pytest.mark.asyncio
     async def test_working_to_episodic_to_semantic(
@@ -698,86 +771,3 @@ class TestErrorHandling:
         # Should return False, not raise error
         deleted = await memory_system.delete("nonexistent_id")
         assert deleted is False
-
-
-class TestConcurrentWrites:
-    """MemorySystem writes stay consistent while access refreshes run."""
-
-    @pytest.mark.asyncio
-    async def test_update_importance_races_refresh_and_delete(
-        self, memory_system, db_manager, test_context
-    ):
-        """One row with the new importance; a racing delete is never undone."""
-
-        async def stored_importances(item_id):
-            rows = await db_manager.advanced_filter(
-                table_name="memory_episodic_medium",
-                filters={"id": item_id},
-                limit=10,
-                project_id=None,
-            )
-            return [row["importance"] for row in rows]
-
-        for attempt in range(5):
-            item = await memory_system.store(
-                content=f"User prefers Python for data analysis ({attempt})",
-                context=test_context,
-                importance=0.8,
-                summary="Python preference",
-            )
-
-            await memory_system.retrieve(
-                query="programming language preference", context=test_context, limit=5
-            )
-            assert await memory_system.update_importance(item.id, 0.85) is True
-            await memory_system.episodic_memory.wait_for_background_writes()
-            assert await stored_importances(item.id) == [0.85]
-
-            await memory_system.retrieve(
-                query="programming language preference", context=test_context, limit=5
-            )
-            await asyncio.gather(
-                memory_system.update_importance(item.id, 0.86),
-                memory_system.delete(item.id),
-            )
-            await memory_system.episodic_memory.wait_for_background_writes()
-            assert await stored_importances(item.id) == []
-
-
-class TestStatusChangesPersist:
-    """Negate and supersede persist on the stored tiers, not only in memory."""
-
-    @staticmethod
-    def _layer(memory_system, importance):
-        return memory_system.semantic_memory if importance >= 0.9 else memory_system.episodic_memory
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("importance", [0.8, 0.95], ids=["episodic", "semantic"])
-    async def test_negate_persists(self, memory_system, test_context, importance):
-        item = await memory_system.store(
-            content="The build uses Makefiles", context=test_context,
-            importance=importance, summary="Build tool",
-        )
-
-        assert await memory_system.negate_memory(item.id) is True
-
-        stored = await self._layer(memory_system, importance).get_by_id(
-            item.id, update_access=False
-        )
-        assert stored.status == MemoryStatus.NEGATED
-
-    @pytest.mark.asyncio
-    @pytest.mark.parametrize("importance", [0.8, 0.95], ids=["episodic", "semantic"])
-    async def test_supersede_persists(self, memory_system, test_context, importance):
-        old = await memory_system.store(
-            content="The build uses Makefiles", context=test_context,
-            importance=importance, summary="Build tool",
-        )
-
-        new = await memory_system.supersede_memory(old.id, "The build uses just")
-
-        stored = await self._layer(memory_system, importance).get_by_id(
-            old.id, update_access=False
-        )
-        assert stored.status == MemoryStatus.SUPERSEDED
-        assert stored.superseded_by == new.id

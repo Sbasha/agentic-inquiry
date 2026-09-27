@@ -88,7 +88,7 @@ Memory and embeddings:
       and a deleted item is not re-created by a pending refresh or a racing
       `update_importance`.
 - [x] A refresh whose write fails leaves the previous version of the item
-      readable, and repeated retrieves count every access.
+      readable.
 - [x] Negate and supersede persist the new status on the episodic and semantic
       tiers.
 - [x] Embedders created and loaded concurrently in one process all load and

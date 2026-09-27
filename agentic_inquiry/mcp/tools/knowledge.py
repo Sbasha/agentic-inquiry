@@ -49,7 +49,7 @@ async def _index_directory_async(
     db_manager = services["storage"]
 
     # Initialize progress tracking
-    progress = {
+    progress: Dict[str, Any] = {
         "files_processed": 0,
         "chunks_created": 0,
         "entities_created": 0,
@@ -780,9 +780,7 @@ async def add_knowledge(
                 try:
                     if hasattr(db_manager, 'generate_embeddings'):
                         await db_manager.generate_embeddings()
-                    await indexing_pipeline._poll_embedding_completion(
-                        f"file_{project_id}"
-                    )
+                    await indexing_pipeline._poll_embedding_completion()
                 except Exception as poll_err:
                     logger.warning(
                         "Embedding poll error after single-file indexing: %s",

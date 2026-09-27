@@ -171,8 +171,7 @@ class FallbackTextParser:
         if self.whole_file_max_chars > 0 and len(content) <= self.whole_file_max_chars:
             line_end = max(content.count("\n") + 1, 1)
             chunk = self._create_chunk(content, 1, line_end, "file")
-            chunk.metadata["chunk_index"] = 0
-            chunk.metadata["total_chunks"] = 1
+            chunk.metadata = {**(chunk.metadata or {}), "chunk_index": 0, "total_chunks": 1}
             return [chunk]
         
         # Split into paragraphs (double newlines)

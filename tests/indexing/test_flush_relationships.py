@@ -33,13 +33,14 @@ class _DummyEmbedder(Embedder):
         return self._ndims
 
 
-def test_flush_relationships_with_enhanced_resolution():
+def test_flush_relationships_with_enhanced_resolution(tmp_path):
     """Test that flush_pending_relationships uses enhanced resolution and tracks statistics."""
     async def run():
         import uuid
         from agentic_inquiry.events import EventSystem
         
         config = Config.load()
+        config.storage.root = str(tmp_path)
         registry = EmbeddingRegistry(default_embedder=_DummyEmbedder())
         mock_db_manager = InMemoryLanceDBManager(uri="memory://test-flush")
         await mock_db_manager.create_tables_and_indexes()

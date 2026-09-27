@@ -354,12 +354,17 @@ class MemorySystem:
                 logger.exception("Error in consolidation loop")
                 # Continue running despite errors
 
-    async def shutdown(self) -> None:
+    async def shutdown(self, consolidate: bool = True) -> None:
         """
         Shutdown the memory system and cleanup resources.
 
         Stops background tasks, performs final consolidation,
         and closes database connections.
+
+        Args:
+            consolidate: Run a final consolidation of every active context.
+                Pass False to only stop the background tasks, leaving stored
+                memories exactly as written.
         """
         if not self._initialized:
             logger.debug("MemorySystem not initialized, nothing to shutdown")
@@ -378,12 +383,10 @@ class MemorySystem:
         # Stop context manager
         await self.context_manager.stop()
 
-        # Let pending access-stat refreshes finish before the loop can end
-        await self.episodic_memory.wait_for_background_writes()
-        await self.semantic_memory.wait_for_background_writes()
-
         # Perform final consolidation for all active contexts
-        active_contexts = self.context_manager.get_active_contexts()
+        active_contexts = (
+            self.context_manager.get_active_contexts() if consolidate else []
+        )
         if active_contexts:
             logger.info(
                 "Performing final consolidation for %d contexts",
@@ -757,30 +760,46 @@ class MemorySystem:
             MemoryTier.SEMANTIC,
         ]
 
-        def apply(item: MemoryItem) -> None:
-            item.importance = new_importance
-            item.modified_at = datetime.now(timezone.utc)
-            item.modifier_agent_id = item.context.agent_id
-
         for search_tier in tiers_to_search:
-            item: MemoryItem | None
+            item = None
+
             if search_tier == MemoryTier.WORKING:
                 item = await self.working_memory.get_by_id(item_id)
-                if item:
-                    apply(item)
-                    await self.working_memory.store(item)
             elif search_tier == MemoryTier.EPISODIC:
-                item = await self.episodic_memory.modify(item_id, apply)
+                item = await self.episodic_memory.get_by_id(item_id, update_access=False)
             else:  # SEMANTIC
-                item = await self.semantic_memory.modify(item_id, apply)
+                item = await self.semantic_memory.get_by_id(item_id, update_access=False)
 
             if item:
+                old_importance = item.importance
+                changes = {
+                    "importance": new_importance,
+                    "modified_at": datetime.now(timezone.utc),
+                    "modifier_agent_id": item.context.agent_id,
+                }
+
+                if search_tier == MemoryTier.WORKING:
+                    for field, value in changes.items():
+                        setattr(item, field, value)
+                    await self.working_memory.store(item)
+                    updated = True
+                elif search_tier == MemoryTier.EPISODIC:
+                    updated = await self.episodic_memory.update_fields(item_id, changes)
+                else:  # SEMANTIC
+                    updated = await self.semantic_memory.update_fields(item_id, changes)
+
+                if not updated:
+                    # Gone since the read: deleted, or promoted to a later tier.
+                    continue
+
                 logger.info(
-                    "Updated importance: id=%s, tier=%s, new=%.3f",
+                    "Updated importance: id=%s, tier=%s, old=%.3f, new=%.3f",
                     item_id,
                     search_tier.value,
+                    old_importance,
                     new_importance,
                 )
+
                 return True
 
         logger.warning("Item not found for importance update: id=%s", item_id)
@@ -814,17 +833,24 @@ class MemorySystem:
                 f"new_confidence must be between 0.0 and 1.0, got {new_confidence}"
             )
 
-        old_confidence: float | None = None
+        # Search in semantic memory
+        item = await self.semantic_memory.get_by_id(item_id, update_access=False)
 
-        def apply(item: MemoryItem) -> None:
-            nonlocal old_confidence
-            old_confidence = item.confidence
-            item.confidence = new_confidence
-            item.modified_at = datetime.now(timezone.utc)
-            item.modifier_agent_id = item.context.agent_id
-
-        if await self.semantic_memory.modify(item_id, apply) is None:
+        if not item:
             logger.warning("Item not found for confidence update: id=%s", item_id)
+            return False
+
+        old_confidence = item.confidence
+        updated = await self.semantic_memory.update_fields(
+            item_id,
+            {
+                "confidence": new_confidence,
+                "modified_at": datetime.now(timezone.utc),
+                "modifier_agent_id": item.context.agent_id,
+            },
+        )
+        if not updated:
+            logger.warning("Item deleted before confidence update: id=%s", item_id)
             return False
 
         logger.info(
@@ -999,22 +1025,26 @@ class MemorySystem:
                 # Since update_importance doesn't allow setting arbitrary fields, we need
                 # to do it manually here.
                 
-                def negate(item: MemoryItem) -> None:
-                    item.status = MemoryStatus.NEGATED
-                    item.modified_at = datetime.now(timezone.utc)
-
+                # Re-fetch to update status
                 item = None
                 if tier == MemoryTier.WORKING:
                     item = await self.working_memory.get_by_id(item_id)
-                    if item:
-                        negate(item)
-                        await self.working_memory.store(item)
                 elif tier == MemoryTier.EPISODIC:
-                    item = await self.episodic_memory.modify(item_id, negate)
+                    item = await self.episodic_memory.get_by_id(item_id, update_access=False)
                 else:
-                    item = await self.semantic_memory.modify(item_id, negate)
-
+                    item = await self.semantic_memory.get_by_id(item_id, update_access=False)
+                
                 if item:
+                    item.status = MemoryStatus.NEGATED
+                    item.modified_at = datetime.now(timezone.utc)
+                    
+                    if tier == MemoryTier.WORKING:
+                        await self.working_memory.store(item)
+                    elif tier == MemoryTier.EPISODIC:
+                        await self.episodic_memory.update(item)
+                    else:
+                        await self.semantic_memory.update(item)
+                        
                     logger.info("Negated memory item: id=%s", item_id)
                     
                     # Emit memory.negated event
@@ -1087,29 +1117,17 @@ class MemorySystem:
         )
         
         # Update old item status
-        def supersede(item: MemoryItem) -> None:
-            item.status = MemoryStatus.SUPERSEDED
-            item.superseded_by = new_item.id
-            item.modified_at = datetime.now(timezone.utc)
-
-        marked: MemoryItem | None
+        old_item.status = MemoryStatus.SUPERSEDED
+        old_item.superseded_by = new_item.id
+        old_item.modified_at = datetime.now(timezone.utc)
+        
         if old_tier == MemoryTier.WORKING:
-            supersede(old_item)
             await self.working_memory.store(old_item)
-            marked = old_item
         elif old_tier == MemoryTier.EPISODIC:
-            marked = await self.episodic_memory.modify(old_item_id, supersede)
+            await self.episodic_memory.update(old_item)
         else:
-            marked = await self.semantic_memory.modify(old_item_id, supersede)
-
-        if marked is None:
-            logger.warning(
-                "Memory %s was deleted before it could be marked superseded by %s",
-                old_item_id,
-                new_item.id,
-            )
-            return new_item
-
+            await self.semantic_memory.update(old_item)
+            
         logger.info(
             "Superseded memory: old_id=%s, new_id=%s",
             old_item_id,

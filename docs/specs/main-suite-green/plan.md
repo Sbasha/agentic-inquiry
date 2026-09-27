@@ -22,18 +22,11 @@ does.
   to `LanceDBManager.advanced_filter`, which already combines either form with
   the project scope. The `relationship_type` to `type` key shim goes; its only
   caller now uses the schema column.
-- **Memory writes are atomic and serialised.** A layer writes an item over its
-  stored copy with the storage adapter's `replace()`, which on LanceDB is one
-  `merge_insert` commit (`LanceDBManager.upsert`), so a cancelled or failed
-  write never leaves the item missing. `EpisodicMemory` and `SemanticMemory`
-  each hold an `asyncio.Lock` around updates, deletes, evictions and
-  access-stat refreshes; `modify(item_id, change)` re-reads, mutates and
-  replaces an item under that lock, and `MemorySystem` uses it for importance,
-  confidence, negation and supersede, so no caller writes back a copy it read
-  earlier. Background refreshes are tracked, coalesced per item (repeat
-  retrieves add to a pending access count instead of queueing more work), log
-  failures at warning, and are awaited by `MemorySystem.shutdown` through
-  `wait_for_background_writes()`.
+- **Memory field writes are field-scoped.** Importance and confidence go
+  through the layers' `update_fields`, which writes only the named columns, so
+  a concurrent access-stat write never overwrites them and a deleted item is
+  not re-created. Negate and supersede still rewrite the whole row, and
+  overlapping accesses can count once; both are open in `docs/backlog.md`.
 - **Model loads are serialised process-wide.** transformers builds models under
   global meta-device patching; two overlapping loads leave every later load in
   the process failing. `SentenceTransformerEmbedder` loads under one

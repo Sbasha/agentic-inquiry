@@ -112,7 +112,7 @@ requires-dist = [
     { name = "filelock", specifier = ">=3.20.3" },
     { name = "fsspec", specifier = ">=2024.1.0" },
     { name = "jsonschema", specifier = ">=4.0.0" },
-    { name = "lancedb", specifier = ">=0.8.0,<0.26" },
+    { name = "lancedb", specifier = ">=0.23.0,<0.26" },
     { name = "mypy", specifier = ">=1.18.2" },
     { name = "onnxruntime", specifier = ">=1.16.0" },
     { name = "optimum", specifier = ">=1.16.0" },

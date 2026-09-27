@@ -6,6 +6,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
+import asyncio
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -600,95 +601,67 @@ async def test_get_stats(temp_semantic_memory: SemanticMemory) -> None:
     assert stats["capacity"] == 100
 
 
-async def _stored_rows(db_manager: LanceDBManager, item_id: str) -> list[dict]:
-    return await db_manager.advanced_filter(
-        table_name="memory_semantic_high",
-        filters={"id": item_id},
-        limit=10,
-        project_id=None,
-    )
+def _write_confidence_after_first_read(
+    adapter: LanceDBMemoryAdapter, monkeypatch: pytest.MonkeyPatch, confidence: float
+) -> None:
+    """Make another writer set confidence right after the next read returns."""
+    real_get_by_id = adapter.get_by_id
+
+    async def get_then_concurrent_write(item_id: str) -> MemoryItem | None:
+        monkeypatch.setattr(adapter, "get_by_id", real_get_by_id)
+        item = await real_get_by_id(item_id)
+        await adapter.update(item_id, {"confidence": confidence})
+        return item
+
+    monkeypatch.setattr(adapter, "get_by_id", get_then_concurrent_write)
 
 
 @pytest.mark.asyncio
-async def test_access_refresh_does_not_overwrite_concurrent_update(
+async def test_access_bookkeeping_keeps_concurrent_confidence_update(
     temp_semantic_memory: SemanticMemory,
-    db_manager: LanceDBManager,
+    semantic_adapter: LanceDBMemoryAdapter,
     sample_fact_item: MemoryItem,
-    sample_context: MemoryContext,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """An update racing retrieve()'s access refresh leaves one row with the update."""
+    """get_by_id's access write must not revert a field another writer changed."""
     await temp_semantic_memory.store(sample_fact_item)
+    _write_confidence_after_first_read(semantic_adapter, monkeypatch, 0.4)
 
-    for attempt in range(5):
-        await temp_semantic_memory.retrieve(
-            query_embedding=sample_fact_item.embedding, context=sample_context
-        )
-        item = await temp_semantic_memory.get_by_id(sample_fact_item.id, update_access=False)
-        item.importance = 0.9 + attempt / 100
-        await temp_semantic_memory.update(item)
-        await temp_semantic_memory.wait_for_background_writes()
+    await temp_semantic_memory.get_by_id(sample_fact_item.id)
 
-        rows = await _stored_rows(db_manager, sample_fact_item.id)
-        assert [row["importance"] for row in rows] == [item.importance]
+    stored = await semantic_adapter.get_by_id(sample_fact_item.id)
+    assert stored is not None
+    assert stored.confidence == 0.4
+    assert stored.access_count == 1
+    assert await semantic_adapter.count(filters={"id": sample_fact_item.id}) == 1
 
 
 @pytest.mark.asyncio
-async def test_access_refresh_does_not_recreate_deleted_item(
+async def test_retrieve_access_task_keeps_concurrent_confidence_update(
     temp_semantic_memory: SemanticMemory,
-    db_manager: LanceDBManager,
-    sample_fact_item: MemoryItem,
-    sample_context: MemoryContext,
-) -> None:
-    """Deleting a fact while its access refresh is pending keeps it deleted."""
-    for _ in range(5):
-        sample_fact_item.id = str(uuid.uuid4())
-        await temp_semantic_memory.store(sample_fact_item)
-        await temp_semantic_memory.retrieve(
-            query_embedding=sample_fact_item.embedding, context=sample_context
-        )
-
-        await temp_semantic_memory.delete(sample_fact_item.id)
-        await temp_semantic_memory.wait_for_background_writes()
-
-        assert await _stored_rows(db_manager, sample_fact_item.id) == []
-
-
-@pytest.mark.asyncio
-async def test_failed_access_refresh_keeps_the_stored_row(
-    temp_semantic_memory,
-    db_manager: LanceDBManager,
+    semantic_adapter: LanceDBMemoryAdapter,
     sample_fact_item: MemoryItem,
     sample_context: MemoryContext,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A refresh whose write fails leaves the previous version readable."""
+    """The background access task retrieve() starts must not revert other writes."""
     await temp_semantic_memory.store(sample_fact_item)
+    results = await temp_semantic_memory.retrieve(
+        sample_fact_item.embedding, sample_context, limit=5
+    )
+    assert [r.item.id for r in results] == [sample_fact_item.id]
+    _write_confidence_after_first_read(semantic_adapter, monkeypatch, 0.4)
 
-    async def fail(*args, **kwargs):
-        raise RuntimeError("disk full")
+    access_tasks = [
+        task
+        for task in asyncio.all_tasks()
+        if "_update_access_stats" in task.get_coro().__qualname__
+    ]
+    assert len(access_tasks) == 1
+    await asyncio.gather(*access_tasks)
 
-    monkeypatch.setattr(db_manager, "add_rows", fail)
-    monkeypatch.setattr(db_manager, "upsert", fail)
-    await temp_semantic_memory.retrieve(query_embedding=sample_fact_item.embedding, context=sample_context)
-    await temp_semantic_memory.wait_for_background_writes()
-
-    rows = await _stored_rows(db_manager, sample_fact_item.id)
-    assert [row["importance"] for row in rows] == [sample_fact_item.importance]
-
-
-@pytest.mark.asyncio
-async def test_repeated_retrieves_count_every_access(
-    temp_semantic_memory,
-    db_manager: LanceDBManager,
-    sample_fact_item: MemoryItem,
-    sample_context: MemoryContext,
-) -> None:
-    """Retrieves that coalesce into one refresh still count each access."""
-    await temp_semantic_memory.store(sample_fact_item)
-
-    for _ in range(3):
-        await temp_semantic_memory.retrieve(query_embedding=sample_fact_item.embedding, context=sample_context)
-    await temp_semantic_memory.wait_for_background_writes()
-
-    rows = await _stored_rows(db_manager, sample_fact_item.id)
-    assert [row["access_count"] for row in rows] == [sample_fact_item.access_count + 3]
+    stored = await semantic_adapter.get_by_id(sample_fact_item.id)
+    assert stored is not None
+    assert stored.confidence == 0.4
+    assert stored.access_count == 1
+    assert await semantic_adapter.count(filters={"id": sample_fact_item.id}) == 1

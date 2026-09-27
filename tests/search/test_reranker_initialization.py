@@ -12,6 +12,7 @@ from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
 from agentic_inquiry.exceptions import ConfigurationError
 from agentic_inquiry.search.service import SearchService
 from agentic_inquiry.search.rerankers import (
+    CrossEncoderReranker,
     RRFReranker,
     LinearCombinationReranker,
 )
@@ -89,15 +90,14 @@ class TestRRFRerankerParameterHandling:
             RRFReranker(k=60)
     
     def test_search_service_creates_reranker_with_valid_params(self, base_config, mock_storage_facade, mock_event_system):
-        """Test SearchService._hybrid_search._create_reranker() builds a registry reranker.
+        """Test SearchService._hybrid_search._create_reranker() passes reranker_params
+        through the registry to an ML-based reranker.
 
-        ML-based rerankers (colbert, cross_encoder) come from the registry and
-        load their model lazily, so construction needs no model download.
+        The cross-encoder loads its model lazily on first rerank, so construction
+        needs neither the model nor network access.
         """
-        from agentic_inquiry.search.rerankers import ColBERTReranker
-
-        base_config.search.hybrid_search.reranker_type = "colbert"
-        base_config.search.hybrid_search.reranker_params = {"model_name": "colbert-ir/colbertv2.0"}
+        base_config.search.hybrid_search.reranker_type = "cross_encoder"
+        base_config.search.hybrid_search.reranker_params = {"model_name": "custom/model"}
 
         search_service = SearchService(
             storage=mock_storage_facade,
@@ -106,8 +106,8 @@ class TestRRFRerankerParameterHandling:
         )
 
         reranker = search_service._hybrid_search._create_reranker()
-
-        assert isinstance(reranker, ColBERTReranker)
+        assert isinstance(reranker, CrossEncoderReranker)
+        assert reranker.model_name == "custom/model"
 
     def test_search_service_rejects_invalid_reranker_type(self, base_config, mock_storage_facade, mock_event_system):
         """Test SearchService rejects invalid reranker type at startup.

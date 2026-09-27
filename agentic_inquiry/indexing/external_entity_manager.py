@@ -15,6 +15,7 @@ from agentic_inquiry.models.graph_entity import GraphEntity
 
 if TYPE_CHECKING:
     from agentic_inquiry.database.adapters.lancedb_adapter import LanceDBAdapter
+    from agentic_inquiry.embeddings.base import Embedder
     from agentic_inquiry.database.lancedb_manager import LanceDBManager
     from agentic_inquiry.indexing.external_entity_resolver import (
         ExternalEntityResolver,
@@ -237,6 +238,7 @@ class ExternalEntityManager:
         if not self._pending_external_entities:
             return []
 
+        entity_embedder: Optional[Embedder]
         if self._skip_local_embedding:
             entity_embedder, entity_dims = None, 768
         else:
@@ -250,7 +252,7 @@ class ExternalEntityManager:
 
         loop = asyncio.get_running_loop()
         for entity_id, info in self._pending_external_entities.items():
-            if self._skip_local_embedding:
+            if entity_embedder is None:
                 vector = [0.0] * entity_dims
             else:
                 # Generate embedding for the entity name (in executor to avoid blocking)

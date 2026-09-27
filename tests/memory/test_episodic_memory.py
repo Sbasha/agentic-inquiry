@@ -6,6 +6,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
+import asyncio
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -17,7 +18,7 @@ from agentic_inquiry.config import Config
 from agentic_inquiry.database.lancedb_manager import LanceDBManager
 from agentic_inquiry.memory.adapters.lancedb_adapter import LanceDBMemoryAdapter
 from agentic_inquiry.memory.layers.episodic import EpisodicMemory
-from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier
+from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryStatus, MemoryTier
 
 
 @pytest.fixture
@@ -382,95 +383,190 @@ async def test_get_stats(temp_episodic_memory: EpisodicMemory) -> None:
     assert stats["capacity"] == 100
 
 
-async def _stored_rows(db_manager: LanceDBManager, item_id: str) -> list[dict]:
-    return await db_manager.advanced_filter(
-        table_name="memory_episodic_medium",
-        filters={"id": item_id},
-        limit=10,
-        project_id=None,
-    )
+def _write_importance_after_first_read(
+    adapter: LanceDBMemoryAdapter, monkeypatch: pytest.MonkeyPatch, importance: float
+) -> None:
+    """Make another writer set importance right after the next read returns.
+
+    This pins the interleaving that loses updates when access bookkeeping
+    writes back the whole row it read.
+    """
+    real_get_by_id = adapter.get_by_id
+
+    async def get_then_concurrent_write(item_id: str) -> MemoryItem | None:
+        monkeypatch.setattr(adapter, "get_by_id", real_get_by_id)
+        item = await real_get_by_id(item_id)
+        await adapter.update(item_id, {"importance": importance})
+        return item
+
+    monkeypatch.setattr(adapter, "get_by_id", get_then_concurrent_write)
 
 
 @pytest.mark.asyncio
-async def test_access_refresh_does_not_overwrite_concurrent_update(
+async def test_access_bookkeeping_keeps_concurrent_importance_update(
     temp_episodic_memory: EpisodicMemory,
-    db_manager: LanceDBManager,
+    episodic_adapter: LanceDBMemoryAdapter,
     sample_memory_item: MemoryItem,
-    sample_context: MemoryContext,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """An update racing retrieve()'s access refresh leaves one row with the update."""
+    """get_by_id's access write must not revert a field another writer changed."""
     await temp_episodic_memory.store(sample_memory_item)
+    _write_importance_after_first_read(episodic_adapter, monkeypatch, 0.95)
 
-    for attempt in range(5):
-        await temp_episodic_memory.retrieve(
-            query_embedding=sample_memory_item.embedding, context=sample_context
-        )
-        item = await temp_episodic_memory.get_by_id(sample_memory_item.id, update_access=False)
-        item.importance = 0.9 + attempt / 100
-        await temp_episodic_memory.update(item)
-        await temp_episodic_memory.wait_for_background_writes()
+    await temp_episodic_memory.get_by_id(sample_memory_item.id)
 
-        rows = await _stored_rows(db_manager, sample_memory_item.id)
-        assert [row["importance"] for row in rows] == [item.importance]
+    stored = await episodic_adapter.get_by_id(sample_memory_item.id)
+    assert stored is not None
+    assert stored.importance == 0.95
+    assert stored.access_count == 1
+    assert await episodic_adapter.count(filters={"id": sample_memory_item.id}) == 1
 
 
 @pytest.mark.asyncio
-async def test_access_refresh_does_not_recreate_deleted_item(
+async def test_retrieve_access_task_keeps_concurrent_importance_update(
     temp_episodic_memory: EpisodicMemory,
-    db_manager: LanceDBManager,
-    sample_memory_item: MemoryItem,
-    sample_context: MemoryContext,
-) -> None:
-    """Deleting an item while its access refresh is pending keeps it deleted."""
-    for _ in range(5):
-        sample_memory_item.id = str(uuid.uuid4())
-        await temp_episodic_memory.store(sample_memory_item)
-        await temp_episodic_memory.retrieve(
-            query_embedding=sample_memory_item.embedding, context=sample_context
-        )
-
-        await temp_episodic_memory.delete(sample_memory_item.id)
-        await temp_episodic_memory.wait_for_background_writes()
-
-        assert await _stored_rows(db_manager, sample_memory_item.id) == []
-
-
-@pytest.mark.asyncio
-async def test_failed_access_refresh_keeps_the_stored_row(
-    temp_episodic_memory,
-    db_manager: LanceDBManager,
+    episodic_adapter: LanceDBMemoryAdapter,
     sample_memory_item: MemoryItem,
     sample_context: MemoryContext,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A refresh whose write fails leaves the previous version readable."""
+    """The background access task retrieve() starts must not revert other writes."""
     await temp_episodic_memory.store(sample_memory_item)
+    results = await temp_episodic_memory.retrieve(
+        sample_memory_item.embedding, sample_context, limit=5
+    )
+    assert [r.item.id for r in results] == [sample_memory_item.id]
+    _write_importance_after_first_read(episodic_adapter, monkeypatch, 0.95)
 
-    async def fail(*args, **kwargs):
-        raise RuntimeError("disk full")
+    access_tasks = [
+        task
+        for task in asyncio.all_tasks()
+        if "_update_access_stats" in task.get_coro().__qualname__
+    ]
+    assert len(access_tasks) == 1
+    await asyncio.gather(*access_tasks)
 
-    monkeypatch.setattr(db_manager, "add_rows", fail)
-    monkeypatch.setattr(db_manager, "upsert", fail)
-    await temp_episodic_memory.retrieve(query_embedding=sample_memory_item.embedding, context=sample_context)
-    await temp_episodic_memory.wait_for_background_writes()
-
-    rows = await _stored_rows(db_manager, sample_memory_item.id)
-    assert [row["importance"] for row in rows] == [sample_memory_item.importance]
+    stored = await episodic_adapter.get_by_id(sample_memory_item.id)
+    assert stored is not None
+    assert stored.importance == 0.95
+    assert stored.access_count == 1
+    assert await episodic_adapter.count(filters={"id": sample_memory_item.id}) == 1
 
 
 @pytest.mark.asyncio
-async def test_repeated_retrieves_count_every_access(
-    temp_episodic_memory,
+async def test_adapter_update_changes_only_named_columns(
+    episodic_adapter: LanceDBMemoryAdapter,
     db_manager: LanceDBManager,
     sample_memory_item: MemoryItem,
-    sample_context: MemoryContext,
 ) -> None:
-    """Retrieves that coalesce into one refresh still count each access."""
-    await temp_episodic_memory.store(sample_memory_item)
+    """A field update rewrites the named columns in one commit and leaves the rest."""
+    vector = sample_memory_item.embedding.tolist()
+    await episodic_adapter.store(sample_memory_item, vector)
+    table = await db_manager.get_table(episodic_adapter.table_name)
+    version_before = table.version
+    modified_at = datetime(2026, 1, 2, tzinfo=timezone.utc)
 
-    for _ in range(3):
-        await temp_episodic_memory.retrieve(query_embedding=sample_memory_item.embedding, context=sample_context)
-    await temp_episodic_memory.wait_for_background_writes()
+    updated = await episodic_adapter.update(
+        sample_memory_item.id, {"importance": 0.3, "modified_at": modified_at}
+    )
 
-    rows = await _stored_rows(db_manager, sample_memory_item.id)
-    assert [row["access_count"] for row in rows] == [sample_memory_item.access_count + 3]
+    assert updated is True
+    # A delete followed by an add would be two commits.
+    assert table.version == version_before + 1
+    stored = await episodic_adapter.get_by_id(sample_memory_item.id)
+    assert stored is not None
+    assert stored.importance == 0.3
+    assert stored.modified_at == modified_at
+    assert stored.content == sample_memory_item.content
+    assert stored.event_type == "user_query"
+    assert np.allclose(stored.embedding, sample_memory_item.embedding)
+    assert await episodic_adapter.count(filters={"id": sample_memory_item.id}) == 1
+
+
+@pytest.mark.asyncio
+async def test_adapter_update_reports_missing_item(
+    episodic_adapter: LanceDBMemoryAdapter,
+    sample_memory_item: MemoryItem,
+) -> None:
+    """Updating an id with no row returns False and writes nothing."""
+    vector = sample_memory_item.embedding.tolist()
+    await episodic_adapter.store(sample_memory_item, vector)
+
+    assert await episodic_adapter.update("no-such-id", {"importance": 0.1}) is False
+    assert await episodic_adapter.count() == 1
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("field", ["context", "embedding", "metadata", "not_a_field"])
+async def test_adapter_update_rejects_non_column_fields(
+    episodic_adapter: LanceDBMemoryAdapter,
+    sample_memory_item: MemoryItem,
+    field: str,
+) -> None:
+    """Fields that are not scalar columns cannot be updated in place."""
+    vector = sample_memory_item.embedding.tolist()
+    await episodic_adapter.store(sample_memory_item, vector)
+
+    with pytest.raises(ValueError, match=field):
+        await episodic_adapter.update(sample_memory_item.id, {field: None})
+
+
+@pytest.mark.asyncio
+async def test_adapter_update_stores_values_as_store_does(
+    episodic_adapter: LanceDBMemoryAdapter,
+    sample_memory_item: MemoryItem,
+) -> None:
+    """Enums, numpy scalars and None on optional fields read back as stored items do."""
+    vector = sample_memory_item.embedding.tolist()
+    await episodic_adapter.store(sample_memory_item, vector)
+
+    await episodic_adapter.update(
+        sample_memory_item.id,
+        {
+            "status": MemoryStatus.SUPERSEDED,
+            "tier": "semantic",
+            "importance": np.float32(0.5),
+            "access_count": np.int64(3),
+            "superseded_by": None,
+            "confidence": None,
+        },
+    )
+
+    stored = await episodic_adapter.get_by_id(sample_memory_item.id)
+    assert stored is not None
+    assert stored.status == MemoryStatus.SUPERSEDED
+    assert stored.tier == MemoryTier.SEMANTIC
+    assert stored.importance == 0.5
+    assert stored.access_count == 3
+    assert stored.superseded_by is None
+    assert stored.confidence == 0.0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("status", None),
+        ("tier", None),
+        ("tier", "bogus"),
+        ("importance", None),
+        ("importance", float("nan")),
+        ("accessed_at", None),
+    ],
+)
+async def test_adapter_update_rejects_values_that_break_the_row(
+    episodic_adapter: LanceDBMemoryAdapter,
+    sample_memory_item: MemoryItem,
+    field: str,
+    value: object,
+) -> None:
+    """A value the row could not be read back with is refused, and the row is untouched."""
+    vector = sample_memory_item.embedding.tolist()
+    await episodic_adapter.store(sample_memory_item, vector)
+
+    with pytest.raises(ValueError):
+        await episodic_adapter.update(sample_memory_item.id, {field: value})
+
+    stored = await episodic_adapter.get_by_id(sample_memory_item.id)
+    assert stored is not None
+    assert stored.importance == sample_memory_item.importance
