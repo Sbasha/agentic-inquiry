@@ -1,7 +1,7 @@
 """Unit tests for LanceDBQueryBuilder."""
 
 import pytest
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 pytestmark = pytest.mark.unit
 
@@ -308,3 +308,57 @@ class TestCrossProjectQueries:
         if query_mock.where.called:
             call_args = query_mock.where.call_args[0][0]
             assert "project_id" not in call_args
+
+
+class TestStaleTableRetry:
+    """Error branches of the shared stale-table retry.
+
+    The successful recovery path runs against real LanceDB in
+    test_query_builder_stale_retry.py.
+    """
+
+    _STALE = RuntimeError("lance error: LanceError(IO): Object at docs.lance/data/x.lance not found")
+
+    @staticmethod
+    def _builder(get_table, run_sync, invalidate=None) -> LanceDBQueryBuilder:
+        return LanceDBQueryBuilder(
+            get_table_fn=get_table,
+            run_sync_fn=run_sync,
+            project_id="test-project",
+            invalidate_cache_fn=invalidate,
+        )
+
+    async def test_non_stale_error_propagates_without_invalidation(
+        self, mock_get_table, mock_run_sync, mock_table
+    ):
+        mock_table.search = MagicMock(side_effect=ValueError("bad query"))
+        invalidate = AsyncMock()
+        builder = self._builder(mock_get_table, mock_run_sync, invalidate)
+
+        with pytest.raises(ValueError, match="bad query"):
+            await builder.fts_search(table_name="docs", query="term", limit=5)
+        invalidate.assert_not_awaited()
+
+    async def test_stale_error_propagates_without_invalidate_fn(
+        self, mock_get_table, mock_run_sync, mock_table
+    ):
+        mock_table.search = MagicMock(side_effect=self._STALE)
+        builder = self._builder(mock_get_table, mock_run_sync)
+
+        with pytest.raises(RuntimeError, match="lance error"):
+            await builder.fts_search(table_name="docs", query="term", limit=5)
+
+    async def test_stale_error_returns_empty_when_table_gone(
+        self, mock_run_sync, mock_table
+    ):
+        mock_table.search = MagicMock(side_effect=self._STALE)
+        handles = iter([mock_table, None])
+
+        async def get_table(table_name: str):
+            return next(handles)
+
+        invalidate = AsyncMock()
+        builder = self._builder(get_table, mock_run_sync, invalidate)
+
+        assert await builder.fts_search(table_name="docs", query="term", limit=5) == []
+        invalidate.assert_awaited_once_with("docs")

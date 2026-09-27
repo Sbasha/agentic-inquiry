@@ -7,7 +7,11 @@ Tests cover:
 - Error handling for invalid paths and permissions
 """
 
+import json
+import os
+
 import pytest
+import yaml
 
 pytestmark = pytest.mark.unit
 
@@ -18,6 +22,7 @@ from agentic_inquiry.config import (
     ConfigurationError,
     DocumentCacheStorageConfig,
     FileTrackerConfig,
+    HybridSearchConfig,
     LanceDBConfig,
     StorageConfig,
     StoragePathError,
@@ -699,18 +704,64 @@ class TestRerankerTypeValidation:
         assert config.search.hybrid_search.reranker_type == reranker_type
     
     def test_default_reranker_type(self, minimal_config_base):
-        """Test that reranker_type has a default value."""
+        """A config file that omits reranker_type gets RRF.
+
+        A user config file replaces the packaged default.yaml rather than
+        overlaying it, so the dataclass default is what such a user runs.
+        """
         minimal_config_base['search']['hybrid_search'] = {
             'vector_weight': 0.7,
             'fts_weight': 0.3
         }
-        
+
         Config._validate_config(minimal_config_base)
         config = Config._from_dict(minimal_config_base)
-        
-        # Default should be 'linear_combination' based on config.py
-        assert config.search.hybrid_search.reranker_type in ['rrf', 'linear_combination', 'cross_encoder', 'colbert']
-    
+
+        assert config.search.hybrid_search.reranker_type == "rrf"
+
+    @pytest.fixture
+    def no_user_config(self, tmp_path, monkeypatch):
+        """Hide every user config source so Config.load() sees only tmp_path."""
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.setenv("HOME", str(tmp_path))
+        for name in list(os.environ):
+            if name.startswith("INQUIRY_"):
+                monkeypatch.delenv(name)
+        return tmp_path
+
+    def test_packaged_defaults_load_rrf(self, no_user_config):
+        """With no user config anywhere, Config.load() selects RRF."""
+        config = Config.load()
+
+        assert config.search.hybrid_search.reranker_type == "rrf"
+
+    def test_project_config_without_reranker_type_loads_rrf(self, no_user_config):
+        """A project agentic-inquiry.yaml that omits reranker_type selects RRF."""
+        yaml_path = Config._packaged_config_file("default.yaml")
+        assert yaml_path is not None
+        data = yaml.safe_load(yaml_path.read_text())
+        del data["search"]["hybrid_search"]["reranker_type"]
+        (no_user_config / "agentic-inquiry.yaml").write_text(yaml.safe_dump(data))
+
+        config = Config.load()
+
+        assert config.search.hybrid_search.reranker_type == "rrf"
+
+    def test_default_sources_agree(self):
+        """The dataclass, schema and packaged YAML declare one default."""
+        schema_path = Config._packaged_config_file("config.schema.json")
+        yaml_path = Config._packaged_config_file("default.yaml")
+        assert schema_path is not None and yaml_path is not None
+
+        schema = json.loads(schema_path.read_text())
+        schema_default = (
+            schema["properties"]["search"]["properties"]["hybrid_search"]
+            ["properties"]["reranker_type"]["default"]
+        )
+        yaml_value = yaml.safe_load(yaml_path.read_text())["search"]["hybrid_search"]["reranker_type"]
+
+        assert HybridSearchConfig().reranker_type == schema_default == yaml_value == "rrf"
+
     @pytest.mark.parametrize(
         ("reranker_type", "reranker_params"),
         [

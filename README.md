@@ -273,26 +273,22 @@ Documents and code share the same search index, so queries like `/ai:search "dep
 
 ### Configuration
 
-Configuration loads with precedence: **env vars > YAML > defaults**.
+Configuration loads with precedence: **env vars > environment overlay > config file > packaged defaults**.
 
-Create `agentic-inquiry.yaml` in your project root to override defaults:
+Create `agentic-inquiry.yaml` in your project root with only the keys you want to change:
 
 ```yaml
-storage:
-  root: "./.agentic-inquiry"
-  backend: lancedb
-
 search:
   hybrid_search:
-    reranker_type: rrf
-    vector_weight: 0.7
-    fts_weight: 0.3
     reranker_params:
       k: 30
-      dual_source_bonus: 1.3
   deduplication:
     max_results_per_file: 2
 ```
+
+The config file is merged over the packaged defaults. Mappings merge key by key, and lists and scalars replace the default value, so a config file can add or change keys but cannot remove one the defaults define.
+
+Only one config file is used: the first found of a `--config` path, `$INQUIRY_CONFIG`, `./agentic-inquiry.yaml`, and `~/.agentic-inquiry/config.yaml`. A project file hides the global one entirely. A `--config` path inside an `envs/` directory is the exception: it is applied as an environment overlay on top of the auto-detected config file.
 
 For per-environment config (e.g., different backends for dev vs production), use overlays:
 
