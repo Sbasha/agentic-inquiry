@@ -74,7 +74,7 @@ class MemoryStorageProtocol(Protocol):
     Example:
         class LanceDBMemoryAdapter:
             async def store(self, item: MemoryItem, vector: List[float]) -> str:
-                # Convert to row format and call LanceDBManager.add_rows
+                # Convert to row format and call LanceDBManager.upsert
                 ...
 
     Lifecycle:
@@ -101,6 +101,8 @@ class MemoryStorageProtocol(Protocol):
         vector: List[float],
     ) -> str:
         """Store memory item with embedding vector.
+
+        Storing an item whose id is already stored replaces the stored row.
 
         Args:
             item: Memory item to store (must have valid id)

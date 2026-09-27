@@ -957,32 +957,59 @@ class LanceDBManager:
         data: List[Dict[str, Any]],
         key_field: str = "id",
     ) -> None:
-        """Insert or update records in a table, matched on key_field.
+        """Insert or update records in a table in one commit.
 
-        One merge_insert commit: a record is never absent between removing an
-        old version and writing the new one, even if the caller is cancelled.
+        Rows whose ``key_field`` matches a record are updated and the other
+        records are inserted, in a single ``merge_insert``. Another upsert of
+        an existing key through this manager therefore never finds the key
+        briefly absent, so the two cannot leave a second row behind. The
+        commit lock is per manager: two managers (for example the CLI and the
+        MCP server) upserting the same new key at once can both insert it.
+        Columns a record omits keep their stored value, and when a key repeats
+        within ``data`` the last record wins.
 
         Args:
             table_name: Name of the table to upsert into
-            data: List of records to upsert
-            key_field: Field name to use for uniqueness check (default: "id")
+            data: Records to upsert, all with the same set of fields
+            key_field: Field that identifies a row (default: "id")
 
         Raises:
-            ValueError: If a record has no value for key_field
+            ValueError: If a record's key is missing, None or empty, the
+                records do not all have the same fields, or a record fails
+                schema validation. Nothing is written.
+            StorageError: If the write fails
 
         Examples:
             await db.upsert(
                 table_name="mcp_sessions",
-                data=[{"id": "s1", "session_id": "s1", "project_id": "p1"}],
-                key_field="session_id",
+                data=[{
+                    "id": "session_123",
+                    "session_id": "session_123",
+                    "project_id": "proj_1",
+                    "state": "active"
+                }],
+                key_field="session_id"
             )
         """
-        missing = [record for record in data if not record.get(key_field)]
-        if missing:
+        if not data:
+            return
+
+        # merge_insert silently drops a row whose key is null and takes its
+        # columns from the first record, so either input would lose data.
+        for record in data:
+            key_value = record.get(key_field)
+            if key_value is None or key_value == "":
+                raise ValueError(
+                    f"Cannot upsert into {table_name}: a record has no {key_field}"
+                )
+        fields = set(data[0])
+        if any(set(record) != fields for record in data[1:]):
             raise ValueError(
-                f"upsert into {table_name} needs '{key_field}' on every record; "
-                f"{len(missing)} record(s) lack it"
+                f"Cannot upsert into {table_name}: records must all have the same fields"
             )
+        for record in data:
+            self._validate_record(table_name, record)
+
         await self._upsert_rows(table_name=table_name, items=data, key_column=key_field)
 
     async def delete_by_ids(

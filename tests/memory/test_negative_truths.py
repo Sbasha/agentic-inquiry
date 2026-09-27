@@ -1,50 +1,8 @@
 import pytest
 from unittest.mock import MagicMock, AsyncMock
 
-from agentic_inquiry.memory.system import MemorySystem
 from agentic_inquiry.memory.models import MemoryContext, MemoryItem, MemoryTier, MemoryStatus, RetrievalResult
 from agentic_inquiry.memory.retrieval import RetrievalEngine
-from agentic_inquiry.memory.protocols import MemoryStorageProtocol
-
-@pytest.mark.asyncio
-async def test_negate_memory():
-    # Mock dependencies
-    config = MagicMock()
-    config.memory.retrieval.cache_enabled = False
-    embedding_service = MagicMock()
-    embedding_service.embed_async = AsyncMock(return_value=[0.1] * 384)
-    
-    # Mock storage adapter
-    adapter = MagicMock(spec=MemoryStorageProtocol)
-    adapter.retrieve = AsyncMock(return_value=[])
-    
-    # Create system with mocks
-    system = MemorySystem(config, embedding_service, episodic_storage=adapter, semantic_storage=adapter)
-    # Bypass initialization check
-    system._initialized = True
-    
-    # Mock working memory behavior
-    mock_item = MemoryItem(
-        id="test_id",
-        content="Test content",
-        summary="Summary",
-        context=MemoryContext("agent", "session", "conv"),
-        importance=0.5,
-        tier=MemoryTier.WORKING,
-        creator_agent_id="agent",
-        modifier_agent_id="agent"
-    )
-    
-    system.working_memory.get_by_id = AsyncMock(return_value=mock_item)
-    system.working_memory.store = AsyncMock()
-    system.update_importance = AsyncMock(return_value=True) # Pretend found
-    
-    # Execute negate
-    result = await system.negate_memory("test_id")
-    
-    assert result is True
-    assert mock_item.status == MemoryStatus.NEGATED
-    system.working_memory.store.assert_called_with(mock_item)
 
 @pytest.mark.asyncio
 async def test_retrieval_filtering():

@@ -168,6 +168,9 @@ class LanceDBMemoryAdapter:
     ) -> str:
         """Store memory item with embedding vector.
 
+        Replaces the stored row when the item's id already exists, in one
+        commit.
+
         Args:
             item: Memory item to store (must have valid id)
             vector: Embedding vector for similarity search
@@ -176,15 +179,14 @@ class LanceDBMemoryAdapter:
             ID of the stored item
 
         Raises:
-            ValueError: If item is invalid
-            RuntimeError: If storage fails
+            RuntimeError: If the item cannot be converted or stored
         """
         if not self._initialized:
             await self.initialize()
 
         try:
             row = self._memory_item_to_row(item, vector)
-            await self._manager.add_rows(self._table_name, [row])
+            await self._manager.upsert(self._table_name, [row])
             logger.debug("Stored memory item: id=%s, table=%s", item.id, self._table_name)
             return item.id
         except Exception as e:
