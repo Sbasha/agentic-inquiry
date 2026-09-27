@@ -62,11 +62,6 @@ class OnboardMetadataService:
         elif project_id:
             pid = project_id
 
-        # Determine backend type from config
-        backend_type = None
-        if config is not None:
-            backend_type = getattr(config.storage, "backend", None)
-
         provider = await cls._create_sqlite_provider(config, workspace, pid)
 
         return cls(provider=provider, project_id=pid)

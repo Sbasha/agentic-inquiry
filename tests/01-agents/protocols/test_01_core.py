@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Any, Dict
 
 from .base import (
-    CODEBASE_PATH,
     TOOLS_PATH,
     call_tool,
     check,
@@ -35,7 +34,7 @@ async def run(
     from agentic_inquiry.mcp.tools.session import get_session
     from agentic_inquiry.mcp.tools.search import search_knowledge
     from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
-    from agentic_inquiry.mcp.tools.info import get_server_info, get_project_info
+    from agentic_inquiry.mcp.tools.info import get_server_info
     from agentic_inquiry.mcp.tools.context import build_context
 
     results: Dict[str, Any] = {}

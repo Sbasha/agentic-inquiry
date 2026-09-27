@@ -19,7 +19,6 @@ from typing import Any, Dict
 
 from .base import (
     CODEBASE_PATH,
-    TOOLS_PATH,
     call_tool,
     check,
     create_test_session,
@@ -57,7 +56,7 @@ async def run(
 ) -> Dict[str, Any]:
     from agentic_inquiry.mcp.tools.search import search_knowledge
     from agentic_inquiry.mcp.tools.analysis import understand_entity
-    from agentic_inquiry.mcp.tools.info import get_project_info, list_entities
+    from agentic_inquiry.mcp.tools.info import list_entities
     from agentic_inquiry.mcp.tools.memory import save_memory, recall_memories
 
     results: Dict[str, Any] = {}

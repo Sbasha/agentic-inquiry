@@ -175,6 +175,103 @@ owners that spec covers.
   `_register_default_watcher()` builds a `FileTracker()` at import time,
   which creates the directory in the importing process's cwd. Register
   the default watcher lazily.
+## local-only-config-cleanup
+
+Open items from [`specs/local-only-config-cleanup/spec.md`](specs/local-only-config-cleanup/spec.md).
+The `.env.example` item is the deferred part of AC1; the rest are
+outside the spec's boundaries.
+
+- **`config/mcp.yaml` fails the schema:** no code loads it, yet
+  `docs/mcp/configuration.md`, `docs/mcp/deployment.md` and
+  `docs/mcp/security.md` say the MCP server reads it. The schema's
+  `mcp.relationships`, `mcp.tokens`, `mcp.defaults`, `mcp.behavior` and
+  `mcp.logging` are empty objects with `additionalProperties: false`, so
+  they reject every field the `MCPConfig` dataclasses define. Decide
+  whether to add those fields to the schema or retire the file and its
+  docs, then add `config/mcp.yaml` to the shipped-config test if it stays.
+- **Empty config section crashes `Config.load`:** a section header with
+  no keys (for example `search:`) reaches `_validate_config` as `None`,
+  which calls `.get` on it and raises `AttributeError` instead of
+  `ConfigurationError`. Read each section with `or {}` and let the schema
+  report the empty section.
+- **`ai search` ignores `--project` for its event system:**
+  `GraphSearchService.__init__` and `HybridSearchService.__init__` fall
+  back to a bare `EventSystem()` when `SearchService` passes `None`, and
+  that constructor reloads config and
+  raises "project_id must be provided or set as
+  storage.default_project_id" when the config leaves
+  `default_project_id` unset, even with `--project demo`. The example
+  config sets `default_project_id` to work around it. Pass the resolved
+  project id (or the caller's event system) through.
+- **`ai search` does not exit:** after printing results, the process
+  stays alive until killed (reproduced with `config/default.yaml` and the
+  example config, 170 s timeout). Find the non-daemon thread or executor
+  left running and shut it down before returning.
+- **`.env.example` still names PostgreSQL:** it carries a "PostgreSQL
+  Configuration (for test-postgresql.yaml)" block. Agent permission
+  settings block reading and editing the file, so remove the block by
+  hand.
+- **`docs/architecture/embeddings.md` describes removed embedders:** the
+  page is the embeddings subsystem's only architecture doc, but most of
+  it covers server-side embedding, `BedrockEmbedder` and the PostgreSQL
+  adapters, so it carries the historical-reference banner. Rewrite it
+  around the shipped local embedders.
+- **PostgreSQL-family code leftovers:** `agentic_inquiry/storage/schemas/`
+  still ships `postgresql`, `cloudsql`, `alloydb`, `rds` and `spanner`
+  schemas; `BackendConfig` keeps `alloydb` handling; `NoOpEmbedder`
+  documents an AlloyDB flow, and the per-backend
+  `embedding_strategy: server_side` setting is still honored on shipped
+  backends, where it makes indexing store zero vectors. The agent docs in
+  `agentic_inquiry/storage/providers/AGENTS.md`,
+  `providers/lancedb/AGENTS.md` and `providers/sqlite/AGENTS.md` still
+  describe `postgresql/`, `alloydb/` and `cloudsql/` provider directories
+  and a Postgres migration path, and cite a missing `docs/scaling.md`.
+  Decide per item whether it serves the external provider contract in
+  `storage-backends.md` or should go.
+- **LanceDB ignores `database_path`:** `BackendConfig` requires
+  `database_path` for a `lancedb` backend, but `LanceDBProvider` drops it
+  and the connection code always uses `storage.root` +
+  `storage.lancedb.path`. A user who changes it gets no error and no
+  effect. Either read it or stop requiring it.
+- **`ai index` ignores `embeddings.default_provider: hashing`:**
+  `configure_embedder_for_backend` handles only `fastembed` and
+  `local`/`local_model` and falls through to `SentenceTransformerEmbedder`
+  for everything else, while `EmbeddingService._create_embedder` builds a
+  `HashingEmbedder`, so index and query paths can disagree.
+## lazy-default-watcher
+
+Open items found while implementing [`specs/lazy-default-watcher/spec.md`](specs/lazy-default-watcher/spec.md);
+no acceptance criterion is deferred.
+
+- **Cache default overrides the caller's default:** `agentic_inquiry/cache/__init__.py`
+  registers its lazily built `DocumentCache` with `set_default=True` and builds
+  it on every `get_cache()`, named lookups included, so a caller's
+  `set_default=True` cache is replaced and a construction error breaks named
+  lookups. Unblocked by applying the watcher fix (knowledge entry K-0008).
+## hybrid-reranker-default
+
+Open items found while building [`specs/hybrid-reranker-default/spec.md`](specs/hybrid-reranker-default/spec.md).
+
+- **User config replaces the packaged defaults:** `Config.load()` loads one
+  file (`INQUIRY_CONFIG`, `./agentic-inquiry.yaml`,
+  `~/.agentic-inquiry/config.yaml`, then packaged `default.yaml`) and does not
+  merge a user file onto `default.yaml`. Keys a user omits fall to the
+  dataclass defaults, which can differ from the YAML (for example
+  `reranker_params` is `{}` in the dataclass and `{k: 60}` in the YAML), and
+  the README "override defaults" example fails schema validation with
+  `'cache' is a required property`. Unblocked by a product call: overlay user
+  files on the packaged defaults (`Config._deep_merge` already exists), or
+  document that the file must be complete.
+- **Stale cohere validation test:**
+  `tests/integration/test_reranker_configuration.py::TestRerankerConfiguration::test_invalid_reranker_type`
+  expects `reranker_type: cohere` to be rejected, but the schema enum and
+  `VALID_RERANKER_TYPES` accept it, so the test fails on main. Unblocked by
+  deciding whether an external-API reranker is in scope under
+  `docs/CHARTER.md`, then aligning the test or removing cohere.
+- **Scoring test docstring describes the wrong reranker:**
+  `tests/search/test_hybrid_search_scoring.py::test_score_differences_reflected_in_ranking`
+  explains linear-combination arithmetic, but its service is built from
+  `Config.load()` and runs RRF. Rewrite the docstring to the RRF ordering.
 
 <!-- Add one section per spec with open work, e.g.:
 
