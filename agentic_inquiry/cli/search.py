@@ -92,6 +92,7 @@ async def search_command(args: argparse.Namespace) -> int:
         print("Error: Query is required", file=sys.stderr)
         return 1
 
+    storage = None
     try:
         # Configure embedder based on storage backend capabilities
         from agentic_inquiry.embeddings.factory import (
@@ -167,6 +168,11 @@ async def search_command(args: argparse.Namespace) -> int:
         logger.exception("Search failed")
         print(f"Error: {e}", file=sys.stderr)
         return 1
+    finally:
+        # An open store keeps a non-daemon connection thread alive, and the
+        # process would never exit after printing its results.
+        if storage is not None:
+            await storage.close()
 
 
 async def similar_command(args: argparse.Namespace) -> int:
@@ -191,6 +197,7 @@ async def similar_command(args: argparse.Namespace) -> int:
         )
         return 1
 
+    storage = None
     try:
         # Configure embedder based on storage backend capabilities
         from agentic_inquiry.embeddings.factory import configure_embedder_for_backend
@@ -253,6 +260,9 @@ async def similar_command(args: argparse.Namespace) -> int:
         logger.exception("Similar search failed")
         print(f"Error: {e}", file=sys.stderr)
         return 1
+    finally:
+        if storage is not None:
+            await storage.close()
 
 
 def create_search_parser() -> argparse.ArgumentParser:
