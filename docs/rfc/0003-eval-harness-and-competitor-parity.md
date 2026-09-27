@@ -186,6 +186,25 @@ A separate table reproduces Graphify BENCHMARKS.md values with their n, judge an
 
 Our `bm25` and `dense` rows are shown beside them only as a calibration check of the unit definition. They are never compared to our `inquiry` score.
 
+### Live competitor arms (amendment, 2026-09-27)
+
+Reported numbers come from other harnesses, models and labels, so every competitor also runs live in this harness. This amendment is written before any competitor result exists. `inquiry` test-split results for Level A and Level B were already observed at `e32fb55`; its configuration stays frozen at that commit.
+
+- **Arms.** Each runs its released package, pinned by version in an isolated virtualenv, with its documented defaults:
+  - `graphify-text`: `graphify extract` (AST plus LLM semantic extraction), queried with `graphify query --budget 2000`
+  - `openkb`: VectifyAI/OpenKB; one wiki per corpus built with `openkb add`, queried with its own query agent
+  - `mem0`: mem0 with a local vector store; one `add` per session, queried with `search`
+  - `cognee`: Cognee with its local graph and vector stores; `add` plus `cognify` per corpus, queried with its default search
+- **Ingestion model.** Every competitor LLM call goes to `claude-haiku-4-5-20251001` through the Claude subscription: Graphify's own `claude-cli` backend, and for the others a local OpenAI-compatible endpoint (`evals/claude_shim.py`) that forwards each chat completion to `claude -p`, with JSON mode and tool calls expressed in the prompt. Responses are cached by request hash. Tools that need embeddings use Ollama `bge-m3`, the dense baseline's model.
+- **Context.** Each arm's context is the text its native query path returns: Graphify's rendered subgraph, mem0's retrieved memories, Cognee's retrieved passages, and for OpenKB the wiki pages and source excerpts its agent read. It is cut at 2,000 tokens with the same renderer as every other arm.
+- **Suites.** Level B only, since these tools rewrite content and cannot be scored on source spans:
+  - LOCOMO: the same 200 test questions as Level B.
+  - LongMemEval-S: 60 test questions, 10 per question type (fewer if a type has fewer), chosen by the lowest `sha256(question_id)` within each type. Every arm, `inquiry` and the baselines included, answers the same 60.
+- **Answerer, judges and metrics** are Level B's, unchanged.
+- **Failures.** A corpus a competitor cannot ingest counts as an empty context for its questions and is reported per arm.
+
+**H6.** `inquiry` answer accuracy exceeds each live competitor's on LOCOMO and on the LongMemEval sample: paired bootstrap CI lower bound above 0, with conversations as clusters for LOCOMO and questions for LongMemEval.
+
 ## Options considered
 
 The axis is who authors the labels:
