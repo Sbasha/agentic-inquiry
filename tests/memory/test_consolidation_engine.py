@@ -548,7 +548,9 @@ async def test_promote_to_semantic_moves_item_out_of_episodic(
     for item in (promoted, kept):
         await episodic_memory.store(item)
 
-    await consolidation_engine.promote_to_semantic([promoted, kept], extract_patterns=False)
+    await consolidation_engine.promote_to_semantic(
+        [promoted, kept], extract_patterns=False
+    )
 
     assert await semantic_memory.get_by_id(promoted.id, update_access=False) is not None
     assert await episodic_memory.get_by_id(promoted.id, update_access=False) is None
@@ -593,7 +595,9 @@ async def test_failed_episodic_delete_keeps_promotion(
         episodic_memory, "delete", AsyncMock(side_effect=RuntimeError("disk full"))
     )
 
-    with caplog.at_level(logging.WARNING, logger="agentic_inquiry.memory.consolidation"):
+    with caplog.at_level(
+        logging.WARNING, logger="agentic_inquiry.memory.consolidation"
+    ):
         promoted_count = await consolidation_engine.promote_to_semantic(
             [item], extract_patterns=False
         )
