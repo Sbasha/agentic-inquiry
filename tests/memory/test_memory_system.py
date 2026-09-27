@@ -89,22 +89,21 @@ async def memory_system(
         EmbeddingsConfig,
     )
 
-    # Create a mock config with all required attributes
-    config = MagicMock(spec=Config)
-    config.memory = memory_config
-    config.storage = StorageConfig(
-        root=str(tmp_path),
-        default_project_id="test_default",
+    config = Config(
+        memory=memory_config,
+        storage=StorageConfig(
+            root=str(tmp_path),
+            default_project_id="test_default",
+        ),
+        cache=CacheConfig(
+            document_cache=DocumentCacheConfig(
+                max_size=100,
+                ttl_seconds=3600,
+                eviction_policy="lru",
+            )
+        ),
+        embeddings=EmbeddingsConfig(default_provider="sentence_transformer"),
     )
-    config.storage.uri = str(tmp_path / "test.lancedb")
-    config.cache = CacheConfig(
-        document_cache=DocumentCacheConfig(
-            max_size=100,
-            ttl_seconds=3600,
-            eviction_policy="lru",
-        )
-    )
-    config.embeddings = EmbeddingsConfig(default_provider="sentence_transformer")
 
     system = MemorySystem(
         config=config,
@@ -698,32 +697,33 @@ async def test_configuration_loading(
     # Create a custom config
     from agentic_inquiry.config import StorageConfig, EmbeddingsConfig
 
-    custom_config = MagicMock(spec=Config)
-    custom_config.memory = MemoryConfig(
-        working_memory=WorkingMemoryConfig(capacity=50),  # Custom capacity
-        episodic_memory=EpisodicMemoryConfig(capacity=200),
-        semantic_memory=SemanticMemoryConfig(capacity=200),
-        consolidation=ConsolidationConfig(
-            enabled=True,
-            interval_seconds=300,
-            episodic_threshold=0.7,
-            semantic_threshold=0.9,
+    custom_config = Config(
+        memory=MemoryConfig(
+            working_memory=WorkingMemoryConfig(capacity=50),  # Custom capacity
+            episodic_memory=EpisodicMemoryConfig(capacity=200),
+            semantic_memory=SemanticMemoryConfig(capacity=200),
+            consolidation=ConsolidationConfig(
+                enabled=True,
+                interval_seconds=300,
+                episodic_threshold=0.7,
+                semantic_threshold=0.9,
+            ),
+            retrieval=RetrievalConfig(
+                default_strategy="adaptive",
+                cache_enabled=True,
+                cache_ttl_seconds=300,
+                cache_size=100,
+                ranking_weights={
+                    "relevance": 0.5,
+                    "recency": 0.3,
+                    "importance": 0.2,
+                },
+            ),
+            summary=SummaryConfig(auto_threshold=150),
         ),
-        retrieval=RetrievalConfig(
-            default_strategy="adaptive",
-            cache_enabled=True,
-            cache_ttl_seconds=300,
-            cache_size=100,
-            ranking_weights={
-                "relevance": 0.5,
-                "recency": 0.3,
-                "importance": 0.2,
-            },
-        ),
-        summary=SummaryConfig(auto_threshold=150),
+        storage=StorageConfig(root=str(tmp_path)),
+        embeddings=EmbeddingsConfig(),
     )
-    custom_config.storage = StorageConfig(root=str(tmp_path))
-    custom_config.embeddings = EmbeddingsConfig()
 
     # Create system with custom config
     system = MemorySystem(
@@ -784,18 +784,16 @@ async def test_async_context_manager(
     )
 
     # Create config like the memory_system fixture
-    config = MagicMock(spec=Config)
-    config.memory = memory_config
-    config.storage = StorageConfig(
-        root=str(tmp_path), default_project_id="test_default"
+    config = Config(
+        memory=memory_config,
+        storage=StorageConfig(root=str(tmp_path), default_project_id="test_default"),
+        cache=CacheConfig(
+            document_cache=DocumentCacheConfig(
+                max_size=100, ttl_seconds=3600, eviction_policy="lru"
+            )
+        ),
+        embeddings=EmbeddingsConfig(default_provider="sentence_transformer"),
     )
-    config.storage.uri = str(tmp_path / "test.lancedb")
-    config.cache = CacheConfig(
-        document_cache=DocumentCacheConfig(
-            max_size=100, ttl_seconds=3600, eviction_policy="lru"
-        )
-    )
-    config.embeddings = EmbeddingsConfig(default_provider="sentence_transformer")
 
     # Use async with to test context manager
     async with MemorySystem(config, mock_embedding_service) as memory:
@@ -837,18 +835,16 @@ async def test_async_context_manager_handles_exception(
     )
 
     # Create config like the memory_system fixture
-    config = MagicMock(spec=Config)
-    config.memory = memory_config
-    config.storage = StorageConfig(
-        root=str(tmp_path), default_project_id="test_default"
+    config = Config(
+        memory=memory_config,
+        storage=StorageConfig(root=str(tmp_path), default_project_id="test_default"),
+        cache=CacheConfig(
+            document_cache=DocumentCacheConfig(
+                max_size=100, ttl_seconds=3600, eviction_policy="lru"
+            )
+        ),
+        embeddings=EmbeddingsConfig(default_provider="sentence_transformer"),
     )
-    config.storage.uri = str(tmp_path / "test.lancedb")
-    config.cache = CacheConfig(
-        document_cache=DocumentCacheConfig(
-            max_size=100, ttl_seconds=3600, eviction_policy="lru"
-        )
-    )
-    config.embeddings = EmbeddingsConfig(default_provider="sentence_transformer")
 
     class TestError(Exception):
         pass

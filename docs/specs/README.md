@@ -24,6 +24,8 @@ files inside any feature dir are gitignored; see
 
 [`afp-lifecycle-contract`](afp-lifecycle-contract/spec.md) - The `ai capabilities` and `ai integration hook` contract for host adapters (AFP pack), SQLite ledger, queued-then-reconciled capture, `ai mcp`, `ai status`.
 
+[`memory-test-drift`](memory-test-drift/spec.md) - Memory tests aligned with `memory.layers` and a real `Config`.
+
 [`index-memory-reliability`](index-memory-reliability/spec.md) - Graph-relationship merge honesty, memory-save verify-on-write, Darwin CPU-hatch hint.
 
 [`first-run-reliability`](first-run-reliability/spec.md) - First-run onboard gate, index exit codes, LanceDB retry, env-file bootstrap.
@@ -54,6 +56,8 @@ files inside any feature dir are gitignored; see
 
 [`lancedb-single-commit-upsert`](lancedb-single-commit-upsert/spec.md) - Session, record and memory-item row replacement is one LanceDB commit, so concurrent writers leave one complete row; `negate_memory` and `supersede_memory` write only the columns they change.
 
+[`load-stable-indexing-tests`](load-stable-indexing-tests/spec.md) - Resolver cache tests that count backend calls instead of timing them; no Hypothesis deadline on counting tests.
+
 [`local-only-config-cleanup`](local-only-config-cleanup/spec.md) - Shipped configs, examples and user docs describe only local storage, and every full config we ship loads against the schema.
 
 [`local-only-rerankers`](local-only-rerankers/spec.md) - Every hybrid-search reranker runs locally; a config naming a hosted reranker such as `cohere` fails at load and lists the valid options.
@@ -65,3 +69,5 @@ files inside any feature dir are gitignored; see
 [`ruff-clean-stale-fts-retry`](ruff-clean-stale-fts-retry/spec.md) - One stale-table retry path shared by vector, FTS, hybrid and filter search, and zero `ruff check` findings in `agentic_inquiry` and `tests`.
 
 [`skill-global-invocation`](skill-global-invocation/spec.md) - Claude Code plugin skills call a globally installed `ai` command instead of `uv run --env-file .env ai`, so they run from a target project; the README documents the global install.
+
+[`server-shutdown-closes-stores`](server-shutdown-closes-stores/spec.md) - The server closes the stores it opened when it stops, so the process exits and the test suite's exit status reflects its results.

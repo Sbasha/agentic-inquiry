@@ -1,11 +1,13 @@
-"""Property-based tests for resolve_import performance optimization.
+"""Property-based tests for resolve_import cost and profiling data.
 
-These tests validate performance bounds and profiling data as specified
-in the design document.
+These tests validate the resolver's cache cost model and profiling data as
+specified in the design document. Cost is measured in database queries and
+symbol-registry lookups rather than wall-clock time, which varies with
+machine load.
 
 Property tests:
-- Property 2: Cache Hit Performance Bound (Requirements 2.1)
-- Property 3: Cache Miss Performance Bound (Requirements 2.2)
+- Property 2: A cache hit does no backend work (Requirements 2.1)
+- Property 3: An unresolved cache miss walks the strategy chain once, then hits (Requirements 2.2)
 - Property 5: Profiling Data Completeness (Requirements 2.5)
 """
 
@@ -13,7 +15,6 @@ import pytest
 
 pytestmark = pytest.mark.unit
 
-import time
 from hypothesis import given, strategies as st, settings
 from unittest.mock import MagicMock, AsyncMock
 
@@ -29,14 +30,18 @@ from agentic_inquiry.indexing.relationship_resolver import (
 
 
 def create_mock_resolver() -> RelationshipResolver:
-    """Create a mock RelationshipResolver for testing."""
+    """Create a RelationshipResolver over a mock database and symbol registry.
+
+    Every query and lookup returns an empty list, so nothing resolves and a
+    cache miss walks the whole strategy chain.
+    """
     mock_db = MagicMock()
+    mock_db.query_raw = AsyncMock(return_value=[])
     mock_db.query_entities = AsyncMock(return_value=[])
-    mock_db.get_relationships = AsyncMock(return_value=[])
 
     mock_registry = MagicMock()
-    mock_registry.resolve_symbol = MagicMock(return_value=None)
-    mock_registry.get_symbol = MagicMock(return_value=None)
+    mock_registry.lookup_by_name = MagicMock(return_value=[])
+    mock_registry.lookup_by_name_and_type = MagicMock(return_value=[])
 
     resolver = RelationshipResolver(
         symbol_registry=mock_registry,
@@ -47,110 +52,44 @@ def create_mock_resolver() -> RelationshipResolver:
     return resolver
 
 
-def create_populated_cache(size: int = 100) -> SimpleCache:
-    """Create a pre-populated cache for testing cache hits."""
-    cache = SimpleCache(max_size=1000)
+def backend_calls(resolver: RelationshipResolver) -> list:
+    """Return every method call made on the mock database and symbol registry so far.
 
-    for i in range(size):
-        cache.put(
-            target_name=f"symbol_{i}",
-            target_type="function",
-            source_file=f"file_{i % 10}.py",
-            result=(f"resolved_file_{i}.py", "function", 0.9),
-        )
+    Dunder calls such as ``__bool__`` are truthiness checks, not backend work.
+    """
+    calls = resolver.db_manager.mock_calls + resolver.symbol_registry.mock_calls
+    return [c for c in calls if not c[0].startswith("__")]
 
-    return cache
+
+def calls_per_method(resolver: RelationshipResolver) -> dict[str, int]:
+    """Count the backend calls issued so far, by method name."""
+    counts: dict[str, int] = {}
+    for name, _args, _kwargs in backend_calls(resolver):
+        counts[name] = counts.get(name, 0) + 1
+    return counts
+
+
+# Pins the strategy chain for an unresolved miss without an import path: the
+# database, symbol, exact-match and proximity strategies each issue one call,
+# and the import-path and module-path strategies skip. A miss with an import
+# path, or one the symbol strategy resolves, issues more.
+UNRESOLVED_MISS_CALLS = {
+    "query_raw": 1,
+    "query_entities": 1,
+    "lookup_by_name_and_type": 1,
+    "lookup_by_name": 1,
+}
 
 
 # =============================================================================
-# Property 2: Cache Hit Performance Bound
+# Property 2: A cache hit does no backend work
 # Validates: Requirements 2.1
 # =============================================================================
 
 
-class TestCacheHitPerformance:
-    """Tests for cache hit resolution performance."""
+class TestCacheHitCost:
+    """Tests for the cost of a cache hit."""
 
-    @pytest.mark.perf
-    @pytest.mark.asyncio
-    async def test_cache_hit_under_10ms(self):
-        """Cache hit resolution SHALL complete in less than 10 milliseconds."""
-        resolver = create_mock_resolver()
-
-        # Pre-populate cache
-        resolver._cache.put(
-            target_name="CachedSymbol",
-            target_type="class",
-            source_file="source.py",
-            result=("target.py", "class", 1.0),
-        )
-
-        start = time.perf_counter()
-        result = await resolver.resolve_import(
-            target_name="CachedSymbol",
-            target_type="class",
-            source_file="source.py",
-            source_language="python",
-        )
-        elapsed_ms = (time.perf_counter() - start) * 1000
-
-        assert result is not None
-        assert elapsed_ms < 10.0, f"Cache hit took {elapsed_ms:.2f}ms, should be < 10ms"
-
-    @pytest.mark.perf
-    @pytest.mark.asyncio
-    async def test_multiple_cache_hits_performance(self):
-        """Multiple cache hits should all be fast."""
-        resolver = create_mock_resolver()
-
-        # Pre-populate cache with multiple entries
-        for i in range(10):
-            resolver._cache.put(
-                target_name=f"Symbol{i}",
-                target_type="function",
-                source_file=f"source_{i}.py",
-                result=(f"target_{i}.py", "function", 0.9),
-            )
-
-        # Time multiple cache hits
-        total_time_ms = 0.0
-        for i in range(10):
-            start = time.perf_counter()
-            result = await resolver.resolve_import(
-                target_name=f"Symbol{i}",
-                target_type="function",
-                source_file=f"source_{i}.py",
-                source_language="python",
-            )
-            elapsed_ms = (time.perf_counter() - start) * 1000
-            total_time_ms += elapsed_ms
-
-            assert result is not None
-
-        avg_time_ms = total_time_ms / 10
-        assert avg_time_ms < 10.0, f"Average cache hit took {avg_time_ms:.2f}ms"
-
-    @pytest.mark.perf
-    def test_simple_cache_get_performance(self):
-        """SimpleCache.get() should be O(1)."""
-        cache = create_populated_cache(size=1000)
-
-        # Warm up
-        cache.get("symbol_0", "function", "file_0.py")
-
-        # Time cache lookups
-        timings = []
-        for i in range(100):
-            start = time.perf_counter()
-            cache.get(f"symbol_{i}", "function", f"file_{i % 10}.py")
-            elapsed_ns = (time.perf_counter() - start) * 1_000_000_000
-            timings.append(elapsed_ns)
-
-        avg_ns = sum(timings) / len(timings)
-        # Cache lookup should be under 1ms (1,000,000 ns)
-        assert avg_ns < 1_000_000, f"Average cache lookup took {avg_ns:.0f}ns"
-
-    @pytest.mark.perf
     @given(
         target_name=st.text(
             min_size=1,
@@ -163,91 +102,49 @@ class TestCacheHitPerformance:
             max_size=30,
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
+        resolved=st.booleans(),
     )
-    @settings(max_examples=30)
+    @settings(max_examples=30, deadline=None)
     @pytest.mark.asyncio
-    async def test_property_2_cache_hit_performance_bound(
-        self, target_name, target_type, source_file
+    async def test_property_2_cache_hit_does_no_backend_work(
+        self, target_name, target_type, source_file, resolved
     ):
-        """Property 2: For any cache hit, resolution SHALL complete in < 10ms."""
-        if not target_name or not source_file:
-            return  # Skip empty strings
+        """Property 2: For any cache hit, resolution SHALL NOT query the database or registry.
 
+        Holds for cached resolutions and for cached unresolved (None) results.
+        """
         resolver = create_mock_resolver()
         source_file_with_ext = f"{source_file}.py"
+        cached = (f"resolved_{source_file}.py", target_type, 0.95) if resolved else None
 
-        # Pre-populate cache
         resolver._cache.put(
             target_name=target_name,
             target_type=target_type,
             source_file=source_file_with_ext,
-            result=(f"resolved_{source_file}.py", target_type, 0.95),
+            result=cached,
         )
 
-        start = time.perf_counter()
         result = await resolver.resolve_import(
             target_name=target_name,
             target_type=target_type,
             source_file=source_file_with_ext,
             source_language="python",
         )
-        elapsed_ms = (time.perf_counter() - start) * 1000
 
-        assert result is not None, "Cache should hit"
-        assert elapsed_ms < 10.0, f"Cache hit took {elapsed_ms:.2f}ms, limit is 10ms"
+        assert result == cached
+        assert backend_calls(resolver) == []
+        assert resolver.get_resolution_stats()["cache_hits"] == 1
 
 
 # =============================================================================
-# Property 3: Cache Miss Performance Bound
+# Property 3: An unresolved cache miss walks the strategy chain once, then hits
 # Validates: Requirements 2.2
 # =============================================================================
 
 
-class TestCacheMissPerformance:
-    """Tests for cache miss resolution performance."""
+class TestCacheMissCost:
+    """Tests for the cost of a cache miss."""
 
-    @pytest.mark.perf
-    @pytest.mark.asyncio
-    async def test_cache_miss_under_100ms(self):
-        """Cache miss resolution SHALL complete in less than 100 milliseconds."""
-        resolver = create_mock_resolver()
-
-        # Ensure cache miss by not populating cache
-        start = time.perf_counter()
-        await resolver.resolve_import(
-            target_name="UnknownSymbol",
-            target_type="class",
-            source_file="source.py",
-            source_language="python",
-        )
-        elapsed_ms = (time.perf_counter() - start) * 1000
-
-        # Result may be None (unresolved) but timing should be bounded
-        assert elapsed_ms < 100.0, (
-            f"Cache miss took {elapsed_ms:.2f}ms, should be < 100ms"
-        )
-
-    @pytest.mark.perf
-    @pytest.mark.asyncio
-    async def test_cache_miss_with_db_query(self):
-        """Cache miss with database query should still be bounded."""
-        resolver = create_mock_resolver()
-
-        # Mock database to return empty results (simulating cache miss path)
-        resolver.db_manager.query_entities = AsyncMock(return_value=[])
-
-        start = time.perf_counter()
-        await resolver.resolve_import(
-            target_name="MissedSymbol",
-            target_type="function",
-            source_file="module.py",
-            source_language="python",
-        )
-        elapsed_ms = (time.perf_counter() - start) * 1000
-
-        assert elapsed_ms < 100.0, f"Cache miss with DB took {elapsed_ms:.2f}ms"
-
-    @pytest.mark.perf
     @given(
         target_name=st.text(
             min_size=5,
@@ -260,31 +157,33 @@ class TestCacheMissPerformance:
             alphabet=st.characters(whitelist_categories=("L", "N")),
         ),
     )
-    @settings(max_examples=20)
+    @settings(max_examples=20, deadline=None)
     @pytest.mark.asyncio
-    async def test_property_3_cache_miss_performance_bound(
+    async def test_property_3_cache_miss_resolves_once_then_hits(
         self, target_name, source_file
     ):
-        """Property 3: For any cache miss, resolution SHALL complete in < 100ms."""
-        if not target_name or not source_file:
-            return
+        """Property 3: An unresolved miss without an import path SHALL walk the strategy chain once.
 
+        Each backend lookup is issued once, and the unresolved result SHALL be
+        cached, so repeating the call does no backend work.
+        """
         resolver = create_mock_resolver()
-        source_file_with_ext = f"{source_file}.py"
+        call = {
+            "target_name": target_name,
+            "target_type": "function",
+            "source_file": f"{source_file}.py",
+            "source_language": "python",
+        }
 
-        # Ensure cache miss with unique symbol name
-        unique_name = f"unique_{target_name}_{hash(source_file) % 10000}"
+        assert await resolver.resolve_import(**call) is None
+        assert calls_per_method(resolver) == UNRESOLVED_MISS_CALLS
+        calls_after_miss = len(backend_calls(resolver))
 
-        start = time.perf_counter()
-        await resolver.resolve_import(
-            target_name=unique_name,
-            target_type="function",
-            source_file=source_file_with_ext,
-            source_language="python",
-        )
-        elapsed_ms = (time.perf_counter() - start) * 1000
+        assert await resolver.resolve_import(**call) is None
+        assert len(backend_calls(resolver)) == calls_after_miss
 
-        assert elapsed_ms < 100.0, f"Cache miss took {elapsed_ms:.2f}ms, limit is 100ms"
+        stats = resolver.get_resolution_stats()
+        assert (stats["cache_misses"], stats["cache_hits"]) == (1, 1)
 
 
 # =============================================================================
@@ -415,7 +314,7 @@ class TestProfilingDataCompleteness:
         num_cached=st.integers(min_value=0, max_value=50),
         num_uncached=st.integers(min_value=1, max_value=50),
     )
-    @settings(max_examples=20)
+    @settings(max_examples=20, deadline=None)
     @pytest.mark.asyncio
     async def test_property_5_profiling_data_completeness(
         self, num_cached, num_uncached
@@ -478,70 +377,50 @@ class TestProfilingDataCompleteness:
 
 
 # =============================================================================
-# Additional Performance Tests
+# SimpleCache behavior
 # =============================================================================
 
 
-class TestSimpleCachePerformance:
-    """Tests for SimpleCache performance characteristics."""
+class TestSimpleCache:
+    """Tests for SimpleCache lookups and eviction."""
 
-    @pytest.mark.perf
-    def test_repeated_lookup_performance(self):
-        """Repeated lookups for same target should be fast."""
+    def test_get_returns_stored_results(self):
+        """Lookups return the stored result, including a cached None, keyed per source file."""
         cache = SimpleCache(max_size=1000)
+        cache.put("Found", "class", "a.py", ("target.py", "class", 1.0))
+        cache.put("Unresolved", "class", "a.py", None)
 
-        # Add entries
-        for i in range(10):
-            cache.put(
-                target_name="CommonImport",
-                target_type="module",
-                source_file=f"source_{i}.py",
-                result=("common/module.py", "module", 1.0),
-            )
+        assert cache.get("Found", "class", "a.py") == (
+            True,
+            ("target.py", "class", 1.0),
+        )
+        assert cache.get("Unresolved", "class", "a.py") == (True, None)
+        assert cache.get("Found", "class", "b.py") == (False, None)
 
-        # Lookup performance
-        timings = []
-        for i in range(100):
-            start = time.perf_counter()
-            found, result = cache.get(
-                target_name="CommonImport",
-                target_type="module",
-                source_file=f"source_{i % 10}.py",
-            )
-            elapsed_ns = (time.perf_counter() - start) * 1_000_000_000
-            timings.append(elapsed_ns)
-
-            # Should hit cache
-            if found:
-                assert result is not None
-
-        avg_ns = sum(timings) / len(timings)
-        assert avg_ns < 1_000_000, f"Cache lookup took {avg_ns:.0f}ns"
-
-    @pytest.mark.perf
-    def test_cache_eviction_performance(self):
-        """Cache eviction should not degrade performance."""
+    def test_eviction_drops_least_recently_used(self):
+        """Past max_size, the least recently used entry is evicted first."""
         cache = SimpleCache(max_size=100)
-
-        # Fill cache beyond capacity
-        for i in range(200):
+        for i in range(100):
             cache.put(
-                target_name=f"symbol_{i}",
-                target_type="function",
-                source_file=f"file_{i}.py",
-                result=(f"resolved_{i}.py", "function", 0.9),
+                f"symbol_{i}",
+                "function",
+                f"file_{i}.py",
+                (f"resolved_{i}.py", "function", 0.9),
             )
 
-        # Lookups should still be fast
-        timings = []
-        for i in range(100, 200):  # Recent items should be in cache
-            start = time.perf_counter()
-            cache.get(f"symbol_{i}", "function", f"file_{i}.py")
-            elapsed_ns = (time.perf_counter() - start) * 1_000_000_000
-            timings.append(elapsed_ns)
+        # Reading symbol_0 makes symbol_1 the least recently used entry.
+        assert cache.get("symbol_0", "function", "file_0.py")[0]
+        cache.put(
+            "symbol_100",
+            "function",
+            "file_100.py",
+            ("resolved_100.py", "function", 0.9),
+        )
 
-        avg_ns = sum(timings) / len(timings)
-        assert avg_ns < 1_000_000, f"Post-eviction lookup took {avg_ns:.0f}ns"
+        assert cache.get_statistics()["cache_size"] == 100
+        assert cache.get("symbol_1", "function", "file_1.py") == (False, None)
+        assert cache.get("symbol_0", "function", "file_0.py")[0]
+        assert cache.get("symbol_100", "function", "file_100.py")[0]
 
 
 class TestResolutionStatistics:

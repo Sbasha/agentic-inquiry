@@ -22,7 +22,7 @@ the test harness cutting it short. If a test still leaks a thread that
 blocks interpreter exit, the run names that thread and its stack and
 fails, instead of hanging or exiting silently. The test harness never
 reads, compacts or prunes the developer's real `./.agentic-inquiry`
-store. Leaks in other CLI commands and in `ai server` are tracked in
+store. Leaks in other CLI commands are tracked in
 [`docs/backlog.md`](../../backlog.md#clean-process-exit).
 
 ## Boundaries

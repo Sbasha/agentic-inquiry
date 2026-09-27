@@ -126,9 +126,10 @@ async def test_search_with_local_diff_annotates_modified_file(tmp_path):
         },
     }
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
         response = await client.post("/api/v1/search", json=payload)
 
     assert response.status_code == 200, (
@@ -200,9 +201,10 @@ async def test_branch_scoped_search_routes_to_correct_content(tmp_path):
     svc.hybrid_search = _branch_aware_search
     app.state.services = {"search_service": svc}
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
         # Search on main
         resp_main = await client.post(
             "/api/v1/search",
@@ -292,9 +294,10 @@ async def test_large_local_diff_is_truncated_before_annotation(tmp_path):
         },
     }
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
         response = await client.post("/api/v1/search", json=payload)
 
     assert response.status_code == 200, (
