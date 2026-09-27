@@ -372,6 +372,29 @@ def _write_corpus(target: Path, files: dict[str, str]) -> Path:
 # --------------------------------------------------------------------------
 
 
+def patch_gold(repo: str, base_commit: str, patch: str) -> dict[str, Any]:
+    """Gold pre-image lines per file and the innermost definitions enclosing them."""
+    gold = parse_patch(patch)
+    pairs = insertion_pairs(patch)
+    clone = ensure_clone(repo)
+    functions: list[tuple[str, int, int]] = []
+    for path, lines in gold.items():
+        if not path.endswith(".py"):
+            continue
+        try:
+            text = _git(["show", f"{base_commit}:{path}"], cwd=clone)
+        except subprocess.CalledProcessError:
+            try:
+                _git(["fetch", "--quiet", "origin", base_commit], cwd=clone)
+                text = _git(["show", f"{base_commit}:{path}"], cwd=clone)
+            except subprocess.CalledProcessError:
+                continue
+        deleted = lines - {a for a, _ in pairs.get(path, [])}
+        spans = enclosing_defs(text, deleted, pairs.get(path, []))
+        functions += [(path, s, e) for s, e in sorted(spans)]
+    return {"lines": {p: sorted(v) for p, v in gold.items()}, "functions": functions}
+
+
 def load_swebench() -> Suite:
     import pandas as pd
 
@@ -392,32 +415,7 @@ def load_swebench() -> Suite:
     for row in sample:
         iid = row["instance_id"]
         if iid not in labels:
-            gold = parse_patch(row["patch"])
-            pairs = insertion_pairs(row["patch"])
-            clone = ensure_clone(row["repo"])
-            functions: list[tuple[str, int, int]] = []
-            for path, lines in gold.items():
-                if path.endswith(".py"):
-                    try:
-                        text = _git(["show", f"{row['base_commit']}:{path}"], cwd=clone)
-                    except subprocess.CalledProcessError:
-                        try:
-                            _git(
-                                ["fetch", "--quiet", "origin", row["base_commit"]],
-                                cwd=clone,
-                            )
-                            text = _git(
-                                ["show", f"{row['base_commit']}:{path}"], cwd=clone
-                            )
-                        except subprocess.CalledProcessError:
-                            continue
-                    deleted = lines - {a for a, _ in pairs.get(path, [])}
-                    spans = enclosing_defs(text, deleted, pairs.get(path, []))
-                    functions += [(path, s, e) for s, e in sorted(spans)]
-            labels[iid] = {
-                "lines": {p: sorted(v) for p, v in gold.items()},
-                "functions": functions,
-            }
+            labels[iid] = patch_gold(row["repo"], row["base_commit"], row["patch"])
         entry = labels[iid]
         if not entry["lines"]:
             dropped += 1
@@ -678,8 +676,15 @@ def load_scifact() -> Suite:
     )
 
 
+def _load_fresh() -> Suite:
+    from evals.fresh import load_fresh
+
+    return load_fresh()
+
+
 LOADERS: dict[str, Callable[[], Suite]] = {
     "swebench": load_swebench,
+    "fresh": _load_fresh,
     "erpnext": load_erpnext,
     "locomo": load_locomo,
     "longmemeval": load_longmemeval,

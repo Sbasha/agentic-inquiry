@@ -61,6 +61,7 @@ def main() -> None:
     sub.add_parser(
         "report", help="RFC-0003 hypothesis verdicts from the latest test runs"
     )
+    sub.add_parser("mine-fresh", help="mine the RFC-0004 C3 task list once")
 
     args = parser.parse_args()
     if args.command == "cases":
@@ -90,6 +91,10 @@ def main() -> None:
             args.jobs,
             args.suite,
         )
+    elif args.command == "mine-fresh":
+        from evals.fresh import mine
+
+        print(mine())
     elif args.command == "report":
         from evals.report import main as report_main
 
