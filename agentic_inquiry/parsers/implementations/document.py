@@ -183,8 +183,9 @@ class DocumentParser:
                     file_size / (1024 * 1024), file_path,
                 )
                 return ParsedDocument(
+                    doc_id=self._generate_doc_id(path),
+                    file_path=path,
                     chunks=[],
-                    relationships=[],
                     metadata={"skipped": True, "reason": "file_too_large"},
                 )
         except OSError:

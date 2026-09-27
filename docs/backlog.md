@@ -30,6 +30,16 @@ rots. See `CONVENTIONS.md` § 4 (Spec metadata contract).
 
 ---
 
+## local-only-rerankers
+
+Open items from [`specs/local-only-rerankers/spec.md`](specs/local-only-rerankers/spec.md).
+
+- **Custom-embedder guide suggests hosted services:** the "Custom Embeddings"
+  use cases in [`customization/extending.md`](customization/extending.md)
+  list "external embedding services (OpenAI, Cohere, etc.)", which
+  `CHARTER.md` Principle 1 rules out. Unblocked by rewriting that bullet to
+  local models only.
+
 ## afp-lifecycle-contract
 
 Open items from [`specs/afp-lifecycle-contract/spec.md`](specs/afp-lifecycle-contract/spec.md).
@@ -125,6 +135,95 @@ a defect found while qualifying and left for its own change.
 - **`tantivy` dependency:** no code imports it after the native FTS
   switch. Remove it from `pyproject.toml` with an ADR.
 
+## mypy-clean
+
+Open items from [`specs/mypy-clean/spec.md`](specs/mypy-clean/spec.md).
+None is a deferred acceptance criterion. Each is a gap the type fixes
+exposed where the fix would change search, indexing, or memory behaviour.
+
+- **Initial-index shortcut never runs on LanceDB:**
+  `GraphBuilder.flush_pending_relationships_batched` calls
+  `db_manager.count_records`, but on the LanceDB path `db_manager` is a
+  `LanceDBAdapter`, which has no such method. The `AttributeError` is
+  caught, so `RelationshipResolver._skip_database_lookups` is never set and
+  every fresh index pays for database lookups that return nothing. Decide
+  whether to enable it by giving `LanceDBAdapter` a project-scoped
+  `count_records`, then measure resolution time and edge counts before and
+  after on a fresh index. The call carries a `type: ignore[union-attr]`
+  until then.
+- **`ai index --branch` doesn't tag chunks:** the command indexes the
+  branch's worktree, but nothing records the branch on the stored rows.
+  `branch_expiry` reads a `branch` field that no writer sets, so it never
+  prunes branch data. Unblocked by threading the branch name from
+  `index_command` into the chunk and entity writers.
+- **Raw query text reaches list-only vector providers:**
+  `SearchService.vector_search` accepts `str` for server-side embedding and
+  forwards it to `StorageFacade.vector_search`, whose provider contract takes
+  an embedding only. Text arrives there when a backend sets
+  `embedding_strategy: server_side` (honoured by `mcp/factories.py`) or when
+  `server/routes/search.py` has no `embedding_service`. LanceDB then runs the
+  vector leg as full-text search, so hybrid results quietly lose their
+  semantic half. Decide between widening the vector-search provider contract
+  to `Union[str, List[float]]` (with list-only providers raising, as
+  `entity_vector_search` does) and making those callers always embed. The
+  facade call carries a `type: ignore[arg-type]` until then.
+- **REST memories below the episodic threshold can't be recalled:**
+  `server/routes/memory.py` mints a new session per request, and the working
+  tier filters by session. A memory stored with importance under the
+  episodic threshold (0.7 by default) lands in working memory and no later
+  `/memory/recall` finds it. Unblocked by giving REST calls a stable
+  per-project session, after checking how that interacts with working-memory
+  capacity and consolidation.
+## clean-process-exit
+
+Open items from [`specs/clean-process-exit/spec.md`](specs/clean-process-exit/spec.md).
+None is a deferred acceptance criterion; each is a leak outside the
+owners that spec covers.
+
+- **Other CLI commands leave storage open:** `ai entity`, `ai search`,
+  `ai lineage`, `ai patterns`, `ai validate` and `ai agent-test` open a
+  `StorageFacade` (and `search/service.py`, `search/hybrid_search.py`
+  build one internally) without closing it, so the process prints its
+  result and then hangs on the events writer thread. Repro: in an empty
+  git directory, `python -m agentic_inquiry.cli entity foo` prints
+  `Entity not found: foo` and does not exit. Close the facade in a
+  `finally` in each command.
+- **`ai server` never shuts its MCP services down:** the FastAPI lifespan
+  in `agentic_inquiry/server/app.py` does not call `MCPServer.shutdown()`,
+  so `server/lifecycle.py` falls back to SIGKILL. Call it on lifespan exit.
+- **`close()` paths skip releasing the connection on error:**
+  `EventSystem.stop` returns `False` on a writer timeout before it closes
+  the store; `StorageFacade.close` stops at the first provider that
+  raises; `EventStore.close` and `SQLiteEventStorage.close` skip
+  `conn.close()` when the final commit raises. Each leaves an aiosqlite
+  thread alive. Release the connection in a `finally`.
+- **`ai mcp` over stdio cancels its background tasks before serving:**
+  `agentic_inquiry/mcp/cli.py` builds the services inside one
+  `asyncio.run`, which cancels the maintenance task, the `EventSystem`
+  writer and the memory consolidation and cleanup tasks when it returns;
+  serving then runs on a second loop. Under the default transport no
+  maintenance tick runs and emitted events are not persisted. Build and
+  serve on one loop.
+- **`ai memory recall` ignores the hashing embedder's size:** with
+  `INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER=hashing` and
+  `INQUIRY_EMBEDDINGS_DEFAULT_DIMENSIONS=128`, `save` writes 128-dim
+  vectors but `recall` embeds its query at 384 dims and fails with
+  `query dim(384) doesn't match the column vector vector dim(128)`. Find
+  where the recall path picks an embedder other than the configured one.
+- **`ai mcp` ignores `embeddings.default_provider`:** `create_mcp_services`
+  registers a `SentenceTransformerEmbedder` whenever the registry is
+  unconfigured, so `INQUIRY_EMBEDDINGS_DEFAULT_PROVIDER=hashing` still
+  loads (and on a cold cache downloads) the model. Honor the configured
+  provider as `create_memory_system` does.
+- **`close_mcp_services` swallows a cancellation aimed at its caller:**
+  awaiting the cancelled maintenance task catches every `CancelledError`,
+  including one delivered to the caller. Re-raise when the current task is
+  itself being cancelled (`Task.cancelling()`, Python 3.11+; the package
+  still supports 3.10).
+- **Importing `agentic_inquiry.watching` creates `./.agentic-inquiry`:**
+  `_register_default_watcher()` builds a `FileTracker()` at import time,
+  which creates the directory in the importing process's cwd. Register
+  the default watcher lazily.
 ## local-only-config-cleanup
 
 Open items from [`specs/local-only-config-cleanup/spec.md`](specs/local-only-config-cleanup/spec.md).
@@ -198,26 +297,11 @@ no acceptance criterion is deferred.
   it on every `get_cache()`, named lookups included, so a caller's
   `set_default=True` cache is replaced and a construction error breaks named
   lookups. Unblocked by applying the watcher fix (knowledge entry K-0008).
+
 ## hybrid-reranker-default
 
 Open items found while building [`specs/hybrid-reranker-default/spec.md`](specs/hybrid-reranker-default/spec.md).
 
-- **User config replaces the packaged defaults:** `Config.load()` loads one
-  file (`INQUIRY_CONFIG`, `./agentic-inquiry.yaml`,
-  `~/.agentic-inquiry/config.yaml`, then packaged `default.yaml`) and does not
-  merge a user file onto `default.yaml`. Keys a user omits fall to the
-  dataclass defaults, which can differ from the YAML (for example
-  `reranker_params` is `{}` in the dataclass and `{k: 60}` in the YAML), and
-  the README "override defaults" example fails schema validation with
-  `'cache' is a required property`. Unblocked by a product call: overlay user
-  files on the packaged defaults (`Config._deep_merge` already exists), or
-  document that the file must be complete.
-- **Stale cohere validation test:**
-  `tests/integration/test_reranker_configuration.py::TestRerankerConfiguration::test_invalid_reranker_type`
-  expects `reranker_type: cohere` to be rejected, but the schema enum and
-  `VALID_RERANKER_TYPES` accept it, so the test fails on main. Unblocked by
-  deciding whether an external-API reranker is in scope under
-  `docs/CHARTER.md`, then aligning the test or removing cohere.
 - **Scoring test docstring describes the wrong reranker:**
   `tests/search/test_hybrid_search_scoring.py::test_score_differences_reflected_in_ranking`
   explains linear-combination arithmetic, but its service is built from

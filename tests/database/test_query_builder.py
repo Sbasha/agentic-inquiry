@@ -112,6 +112,35 @@ class TestQueryConstruction:
         assert len(results) == 1
         mock_table.search.assert_called_once_with("search term", query_type="fts")
 
+    async def test_fts_search_retries_stale_table(self, mock_get_table, mock_run_sync, mock_table):
+        """A stale-table error invalidates the cache and reruns the same query."""
+        query_mock = MagicMock()
+        query_mock.limit = MagicMock(return_value=query_mock)
+        query_mock.to_list = MagicMock(return_value=[{"id": "1", "content": "test"}])
+        mock_table.search = MagicMock(
+            side_effect=[RuntimeError("lance error: stale data file"), query_mock]
+        )
+        invalidated = []
+
+        async def _invalidate(table_name: str) -> None:
+            invalidated.append(table_name)
+
+        builder = LanceDBQueryBuilder(
+            get_table_fn=mock_get_table,
+            run_sync_fn=mock_run_sync,
+            project_id=None,
+            invalidate_cache_fn=_invalidate,
+        )
+
+        results = await builder.fts_search(
+            table_name="test_table", query="search term", limit=10, project_id=None
+        )
+
+        assert results == [{"id": "1", "content": "test"}]
+        assert invalidated == ["test_table"]
+        assert mock_table.search.call_count == 2
+        mock_table.search.assert_called_with("search term", query_type="fts")
+
     async def test_hybrid_search(self, query_builder, mock_table):
         """Test hybrid search query construction."""
         # Setup mock - hybrid search uses .text().vector() chaining

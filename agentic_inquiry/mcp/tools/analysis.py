@@ -987,7 +987,7 @@ async def compare_patterns(
 
         # Build aggregate signature from reference entities
         ref_sigs = []
-        common_relationships = {}  # relationship -> count of refs that have it
+        common_relationships: dict[str, int] = {}  # relationship -> count of refs that have it
         for ref in ref_entities[:5]:
             ref_name = ref.get("name", "")
             try:
