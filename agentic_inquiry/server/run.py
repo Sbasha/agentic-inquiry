@@ -8,6 +8,8 @@ Usage:
 import argparse
 import asyncio
 import logging
+import signal
+import sys
 
 import uvicorn
 
@@ -30,43 +32,58 @@ def parse_args():
 async def _start_server():
     args = parse_args()
 
-    # Create app via async factory
+    import os
+
+    from agentic_inquiry.config import Config
     from agentic_inquiry.server.app import create_app
+    from agentic_inquiry.server.bind import bind_host, rest_auth_enabled
+    from agentic_inquiry.server.lifecycle import remove_pid_file, write_pid_file
+
+    # Refuse a bad bind before create_app opens any store.
+    config = Config.load()
+    try:
+        host = bind_host(
+            os.environ.get("INQUIRY_SERVER_HOST"), rest_auth_enabled(config)
+        )
+    except ValueError as exc:
+        logger.error("Cannot start the ai server: %s", exc)
+        raise SystemExit(1) from None
 
     app = await create_app(
+        config=config,
         project_id=args.project_id,
         workspace=args.workspace,
     )
 
-    # Write PID file
-    from agentic_inquiry.server.lifecycle import write_pid_file, remove_pid_file
-    import os
-
-    write_pid_file(os.getpid(), args.port, args.project_id, env=args.env)
-
-    from agentic_inquiry.server.bind import bind_host, rest_auth_enabled
-
-    host = bind_host(
-        os.environ.get("INQUIRY_SERVER_HOST"), rest_auth_enabled(app.state.config)
-    )
-    logger.info("Starting ai server on %s:%d (env=%s)", host, args.port, args.env)
-
-    # We use uvicorn directly but make sure we don't block the loop incorrectly
-    config = uvicorn.Config(
-        app,
-        host=host,
-        port=args.port,
-        log_level="info",
-        ws_ping_interval=30,
-        ws_ping_timeout=30,
-    )
-    server = uvicorn.Server(config)
-    await server.serve()
-    remove_pid_file(env=args.env)
+    try:
+        write_pid_file(os.getpid(), args.port, args.project_id, env=args.env)
+        logger.info("Starting ai server on %s:%d (env=%s)", host, args.port, args.env)
+        uvicorn_config = uvicorn.Config(
+            app,
+            host=host,
+            port=args.port,
+            log_level="info",
+            ws_ping_interval=30,
+            ws_ping_timeout=30,
+        )
+        await uvicorn.Server(uvicorn_config).serve()
+    finally:
+        # uvicorn re-raises the signal that stopped it once serve() returns,
+        # and a signal before its lifespan starts skips the lifespan's
+        # shutdown; the second shutdown() after a normal stop does nothing.
+        remove_pid_file(env=args.env)
+        await app.state.mcp_server.shutdown()
 
 
 def main():
-    asyncio.run(_start_server())
+    # uvicorn restores the handlers it found and re-raises the stopping signal
+    # after serve() returns. Under the default SIGTERM action that kills the
+    # process before _start_server's finally removes the PID file.
+    signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(128 + signum))
+    try:
+        asyncio.run(_start_server())
+    except KeyboardInterrupt:
+        pass
 
 
 if __name__ == "__main__":

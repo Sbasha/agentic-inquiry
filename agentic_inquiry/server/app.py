@@ -8,6 +8,9 @@ Creates a FastAPI app with dual surfaces:
 import logging
 import os
 import time
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from typing import TYPE_CHECKING, Any
 
 from fastapi import FastAPI
 
@@ -15,6 +18,9 @@ from agentic_inquiry.server.cache import ServerCacheManager
 from agentic_inquiry.server.session import SessionState
 from agentic_inquiry.server.signals import SignalAnalyzer
 from agentic_inquiry.server.versioning import GitVersionManager
+
+if TYPE_CHECKING:
+    from agentic_inquiry.mcp.server import MCPServer
 
 logger = logging.getLogger("ai.server")
 
@@ -51,16 +57,42 @@ async def create_app(
     from agentic_inquiry.mcp.server import MCPServer
 
     mcp_server = MCPServer(config, project_id)
-    await mcp_server.initialize()
+    # A signal or error between initialize() and the lifespan starting would
+    # leave the stores open, and their threads keep the process alive.
+    try:
+        await mcp_server.initialize()
+        return _build_app(mcp_server, config, project_id, workspace, daemon_config)
+    except BaseException:
+        await mcp_server.shutdown()
+        raise
 
+
+def _build_app(
+    mcp_server: "MCPServer",
+    config: Any,
+    project_id: str,
+    workspace: str,
+    daemon_config: dict,
+) -> FastAPI:
+    """Assemble the FastAPI app around an initialized MCP server."""
     # Get ASGI app from FastMCP
     mcp_asgi = mcp_server.get_app().http_app(path="/mcp")
 
-    # Create FastAPI app with MCP's lifespan
+    # MCP's lifespan runs the streamable-HTTP session manager. The services
+    # initialize() opened must close when it ends: an open aiosqlite store
+    # holds a non-daemon thread that keeps the process alive after uvicorn stops.
+    @asynccontextmanager
+    async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+        try:
+            async with mcp_asgi.lifespan(app):
+                yield
+        finally:
+            await mcp_server.shutdown()
+
     app = FastAPI(
         title=SERVER_TITLE,
         version="1.0.0",
-        lifespan=mcp_asgi.lifespan,
+        lifespan=lifespan,
     )
 
     # Mount MCP ASGI app at /mcp (matches docs and http_app path)

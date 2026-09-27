@@ -67,9 +67,10 @@ async def test_auth_middleware_unauthenticated_returns_401(tmp_path):
 
     app = await create_app(config=config, project_id="test_auth")
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
         response = await client.post(
             "/api/v1/search",
             json={"query": "hello world"},
@@ -94,9 +95,10 @@ async def test_auth_middleware_authenticated_not_401(tmp_path):
 
     app = await create_app(config=config, project_id="test_auth")
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
         response = await client.post(
             "/api/v1/search",
             json={"query": "hello world"},
@@ -121,9 +123,10 @@ async def test_health_endpoint_accessible_without_auth(tmp_path):
 
     app = await create_app(config=config, project_id="test_health")
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
         response = await client.get("/api/v1/health")
 
     assert response.status_code == 200
@@ -171,9 +174,10 @@ async def test_search_with_local_diff_returns_local_changes_summary(tmp_path):
         },
     }
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
         response = await client.post("/api/v1/search", json=payload)
 
     # Schema validation must pass (not 422)
@@ -233,9 +237,10 @@ async def test_search_with_local_diff_annotates_results(tmp_path):
         },
     }
 
-    async with AsyncClient(
-        transport=ASGITransport(app=app), base_url="http://test"
-    ) as client:
+    async with (
+        app.router.lifespan_context(app),
+        AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client,
+    ):
         response = await client.post("/api/v1/search", json=payload)
 
     assert response.status_code == 200
