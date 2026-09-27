@@ -67,6 +67,30 @@ Working without a tool is tested where it is meaningful: C1 (full history in the
 - Each competitor runs at its documented defaults, configured the way its own benchmark code configures it: `mem0ai/memory-benchmarks` for mem0, Cognee's `eval_framework`, Graphify's `graphify update` and `query`. Our adapter code and each tool's exact version are published with the results.
 - A failure to ingest, retrieve, answer or judge counts as a wrong answer.
 
+## Methods per claim (clarified 2026-09-27, before any run)
+
+- **C1 answering and judging.**
+  - Every arm answers with one prompt that gives the question date, as LongMemEval does.
+  - The judge uses LongMemEval's official per-type prompts (`xiaowu0162/LongMemEval` @ `9e0b455`, `get_anscheck_prompt`).
+  - The no-tool arm puts every session, in date order, into the same prompt.
+- **C1 `mem0`**, as in `mem0ai/memory-benchmarks` @ `4b61c5d` for LongMemEval:
+  - sessions in date order, one `add` per user and assistant pair, `top_k` 200;
+  - the open-source SDK rejects the benchmark's `timestamp` argument, so the session date is written into each message and returned with each memory.
+- **C1 `cognee`**, as in its BEAM evaluation (`cognee.eval_framework.beam`):
+  - every session is one JSON-list document of turn pairs with their date;
+  - ingestion runs `local_ingest` with its defaults: session distillation and the global context index;
+  - retrieval is `hybrid_completion` with 20 chunks and 20 entities, context only.
+- **C2.**
+  - A task counts as found when at least one changed function has a rendered line inside the arm's 2,000-token context. Graphify's location lines count when they point inside the function.
+  - `cognee` is not applicable. Its released code search answers structured symbol operations, not issue text, and its text pipeline would run LLM extraction over every file of every repository snapshot.
+- **C3.**
+  - The agent gets at most 14 turns and must end with up to five `path:line` locations. A task counts as solved when one of them falls inside a changed function.
+  - Each tool arm gets that tool's own published agent instructions.
+  - Each arm's tool-call rate is reported.
+- **Time.**
+  - Wall-clock time is measured at one fixed concurrency for every tool.
+  - LLM time is the sum of provider-reported API durations. Calls made through the Claude Code CLI carry a fixed per-call overhead (its system prompt and start-up), measured once on an empty prompt and subtracted from token counts and time.
+
 ## Statistics and sample sizes
 
 - Every comparison is paired by question or task: `inquiry` against each other arm in the claim.
