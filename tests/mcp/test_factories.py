@@ -29,15 +29,18 @@ This approach ensures:
 4. Tests run fast while maintaining high confidence
 """
 
+import asyncio
+
 import pytest
 
 pytestmark = pytest.mark.unit
 from unittest.mock import Mock, patch, AsyncMock
 
 from agentic_inquiry.config import Config
-from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.factories import close_mcp_services, create_mcp_services
 from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
 from agentic_inquiry.mcp.utils.cache import MCPCacheManager
+from tests.helpers.assertions import aiosqlite_threads, assert_no_new_aiosqlite_threads
 
 
 @pytest.fixture
@@ -1011,3 +1014,134 @@ class TestMCPServerShutdown:
         # Verify services were cleared
         assert len(server.services) == 0
         assert not server._initialized
+
+
+class TestCloseMCPServices:
+    """close_mcp_services releases what create_mcp_services opened."""
+
+    @staticmethod
+    def _services(calls: list[str]) -> dict:
+        def record(name: str):
+            async def closer() -> None:
+                calls.append(name)
+
+            return closer
+
+        async def tick() -> None:
+            try:
+                await asyncio.sleep(3600)
+            except asyncio.CancelledError:
+                calls.append("maintenance_task")
+                raise
+
+        memory_system = Mock()
+        memory_system.shutdown = AsyncMock(side_effect=record("memory_system"))
+        event_system = Mock()
+        event_system.stop = AsyncMock(side_effect=record("event_system"))
+        storage = Mock()
+        storage.close = AsyncMock(side_effect=record("storage"))
+        return {
+            "maintenance_task": asyncio.create_task(tick()),
+            "memory_system": memory_system,
+            "event_system": event_system,
+            "storage": storage,
+        }
+
+    async def test_closes_dependents_first(self):
+        calls: list[str] = []
+        services = self._services(calls)
+
+        await asyncio.sleep(0)  # let the maintenance task start
+        await close_mcp_services(services)
+
+        assert calls == ["maintenance_task", "memory_system", "event_system", "storage"]
+
+    async def test_skips_absent_services(self):
+        storage = Mock()
+        storage.close = AsyncMock()
+
+        await close_mcp_services({"storage": storage, "memory_system": None})
+
+        storage.close.assert_awaited_once_with()
+
+    async def test_failing_service_does_not_keep_the_rest_open(self):
+        calls: list[str] = []
+        services = self._services(calls)
+        services["memory_system"].shutdown = AsyncMock(side_effect=RuntimeError("boom"))
+        await asyncio.sleep(0)  # let the maintenance task start
+
+        await close_mcp_services(services)
+
+        assert calls == ["maintenance_task", "event_system", "storage"]
+
+    async def test_cancelled_service_still_closes_the_rest(self):
+        calls: list[str] = []
+        services = self._services(calls)
+        services["memory_system"].shutdown = AsyncMock(side_effect=asyncio.CancelledError())
+        await asyncio.sleep(0)  # let the maintenance task start
+
+        with pytest.raises(asyncio.CancelledError):
+            await close_mcp_services(services)
+
+        assert calls == ["maintenance_task", "event_system", "storage"]
+
+
+@pytest.fixture
+def hashing_config(mock_config):
+    from agentic_inquiry.embeddings.hashing import HashingEmbedder
+    from agentic_inquiry.embeddings.registry import embedding_registry
+
+    mock_config.embeddings.default_provider = "hashing"
+    mock_config.embeddings.hashing.ndims = mock_config.embeddings.default_dimensions
+    embedding_registry.configure_default_embedder(
+        HashingEmbedder(ndims=mock_config.embeddings.default_dimensions),
+        ndims=mock_config.embeddings.default_dimensions,
+    )
+    return mock_config
+
+
+@pytest.mark.integration
+class TestCloseMCPServicesReleasesStores:
+    """Real services: no aiosqlite writer thread outlives the services."""
+
+    async def test_create_then_close_leaves_no_connection_thread(self, hashing_config):
+        before = aiosqlite_threads()
+
+        services = await create_mcp_services(hashing_config, "test_project")
+        assert aiosqlite_threads() - before
+        await close_mcp_services(services)
+
+        assert services["maintenance_task"].done()
+        assert_no_new_aiosqlite_threads(before)
+
+    async def test_close_consolidates_active_contexts(self, hashing_config, monkeypatch):
+        from agentic_inquiry.memory.consolidation import ConsolidationEngine
+
+        consolidate = AsyncMock()
+        monkeypatch.setattr(ConsolidationEngine, "consolidate", consolidate)
+        before = aiosqlite_threads()
+        services = await create_mcp_services(hashing_config, "test_project")
+        context = services["memory_system"].create_agent_context(
+            agent_id="agent", session_id="session", conversation_id="conversation"
+        )
+
+        await close_mcp_services(services)
+
+        consolidate.assert_awaited_once_with(context)
+        assert_no_new_aiosqlite_threads(before)
+
+    @pytest.mark.parametrize("error", [RuntimeError("initialize failed"), asyncio.CancelledError()])
+    async def test_failed_create_leaves_no_connection_thread(self, hashing_config, error):
+        before = aiosqlite_threads()
+        tasks_before = asyncio.all_tasks()
+
+        with patch(
+            "agentic_inquiry.mcp.factories.MemorySystem.initialize",
+            AsyncMock(side_effect=error),
+        ):
+            with pytest.raises(type(error)):
+                await create_mcp_services(hashing_config, "test_project")
+
+        assert_no_new_aiosqlite_threads(before)
+        assert all(task.done() for task in asyncio.all_tasks() - tasks_before)
+

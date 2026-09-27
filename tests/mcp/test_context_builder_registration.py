@@ -9,15 +9,21 @@ import pytest
 pytestmark = pytest.mark.integration
 
 from agentic_inquiry.config import Config
-from agentic_inquiry.mcp.factories import create_mcp_services
+from agentic_inquiry.mcp.factories import close_mcp_services, create_mcp_services
 from agentic_inquiry.mcp.services.context_builder import ContextBuilder
+from agentic_inquiry.storage.facade import StorageFacade
+
+
+@pytest.fixture
+async def services(mock_config):
+    services = await create_mcp_services(mock_config, "test_project")
+    yield services
+    await close_mcp_services(services)
 
 
 @pytest.mark.asyncio
-async def test_context_builder_registered_in_factory(mock_config):
+async def test_context_builder_registered_in_factory(services):
     """Test that ContextBuilder is registered in service factory."""
-    # Create services
-    services = await create_mcp_services(mock_config, "test_project")
     
     # Verify context_builder is in services
     assert "context_builder" in services
@@ -26,17 +32,14 @@ async def test_context_builder_registered_in_factory(mock_config):
 
 
 @pytest.mark.asyncio
-async def test_context_builder_has_all_dependencies(mock_config):
+async def test_context_builder_has_all_dependencies(services):
     """Test that ContextBuilder receives all required dependencies."""
-    # Create services
-    services = await create_mcp_services(mock_config, "test_project")
     
     context_builder = services["context_builder"]
     
     # Verify all dependencies are set and have expected types
     from agentic_inquiry.search.service import SearchService
     from agentic_inquiry.memory.system import MemorySystem
-    from agentic_inquiry.database.lancedb_manager import LanceDBManager
     from agentic_inquiry.mcp.services.session_manager import SessionManager
     from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
 
@@ -45,7 +48,7 @@ async def test_context_builder_has_all_dependencies(mock_config):
     assert context_builder.memory is not None
     assert isinstance(context_builder.memory, MemorySystem)
     assert context_builder.db is not None
-    assert isinstance(context_builder.db, LanceDBManager)
+    assert isinstance(context_builder.db, StorageFacade)
     assert context_builder.session_manager is not None
     assert isinstance(context_builder.session_manager, SessionManager)
     assert context_builder.config is not None
@@ -55,33 +58,27 @@ async def test_context_builder_has_all_dependencies(mock_config):
 
 
 @pytest.mark.asyncio
-async def test_context_builder_dependencies_are_correct_types(mock_config):
+async def test_context_builder_dependencies_are_correct_types(services):
     """Test that ContextBuilder dependencies are correct types."""
     from agentic_inquiry.search.service import SearchService
     from agentic_inquiry.memory.system import MemorySystem
-    from agentic_inquiry.database.lancedb_manager import LanceDBManager
     from agentic_inquiry.mcp.services.session_manager import SessionManager
     from agentic_inquiry.mcp.services.token_optimizer import TokenOptimizer
-    
-    # Create services
-    services = await create_mcp_services(mock_config, "test_project")
-    
+
     context_builder = services["context_builder"]
     
     # Verify dependency types
     assert isinstance(context_builder.search, SearchService)
     assert isinstance(context_builder.memory, MemorySystem)
-    assert isinstance(context_builder.db, LanceDBManager)
+    assert isinstance(context_builder.db, StorageFacade)
     assert isinstance(context_builder.session_manager, SessionManager)
     assert isinstance(context_builder.config, Config)
     assert isinstance(context_builder.token_optimizer, TokenOptimizer)
 
 
 @pytest.mark.asyncio
-async def test_context_builder_can_be_used_after_creation(mock_config):
+async def test_context_builder_can_be_used_after_creation(services):
     """Test that ContextBuilder can be used after creation from factory."""
-    # Create services
-    services = await create_mcp_services(mock_config, "test_project")
     
     context_builder = services["context_builder"]
     session_manager = services["session_manager"]
@@ -116,10 +113,8 @@ async def test_context_builder_can_be_used_after_creation(mock_config):
 
 
 @pytest.mark.asyncio
-async def test_all_context_builder_dependencies_created_before_builder(mock_config):
+async def test_all_context_builder_dependencies_created_before_builder(services):
     """Test that all dependencies are created before ContextBuilder."""
-    # Create services
-    services = await create_mcp_services(mock_config, "test_project")
     
     # Verify all required services exist
     required_services = [

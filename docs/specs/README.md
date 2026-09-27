@@ -33,3 +33,4 @@ files inside any feature dir are gitignored — see
 [`salesforce-intelligence`](salesforce-intelligence/spec.md) - Salesforce recognizer and metadata allowlist.
 
 [`mypy-clean`](mypy-clean/spec.md) - Zero mypy errors on `agentic_inquiry/`, and the defects the type errors exposed.
+[`lazy-default-watcher`](lazy-default-watcher/spec.md) - Import `agentic_inquiry.watching` without creating files; build the default watcher on first lookup.
