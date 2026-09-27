@@ -28,6 +28,9 @@ in place. There is no window between a delete and an insert in which a second wr
 find the key absent and insert its own copy. Storing a memory item whose id is
 already stored replaces that row.
 
+Consolidation moves an item it promotes from episodic to semantic memory, so
+one id is never stored in both tiers.
+
 `MemorySystem.negate_memory()` and `MemorySystem.supersede_memory()` change a
 stored episodic or semantic item's status with one `update_fields()` call,
 which writes only the named columns in one commit. Access statistics written
@@ -97,6 +100,10 @@ directly: a lone write raises the table's `version` by exactly one.
       commit survives. If the old item moves to a later tier between
       supersede's read and its write, it is marked there; if it is deleted,
       supersede logs a warning and still returns the new item.
+- [x] Consolidation moves an item it promotes from episodic to semantic
+      memory: once the semantic store succeeds, the episodic copy is deleted,
+      so no id is stored in both tiers. When the semantic store fails, the
+      episodic copy stays.
 
 ## Assumptions
 
@@ -137,15 +144,11 @@ directly: a lone write raises the table's `version` by exactly one.
   the failure. Pre-existing and out of scope (source: reproduced on this
   branch, 2026-09-26;
   [backlog](../../backlog.md#lancedb-single-commit-upsert)).
-- Technical: `ConsolidationEngine` promotes an episodic item to semantic
-  without deleting the episodic copy, so one id can be stored in two tiers.
-  `negate_memory()` and `supersede_memory()` mark the first tier that holds
-  the id, working, then episodic, then semantic; the other copy stays active.
-  Out of scope (source: `agentic_inquiry/memory/consolidation.py`
-  `promote_to_semantic`;
-  [backlog](../../backlog.md#lancedb-single-commit-upsert)).
 - Product: `store()` upserts by id although the `merge_insert` adds a flat
   ~8 ms per call over an append (source: user confirmation 2026-09-26).
+- Product: consolidation deletes the episodic copy of an item it promotes to
+  semantic memory, giving up the episodic record of that event (source: user
+  confirmation 2026-09-26).
 - Process: `update_fields()` and `LanceDBManager.update_by_ids()` come from
   memory-update-atomicity, which this change is built on (source:
   `feature/memory-update-lost-write` at `f5b36af`).

@@ -191,3 +191,22 @@ memory writes, and the matching out-of-scope sentence in the
 memory-update-atomicity spec.
 **Done when:** listed tests green; `tests/memory` shows no new failures
 against the rebased base.
+
+### T5: Promotion to semantic moves the item
+
+**Mode:** TDD (integration, on-disk LanceDB)
+**Depends on:** T4
+**Touches:** agentic_inquiry/memory/consolidation.py, tests/memory/test_consolidation_engine.py, docs/backlog.md
+**Tests:**
+- `test_promote_to_semantic_moves_item_out_of_episodic`: an item above the
+  semantic threshold is in semantic and gone from episodic; one below it
+  stays in episodic only. Seen red first.
+- `test_failed_semantic_store_keeps_episodic_copy`: a semantic store that
+  raises leaves the episodic copy and counts nothing.
+- `test_consolidation_preserves_metadata` looks for the item in semantic
+  memory, where a full consolidation of an importance-0.9 item now leaves it.
+**Approach:** In `ConsolidationEngine.promote_to_semantic`, delete the
+episodic copy after the semantic store succeeds; a failed delete logs a
+warning and keeps the promotion. Remove the backlog entry for one id in two
+tiers.
+**Done when:** listed tests green; `tests/memory` shows no new failures.

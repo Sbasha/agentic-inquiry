@@ -488,6 +488,7 @@ async def test_consolidation_preserves_metadata(
     consolidation_engine: ConsolidationEngine,
     working_memory: WorkingMemory,
     episodic_memory: EpisodicMemory,
+    semantic_memory: SemanticMemory,
     sample_context: MemoryContext,
 ) -> None:
     """Test that consolidation preserves item metadata."""
@@ -509,9 +510,68 @@ async def test_consolidation_preserves_metadata(
     # Run consolidation
     await consolidation_engine.consolidate(sample_context)
 
-    # Verify metadata is preserved
-    episodic_items = await episodic_memory.get_all_items(sample_context)
-    assert len(episodic_items) > 0
-    promoted_item = episodic_items[0]
+    # Importance 0.9 reaches the semantic threshold, so one consolidation
+    # moves the item through episodic into semantic memory.
+    assert await episodic_memory.get_by_id(item.id, update_access=False) is None
+    promoted_item = await semantic_memory.get_by_id(item.id, update_access=False)
+    assert promoted_item is not None
     assert promoted_item.metadata.get("source") == "user_input"
     assert promoted_item.metadata.get("category") == "question"
+
+
+def _episodic_item(context: MemoryContext, importance: float) -> MemoryItem:
+    return MemoryItem(
+        id=str(uuid.uuid4()),
+        content=f"Fact at importance {importance}",
+        summary="Summary",
+        context=context,
+        importance=importance,
+        tier=MemoryTier.EPISODIC,
+        creator_agent_id="test_agent",
+        modifier_agent_id="test_agent",
+        embedding=np.random.rand(384).astype(np.float32),
+        summary_embedding=np.random.rand(384).astype(np.float32),
+        event_type="knowledge",
+    )
+
+
+@pytest.mark.asyncio
+async def test_promote_to_semantic_moves_item_out_of_episodic(
+    consolidation_engine: ConsolidationEngine,
+    episodic_memory: EpisodicMemory,
+    semantic_memory: SemanticMemory,
+    sample_context: MemoryContext,
+) -> None:
+    promoted = _episodic_item(sample_context, importance=0.95)
+    kept = _episodic_item(sample_context, importance=0.7)
+    for item in (promoted, kept):
+        await episodic_memory.store(item)
+
+    await consolidation_engine.promote_to_semantic([promoted, kept], extract_patterns=False)
+
+    assert await semantic_memory.get_by_id(promoted.id, update_access=False) is not None
+    assert await episodic_memory.get_by_id(promoted.id, update_access=False) is None
+    assert await episodic_memory.get_by_id(kept.id, update_access=False) is not None
+    assert await semantic_memory.get_by_id(kept.id, update_access=False) is None
+
+
+@pytest.mark.asyncio
+async def test_failed_semantic_store_keeps_episodic_copy(
+    consolidation_engine: ConsolidationEngine,
+    episodic_memory: EpisodicMemory,
+    semantic_memory: SemanticMemory,
+    sample_context: MemoryContext,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    item = _episodic_item(sample_context, importance=0.95)
+    await episodic_memory.store(item)
+    monkeypatch.setattr(
+        semantic_memory, "store", AsyncMock(side_effect=RuntimeError("disk full"))
+    )
+
+    promoted_count = await consolidation_engine.promote_to_semantic(
+        [item], extract_patterns=False
+    )
+
+    assert promoted_count == 0
+    assert await episodic_memory.get_by_id(item.id, update_access=False) is not None

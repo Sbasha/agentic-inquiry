@@ -415,21 +415,33 @@ class ConsolidationEngine:
             # Store in semantic memory
             try:
                 await self.semantic_memory.store(item)
-                promoted_count += 1
-                self._total_promotions += 1
-                
-                logger.debug(
-                    "Promoted item to semantic: id=%s, importance=%.3f, confidence=%.3f, agent=%s",
-                    item.id,
-                    item.importance,
-                    item.confidence,
-                    item.context.agent_id,
-                )
             except Exception as e:
                 logger.error(
                     "Failed to promote item %s to semantic: %s",
                     item.id,
                     str(e),
+                )
+                continue
+
+            promoted_count += 1
+            self._total_promotions += 1
+            logger.debug(
+                "Promoted item to semantic: id=%s, importance=%.3f, confidence=%.3f, agent=%s",
+                item.id,
+                item.importance,
+                item.confidence,
+                item.context.agent_id,
+            )
+
+            # Move, not copy: an id held by two tiers would stay active in
+            # one of them when the other is negated or superseded.
+            try:
+                await self.episodic_memory.delete(item.id)
+            except Exception as e:
+                logger.warning(
+                    "Promoted item %s to semantic but could not remove its episodic copy: %s",
+                    item.id,
+                    e,
                 )
         
         # Extract concepts if requested
@@ -533,9 +545,6 @@ class ConsolidationEngine:
                 # Calculate concepts extracted in this consolidation
                 concepts_extracted = self._total_concepts_extracted - concepts_before
                 
-                # Note: We don't delete from episodic memory after promotion
-                # to maintain the event history. Capacity management will
-                # handle cleanup if needed.
         
         except Exception as e:
             logger.error(

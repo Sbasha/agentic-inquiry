@@ -145,17 +145,12 @@ leaves out.
 
 - **Eviction on re-store:** at capacity, `EpisodicMemory.store` and
   `SemanticMemory.store` evict the oldest item before storing, even when the
-  item's id is already stored and the store only replaces it. Re-promoting an
-  id (`consolidation.py`, `MemorySystem.promote_to_semantic`) then deletes an
-  unrelated memory and leaves the tier one below its limit. Unblocked by
+  item's id is already stored and the store only replaces it, deleting an
+  unrelated memory and leaving the tier one below its limit. Promotion moves
+  items between tiers, so this takes a caller that stores the same id twice
+  into one tier, or a promotion whose source delete failed. Unblocked by
   skipping eviction when the id is already stored, at the cost of a lookup
   per store.
-- **One id in two tiers:** `ConsolidationEngine.promote_to_semantic` stores
-  an episodic item in semantic memory and keeps the episodic copy.
-  `negate_memory` and `supersede_memory` mark only the first tier that holds
-  the id, so the semantic copy stays active and keeps showing up in
-  retrieval. Needs a decision: delete the source copy on promotion, or mark
-  every tier that holds the id.
 - **Working-memory writes resurrect removed items:** `MemorySystem._write_fields`
   stores a working item back unconditionally. If consolidation removed it
   from working memory while supersede awaited the new item's embedding, the
