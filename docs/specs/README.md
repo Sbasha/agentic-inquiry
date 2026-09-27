@@ -65,3 +65,5 @@ files inside any feature dir are gitignored; see
 [`ruff-clean-stale-fts-retry`](ruff-clean-stale-fts-retry/spec.md) - One stale-table retry path shared by vector, FTS, hybrid and filter search, and zero `ruff check` findings in `agentic_inquiry` and `tests`.
 
 [`skill-global-invocation`](skill-global-invocation/spec.md) - Claude Code plugin skills call a globally installed `ai` command instead of `uv run --env-file .env ai`, so they run from a target project; the README documents the global install.
+
+[`server-shutdown-closes-stores`](server-shutdown-closes-stores/spec.md) - The server closes the stores it opened when it stops, so the process exits and the test suite's exit status reflects its results.

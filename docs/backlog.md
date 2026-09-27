@@ -245,9 +245,6 @@ owners that spec covers.
   git directory, `python -m agentic_inquiry.cli entity foo` prints
   `Entity not found: foo` and does not exit. Close the facade in a
   `finally` in each command.
-- **`ai server` never shuts its MCP services down:** the FastAPI lifespan
-  in `agentic_inquiry/server/app.py` does not call `MCPServer.shutdown()`,
-  so `server/lifecycle.py` falls back to SIGKILL. Call it on lifespan exit.
 - **`close()` paths skip releasing the connection on error:**
   `EventSystem.stop` returns `False` on a writer timeout before it closes
   the store; `StorageFacade.close` stops at the first provider that
