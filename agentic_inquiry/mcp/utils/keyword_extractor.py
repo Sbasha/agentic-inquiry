@@ -5,7 +5,6 @@ import re
 from collections import Counter
 from typing import Any, Dict, List
 
-from agentic_inquiry.database.filters import eq
 from agentic_inquiry.storage.facade import StorageFacade
 
 
