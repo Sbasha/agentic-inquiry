@@ -31,15 +31,26 @@ async def db_manager(test_config: Config) -> LanceDBManager:
 
 
 @pytest.fixture
-async def memory_system(test_config: Config, db_manager: LanceDBManager):
+def episodic_adapter(db_manager: LanceDBManager) -> LanceDBMemoryAdapter:
+    return LanceDBMemoryAdapter(db_manager, table_name="memory_episodic_medium")
+
+
+@pytest.fixture
+def semantic_adapter(db_manager: LanceDBManager) -> LanceDBMemoryAdapter:
+    return LanceDBMemoryAdapter(db_manager, table_name="memory_semantic_high")
+
+
+@pytest.fixture
+async def memory_system(
+    test_config: Config,
+    db_manager: LanceDBManager,
+    episodic_adapter: LanceDBMemoryAdapter,
+    semantic_adapter: LanceDBMemoryAdapter,
+):
     """Create a fully initialized memory system."""
     embedding_service = EmbeddingService(test_config)
 
-    # Create adapters for persistent memory tiers
-    # Note: working memory is in-memory only, no adapter needed
-    episodic_adapter = LanceDBMemoryAdapter(db_manager, table_name="memory_episodic_medium")
-    semantic_adapter = LanceDBMemoryAdapter(db_manager, table_name="memory_semantic_high")
-
+    # Working memory is in-memory only, so it has no adapter.
     system = MemorySystem(
         config=test_config,
         embedding_service=embedding_service,
@@ -62,6 +73,21 @@ def test_context():
         session_id="test_session",
         conversation_id="test_conversation",
     )
+
+
+def _bump_access_after_first_read(
+    adapter: LanceDBMemoryAdapter, monkeypatch: pytest.MonkeyPatch, access_count: int
+) -> None:
+    """Record an access from another writer right after the next read returns."""
+    real_get_by_id = adapter.get_by_id
+
+    async def get_then_concurrent_write(item_id: str):
+        monkeypatch.setattr(adapter, "get_by_id", real_get_by_id)
+        item = await real_get_by_id(item_id)
+        await adapter.update(item_id, {"access_count": access_count})
+        return item
+
+    monkeypatch.setattr(adapter, "get_by_id", get_then_concurrent_write)
 
 
 class TestCompleteMemoryLifecycle:
@@ -109,6 +135,54 @@ class TestCompleteMemoryLifecycle:
         # Verify deletion
         deleted_item = await memory_system.episodic_memory.get_by_id(item.id)
         assert deleted_item is None
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        ("importance", "tier"), [(0.8, "episodic"), (0.95, "semantic")]
+    )
+    async def test_update_importance_keeps_concurrent_access_update(
+        self,
+        memory_system,
+        test_context,
+        episodic_adapter,
+        semantic_adapter,
+        monkeypatch,
+        importance,
+        tier,
+    ):
+        """An access recorded between the setter's read and write survives."""
+        adapter = episodic_adapter if tier == "episodic" else semantic_adapter
+        item = await memory_system.store(
+            content="User prefers Python", context=test_context, importance=importance
+        )
+        _bump_access_after_first_read(adapter, monkeypatch, access_count=5)
+
+        assert await memory_system.update_importance(item.id, 0.5) is True
+
+        stored = await adapter.get_by_id(item.id)
+        assert stored.importance == 0.5
+        assert stored.access_count == 5
+        assert await adapter.count(filters={"id": item.id}) == 1
+
+    @pytest.mark.asyncio
+    async def test_update_confidence_keeps_concurrent_access_update(
+        self, memory_system, test_context, semantic_adapter, monkeypatch
+    ):
+        """An access recorded between the setter's read and write survives."""
+        item = await memory_system.store(
+            content="Python is a programming language",
+            context=test_context,
+            importance=0.95,
+            confidence=0.9,
+        )
+        _bump_access_after_first_read(semantic_adapter, monkeypatch, access_count=5)
+
+        assert await memory_system.update_confidence(item.id, 0.4) is True
+
+        stored = await semantic_adapter.get_by_id(item.id)
+        assert stored.confidence == 0.4
+        assert stored.access_count == 5
+        assert await semantic_adapter.count(filters={"id": item.id}) == 1
 
     @pytest.mark.asyncio
     async def test_working_to_episodic_to_semantic(

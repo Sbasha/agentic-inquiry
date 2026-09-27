@@ -163,8 +163,7 @@ class SemanticMemory:
 
         # Update access statistics if requested
         if update_access:
-            item.access()
-            await self.update(item)
+            await self._record_access(item)
 
         logger.debug("Retrieved fact from semantic memory: id=%s", item_id)
         return item
@@ -190,6 +189,34 @@ class SemanticMemory:
         await self._storage.store(item, vector)
 
         logger.debug("Updated fact in semantic memory: id=%s", item.id)
+
+    async def update_fields(self, item_id: str, updates: dict[str, object]) -> bool:
+        """
+        Set scalar fields of a stored fact without rewriting the rest of it.
+
+        Use this rather than update() when changing a score or status, so a
+        concurrent writer of other fields (such as access statistics) is not
+        overwritten.
+
+        Args:
+            item_id: Unique identifier of the memory item
+            updates: MemoryItem field name to new value
+
+        Returns:
+            True if the item was found and updated, False otherwise
+        """
+        if not self._initialized:
+            await self.initialize()
+
+        return await self._storage.update(item_id, updates)
+
+    async def _record_access(self, item: MemoryItem) -> None:
+        """Count an access on item and persist only its access fields."""
+        item.access()
+        await self._storage.update(
+            item.id,
+            {"access_count": item.access_count, "accessed_at": item.accessed_at},
+        )
 
     async def delete(self, item_id: str) -> bool:
         """
@@ -344,8 +371,9 @@ class SemanticMemory:
         """Persist access count and accessed_at updates for retrieved items.
 
         Called as a fire-and-forget task from retrieve() so it never blocks
-        the recall path. Re-fetches each item from the DB before updating to
-        avoid overwriting concurrent writes (e.g., update_importance calls).
+        the recall path, which means it can overlap the caller's own writes
+        (e.g., update_importance). It re-fetches each item for the current
+        count and writes only the access fields, so those writes survive.
         All items are updated in parallel via asyncio.gather.
         Failures are logged but do not propagate.
 
@@ -356,8 +384,7 @@ class SemanticMemory:
             try:
                 fresh_item = await self._storage.get_by_id(item_id)
                 if fresh_item is not None:
-                    fresh_item.access()
-                    await self.update(fresh_item)
+                    await self._record_access(fresh_item)
             except Exception:
                 logger.debug(
                     "Failed to persist access stats for %s item %s",
