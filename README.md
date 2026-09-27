@@ -193,7 +193,7 @@ Save and recall project insights across Claude Code sessions:
 /ai:memory recall "authentication"
 ```
 
-Memory has three tiers: working (current session), episodic (weeks), and semantic (permanent). Important insights are automatically promoted to longer-lived tiers through a consolidation engine that runs in the background.
+Memory has three tiers: working (current session), episodic (weeks), and semantic (long-term). Important insights are automatically promoted to longer-lived tiers through a consolidation engine that runs in the background.
 
 ### Onboarding
 

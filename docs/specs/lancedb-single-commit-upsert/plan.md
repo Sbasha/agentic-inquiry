@@ -161,7 +161,7 @@ that describe delete + store or append.
 
 **Mode:** TDD (integration, on-disk LanceDB)
 **Depends on:** T3, memory-update-atomicity task 3 (layer `update_fields`)
-**Touches:** agentic_inquiry/memory/system.py, docs/backlog.md, docs/specs/memory-update-atomicity/spec.md, tests/memory/test_memory_row_replace_atomicity.py, tests/memory/test_negative_truths.py
+**Touches:** agentic_inquiry/memory/system.py, docs/backlog.md, tests/memory/test_memory_row_replace_atomicity.py, tests/memory/test_negative_truths.py
 **Tests:**
 - `test_negate_keeps_concurrent_access_count[episodic|semantic]` and
   `test_supersede_keeps_concurrent_access_count[episodic|semantic]`: on a real
@@ -187,8 +187,8 @@ drops its call into `update_importance` and its re-fetch; negate and
 supersede move on to later tiers when the item moved mid-call, and warn when
 it is gone. Remove the mock negate test in `test_negative_truths.py`, which
 the on-disk tests cover. Remove the `docs/backlog.md` entry for whole-row
-memory writes, and the matching out-of-scope sentence in the
-memory-update-atomicity spec.
+memory writes. The memory-update-atomicity spec is shipped and frozen, so its
+out-of-scope sentence stays as written.
 **Done when:** listed tests green; `tests/memory` shows no new failures
 against the rebased base.
 
@@ -196,13 +196,16 @@ against the rebased base.
 
 **Mode:** TDD (integration, on-disk LanceDB)
 **Depends on:** T4
-**Touches:** agentic_inquiry/memory/consolidation.py, tests/memory/test_consolidation_engine.py, docs/backlog.md
+**Touches:** agentic_inquiry/memory/consolidation.py, tests/memory/test_consolidation_engine.py, docs/backlog.md, README.md
 **Tests:**
 - `test_promote_to_semantic_moves_item_out_of_episodic`: an item above the
   semantic threshold is in semantic and gone from episodic; one below it
   stays in episodic only. Seen red first.
 - `test_failed_semantic_store_keeps_episodic_copy`: a semantic store that
   raises leaves the episodic copy and counts nothing.
+- `test_failed_episodic_delete_keeps_promotion`: an episodic delete that
+  raises still counts the promotion, leaves the item in both tiers, and logs
+  a warning naming the id.
 - `test_consolidation_preserves_metadata` looks for the item in semantic
   memory, where a full consolidation of an importance-0.9 item now leaves it.
 **Approach:** In `ConsolidationEngine.promote_to_semantic`, delete the

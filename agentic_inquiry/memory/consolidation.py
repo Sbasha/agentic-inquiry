@@ -335,13 +335,15 @@ class ConsolidationEngine:
         self, items: list[MemoryItem], extract_patterns: bool = True
     ) -> int:
         """
-        Promote memory items from episodic to semantic memory.
+        Move memory items from episodic to semantic memory.
 
-        Items are filtered by importance and frequency thresholds. Optionally
-        extracts concepts and patterns from the items before promotion.
+        Items are filtered by importance and frequency thresholds. Each
+        promoted item's episodic row is deleted once its semantic store
+        succeeds. Optionally extracts concepts and patterns from the items
+        before promotion.
 
         Args:
-            items: List of episodic MemoryItem objects to consider for promotion
+            items: Items read from episodic memory to consider for promotion
             extract_patterns: Whether to extract concepts from patterns (default: True)
 
         Returns:

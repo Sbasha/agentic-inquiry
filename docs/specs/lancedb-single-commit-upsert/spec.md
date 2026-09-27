@@ -29,7 +29,8 @@ find the key absent and insert its own copy. Storing a memory item whose id is
 already stored replaces that row.
 
 Consolidation moves an item it promotes from episodic to semantic memory, so
-one id is never stored in both tiers.
+one id is stored in both tiers only when deleting the episodic copy fails,
+which logs a warning.
 
 `MemorySystem.negate_memory()` and `MemorySystem.supersede_memory()` change a
 stored episodic or semantic item's status with one `update_fields()` call,
@@ -101,9 +102,9 @@ directly: a lone write raises the table's `version` by exactly one.
       supersede's read and its write, it is marked there; if it is deleted,
       supersede logs a warning and still returns the new item.
 - [x] Consolidation moves an item it promotes from episodic to semantic
-      memory: once the semantic store succeeds, the episodic copy is deleted,
-      so no id is stored in both tiers. When the semantic store fails, the
-      episodic copy stays.
+      memory: once the semantic store succeeds, the episodic copy is deleted.
+      When the semantic store fails, the episodic copy stays; when the delete
+      fails, the promotion stands and a warning is logged.
 
 ## Assumptions
 
@@ -149,6 +150,16 @@ directly: a lone write raises the table's `version` by exactly one.
 - Product: consolidation deletes the episodic copy of an item it promotes to
   semantic memory, giving up the episodic record of that event (source: user
   confirmation 2026-09-26).
+- Technical: moving promoted items has side effects the move itself does not
+  change: they fall under semantic memory's capacity-500, lowest-confidence
+  eviction instead of episodic's, items recalled more than once move at any
+  importance, recency-weighted retrieval scores a semantic item at a flat
+  0.3, and later consolidations no longer see moved items when extracting
+  concepts. A negate or supersede that lands while consolidation embeds an
+  item is overwritten by the item's earlier read (source: review of
+  `agentic_inquiry/memory/consolidation.py`, `layers/semantic.py`,
+  `retrieval.py`, 2026-09-26;
+  [backlog](../../backlog.md#lancedb-single-commit-upsert)).
 - Process: `update_fields()` and `LanceDBManager.update_by_ids()` come from
   memory-update-atomicity, which this change is built on (source:
   `feature/memory-update-lost-write` at `f5b36af`).

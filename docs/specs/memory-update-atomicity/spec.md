@@ -29,9 +29,8 @@ change, in one LanceDB commit per item. None of the three can revert a
 field another one wrote or leave a second row for the same id.
 
 Out of scope, tracked in [`docs/backlog.md`](../../backlog.md#memory-update-atomicity):
-two overlapping accesses of one item, which can count once. `negate_memory`
-and `supersede_memory` write only their columns under
-[`lancedb-single-commit-upsert`](../lancedb-single-commit-upsert/spec.md).
+`negate_memory` and `supersede_memory`, which still replace the whole row,
+and two overlapping accesses of one item, which can count once.
 
 ## Acceptance Criteria
 

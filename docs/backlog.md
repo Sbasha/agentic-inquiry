@@ -156,6 +156,26 @@ leaves out.
   from working memory while supersede awaited the new item's embedding, the
   store re-inserts it and, at capacity, evicts an unrelated item. Unblocked
   by a working-memory presence check that does not count as an access.
+- **Consolidation re-stores a stale read:** `consolidate()` reads the
+  episodic items once, embeds them one after another, then upserts that read
+  into semantic memory with every column and deletes the episodic row. A
+  negate or supersede that marks the episodic row in between is overwritten
+  by `status=ACTIVE` in semantic and erased with the episodic row. Unblocked
+  by re-reading the item, or carrying over its status, just before the
+  semantic store.
+- **Side effects of moving promoted items:** promoted items now live only in
+  semantic memory, so they are evicted by its capacity-500,
+  lowest-confidence rule rather than episodic's oldest-first one, and an
+  evicted item is gone for good; items recalled twice move at any importance
+  through the `access_count > 1` rule; recency-weighted retrieval scores them
+  at a flat 0.3; and later consolidations' concept extraction no longer sees
+  them. Each needs a product call: tune the promotion rules, semantic
+  capacity, or recency scoring.
+- **Working items lost on a failed episodic store:** `consolidate()` deletes
+  every working item at or above the episodic threshold whether or not
+  `promote_to_episodic` stored it, so a failed store loses the item.
+  Unblocked by having `promote_to_episodic` return the ids it stored and
+  deleting only those.
 - **Inferred `mcp_sessions` schema:** the table is created from the first
   session's record, so a first session with `description` or `log_file`
   unset makes those columns null-typed, and every later persist that sets

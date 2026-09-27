@@ -6,6 +6,7 @@ import pytest
 
 pytestmark = pytest.mark.integration
 
+import logging
 import uuid
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
@@ -575,3 +576,32 @@ async def test_failed_semantic_store_keeps_episodic_copy(
 
     assert promoted_count == 0
     assert await episodic_memory.get_by_id(item.id, update_access=False) is not None
+
+
+@pytest.mark.asyncio
+async def test_failed_episodic_delete_keeps_promotion(
+    consolidation_engine: ConsolidationEngine,
+    episodic_memory: EpisodicMemory,
+    semantic_memory: SemanticMemory,
+    sample_context: MemoryContext,
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    item = _episodic_item(sample_context, importance=0.95)
+    await episodic_memory.store(item)
+    monkeypatch.setattr(
+        episodic_memory, "delete", AsyncMock(side_effect=RuntimeError("disk full"))
+    )
+
+    with caplog.at_level(logging.WARNING, logger="agentic_inquiry.memory.consolidation"):
+        promoted_count = await consolidation_engine.promote_to_semantic(
+            [item], extract_patterns=False
+        )
+
+    assert promoted_count == 1
+    assert await semantic_memory.get_by_id(item.id, update_access=False) is not None
+    assert await episodic_memory.get_by_id(item.id, update_access=False) is not None
+    assert any(
+        record.levelno == logging.WARNING and item.id in record.getMessage()
+        for record in caplog.records
+    )
