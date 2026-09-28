@@ -58,3 +58,17 @@ def _issue(
 )
 def test_candidate_rejects_before_touching_git(pr: dict[str, Any]) -> None:
     assert candidate("o/r", pr) is None
+
+
+def test_names_changed_file_matches_name_module_or_path() -> None:
+    from evals.fresh import names_changed_file
+
+    task = {"problem_statement": "", "gold_lines": {"src/pkg/core.py": [1]}}
+    for text, expected in [
+        ("see core.py line 3", True),
+        ("pkg.core raises", False),
+        ("src.pkg.core raises", True),
+        ("in src/pkg/core.py", True),
+        ("the parser breaks", False),
+    ]:
+        assert names_changed_file(dict(task, problem_statement=text)) is expected

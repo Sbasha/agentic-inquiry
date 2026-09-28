@@ -694,9 +694,16 @@ def _load_fresh() -> Suite:
     return load_fresh()
 
 
+def _load_fresh_b() -> Suite:
+    from evals.fresh import MANIFEST_B, load_fresh
+
+    return load_fresh(MANIFEST_B, "fresh-b")
+
+
 LOADERS: dict[str, Callable[[], Suite]] = {
     "swebench": load_swebench,
     "fresh": _load_fresh,
+    "fresh-b": _load_fresh_b,
     "erpnext": load_erpnext,
     "locomo": load_locomo,
     "longmemeval": load_longmemeval,

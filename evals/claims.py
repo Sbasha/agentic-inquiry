@@ -180,7 +180,10 @@ def summarize(
     return summary
 
 
-FROZEN_CODE_HASH = "a45c43efd352e8db"  # RFC-0004: e32fb55 plus the ai search exit fix
+# The inquiry each claim froze: RFC-0004 (e32fb55 plus the ai search exit fix) and
+# RFC-0005 (a0faf7b, with the plugin's native search tool).
+FROZEN_CODE_HASH = "a45c43efd352e8db"
+FROZEN_CODE_HASHES = {"c3b": "4c370115c21d645b"}
 
 
 def begin(claim: str, split: str, arms: dict[str, Any], options: dict[str, Any]) -> str:
@@ -192,13 +195,12 @@ def begin(claim: str, split: str, arms: dict[str, Any], options: dict[str, Any])
     from evals.run import LEDGER, begin_test_run, guard_clean_tree
 
     guard_clean_tree()
-    if (
-        os.environ.get("EVALS_INQUIRY_CONFIG")
-        or Inquiry().code_hash != FROZEN_CODE_HASH
-    ):
+    if os.environ.get(
+        "EVALS_INQUIRY_CONFIG"
+    ) or Inquiry().code_hash != FROZEN_CODE_HASHES.get(claim, FROZEN_CODE_HASH):
         raise SystemExit(
             f"inquiry is not the frozen system (code_hash {Inquiry().code_hash}, "
-            f"expected {FROZEN_CODE_HASH}, EVALS_INQUIRY_CONFIG unset)"
+            f"expected {FROZEN_CODE_HASHES.get(claim, FROZEN_CODE_HASH)}, EVALS_INQUIRY_CONFIG unset)"
         )
     run_id = begin_test_run(f"claim-{claim}", arms, options)
     _git("add", str(LEDGER))
@@ -1194,25 +1196,29 @@ def c3_arm(arm: str, prepared: dict[str, Any], scratch: Path) -> dict[str, Any]:
     }
 
 
-def run_c3(split: str, jobs: int, limit: int | None = None) -> Path:
+def agent_claim(
+    claim: str,
+    split: str,
+    jobs: int,
+    suite: Any,
+    cases: Sequence[Case],
+    spec_for: Callable[[str, dict[str, Any], Path], dict[str, Any]],
+    tool_use: Callable[[str, dict[str, Any]], dict[str, Any]],
+    provenance: dict[str, Any],
+) -> Path:
+    """Run every arm's agent on every task and score it (C3 and C3b).
+
+    ``spec_for`` gives an arm's working directory, tools, MCP servers, environment
+    and guidance; ``tool_use`` reads what the run did with its tool, and returns
+    ``infra_error`` when the run did not get the tools its arm defines.
+    """
     import tempfile
     from concurrent.futures import ThreadPoolExecutor
 
     from evals.agent import MAX_TURNS, run_agent
-    from evals.data import LOADERS
 
-    if split == "test":
-        suite = LOADERS["fresh"]()
-        cases = [c for c in suite.cases if c.split == "test"]
-    else:
-        # Dev smoke runs use SWE-bench dev tasks; the mined tasks are all held out.
-        suite = LOADERS["swebench"]()
-        cases = sorted(
-            (c for c in suite.cases if c.split == "dev"),
-            key=lambda c: hashlib.sha256(f"{SEED}:{c.id}".encode()).hexdigest(),
-        )[: limit or 3]
     run_id = begin(
-        "c3",
+        claim,
         split,
         {arm: {"agent_model": AGENT_MODEL} for arm in C3_ARMS},
         {"items": len(cases), "jobs": jobs, "suite": suite.name},
@@ -1225,18 +1231,18 @@ def run_c3(split: str, jobs: int, limit: int | None = None) -> Path:
         corpus = prepared[case.corpus]
         with tempfile.TemporaryDirectory() as scratch:
             try:
-                spec = c3_arm(arm, corpus, Path(scratch))
+                spec = spec_for(arm, corpus, Path(scratch))
                 record = run_agent(
                     # One turn is kept for the answer itself.
                     C3_PROMPT.format(query=case.query, budget=MAX_TURNS - 1),
                     spec["cwd"],
-                    {"mcpServers": {}},
+                    spec.get("config", {"mcpServers": {}}),
                     spec["allowed"],
-                    [],
+                    spec.get("hidden", []),
                     AGENT_MODEL,
                     guidance=spec["guidance"],
-                    extra_tools=spec["tools"],
-                    extra_env=spec["env"],
+                    extra_tools=spec.get("tools", ()),
+                    extra_env=spec.get("env", {}),
                 )
                 cited = cited_locations(
                     record["text"], [Path(spec["cwd"]), corpus["root"]]
@@ -1244,7 +1250,9 @@ def run_c3(split: str, jobs: int, limit: int | None = None) -> Path:
                 cost = agent_cost(record["model_usage"])
             except Exception as exc:  # noqa: BLE001 - a failure scores as wrong
                 return _fail(arm, case.id, str(exc))
-        own_calls, other_commands = used_tool(arm, record["tool_uses"])
+        use = tool_use(arm, record)
+        if use.get("infra_error"):
+            return dict(_fail(arm, case.id, use["infra_error"]), infra=True)
         row = {
             "arm": arm,
             "item": case.id,
@@ -1252,8 +1260,7 @@ def run_c3(split: str, jobs: int, limit: int | None = None) -> Path:
             "cited": cited,
             "turns": record["turns"],
             "tool_calls": record["tool_calls"],
-            "own_tool_calls": own_calls,
-            "other_bash_commands": other_commands,
+            **use,
             "permission_denials": len(record["permission_denials"]),
             "model_usage": record["model_usage"],
             "tokens": record["input_tokens"] + record["output_tokens"],
@@ -1291,7 +1298,7 @@ def run_c3(split: str, jobs: int, limit: int | None = None) -> Path:
             }
         )
     return write_results(
-        "c3",
+        claim,
         split,
         started,
         C3_ARMS,
@@ -1301,14 +1308,135 @@ def run_c3(split: str, jobs: int, limit: int | None = None) -> Path:
             "agent_model": AGENT_MODEL,
             "max_turns": MAX_TURNS,
             "prompt_sha256": hashlib.sha256(C3_PROMPT.encode()).hexdigest(),
-            "inquiry_guidance_sha256": hashlib.sha256(
-                INQUIRY_GUIDANCE.encode()
-            ).hexdigest(),
             "items": [c.id for c in cases],
             "suite": suite.name,
             "data_sha256": suite.data_sha256,
+            **provenance,
         },
         run_id,
+    )
+
+
+def _dev_cases(limit: int | None) -> tuple[Any, list[Case]]:
+    """Dev smoke runs use SWE-bench dev tasks; the mined tasks are all held out."""
+    from evals.data import LOADERS
+
+    suite = LOADERS["swebench"]()
+    cases = sorted(
+        (c for c in suite.cases if c.split == "dev"),
+        key=lambda c: hashlib.sha256(f"{SEED}:{c.id}".encode()).hexdigest(),
+    )[: limit or 3]
+    return suite, cases
+
+
+def run_c3(split: str, jobs: int, limit: int | None = None) -> Path:
+    from evals.data import LOADERS
+
+    if split == "test":
+        suite = LOADERS["fresh"]()
+        cases = [c for c in suite.cases if c.split == "test"]
+    else:
+        suite, cases = _dev_cases(limit)
+
+    def tool_use(arm: str, record: dict[str, Any]) -> dict[str, Any]:
+        own, other = used_tool(arm, record["tool_uses"])
+        return {"own_tool_calls": own, "other_bash_commands": other}
+
+    return agent_claim(
+        "c3",
+        split,
+        jobs,
+        suite,
+        cases,
+        c3_arm,
+        tool_use,
+        {
+            "inquiry_guidance_sha256": hashlib.sha256(
+                INQUIRY_GUIDANCE.encode()
+            ).hexdigest()
+        },
+    )
+
+
+def c3b_arm(arm: str, prepared: dict[str, Any], scratch: Path) -> dict[str, Any]:
+    """RFC-0005: each tool as its MCP server, with RFC-0003's parallel guidance; no Bash."""
+    from evals.agent import (
+        ARM_GUIDANCE,
+        FLOOR_TOOLS,
+        GRAPHIFY_HIDDEN,
+        GRAPHIFY_TOOLS,
+        INQUIRY_TOOLS,
+    )
+    from evals.arms import Graphify, Inquiry
+
+    root = prepared["root"]
+    spec: dict[str, Any] = {"cwd": root, "guidance": ARM_GUIDANCE[arm]}
+    if arm == "floor":
+        return {**spec, "allowed": list(FLOOR_TOOLS)}
+    if arm == "graphify":
+        server = {
+            "command": str(Graphify(default_build=True).venv / "bin" / "graphify-mcp"),
+            "args": ["--graph", str(prepared["graph"] / "graph.json")],
+        }
+        return {
+            **spec,
+            "config": {"mcpServers": {"graphify": server}},
+            "allowed": [*FLOOR_TOOLS, *(f"mcp__graphify__{t}" for t in GRAPHIFY_TOOLS)],
+            "hidden": [f"mcp__graphify__{t}" for t in GRAPHIFY_HIDDEN],
+        }
+    inquiry = Inquiry()
+    inquiry_server: dict[str, Any] = {
+        # The server the plugin registers (ai mcp --tools search), bound to this index.
+        "command": str(Path(sys.executable).parent / "ai"),
+        "args": [
+            "mcp",
+            "--project-id",
+            "eval",
+            "--project-root",
+            str(root),
+            "--tools",
+            ",".join(INQUIRY_TOOLS),
+        ],
+        "env": {
+            "INQUIRY_CONFIG": str(inquiry.config_path),
+            "INQUIRY_STORAGE_ROOT": str(prepared["store"]),
+            "INQUIRY_STORAGE_DEFAULT_PROJECT_ID": "eval",
+            "INQUIRY_STORAGE_BACKEND": "lancedb",
+            "INQUIRY_LOGGING_LEVEL": "ERROR",
+            "TOKENIZERS_PARALLELISM": "false",
+            "HF_HUB_OFFLINE": "1",
+        },
+        "cwd": str(root),
+    }
+    return {
+        **spec,
+        "config": {"mcpServers": {"inquiry": inquiry_server}},
+        "allowed": [*FLOOR_TOOLS, *(f"mcp__inquiry__{t}" for t in INQUIRY_TOOLS)],
+    }
+
+
+def run_c3b(split: str, jobs: int, limit: int | None = None) -> Path:
+    from evals.agent import manifest_ok
+    from evals.data import LOADERS
+
+    if split == "test":
+        suite = LOADERS["fresh-b"]()
+        cases = [c for c in suite.cases if c.split == "test"]
+    else:
+        suite, cases = _dev_cases(limit)
+
+    def tool_use(arm: str, record: dict[str, Any]) -> dict[str, Any]:
+        if not manifest_ok(arm, record):
+            return {"infra_error": f"the agent did not get the {arm} arm's tools"}
+        own = sum(
+            n
+            for name, n in record["tool_calls"].items()
+            if name.startswith(f"mcp__{arm}__")
+        )
+        return {"own_tool_calls": own}
+
+    return agent_claim(
+        "c3b", split, jobs, suite, cases, c3b_arm, tool_use, {"integration": "mcp"}
     )
 
 
@@ -1374,4 +1502,5 @@ CLAIMS: dict[str, Callable[..., Path]] = {
     "c1b": run_c1b,
     "c2": run_c2,
     "c3": run_c3,
+    "c3b": run_c3b,
 }

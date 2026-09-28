@@ -125,9 +125,10 @@ def test_test_runs_log_start_before_work_and_bind_results(
     monkeypatch.setattr(run, "LEDGER", tmp_path / "ledger.jsonl")
     monkeypatch.setattr(run, "_git", lambda *a: "")
     monkeypatch.setattr(claims, "_git", lambda *a: "")
-    monkeypatch.setattr(
-        "evals.arms.Inquiry.code_hash", claims.FROZEN_CODE_HASH, raising=False
-    )
+    class Frozen:
+        code_hash = claims.FROZEN_CODE_HASH
+
+    monkeypatch.setattr("evals.arms.Inquiry", Frozen)
     run_id = claims.begin("c2", "test", {"inquiry": {"code_hash": "h"}}, {"items": 2})
     results = tmp_path / "r.json"
     results.write_text("{}")

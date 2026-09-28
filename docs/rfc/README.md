@@ -10,6 +10,7 @@
 | [0002](0002-afp-lifecycle-contract.md) | AFP lifecycle contract: capabilities, integration hook, mcp | accepted |
 | [0003](0003-eval-harness-and-competitor-parity.md) | Evaluation harness and competitor parity | accepted; superseded for test runs by 0004 |
 | [0004](0004-eval-claims-preregistration.md) | Claims, benchmarks and pre-registration for comparing Agentic Inquiry | accepted |
+| [0005](0005-agent-search-tool-claim.md) | Does a native search tool improve a coding agent? | accepted |
 
 ## Adding a new RFC
 

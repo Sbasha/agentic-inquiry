@@ -62,12 +62,13 @@ def main() -> None:
         "report", help="RFC-0003 hypothesis verdicts from the latest test runs"
     )
     sub.add_parser("mine-fresh", help="mine the RFC-0004 C3 task list once")
+    sub.add_parser("mine-fresh-b", help="mine the RFC-0005 C3b task list once")
     sub.add_parser(
         "claims-report",
         help="every RFC-0004 claim test run, verified against the ledger",
     )
     claim = sub.add_parser("claim", help="run one RFC-0004 claim once")
-    claim.add_argument("name", choices=["c1", "c1b", "c2", "c3"])
+    claim.add_argument("name", choices=["c1", "c1b", "c2", "c3", "c3b"])
     claim.add_argument("--split", default="dev", choices=["dev", "test"])
     claim.add_argument("--jobs", type=int, default=2)
     claim.add_argument(
@@ -110,6 +111,10 @@ def main() -> None:
         from evals.claims import claims_report
 
         raise SystemExit(claims_report())
+    elif args.command == "mine-fresh-b":
+        from evals.fresh import mine_b
+
+        print(mine_b())
     elif args.command == "mine-fresh":
         from evals.fresh import mine
 

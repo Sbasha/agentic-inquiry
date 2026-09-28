@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from pathlib import Path
 from typing import Any
@@ -26,6 +27,8 @@ from evals.data import (
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 MANIFEST = REPO_ROOT / "evals" / "tasks" / "fresh-2026.jsonl"
+MANIFEST_B = REPO_ROOT / "evals" / "tasks" / "fresh-2026b.jsonl"
+C3B_TASKS = 100
 MERGED_FROM, MERGED_TO = "2026-02-01", "2026-09-26"
 CAPS = {
     "pytest-dev/pytest": 15,
@@ -138,6 +141,43 @@ def candidate(repo: str, pr: dict[str, Any]) -> dict[str, Any] | None:
     }
 
 
+def names_changed_file(task: dict[str, Any]) -> bool:
+    """The issue text contains a changed file's name, module path or repository path."""
+    text = task["problem_statement"]
+    return any(
+        os.path.basename(path) in text
+        or path[:-3].replace("/", ".") in text
+        or path in text
+        for path in task["gold_lines"]
+    )
+
+
+def mine_b() -> Path:
+    """RFC-0005 C3b: C3's rules, minus C3's tasks and issues that name a changed file."""
+    if MANIFEST_B.exists():
+        raise SystemExit(
+            f"{MANIFEST_B.relative_to(REPO_ROOT)} exists; C3b tasks are mined once"
+        )
+    used = {
+        json.loads(line)["id"]
+        for line in MANIFEST.read_text().splitlines()
+        if line.strip()
+    }
+    eligible = [
+        task
+        for repo in CAPS
+        for pr in _pull_requests(repo)
+        if (task := candidate(repo, pr))
+        and task["id"] not in used
+        and not names_changed_file(task)
+    ]
+    eligible.sort(key=lambda t: _order(t["id"]))
+    tasks = eligible[:C3B_TASKS]
+    print(f"{len(eligible)} eligible, {len(tasks)} taken")
+    MANIFEST_B.write_text("".join(json.dumps(t, sort_keys=True) + "\n" for t in tasks))
+    return MANIFEST_B
+
+
 def mine() -> Path:
     """Apply the RFC-0004 rules and caps; refuses to overwrite an existing task list."""
     if MANIFEST.exists():
@@ -155,14 +195,14 @@ def mine() -> Path:
     return MANIFEST
 
 
-def load_fresh() -> Suite:
+def load_fresh(manifest: Path = MANIFEST, name: str = "fresh") -> Suite:
     tasks = [
-        json.loads(line) for line in MANIFEST.read_text().splitlines() if line.strip()
+        json.loads(line) for line in manifest.read_text().splitlines() if line.strip()
     ]
     cases = [
         Case(
             id=t["id"],
-            suite="fresh",
+            suite=name,
             corpus=f"{t['repo']}@{t['base_commit']}",
             query=t["problem_statement"],
             gold_units={p: 1.0 for p in t["gold_lines"]},
@@ -179,10 +219,10 @@ def load_fresh() -> Suite:
         return snapshot(repo, commit)
 
     return Suite(
-        "fresh",
+        name,
         cases,
         materialize,
         window=50,
         code=True,
-        data_sha256={"fresh": hashlib.sha256(MANIFEST.read_bytes()).hexdigest()},
+        data_sha256={name: hashlib.sha256(manifest.read_bytes()).hexdigest()},
     )
