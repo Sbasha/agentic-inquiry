@@ -101,9 +101,16 @@ MAX_INFRA_FAILURE_SHARE = 0.05
 
 
 def compare(
-    rows: list[dict[str, Any]], arms: Sequence[str], reference: str = "inquiry"
+    rows: list[dict[str, Any]],
+    arms: Sequence[str],
+    reference: str = "inquiry",
+    boundary: tuple[int, float] | None = None,
 ) -> list[dict[str, Any]]:
-    """``reference`` against every other arm on the items both have."""
+    """``reference`` against every other arm on the items both have.
+
+    With ``boundary`` (look, nominal p) a comparison is decided by the sequential
+    design instead of Holm: significant when its exact p is below the boundary.
+    """
     by_arm: dict[str, dict[str, dict[str, Any]]] = {arm: {} for arm in arms}
     for row in rows:
         by_arm[row["arm"]][row["item"]] = row
@@ -139,9 +146,13 @@ def compare(
         test["infra_failure_share"] = {k: round(v, 4) for k, v in infra.items()}
         test["valid"] = all(v <= MAX_INFRA_FAILURE_SHARE for v in infra.values())
         test["p_holm"] = adjusted[other]
-        test["significant"] = (
-            test["valid"] and adjusted[other] < 0.05 and test["a_only"] > test["b_only"]
-        )
+        if boundary is None:
+            crossed = adjusted[other] < 0.05
+        else:
+            test["look"], test["boundary"] = boundary
+            crossed = test["p"] < boundary[1]
+        test["decided"] = test["valid"] and crossed
+        test["significant"] = test["decided"] and test["a_only"] > test["b_only"]
         out.append(test)
     return out
 
@@ -250,6 +261,7 @@ def write_results(
     setup: dict[str, dict[str, Any]],
     provenance: dict[str, Any],
     run_id: str = "",
+    comparisons: list[dict[str, Any]] | None = None,
 ) -> Path:
     report = {
         "schema": "InquiryClaims/v1",
@@ -270,7 +282,7 @@ def write_results(
             **provenance,
         },
         "summary": summarize(rows, arms, setup),
-        "comparisons": compare(rows, arms),
+        "comparisons": comparisons if comparisons is not None else compare(rows, arms),
         "rows": rows,
     }
     stamp = started.strftime("%Y%m%dT%H%M%SZ")
@@ -454,6 +466,8 @@ def sample_digest(ids: Sequence[str]) -> str:
 # --------------------------------------------------------------------------
 
 C1_ITEMS = 100
+# (questions, nominal two-sided p) per look: O'Brien-Fleming spending of 0.05/3 (RFC-0004).
+C1_LOOKS = ((50, 1.91e-4), (100, 0.01661))
 C1_ARMS = ("inquiry", "full", "mem0", "cognee")
 ANSWERER = "claude-haiku-4-5-20251001"
 JUDGE = "claude-sonnet-5"
@@ -548,9 +562,14 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
 
     suite = LOADERS["longmemeval"]()
     pool = [c for c in suite.cases if c.split == split]
-    cases = (
-        c1_sample(pool, C1_ITEMS) if split == "test" else c1_sample(pool, limit or 6)
-    )
+    if split == "test":
+        # RFC-0004 C1 sequential design: look 1 on the first 50, look 2 on all 100.
+        first = c1_sample(pool, C1_LOOKS[0][0])
+        seen = {c.id for c in first}
+        stages = [first, [c for c in c1_sample(pool, C1_ITEMS) if c.id not in seen]]
+    else:
+        stages = [c1_sample(pool, limit or 6)]
+    cases = [c for stage in stages for c in stage]
     inquiry = Inquiry()
     tools = {name: Competitor(name) for name in ("mem0", "cognee")}
     run_id = begin(
@@ -562,8 +581,8 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
     started = datetime.now(timezone.utc)
     contexts: dict[tuple[str, str], dict[str, Any]] = {}
 
-    def build(case: Case) -> None:
-        """Every arm's context for one question: its own haystack, index and query."""
+    def build(case: Case, wanted: Sequence[str]) -> None:
+        """The wanted arms' contexts for one question: its haystack, index and query."""
         root = suite.materialize(case.corpus)
         history = full_history(root)
         contexts[("full", case.id)] = {
@@ -589,6 +608,8 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
         except Exception as exc:  # noqa: BLE001 - a failure scores as wrong
             contexts[("inquiry", case.id)] = {"error": str(exc)}
         for name, tool in tools.items():
+            if name not in wanted:
+                continue
             try:
                 handle = tool.index(case.corpus, root, suite)
                 info = tool.build_info(handle)
@@ -607,9 +628,6 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
                 }
             except Exception as exc:  # noqa: BLE001 - a failure scores as wrong
                 contexts[(name, case.id)] = {"error": str(exc)}
-
-    with ThreadPoolExecutor(max_workers=jobs) as executor:
-        list(executor.map(build, cases))
 
     def answer(item: tuple[str, Case]) -> dict[str, Any]:
         arm, case = item
@@ -679,9 +697,28 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
             "dollars": round(llm_dollars, 6),
         }
 
-    work = [(arm, case) for arm in C1_ARMS for case in cases]
-    with ThreadPoolExecutor(max_workers=4) as executor:
-        rows = list(executor.map(answer, work))
+    rows: list[dict[str, Any]] = []
+    active = list(C1_ARMS)
+    decided: list[dict[str, Any]] = []
+    for look, stage in enumerate(stages, start=1):
+        with ThreadPoolExecutor(max_workers=jobs) as executor:
+            list(executor.map(lambda case: build(case, active), stage))
+        with ThreadPoolExecutor(max_workers=4) as executor:
+            rows += list(
+                executor.map(answer, [(arm, case) for arm in active for case in stage])
+            )
+        if split == "test" and look == 1:
+            for test in compare(rows, active, boundary=(1, C1_LOOKS[0][1])):
+                if test["decided"]:
+                    decided.append(test)
+                    # A decided memory tool is not ingested again; the no-tool arm always runs.
+                    if test["b"] in tools:
+                        active.remove(test["b"])
+    comparisons = None
+    if split == "test":
+        done = {t["b"] for t in decided}
+        final = compare(rows, C1_ARMS, boundary=(2, C1_LOOKS[1][1]))
+        comparisons = decided + [t for t in final if t["b"] not in done]
     judged = [r for r in rows if "error" not in r]
     labelled = [r for r in judged if r["second_judge"] is not None]
     if split == "test" and len(labelled) < 0.95 * len(judged):
@@ -733,6 +770,7 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
             "items": [c.id for c in cases],
         },
         run_id,
+        comparisons,
     )
     # A person reviews these verdicts before any claim is published (RFC-0004).
     sample = target.with_name(target.stem + "-review.json")

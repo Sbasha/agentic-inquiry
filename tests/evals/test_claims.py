@@ -274,3 +274,27 @@ PINNED_JUDGE_DIGESTS = {
     "knowledge-update": "183a9b3a6197",
     "single-session-preference": "741ee3bcbea7",
 }
+
+
+def test_sequential_boundary_decides_either_direction() -> None:
+    rows = [_row("inquiry", str(i), True) for i in range(14)] + [
+        _row("mem0", str(i), False) for i in range(14)
+    ]
+    (won,) = claims.compare(
+        rows, ["inquiry", "mem0"], boundary=(1, claims.C1_LOOKS[0][1])
+    )
+    assert won["decided"] and won["significant"] and won["look"] == 1
+    rows = [_row("inquiry", str(i), False) for i in range(14)] + [
+        _row("mem0", str(i), True) for i in range(14)
+    ]
+    (lost,) = claims.compare(
+        rows, ["inquiry", "mem0"], boundary=(1, claims.C1_LOOKS[0][1])
+    )
+    assert lost["decided"] and not lost["significant"]
+    rows = [_row("inquiry", str(i), True) for i in range(13)] + [
+        _row("mem0", str(i), False) for i in range(13)
+    ]
+    (open_,) = claims.compare(
+        rows, ["inquiry", "mem0"], boundary=(1, claims.C1_LOOKS[0][1])
+    )
+    assert not open_["decided"]

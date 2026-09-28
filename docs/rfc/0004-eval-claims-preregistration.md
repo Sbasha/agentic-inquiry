@@ -125,13 +125,30 @@ An implementation review found these before any claim ran:
 ## Statistics and sample sizes
 
 - Every comparison is paired by question or task: `inquiry` against each other arm in the claim.
-- The test is the exact two-sided sign test on discordant pairs (McNemar). Holm corrects across the comparisons within a claim.
+- The test is the exact two-sided sign test on discordant pairs (McNemar). Holm corrects across the comparisons within C2 and C3; C1 uses the sequential design below.
 - A claim holds against an arm when its corrected p-value is below 0.05 and `inquiry` is ahead.
 - Time and cost are reported as paired ratios with 95% bootstrap intervals.
 - With about 30% of paired outcomes disagreeing:
   - C1's 100 questions detect a gap of about 18 points after Holm across three comparisons;
   - C2's 104 tasks and C3's 100 tasks detect about 17 points after Holm across two.
 - A smaller true gap reads as no significant difference.
+
+## C1 sequential design (amended 2026-09-28, before any C1 test run)
+
+C1's memory tools cost about $2.75 (mem0) and $7.31 (Cognee) per question at list prices, against $0.0024 for `inquiry` (dev smoke run), almost all of it ingestion. To spend no more than the evidence needs, C1 runs in two looks with early stopping:
+
+- **Look 1** uses the first 50 questions: `c1_sample(test, 50)`, a subset of the registered 100.
+- **Look 2** adds the other 50, for comparisons not yet decided.
+- **Per comparison:**
+  - α is 0.05/3 (Bonferroni across C1's three comparisons, replacing Holm for C1).
+  - It is spent with the Lan-DeMets O'Brien-Fleming function at information fractions 0.5 and 1.0.
+  - The exact two-sided McNemar p must be below 0.000191 at look 1, or below 0.01661 at look 2. The boundaries were computed for the bivariate normal of the two looks.
+- **At look 1:**
+  - A comparison that crosses its boundary is decided: in favour of whichever arm won more discordant pairs.
+  - That competitor is not ingested for look 2.
+  - There is no stopping for futility.
+- The no-tool arm is always run for all 100 questions.
+- Builds proceed cheapest first: `inquiry`, then `mem0`, then `cognee`.
 
 ## Integrity
 
