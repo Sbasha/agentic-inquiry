@@ -31,11 +31,11 @@
     "PreToolUse": [
       {
         "matcher": "Grep",
-        "description": "Suggest ai semantic search for conceptual queries",
+        "description": "Suggest the Agentic Inquiry search tool for conceptual queries",
         "hooks": [
           {
             "type": "prompt",
-            "prompt": "The user is about to run a Grep search. If the search pattern looks like a conceptual or natural language query (e.g. asking 'how', 'what', 'where', 'why', or searching for concepts like 'authentication flow' rather than literal code symbols), suggest using /ai:search instead for better results. Only suggest if the query is clearly conceptual. Here is the Grep tool input: $ARGUMENTS"
+            "prompt": "The assistant is about to run a Grep search. If the search pattern looks like a conceptual or natural-language query (for example asking how, what, where or why, or searching for a concept such as 'authentication flow' rather than a literal code symbol), suggest calling the Agentic Inquiry `search` tool (mcp__inquiry__search) with the question instead, since it finds code by meaning. Only suggest it when the query is clearly conceptual. Here is the Grep tool input: $ARGUMENTS"
           }
         ]
       }
