@@ -1,0 +1,902 @@
+[
+ {
+  "arm": "full",
+  "item": "b0479f84",
+  "type": "single-session-preference",
+  "gold": "The user would prefer documentary recommendations that are similar in style and theme to 'Our Planet', 'Free Solo', and 'Tiger King', which they have previously enjoyed. They might not prefer recommendations of documentaries that are vastly different in tone or subject matter from these titles. The preferred response utilizes the user's previously mentioned viewing history to suggest documentaries that cater to their tastes.",
+  "answer": "Based on the conversations I have access to, here are some documentary recommendations you might enjoy:\n\n**Nature and Wildlife:**\n- \"Our Planet\" - Showcases stunning natural history footage\n- \"Planet Earth\" - BBC series exploring various ecosystems\n- \"Dynasties\" - Follows five iconic animal families with intimate, character-driven storytelling\n- \"Chasing Coral\" - Documents the decline of coral reefs\n\n**True Crime:**\n- \"Tiger King\" - About big cat breeding and a eccentric personality\n- \"The Keepers\" - Investigates a nun's murder in Baltimore\n- \"The Staircase\" - Classic true-crime series about a murder trial\n\n**Adventure and Exploration:**\n- \"Free Solo\" - Follows a rock climber attempting a dangerous climb\n- \"The Last Lions\" - About the decline of lions in Africa\n\n**Other Notable Documentaries:**\n- \"Fyre: The Greatest Party That Never Happened\" - About the infamous failed music festival\n- \"The Inventor: Out for Blood in Silicon Valley\" - About the Theranos biotech scandal\n\nWould any of these interest you, or are you looking for something in a specific genre?",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "gpt4_c27434e8",
+  "type": "temporal-reasoning",
+  "gold": "Japanese Zero fighter plane model",
+  "answer": "Based on the context provided, the Japanese Zero fighter plane model was started first.\n\nAccording to Turn 1, you mentioned you \"started about a month ago\" building the 1/48 scale Japanese Zero fighter plane. The current date given is 2023/05/29, so you would have started the Zero around late April 2023.\n\nThe Ferrari 288 GTO model is mentioned as something you're \"currently working on,\" but no start date is given for it, suggesting it was begun more recently than the Zero.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "gpt4_b4a80587",
+  "type": "temporal-reasoning",
+  "gold": "The arrival of the new prime lens",
+  "answer": "Based on the context provided, I cannot definitively determine which event happened first.\n\nThe user mentions:\n- \"I just got back from a road trip to the coast with friends last week\" (stated on 2023/05/23)\n- \"I recently got a new 50mm f/1.8 prime lens that I'm still getting used to\" (stated on 2023/05/23)\n\nThe road trip would have been approximately one week before 2023/05/23 (around 2023/05/16). However, the context only says the lens was acquired \"recently\" without specifying when, so I cannot determine whether the lens was acquired before or after the road trip.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "1d4e3b97",
+  "type": "single-session-preference",
+  "gold": "The user would prefer responses that reference specific details from their previous interactions, such as the replacement of the bike's chain and cassette, and the use of a new Garmin bike computer. They might prefer explanations that connect these details to the observed improvement in bike performance. The user may not prefer responses that fail to acknowledge these specific details or provide vague, general explanations for the improvement.",
+  "answer": "Based on the context provided, I don't have information about why your bike might be performing better during Sunday group rides specifically.\n\nHowever, from the conversation history, I can see that you upgraded your bike's chain and cassette on February 1st, 2024, which was noted as contributing to an improvement in your bike's performance overall. The current date is February 20th, 2024 - about 19 days after that upgrade.\n\nPossible reasons your bike might feel like it's performing even better during group rides could include:\n- **Psychological factors**: The energy and motivation from riding with a group can make you feel like your bike is performing better\n- **Pace and momentum**: Group dynamics often create a faster, more consistent pace that feels smoother\n- **Post-upgrade settling**: Your chain and cassette may still be settling in and performing optimally after about 3 weeks\n\nBut without additional context about your specific experience or observations, I cannot definitively say what's causing the improved performance during group rides. If you'd like a more specific answer, it would help to know what aspects of performance you've noticed improving (speed, smoothness, responsiveness, etc.).",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "1568498a",
+  "type": "single-session-assistant",
+  "gold": "28. Kg3",
+  "answer": "Based on the context from your previous chess game, after 27. Kg2 Bd5+, you made the move **28. Kg3**.\n\nThis occurred on 2023/05/21 in conversation s004.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "4c36ccef",
+  "type": "single-session-assistant",
+  "gold": "Roscioli",
+  "answer": "Based on the context provided, the romantic Italian restaurant in Rome that was recommended for dinner is **Roscioli**.\n\nThis recommendation was made on May 30, 2023, when you asked which restaurant would be best for a romantic dinner. The assistant described it as having a cozy and intimate atmosphere with soft lighting, excellent service, a great wine list, and high-quality ingredients. They also mentioned the option to request a private wine and cheese tasting for a unique romantic dining experience.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "eeda8a6d",
+  "type": "multi-session",
+  "gold": "17",
+  "answer": "I don't have enough information to answer this question. While the context mentions that you have a 10-gallon tank with a betta fish named Bubbles and a 20-gallon tank where you're considering adding lemon tetras and zebra danios, the context does not specify the exact number of fish currently in either tank.\n\nTo give you an accurate total, I would need to know:\n- How many fish are currently in your 10-gallon tank (besides Bubbles)\n- How many lemon tetras and zebra danios you've actually added to your 20-gallon tank",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "10d9b85a",
+  "type": "multi-session",
+  "gold": "3 days",
+  "answer": "I do not know. The context provided does not contain any information about you attending workshops, lectures, or conferences in April. The conversations excerpted are from May 1, 2023, and discuss meditation habits, meeting new people, and fitness goals, but do not mention conference or workshop attendance in April.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "full",
+  "item": "6456829e",
+  "type": "multi-session",
+  "gold": "8",
+  "answer": "Based on the context provided, I can find information about tomatoes and cucumbers:\n\n**Tomatoes:** You initially planted **5 tomato plants**.\n\n**Cucumbers:** You mentioned having **3 cucumber plants** that are producing a lot of them.\n\nSo in total, you initially planted 5 tomato plants and 3 cucumber plants.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "76d63226",
+  "type": "single-session-user",
+  "gold": "55-inch",
+  "answer": "Based on the context provided, your new Samsung TV is a **55-inch 4K smart TV**.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "8077ef71",
+  "type": "temporal-reasoning",
+  "gold": "26 days. 27 days (including the last day) is also acceptable.",
+  "answer": "Based on the context, you attended a networking event on March 9, 2022 (Wed) from 6 PM to 8 PM.\n\nThe current date is April 4, 2022 (Mon) 21:03.\n\nThat was **26 days ago**.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "hybrid",
+  "item": "4388e9dd",
+  "type": "single-session-assistant",
+  "gold": "Andy was wearing an untidy, stained white shirt.",
+  "answer": "Based on the context from your previous conversation on 2023/05/20, Andy was wearing **an untidy, stained white shirt** in the comedy movie script scene.\n\nThis detail was mentioned both in the initial character description you provided and in the script itself that was written.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "full",
+  "item": "2788b940",
+  "type": "multi-session",
+  "gold": "5",
+  "answer": "Based on the context provided, you attend the following regular fitness classes:\n\n1. **Hip Hop Abs** - Saturdays at 10:00 AM\n2. **BodyPump** - Mondays at 6:30 PM\n3. **Yoga** - Sundays at 6:00 PM\n\nThis indicates you attend **3 fitness classes in a typical week**.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "full",
+  "item": "gpt4_d31cdae3",
+  "type": "temporal-reasoning",
+  "gold": "The family road trip across the American Southwest",
+  "answer": "Based on the context provided, the narrator took the **family road trip across the American Southwest first**.\n\nIn conversation [s028#t0], the narrator mentions: \"I've been to the Grand Canyon before with my family on a road trip across the American Southwest a few years ago.\"\n\nIn conversation [s020#t10], the narrator states: \"I did visit Germany last summer. I'm planning to visit in late September...\"\n\nSince the family road trip happened \"a few years ago\" and the solo trip to Europe happened \"last summer,\" the family road trip across the American Southwest occurred first.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "d851d5ba",
+  "type": "multi-session",
+  "gold": "$3,750",
+  "answer": "Based on the context provided, you raised a total of **$750 for charity**:\n\n1. **$250** for a local food bank at the \"Run for Hunger\" charity event (March 12th)\n2. **$500** for the American Cancer Society through a charity fitness challenge (February)",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "gpt4_85da3956",
+  "type": "temporal-reasoning",
+  "gold": "3 weeks ago",
+  "answer": "Based on the context provided, you attended the \"Summer Nights\" festival at Universal Studios Hollywood on 2023/07/15 (Sat), and the current date is 2023/08/05 (Sat).\n\nThat was **3 weeks ago**.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "full",
+  "item": "4388e9dd",
+  "type": "single-session-assistant",
+  "gold": "Andy was wearing an untidy, stained white shirt.",
+  "answer": "Based on the comedy movie script I wrote in the previous conversation (from 2023/05/22), Andy was wearing an **untidy, stained white shirt**.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "gpt4_0b2f1d21",
+  "type": "temporal-reasoning",
+  "gold": "The malfunction of the stand mixer",
+  "answer": "Based on the context provided, the stand mixer malfunction happened first.\n\nAccording to the conversation, the user mentions that they \"had to take [the stand mixer] to a repair shop last month and it took two weeks to fix\" (from the 2023/05/25 conversation, referencing an event from approximately April 2023).\n\nThe coffee maker was purchased \"about three weeks ago\" from the current date of 2023/05/25, which would be approximately early May 2023.\n\nTherefore, the stand mixer malfunction (April 2023) occurred before the purchase of the coffee maker (early May 2023).",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "gpt4_c27434e8",
+  "type": "temporal-reasoning",
+  "gold": "Japanese Zero fighter plane model",
+  "answer": "Based on the context, the user started the Japanese Zero fighter plane model first. In the initial message dated 2023/05/29, the user mentions: \"I'm currently working on a Ferrari 288 GTO model, and in my spare time, I'm also building a 1/48 scale Japanese Zero fighter plane, **which I started about a month ago**.\"\n\nThis indicates the Japanese Zero was started approximately one month prior (around late April 2023), while the Ferrari 288 GTO is described as a current project without a specific start date mentioned, implying it began more recently.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "311778f1",
+  "type": "single-session-user",
+  "gold": "10",
+  "answer": "Based on the context provided, you mentioned spending around **10 hours** watching documentaries on Netflix last month (which would be April 2023, given the current date is May 30, 2023).\n\nThis was mentioned in multiple messages from May 25, 2023, where you noted watching documentaries on topics like space exploration and artificial intelligence, particularly the series \"Cosmos.\"",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "gpt4_76048e76",
+  "type": "temporal-reasoning",
+  "gold": "bike",
+  "answer": "Based on the context provided, you took care of the **bike first in February**.\n\n- **Bike**: You had it repaired in mid-February due to gear problems.\n- **Car**: You washed your Corolla on Monday, February 27th.\n\nSince mid-February comes before February 27th, the bike repair happened first.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "6d550036",
+  "type": "multi-session",
+  "gold": "2",
+  "answer": "Based on the context provided, I can identify the following projects you've been involved with:\n\n1. **A project you're leading a team on** (s035, May 28, 2023) - involving task management in Asana, team coordination, and project planning with team members like Alex.\n\n2. **An academic project** (s039, May 29, 2023) - that you were preparing to present to your professor and classmates.\n\n3. **A workplace communication project** (s037, May 28, 2023) - focused on improving communication in your workplace.\n\n4. **A rural water access project in Nigeria** (s005, May 21, 2023) - planning to connect 100 rural villages to running water.\n\nHowever, the context doesn't provide complete details about which of these are currently active or how many you're actively leading versus have already completed. Based on the information available, I can confirm you've been involved with **at least 4 projects**, though the exact current status of each is unclear.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "8ebdbe50",
+  "type": "single-session-user",
+  "gold": "Data Science",
+  "answer": "Based on the context, you completed a **Data Science certification** last month (which would be April 2023, given the conversation dates in May 2023).",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "bf659f65",
+  "type": "multi-session",
+  "gold": "3",
+  "answer": "Based on the context provided, you have purchased or downloaded **2 music albums/EPs**:\n\n1. **\"Happier Than Ever\"** by Billie Eilish (downloaded on Spotify, mentioned on 2023/05/20)\n2. **\"Midnight Sky\"** by The Whiskey Wanderers (purchased at a music festival merchandise booth, mentioned on 2023/05/29)\n\nHowever, it's worth noting that the assistant later clarified that \"The Whiskey Wanderers\" and their EP \"Midnight Sky\" are not real artists/albums, so if we're counting only confirmed real purchases, it would be just the one Billie Eilish album.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "b0479f84",
+  "type": "single-session-preference",
+  "gold": "The user would prefer documentary recommendations that are similar in style and theme to 'Our Planet', 'Free Solo', and 'Tiger King', which they have previously enjoyed. They might not prefer recommendations of documentaries that are vastly different in tone or subject matter from these titles. The preferred response utilizes the user's previously mentioned viewing history to suggest documentaries that cater to their tastes.",
+  "answer": "Based on our past conversations, I have several documentary recommendations for you tonight!\n\nSince you enjoyed **\"Our Planet,\" \"Free Solo,\" and \"Tiger King,\"** here are some great options to watch:\n\n**Nature & Wildlife** (your stated interest):\n- **Dynasties** - Follows five animal families in the wild, narrated by David Attenborough. What makes it unique is its focus on individual family dynamics rather than just showcasing landscapes\n- **Chasing Coral** - A visually stunning documentary about coral reef decline\n- **Planet Earth** - Another BBC series similar to \"Our Planet\" with stunning natural history footage\n- **Blue Planet** - Explore the marine world with David Attenborough\n\n**If you want something different:**\n- **Fyre: The Greatest Party That Never Happened** - An entertaining true-crime/fraud documentary\n- **The Inventor: Out for Blood in Silicon Valley** - About the rise and fall of Theranos\n\nMost of these are available on Netflix or other major streaming platforms. Given that you specifically mentioned interest in nature and wildlife documentaries earlier, I'd especially recommend starting with **\"Dynasties\"** or **\"Chasing Coral\"** for tonight!",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "hybrid",
+  "item": "06878be2",
+  "type": "single-session-preference",
+  "gold": "The user would prefer suggestions of Sony-compatible accessories or high-quality photography gear that can enhance their photography experience. They may not prefer suggestions of other brands' equipment or low-quality gear.",
+  "answer": "Based on the context provided, I can see that you've had conversations about photography accessories, but I don't have a complete picture of your current setup to make comprehensive suggestions.\n\nFrom your past conversations, I know you:\n- Own a Sony A7R IV camera\n- Recently purchased a Godox V1 flash\n- Are interested in camera bags and protective cases\n\n**Accessories that would complement this setup include:**\n\n1. **Camera Bag**: You previously asked about camera bags for Sony cameras. Popular brands like Peak Design, Think Tank Photo, Lowepro, F-Stop Gear, and MindShift Gear all make bags compatible with your A7R IV and flash.\n\n2. **Flash Protection**: You've already explored cases and pouches for your Godox V1, with options ranging from hard cases to soft pouches.\n\n3. **Additional accessories** that might complement your setup (not explicitly mentioned in your past conversations) could include tripods, light modifiers for your flash, extra batteries, memory cards, or lens filters - but I don't have specific information about what else you might need without knowing more about your photography style and goals.\n\nTo give you more personalized recommendations, it would help to know: What type of photography are you primarily doing? Do you need any specific accessories for your candle photography work that was mentioned in your earlier conversation?",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "hybrid",
+  "item": "1d4e3b97",
+  "type": "single-session-preference",
+  "gold": "The user would prefer responses that reference specific details from their previous interactions, such as the replacement of the bike's chain and cassette, and the use of a new Garmin bike computer. They might prefer explanations that connect these details to the observed improvement in bike performance. The user may not prefer responses that fail to acknowledge these specific details or provide vague, general explanations for the improvement.",
+  "answer": "Based on the context provided, I can see that you replaced your bike's chain and cassette on February 1st, and you mentioned that this replacement \"has contributed to an improvement in the bike's performance.\"\n\nThe improved performance you're noticing during your Sunday group rides is likely due to this upgrade. New chain and cassette components typically provide:\n\n- **Better efficiency**: Fresh drivetrain components transfer power more effectively\n- **Smoother shifting**: A new cassette and chain work together more smoothly\n- **Reduced friction**: Unworn components have less resistance\n- **Better grip and traction**: New cassette teeth engage more effectively with the chain\n\nSince you upgraded these key components about 3 weeks ago (on February 1st), the performance gains you're experiencing now are probably a direct result of that maintenance work.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "06db6396",
+  "type": "knowledge-update",
+  "gold": "5",
+  "answer": "Based on the context provided, you have completed **5 projects** since starting painting classes.\n\nThis is mentioned in your message from October 9, 2023, where you stated: \"I just finished my 5th project since starting painting classes, and I'm feeling pretty accomplished!\"",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "1e043500",
+  "type": "single-session-user",
+  "gold": "Summer Vibes",
+  "answer": "Based on the context provided, the name of the playlist you created on Spotify is **Summer Vibes**. You mentioned it contains chill tracks that are perfect for relaxing or working out.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "gpt4_b4a80587",
+  "type": "temporal-reasoning",
+  "gold": "The arrival of the new prime lens",
+  "answer": "Based on the context provided, the arrival of the new prime lens happened first.\n\nIn Session s011, Turn 1 (2023/05/23 08:02), the user mentions they \"recently got a new 50mm f/1.8 prime lens.\" Then in Turn 3 of the same session, they describe taking the lens on a coastal trip and getting portraits of friends.\n\nThe coastal road trip is described as happening after acquiring the lens, as the user says they \"took it with me on the coastal trip\" (referring to the lens they had just acquired).",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "6456829e",
+  "type": "multi-session",
+  "gold": "8",
+  "answer": "Based on the context provided:\n\n- **Tomatoes**: 5 plants initially\n- **Cucumbers**: 3 plants\n\nThe user mentioned planting \"5 tomato plants initially\" on 2023/05/29, and having \"3 plants that are producing a lot of them\" for cucumbers on 2023/05/28.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "bbf86515",
+  "type": "temporal-reasoning",
+  "gold": "4 days.",
+  "answer": "Based on the context provided:\n\n- **Turbocharged Tuesdays** event: June 14th, 2023\n- **Rack Fest** event: June 18th, 2023\n\nThe difference is **4 days** \u2014 you participated in Turbocharged Tuesdays 4 days before Rack Fest.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "full",
+  "item": "f35224e0",
+  "type": "multi-session",
+  "gold": "27",
+  "answer": "Based on the context provided, you've listened to approximately **27 episodes** total:\n\n- **\"How I Built This\"**: 15 episodes (mentioned in conversation s045#t3)\n- **\"My Favorite Murder\"**: 12 episodes (mentioned in conversation s032#t0, where you said you've \"finished around 15 episodes so far,\" but this was later clarified to be approximately 12 based on context)\n\nHowever, I should note that the exact total for \"My Favorite Murder\" isn't explicitly stated in the context, so this is an approximate count.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "09ba9854",
+  "type": "multi-session",
+  "gold": "$50",
+  "answer": "Based on the context provided, I can give you an estimate of the savings:\n\nAccording to the assistant's previous response from May 26, 2023:\n- **Train cost**: approximately $20-$30\n- **Taxi cost**: approximately $60\n\n**Estimated savings: $30-$40** by taking the train instead of a taxi.\n\nThe assistant noted that $60 for a taxi from the airport to a hotel in Tokyo is \"relatively reasonable,\" but the train is clearly the more budget-friendly option, potentially saving you about half the cost of a taxi ride.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "dense",
+  "item": "10e09553",
+  "type": "knowledge-update",
+  "gold": "7",
+  "answer": "Based on the context provided, you caught **7 largemouth bass** with Alex on your earlier fishing trip to Lake Michigan on **7/10** (July 10, 2023), which was before the 7/22 trip where you caught 9 largemouth bass.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "full",
+  "item": "a08a253f",
+  "type": "multi-session",
+  "gold": "4 days.",
+  "answer": "Based on the context provided, you attend fitness classes **3 days a week**:\n\n- **Tuesday**: Zumba class at 6:30 pm\n- **Thursday**: Zumba class at 6:30 pm\n- **Saturday**: Weightlifting class at 10:00 am",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "dense",
+  "item": "ef9cf60a",
+  "type": "multi-session",
+  "gold": "$300",
+  "answer": "Based on the context provided, you spent **$200** on a gift for your sister - a silver necklace with a small pendant from Tiffany's (mentioned in conversations from May 22, 2023).\n\nNote: There is also mention of a $100 gift card to her favorite spa in a later conversation (May 30, 2023), but the primary gift amount referenced is the $200 Tiffany's necklace.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "dense",
+  "item": "d52b4f67",
+  "type": "single-session-user",
+  "gold": "The Grand Ballroom",
+  "answer": "Based on the context provided, you attended your cousin's wedding at the **Grand Ballroom** last weekend (around May 20-21, 2023).",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "hybrid",
+  "item": "cf22b7bf",
+  "type": "knowledge-update",
+  "gold": "10 pounds",
+  "answer": "Based on the context provided, you have lost **10 pounds** since you started going to the gym consistently 3 months ago.\n\nThis is mentioned in a conversation from June 21, 2023, where you stated: \"I've lost 10 pounds since I started going consistently to the gym 3 months ago.\"",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "09ba9854",
+  "type": "multi-session",
+  "gold": "$50",
+  "answer": "Based on the context provided, here's the savings comparison:\n\n**Train:** approximately $20-$30 (or \u00a52,000-3,000 for cheaper options like the Keisei Skyliner)\n\n**Taxi:** approximately $60 (or \u00a56,000-20,000 depending on the airport and destination)\n\n**Savings: approximately $30-$40** by taking the train instead of a taxi.\n\nThis assumes you're traveling from either Narita or Haneda Airport to a hotel in Tokyo. The exact savings will depend on which train option you choose and which airport you're departing from.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "dense",
+  "item": "4adc0475",
+  "type": "multi-session",
+  "gold": "5",
+  "answer": "Based on the context provided:\n\n- **Goals**: 3 goals (mentioned on 2023/05/26)\n- **Assists**: 2 assists (mentioned on 2023/05/28)\n\n**Total: 5 goals and assists combined**\n\nHowever, it's worth noting that in one message (2023/05/28), you mentioned having \"several goals in the league so far,\" which is slightly vague. The most specific numbers given are 3 goals and 2 assists.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "gpt4_0b2f1d21",
+  "type": "temporal-reasoning",
+  "gold": "The malfunction of the stand mixer",
+  "answer": "Based on the context provided:\n\n- **Stand mixer malfunction**: Occurred last month before 2023/05/25 (so around April 2023)\n- **Coffee maker purchase**: Bought about three weeks ago before 2023/05/25 (so around early May 2023)\n\n**The stand mixer malfunction happened first.**",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "gpt4_d6585ce9",
+  "type": "temporal-reasoning",
+  "gold": "my parents",
+  "answer": "I don't know who you went with to the music event last Saturday.\n\nThe context mentions that you attended a jazz night at a local bar on 2023/04/08 (which was a Saturday), but it doesn't specify who you went with\u2014only that you enjoyed live music in an intimate setting.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "8979f9ec",
+  "type": "multi-session",
+  "gold": "8 meals",
+  "answer": "Based on the context provided:\n\n- **Chicken fajitas**: 3 meals (mentioned on 2023/05/24: \"This is the third meal I got from my chicken fajitas\")\n- **Lentil soup**: 5 lunches (mentioned on 2023/05/26: \"I just made a big batch of lentil soup that lasted me for 5 lunches\")\n\n**Total: 8 lunch meals**",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "f8c5f88b",
+  "type": "single-session-user",
+  "gold": "the sports store downtown",
+  "answer": "Based on the conversation context, you bought your new tennis racket from a sports store downtown.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "gpt4_1a1dc16d",
+  "type": "temporal-reasoning",
+  "gold": "The meeting with Rachel",
+  "answer": "Based on the context provided, the meeting with Rachel happened first.\n\n- Meeting with Rachel: April 10th, 2023\n- Pride parade: May 1st, 2023\n\nThe meeting with Rachel occurred approximately 3 weeks before the pride parade.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "6d550036",
+  "type": "multi-session",
+  "gold": "2",
+  "answer": "Based on the context provided, I can identify **2 projects** you have led or are currently leading:\n\n1. **A new product feature launch** (planned for June 2023) - You were promoted to senior software engineer three months ago (around late February 2023) and have been leading a team of five engineers on this project.\n\n2. **A project presentation for your professor and classmates** - You were preparing to present your findings to your professor and classmates (mentioned on May 29, 2023).\n\nHowever, I should note that the context is somewhat unclear about whether these are distinct projects or if the second one is academic work separate from your primary role. If you're referring only to professional projects you're leading at work, the answer would be **1 project** (the product feature launch).",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "hybrid",
+  "item": "09ba9854",
+  "type": "multi-session",
+  "gold": "$50",
+  "answer": "# Answer\n\nBased on the context provided, I can calculate the potential savings:\n\n- **Taxi cost**: approximately $60\n- **Train cost**: approximately $9-11 USD (\u00a51,000-1,200 for the Keisei Electric Railway from Narita Airport to Shinjuku Station)\n\n**Savings: approximately $49-51**\n\nBy taking the train instead of a taxi, you would save roughly $49-51. However, note that the train fare covers only the journey to the train station near your hotel; you may need to add the cost of additional transportation (taxi or walk) from the station to your actual hotel, which would reduce these savings somewhat.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "1e043500",
+  "type": "single-session-user",
+  "gold": "Summer Vibes",
+  "answer": "Based on the context provided, the playlist you created on Spotify is called **Summer Vibes**. You mentioned it in a conversation on May 21, 2023, describing it as containing chill tracks perfect for relaxing or working out.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "a08a253f",
+  "type": "multi-session",
+  "gold": "4 days.",
+  "answer": "Based on the context provided, you attend fitness classes **3 days a week**:\n\n- **Tuesday**: Zumba class at 6:30 pm\n- **Thursday**: Zumba class at 6:30 pm\n- **Saturday**: Weightlifting class at 10:00 am",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "dense",
+  "item": "6d550036",
+  "type": "multi-session",
+  "gold": "2",
+  "answer": "Based on the context provided, I can identify **at least 1 project you are currently leading**:\n\n1. **A new product feature launch** (planned for June 2023) - You mentioned being promoted to senior software engineer three months ago (around February 2023) and leading a team of five engineers on this project.\n\nThe context does not provide enough information to determine if you have led other projects in the past, so the actual total number may be higher. However, based on what's explicitly stated, you are actively leading at least this one project.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "full",
+  "item": "dad224aa",
+  "type": "knowledge-update",
+  "gold": "7:30 am",
+  "answer": "Based on the context provided, you wake up at 7:30 am on Saturdays. This is mentioned in conversation s006, where you stated: \"I've been doing pretty well on weekdays, but weekends are a different story - like the previous Saturday, I woke up at 7:30 am, which was a good start to the day.\"",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "bc149d6b",
+  "type": "multi-session",
+  "gold": "70 pounds",
+  "answer": "Based on the context provided, I can identify the following feed purchases mentioned in the past two months (since approximately late March 2023):\n\n1. **50-pound batch of layer feed** (mentioned on 2023/05/22)\n2. **20 pounds of organic scratch grains** (mentioned on 2023/05/22)\n\n**Total weight: 70 pounds**",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "3b6f954b",
+  "type": "single-session-user",
+  "gold": "University of Melbourne in Australia",
+  "answer": "Based on the context provided, you attended the **University of Melbourne** for your study abroad program. You mentioned visiting the Great Ocean Road with friends during this program.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "cf22b7bf",
+  "type": "knowledge-update",
+  "gold": "10 pounds",
+  "answer": "Based on the context provided, you have lost **10 pounds** since you started going consistently to the gym 3 months ago (as mentioned in your conversation from June 21, 2023).",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "00ca467f",
+  "type": "multi-session",
+  "gold": "2",
+  "answer": "Based on the context provided, I can identify the following doctor's appointments in March:\n\n1. **Dr. Thompson** (orthopedic surgeon) - March 20th\n2. **Dr. Smith** (primary care physician) - March 3rd\n3. **Dr. Johnson** (neurologist) - scheduled for April 1st (not in March)\n\nAdditionally, there is mention of:\n- **Physical therapy sessions** starting March 25th (twice a week)\n\nSo you went to **2 doctor's appointments in March** (Dr. Thompson on March 20th and Dr. Smith on March 3rd). The EMG test with Dr. Johnson is scheduled for April 1st, which is in April, not March.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "bc149d6b",
+  "type": "multi-session",
+  "gold": "70 pounds",
+  "answer": "Based on the context provided, I do not know the total weight of the new feed purchased in the past two months.\n\nThe only mention of feed weight is in conversation s009, where the user references a 50-pound batch of layer feed purchased on 2023/05/22. However, this is only one purchase, and there is no information about any other feed purchases in the two-month period leading up to the current date (2023/05/30).",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "hybrid",
+  "item": "gpt4_c27434e8",
+  "type": "temporal-reasoning",
+  "gold": "Japanese Zero fighter plane model",
+  "answer": "Based on the context, you started the Ferrari 288 GTO model first. \n\nIn your initial message (2023/05/29), you mentioned you were \"currently working on a Ferrari 288 GTO model\" and that you were \"also building a 1/48 scale Japanese Zero fighter plane, which I started about a month ago.\" This indicates the Ferrari was already in progress before you began the Zero fighter plane approximately one month earlier (around late April 2023).",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "full",
+  "item": "ba61f0b9",
+  "type": "knowledge-update",
+  "gold": "6",
+  "answer": "Based on the context provided, Rachel's team has 6 women out of 10 people total.\n\nThis information comes from a conversation in early 2023 where the user mentioned: \"for instance, my former manager Rachel's team is a great example of a diverse team, with 6 women out of 10 people.\"",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "gpt4_d31cdae3",
+  "type": "temporal-reasoning",
+  "gold": "The family road trip across the American Southwest",
+  "answer": "Based on the context provided, the family road trip across the American Southwest occurred first. \n\nIn Session s028, Turn 1 (dated 2023/05/22), the user mentions: \"I've been to the Grand Canyon before with my family on a road trip across the American Southwest a few years ago, but I'm looking to explore more of the state on my own this time.\"\n\nThe phrase \"a few years ago\" indicates the family road trip happened in the past, while the current solo trip to Arizona is what they are planning now.\n\nThere is no mention of a solo trip to Europe in the provided context, so I cannot determine a comparison between a European trip and the American Southwest trip based on the information given.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "8077ef71",
+  "type": "temporal-reasoning",
+  "gold": "26 days. 27 days (including the last day) is also acceptable.",
+  "answer": "Based on the context provided, you attended a networking event on 2022/03/09 (Wednesday) at 6 PM to 8 PM.\n\nThe current date is 2022/04/04 (Monday) 21:03.\n\nThe time elapsed is: **26 days ago**",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "c7dc5443",
+  "type": "knowledge-update",
+  "gold": "5-2",
+  "answer": "Based on the context provided, there are two different records mentioned for your volleyball league at different times:\n\n- **June 16, 2023**: Your volleyball team had a record of **3-2**\n- **June 30, 2023**: Your volleyball team (the Net Ninjas) had a record of **5-2**\n\nSince the current date is July 21, 2023, and the most recent record mentioned is from June 30, your team's record was **5-2** as of that date. However, I don't have information about any games played between June 30 and July 21, so I cannot tell you your current record as of today.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "gpt4_85da3956",
+  "type": "temporal-reasoning",
+  "gold": "3 weeks ago",
+  "answer": "Based on the context provided, you attended the \"Summer Nights\" festival at Universal Studios Hollywood on 2023/07/15 (Saturday).\n\nThe current date is 2023/08/05 (Saturday).\n\nThat's **3 weeks ago** (21 days).",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "1e043500",
+  "type": "single-session-user",
+  "gold": "Summer Vibes",
+  "answer": "Based on the context provided, the name of the playlist you created on Spotify is **\"Summer Vibes\"**. \n\nThis was mentioned in your conversation from May 21, 2023, where you described it as having \"all these chill tracks that are perfect for relaxing or working out.\"",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "gpt4_372c3eed",
+  "type": "multi-session",
+  "gold": "10 years",
+  "answer": "Based on the context provided, I can calculate your formal education timeline from high school to Bachelor's degree completion:\n\n- **High School**: Arcadia High School, 2010-2014 (4 years)\n- **Associate's Degree**: Pasadena City College, completed May 2016 (2 years)\n- **Bachelor's Degree**: UCLA (undergrad) - completion date not specified in the context\n\nThe context confirms you attended Arcadia High School from 2010 to 2014 and completed an Associate's degree at PCC in May 2016, then attended UCLA for undergrad. However, **the context does not specify when you completed your Bachelor's degree at UCLA**, so I cannot calculate the total number of years from high school through Bachelor's degree completion.\n\nWhat I can confirm is that from high school start to Associate's degree completion was approximately **6 years (2010-2016)**, but the total duration including your UCLA Bachelor's degree cannot be determined from the information provided.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "2ebe6c90",
+  "type": "temporal-reasoning",
+  "gold": "21 days. 22 days (including the last day) is also acceptable.",
+  "answer": "Based on the context provided, you started reading \"The Nightingale\" by Kristin Hannah on 2023/01/10 and finished it on 2023/01/31.\n\nThat's **21 days** to finish the book.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "gpt4_1a1dc16d",
+  "type": "temporal-reasoning",
+  "gold": "The meeting with Rachel",
+  "answer": "Based on the context provided:\n\n- The pride parade occurred on **May 1st**\n- The meeting with Rachel occurred on **April 10th**\n\nThe **meeting with Rachel happened first** (April 10th came before May 1st).",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "e6041065",
+  "type": "multi-session",
+  "gold": "40%",
+  "answer": "Based on the context provided, you wore 2 out of the shoes you packed on your last trip. In conversation s003, you mentioned: \"I packed a lot of shoes for my last trip, but I ended up only wearing two - my sneakers and sandals.\"\n\nHowever, the context does not specify the exact total number of shoes you packed on that last trip, so I cannot calculate the precise percentage. You would need to provide the total number of shoes you originally packed to determine the percentage.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "hybrid",
+  "item": "9bbe84a2",
+  "type": "knowledge-update",
+  "gold": "level 100",
+  "answer": "Based on the context provided, your previous goal for your Apex Legends level was **level 100 before the end of the year**.\n\nThis was mentioned in a conversation from June 16, 2023, where you stated: \"I've been playing a lot of Apex lately and I'm determined to reach level 100 before the end of the year.\"\n\nLater, in a conversation from September 30, 2023, you updated your goal to **level 150**, which you mentioned you were determined to reach eventually.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "e6041065",
+  "type": "multi-session",
+  "gold": "40%",
+  "answer": "Based on the context provided, I can answer this question using information from the first conversation excerpt (s003.txt).\n\nThe user stated: \"I packed a lot of shoes for my last trip, but I ended up only wearing two - my sneakers and sandals.\"\n\nHowever, the user did not specify the total number of shoes packed, so I cannot calculate an exact percentage. The context only tells us that out of multiple shoes packed, the user wore 2 pairs (sneakers and sandals), but the total number of shoes packed is not stated.\n\n**I do not know the exact percentage** because while we know 2 shoes were worn, the total number of shoes packed on that trip is not provided in the context.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "2ebe6c90",
+  "type": "temporal-reasoning",
+  "gold": "21 days. 22 days (including the last day) is also acceptable.",
+  "answer": "Based on the context provided, I do not know how many days it took you to finish 'The Nightingale' by Kristin Hannah.\n\nThe context shows that you finished the book on January 31, 2023 (from Session s019, Turn 1), but there is no information about when you started reading it. Without a start date, I cannot calculate how many days it took you to complete the book.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "full",
+  "item": "d52b4f67",
+  "type": "single-session-user",
+  "gold": "The Grand Ballroom",
+  "answer": "According to the context, you attended your cousin's wedding at the **Grand Ballroom** last weekend.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "2788b940",
+  "type": "multi-session",
+  "gold": "5",
+  "answer": "Based on the context provided, you attend **4 fitness classes in a typical week**:\n\n1. **Zumba** - Tuesdays and Thursdays (2 classes)\n2. **Yoga** - Sundays at 6:00 PM (1 class)\n3. **Hip Hop Abs** - Saturdays at 10:00 AM (1 class)\n\nYou also mentioned attending **BodyPump** classes, but specific days weren't detailed in the context provided.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "6ae235be",
+  "type": "single-session-assistant",
+  "gold": "Atmospheric distillation, fluid catalytic cracking (FCC), alkylation, and hydrotreating.",
+  "answer": "Based on the context from your earlier conversation on 2023/05/28, the Lake Charles Refinery uses the following refining processes:\n\n1. **Atmospheric distillation** - The initial step where crude oil is heated and separated into different fractions based on their boiling points.\n2. **Fluid catalytic cracking (FCC)** - Breaks down heavier fractions of crude oil into lighter, more valuable products such as gasoline and diesel fuel.\n3. **Alkylation** - Combines smaller molecules to form larger ones, creating high-octane gasoline components.\n4. **Hydrotreating** - Removes impurities from the gasoline and diesel fractions to improve their quality.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "full",
+  "item": "2311e44b",
+  "type": "multi-session",
+  "gold": "190",
+  "answer": "Based on the context provided, you mentioned that you're currently on page 250 of 'The Nightingale' by Kristin Hannah, and the book has 440 pages total.\n\nTherefore, you have approximately **190 pages left to read** (440 - 250 = 190 pages).",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "gpt4_45189cb4",
+  "type": "temporal-reasoning",
+  "gold": "First, I attended a NBA game at the Staples Center, then I watched the College Football National Championship game, and finally, I watched the NFL playoffs.",
+  "answer": "Based on the context provided, here are the sports events you watched in January, in chronological order:\n\n1. **January 5, 2023** - Sports-themed team-building event discussion (scavenger hunt)\n2. **January 15, 2023** - College Football National Championship: Georgia defeated Alabama 33-18\n3. **January 22, 2023** - NFL Divisional Round: Kansas City Chiefs defeated Buffalo Bills (at your friend Mike's place)",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "b6025781",
+  "type": "single-session-preference",
+  "gold": "The user would prefer responses that suggest healthy meal prep recipes, especially those that incorporate quinoa and roasted vegetables, and offer variations in protein sources. They might appreciate suggestions that build upon their existing preferences, such as new twists on chicken Caesar salads or turkey and avocado wraps. The user may not prefer responses that suggest unhealthy or high-calorie meal prep options, or those that deviate significantly from their established healthy eating habits.",
+  "answer": "Based on your past conversations, here are some suggestions for your meal prep next week:\n\n**Build on your favorites:**\n- **Lentil bolognese with quinoa** - You were enthusiastic about this combination. You can prep a large batch and freeze portions for up to 3 months.\n- **Roasted vegetables** - Prep a batch on the weekend with options like roasted broccoli with garlic and lemon, Brussels sprouts with balsamic glaze, or sweet potato wedges with rosemary.\n\n**New directions to try:**\n- **Mexican-inspired dishes** - You mentioned interest in trying chicken or veggie-based Mexican recipes. Chicken fajitas were on your radar.\n- **Sweet potato fries** with homemade dipping sauces (spicy mayo, chipotle ranch, or one of the other options suggested like garlic-lime crema or sriracha honey mustard)\n- **Homemade granola** - You were interested in making a customizable batch for snacking throughout the week\n\n**Protein options** that pair well with your preferred sides: grilled chicken, turkey breast, lentils, or mushroom-based proteins.\n\nWould you like specific recipes for any of these options?",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "0f05491a",
+  "type": "knowledge-update",
+  "gold": "120",
+  "answer": "Based on the context provided, there are conflicting answers about how many stars are needed to reach Gold level on the Starbucks Rewards app:\n\n- In earlier responses (Sessions s004 Turn 4 and s043 Turn 3), the answer was **300 stars**\n- Later corrections (Sessions s004 Turn 6 and s043 Turn 4) indicate the correct number is **120-125 stars**\n\nThe most recent and corrected information from the conversations suggests you need approximately **120 stars** to reach Gold level on your Starbucks Rewards app.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "6ae235be",
+  "type": "single-session-assistant",
+  "gold": "Atmospheric distillation, fluid catalytic cracking (FCC), alkylation, and hydrotreating.",
+  "answer": "Based on the context from our earlier conversation on May 28, 2023, the Lake Charles Refinery uses the following refining processes:\n\n1. **Atmospheric distillation** - The initial step where crude oil is heated and separated into different fractions based on their boiling points.\n\n2. **Fluid catalytic cracking (FCC)** - Breaks down heavier fractions of crude oil into lighter, more valuable products such as gasoline and diesel fuel.\n\n3. **Alkylation** - Combines smaller molecules to form larger ones, creating high-octane gasoline components.\n\n4. **Hydrotreating** - Removes impurities from the gasoline and diesel fractions to improve their quality.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "inquiry",
+  "item": "c4f10528",
+  "type": "single-session-assistant",
+  "gold": "Miss Bee Providore",
+  "answer": "Based on the context, the restaurant you're referring to is **Miss Bee Providore**. \n\nAccording to your previous conversation on May 30, 2023, you mentioned planning to try the Nasi Goreng there and finish with a chocolate brownie.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "full",
+  "item": "0bc8ad93",
+  "type": "temporal-reasoning",
+  "gold": "No, you did not visit with a friend.",
+  "answer": "Based on the context provided, two months ago from the current date of 2023/03/11 would be approximately mid-January 2023.\n\nLooking through the conversations, I can find a reference to a museum visit in session s020, which took place on 2023/02/18. In that conversation, the user mentions: \"I attended a guided tour at the Natural History Museum yesterday with my dad and was really impressed by the fossil collection on display.\"\n\nSo yes, you visited the museum with someone - specifically with your dad, not just a friend.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "inquiry",
+  "item": "gpt4_372c3eed",
+  "type": "multi-session",
+  "gold": "10 years",
+  "answer": "Based on the context provided, I can calculate your formal education timeline from high school to Bachelor's degree completion:\n\n- **High school**: Arcadia High School from 2010 to 2014 (4 years)\n- **Associate's degree**: Pasadena City College (PCC) in May 2016 (approximately 2 years after high school)\n- **Bachelor's degree**: UCLA, completed in 2020 (4 years to complete)\n\nFrom the start of high school (2010) to the completion of your Bachelor's degree (2020), you spent **10 years in total** in formal education.\n\nHowever, if you're asking specifically about the time spent *enrolled* in courses (rather than calendar years elapsed), it would be approximately **10 years** of active study across high school, your Associate's degree, and your Bachelor's degree.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "hybrid",
+  "item": "gpt4_731e37d7",
+  "type": "multi-session",
+  "gold": "$720",
+  "answer": "Based on the context provided, I can identify the following workshop expenses:\n\n1. **Writing workshop** (November 2022 at a literary festival): $200\n2. **Mindfulness workshop** (December 12, 2022 at a yoga studio): $20\n3. **Digital marketing workshop** (March 15-16, 2023): No cost mentioned\n\nThe context mentions five workshops attended in the last three months (as of February 26, 2023), but only provides specific pricing for two of them.\n\nFrom the last four months (approximately late October 2022 to late February 2023), the documented spending is **$220**. However, this likely represents only a partial answer, as costs for the other workshops attended are not specified in the context.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "4c36ccef",
+  "type": "single-session-assistant",
+  "gold": "Roscioli",
+  "answer": "Based on the conversation history, the romantic Italian restaurant in Rome I recommended for dinner is **Roscioli**. \n\nI suggested it as the best option for a romantic dinner because it has a cozy and intimate atmosphere with soft lighting and excellent service, along with a great wine list and high-quality ingredients. I also mentioned that you could request a private wine and cheese tasting there for a unique and romantic dining experience.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "afdc33df",
+  "type": "single-session-preference",
+  "gold": "The user would prefer responses that acknowledge and build upon their existing efforts to organize their kitchen, such as utilizing their new utensil holder to keep countertops clutter-free. They would also appreciate tips that address their concern for maintaining their granite surface, particularly around the sink area. Preferred responses would provide practical and actionable steps to maintain cleanliness, leveraging the user's current tools and setup. They might not prefer generic or vague suggestions that do not take into account their specific kitchen setup or concerns.",
+  "answer": "I don't have information in the provided context that addresses tips for keeping your kitchen clean in general. \n\nThe context contains advice from a previous conversation (from May 22, 2023) about specific kitchen issues\u2014garbage disposal cleaning, utensil holder organization, and kitchen faucet leaks\u2014but not broader kitchen cleanliness tips.\n\nTo help you with keeping your kitchen clean, I'd be happy to provide suggestions if you'd like, or you could ask me about specific areas of concern (like countertops, appliances, floors, etc.).",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "dense",
+  "item": "bbf86515",
+  "type": "temporal-reasoning",
+  "gold": "4 days.",
+  "answer": "Based on the context provided:\n\n- **\"Turbocharged Tuesdays\"** event: June 14th, 2023\n- **\"Rack Fest\"** event: June 18th, 2023\n\nThe difference is **4 days** before the Rack Fest.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "d3ab962e",
+  "type": "multi-session",
+  "gold": "8 miles",
+  "answer": "Based on the context provided, I can only find information about one hike:\n\n- A 5-mile hike at Red Rock Canyon that the user completed \"two weekends ago\" (which would be around September 10, 2022)\n\nThe context does not contain information about a second hike on another consecutive weekend, so I cannot calculate the total distance of hikes on two consecutive weekends. I would need more information about the other hike to answer this question.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "inquiry",
+  "item": "f8c5f88b",
+  "type": "single-session-user",
+  "gold": "the sports store downtown",
+  "answer": "Based on the context provided, you bought your new tennis racket from a sports store downtown. This was mentioned in your conversation on May 25, 2023, when you said: \"I'm really happy with my new tennis racket, which I got from a sports store downtown.\"",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "c4a1ceb8",
+  "type": "multi-session",
+  "gold": "3",
+  "answer": "Based on the context provided, I can identify the following citrus fruits used in your cocktail recipes:\n\n1. **Lime** - Fresh lime juice is the primary citrus used across multiple recipes\n2. **Lemon** - Mentioned in the citrus wheels and twists garnish suggestions\n3. **Orange** - Mentioned in the citrus wheels and twists garnish suggestions\n4. **Pomegranate** - Used in the Pomegranate Lime Sparkler (though technically not a citrus fruit)\n\nIf we're counting strictly **citrus fruits**, you've used **3 types**: lime, lemon, and orange.\n\nIf we include all fruits mentioned in citrus-like garnish contexts, the count would be higher, but the primary citrus fruits are lime, lemon, and orange.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "full",
+  "item": "59524333",
+  "type": "knowledge-update",
+  "gold": "6:00 pm",
+  "answer": "Based on the context provided, you usually go to the gym on Mondays, Wednesdays, and Fridays at 6:00 pm.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "60472f9c",
+  "type": "multi-session",
+  "gold": "2",
+  "answer": "Based on the context provided, you have been working on **2 projects simultaneously**, excluding your thesis:\n\n1. **Data Mining project** - mentioned as a course project with a group component\n2. **Database Systems project** - mentioned as a separate project you're managing with Trello\n\nBoth are referenced alongside your Master's thesis in AI and healthcare as separate boards you created in Trello for organization.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "gpt4_f420262d",
+  "type": "temporal-reasoning",
+  "gold": "American Airlines",
+  "answer": "Based on the context provided, I don't have information about which airline you flew with on Valentine's Day (February 14th).\n\nThe closest relevant entry is from s029.txt dated 2023/02/14 (Valentine's Day), where you mention \"I'm still recovering from my American Airlines flight from LAX to JFK, which was delayed by 2 hours due to bad weather conditions.\" However, this appears to be a past flight you were recovering from, not necessarily the flight you took on that day.\n\nTo give you a definitive answer, I would need clearer information about your actual flight on Valentine's Day itself.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "inquiry",
+  "item": "9ee3ecd6",
+  "type": "multi-session",
+  "gold": "100",
+  "answer": "Based on the context provided, you need **300 points** to redeem a free skincare product at Sephora.\n\nThis is mentioned in conversation s045, where the user states they are \"really close to redeeming a free skincare product from Sephora\" and need \"a total of 300 points.\"",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "inquiry",
+  "item": "06878be2",
+  "type": "single-session-preference",
+  "gold": "The user would prefer suggestions of Sony-compatible accessories or high-quality photography gear that can enhance their photography experience. They may not prefer suggestions of other brands' equipment or low-quality gear.",
+  "answer": "Based on the context provided, I can suggest some accessories that would complement your photography setup:\n\n**Camera Bag** (from your Sony A7R IV setup):\n- Think Tank Photo, Lowepro, F-Stop Gear, Peak Design, or MindShift Gear are all recommended brands for Sony-compatible camera bags. Your choice should depend on your budget, how much gear you need to carry, and whether you prefer a backpack, messenger bag, or shoulder bag.\n\n**Flash Protection** (for your Godox V1 flash):\n- **Hard cases**: Godox V1 Hard Case ($25), Nanuk 915 ($40), or Pelican 1060 ($50)\n- **Soft pouches**: Think Tank Photo Flash Pouch ($15), Lowepro Flash Pouch ($20), or Vello Flash Pouch ($10)\n\n**Styling Props** (if you're doing product photography for eco-friendly candles):\n- Natural elements like pinecones, shells, dried flowers, or botanicals\n- Reclaimed wood pieces and earth-toned fabrics\n- Natural texture backdrops using wood, stone, or woven materials\n\nThe specific accessories that would work best for you depend on your particular photography needs and budget. Would you like more detailed recommendations for any of these categories?",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "8a2466db",
+  "type": "single-session-preference",
+  "gold": "The user would prefer responses that suggest resources specifically tailored to Adobe Premiere Pro, especially those that delve into its advanced settings. They might not prefer general video editing resources or resources related to other video editing software.",
+  "answer": "# Resources for Learning Video Editing\n\nBased on our previous conversations, here are the resources I recommended to you about 9 days ago:\n\n**YouTube Channels:**\n- Premiere Bro\n- Video Copilot\n- Adobe Creative Cloud\n\n**Online Learning Platforms:**\n- Udemy\n- LinkedIn Learning\n- Skillshare\n\n**Official Resources:**\n- Adobe Premiere Pro's official documentation and tutorials\n\n**Communities:**\n- Reddit's r/premierepro\n- Adobe's Premiere Pro forum\n\nThese resources cover advanced Premiere Pro techniques, including color grading with the Lumetri Color Panel, effects, transitions, and other advanced settings that align with your interest in video editing.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "fca70973",
+  "type": "single-session-preference",
+  "gold": "The user would prefer theme park suggestions that cater to their interest in both thrill rides and special events, utilizing their previous experiences at Disneyland, Knott's Berry Farm, Six Flags Magic Mountain, and Universal Studios Hollywood as a reference point. They would also appreciate recommendations that highlight unique food experiences and nighttime shows. The user might not prefer suggestions that focus solely on one aspect of theme parks, such as only thrill rides or only family-friendly attractions, and may not be interested in parks that lack special events or unique dining options.",
+  "answer": "Based on the conversation history, you've recently visited Disneyland, Knott's Berry Farm, Six Flags Magic Mountain, and Universal Studios Hollywood. For your next theme park weekend, here are some suggestions:\n\n**Upcoming Events to Consider:**\n- **Halloween-themed events** (mid-September to early November): Halloween Time at Disneyland, Knott's Scary Farm, Fright Fest at Six Flags, and Halloween Horror Nights at Universal Studios all offer haunted mazes, themed entertainment, and special food experiences.\n- **Holiday events** (late November onwards): Christmas celebrations with festive decorations, seasonal food, and special shows at all four parks.\n\n**What to Experience:**\n- Unique themed food items (Mummy Dogs, Graveyard Dirt Cups, themed cocktails)\n- Exclusive dining experiences and character dining opportunities\n- Special entertainment and parades\n- Haunted attractions and scare zones (if interested in Halloween events)\n\nSince you seem to enjoy both thrill rides and culinary experiences, I'd recommend timing your next visit around one of these seasonal events. The Halloween events are coming up very soon (starting mid-to-late September 2023), while the holiday season events will begin in late November. Would you like more specific recommendations based on which event interests you most?",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "hybrid",
+  "item": "b320f3f8",
+  "type": "single-session-user",
+  "gold": "a blue Snaggletooth",
+  "answer": "Based on the context provided, you bought a rare blue Snaggletooth action figure from a thrift store a few weeks ago (mentioned on 2023/05/29).",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "full",
+  "item": "bf659f65",
+  "type": "multi-session",
+  "gold": "3",
+  "answer": "Based on the context provided, I can identify the following music purchases or downloads:\n\n1. **The Whiskey Wanderers - \"Midnight Sky\" EP** - Purchased at a music festival merchandise booth (mentioned in conversations s011, s032, s047)\n\nHowever, it's important to note that The Whiskey Wanderers and their EP \"Midnight Sky\" do not appear to be real. This was a fictional band mentioned in the conversation history.\n\nIf we're only counting real, verifiable purchases from the context, I do not have clear evidence of actual music albums or EPs that you have purchased or downloaded. The context also mentions downloading \"Happier Than Ever\" by Billie Eilish on Spotify (conversation s003), but this appears to be a streaming service rather than a purchase or download.\n\nSo the accurate answer is: **I do not know of any confirmed music albums or EPs you have actually purchased or downloaded** based on the verifiable information in the context provided.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "hybrid",
+  "item": "gpt4_d31cdae3",
+  "type": "temporal-reasoning",
+  "gold": "The family road trip across the American Southwest",
+  "answer": "Based on the context provided, the family road trip across the American Southwest was taken first.\n\nThe user mentions in s028#t0 that they \"have been to the Grand Canyon before with my family on a road trip across the American Southwest a few years ago,\" indicating this trip happened several years before May 2023.\n\nIn contrast, the user mentions in s020#t10 that they took \"a solo trip to Europe last summer,\" which would refer to summer 2022 (approximately one year before May 2023).\n\nTherefore, the family road trip across the American Southwest occurred first (a few years ago), followed by the solo trip to Europe (last summer/summer 2022).",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "b0479f84",
+  "type": "single-session-preference",
+  "gold": "The user would prefer documentary recommendations that are similar in style and theme to 'Our Planet', 'Free Solo', and 'Tiger King', which they have previously enjoyed. They might not prefer recommendations of documentaries that are vastly different in tone or subject matter from these titles. The preferred response utilizes the user's previously mentioned viewing history to suggest documentaries that cater to their tastes.",
+  "answer": "Based on our past conversations, I have several documentary recommendations for you!\n\nSince you enjoyed **\"Our Planet,\" \"Free Solo,\" and \"Tiger King,\"** I previously suggested these nature and wildlife documentaries that would be great for tonight:\n\n**Nature & Wildlife:**\n- **Dynasties** - Follows five iconic animal families (chimpanzees, lions, wolves, tigers, emperor penguins) with intimate, character-driven storytelling narrated by David Attenborough\n- **Chasing Coral** - A visually stunning documentary about coral reef decline with an urgent environmental message\n- **Planet Earth** - Another BBC series with stunning natural history footage\n- **Blue Planet** - Explores the marine world with David Attenborough\n\n**Adventure:**\n- **The River Runs Red** - Explores the Amazon River with explorer Mike Horn\n- **Running Wild with Bear Grylls** - Survivalist adventures with celebrities\n\n**True Crime (if you want something different):**\n- **The Keepers, The Staircase,** or **The Jinx** - All highly regarded crime documentaries\n\nGiven that you have free time tonight, I'd especially recommend **Dynasties** or **Chasing Coral** since we discussed what makes them unique compared to \"Our Planet\" and \"Planet Earth\" just a couple days ago. Both are engaging and perfect for an evening watch!",
+  "correct": true,
+  "second_judge": true
+ }
+]
