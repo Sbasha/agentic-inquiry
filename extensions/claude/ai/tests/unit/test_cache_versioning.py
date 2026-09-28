@@ -241,13 +241,6 @@ class TestStalenessDetection:
         return vm
 
     def test_flags_stale_memories(self, version_manager):
-        memories = [
-            {
-                "content": "Config uses yaml",
-                "confidence": 0.35,
-                "file_paths": ["src/config.py"],
-            }
-        ]
         # Mock with a commit touching the referenced file
         version_manager._last_known_commit = "old_commit"
 
@@ -266,13 +259,6 @@ class TestStalenessDetection:
         assert new_confidence == pytest.approx(0.30)
 
     def test_unchanged_files_not_flagged(self, version_manager):
-        memories = [
-            {
-                "content": "Vector search works well",
-                "confidence": 1.0,
-                "file_paths": ["src/vector.py"],
-            }
-        ]
         # No commits touching vector.py
         commits = [
             {
