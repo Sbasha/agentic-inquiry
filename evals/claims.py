@@ -313,7 +313,27 @@ def _fmt(value: float | None) -> str:
     return "n/a" if value is None else f"{value:.3g}"
 
 
+def print_cost_report(report: dict[str, Any]) -> None:
+    """C1b: ingestion cost and time per million conversation tokens."""
+    print(f"\n{report['claim']} / {report['split']}", file=sys.stderr)
+    for arm, s in report["summary"].items():
+        print(
+            f"{arm:8} histories {s['histories']}  ${s['mean_dollars_per_mtok']:.2f}/Mtok  "
+            f"LLM {s['mean_api_seconds_per_mtok']:.0f}s/Mtok  wall {s['mean_seconds_per_mtok']:.0f}s/Mtok",
+            file=sys.stderr,
+        )
+    for c in report["comparisons"]:
+        print(
+            f"  inquiry vs {c['b']}: cheaper on {c['inquiry_cheaper']} of {c['histories']}, "
+            f"p={c['p']:.4f} holm={c['p_holm']:.4f} significant={c['significant']}",
+            file=sys.stderr,
+        )
+
+
 def print_report(report: dict[str, Any]) -> None:
+    if report.get("claim") == "c1b":
+        print_cost_report(report)
+        return
     print(f"\n{report['claim']} / {report['split']}", file=sys.stderr)
     print(
         f"{'arm':10} {'items':>5} {'acc':>6} {'fail':>4} {'med tok':>7} {'$':>9} {'$/correct':>10} {'s/correct':>9}",
@@ -951,19 +971,9 @@ def run_c1b(split: str, jobs: int, limit: int | None = None) -> Path:
             adjusted[name] < 0.05 and test["inquiry_cheaper"] > test["tool_cheaper"]
         )
         comparisons.append(test)
-    print(f"\nc1b / {split}", file=sys.stderr)
-    for arm, s in summary.items():
-        print(
-            f"{arm:8} histories {s['histories']}  ${s['mean_dollars_per_mtok']:.2f}/Mtok  "
-            f"LLM {s['mean_api_seconds_per_mtok']:.0f}s/Mtok  wall {s['mean_seconds_per_mtok']:.0f}s/Mtok",
-            file=sys.stderr,
-        )
-    for c in comparisons:
-        print(
-            f"  inquiry vs {c['b']}: cheaper on {c['inquiry_cheaper']} of {c['histories']}, "
-            f"p={c['p']:.4f} holm={c['p_holm']:.4f} significant={c['significant']}",
-            file=sys.stderr,
-        )
+    print_cost_report(
+        {"claim": "c1b", "split": split, "summary": summary, "comparisons": comparisons}
+    )
     return save(
         "c1b",
         split,

@@ -285,3 +285,33 @@ def test_c1b_sample_takes_the_lowest_hashes_of_the_registered_questions() -> Non
         cases, key=lambda c: hashlib.sha256(f"20260926:{c.id}".encode()).hexdigest()
     )[:7]
     assert [c.id for c in pick] == [c.id for c in lowest]
+
+
+def test_print_report_handles_the_cost_claim(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    summary = {
+        "inquiry": {
+            "histories": 7,
+            "mean_dollars_per_mtok": 0.0,
+            "mean_api_seconds_per_mtok": 0.0,
+            "mean_seconds_per_mtok": 219.0,
+        }
+    }
+    comparison = {
+        "b": "mem0",
+        "inquiry_cheaper": 7,
+        "histories": 7,
+        "p": 0.0156,
+        "p_holm": 0.0312,
+        "significant": True,
+    }
+    claims.print_report(
+        {
+            "claim": "c1b",
+            "split": "test",
+            "summary": summary,
+            "comparisons": [comparison],
+        }
+    )
+    assert "cheaper on 7 of 7" in capsys.readouterr().err
