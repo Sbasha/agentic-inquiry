@@ -605,6 +605,10 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
                 handle = arm.index(case.corpus, root, suite)
                 built = getattr(arm, "build_seconds", lambda h: None)(handle)
                 setup_s = built if built is not None else time.perf_counter() - t0
+                if name == "hybrid":
+                    # Hybrid embeds the same units with the same model as dense and
+                    # reuses dense's cached vectors; it is charged that embedding time.
+                    setup_s += contexts.get(("dense", case.id), {}).get("setup_s", 0.0)
                 ((hits, latency_ms),) = arm.search(handle, [case.query], 50)
                 rendered = render(hits, BUDGET)
                 contexts[(name, case.id)] = {
@@ -652,11 +656,14 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
                     question=case.query,
                 ),
             )
+            # The grader keeps the CLI's default thinking: without it Sonnet's
+            # verdicts on the same answer flip between calls (RFC-0004).
             verdict = complete(
                 JUDGE,
                 prompt(
                     case.meta["type"], case.query, case.meta["answer"], reply["text"]
                 ),
+                thinking=True,
             )
         except Exception as exc:  # noqa: BLE001 - a failure scores as wrong
             return _fail(arm, case.id, str(exc))

@@ -1,0 +1,616 @@
+{
+ "budget_tokens": 2000,
+ "claim": "c1",
+ "comparisons": [
+  {
+   "a": "inquiry",
+   "a_only": 1,
+   "a_rate": 0.5,
+   "b": "full",
+   "b_only": 0,
+   "b_rate": 0.0,
+   "decided": false,
+   "dollars_ratio": {
+    "ci_high": 0.019973,
+    "ci_low": 0.019034,
+    "ratio": 0.019492
+   },
+   "infra_failure_share": {
+    "full": 0.0,
+    "inquiry": 0.0
+   },
+   "n": 2,
+   "p": 1.0,
+   "p_holm": 1.0,
+   "seconds_ratio": {
+    "ci_high": 40.261803,
+    "ci_low": 15.459691,
+    "ratio": 21.179479
+   },
+   "significant": false,
+   "tokens_ratio": {
+    "ci_high": 0.014198,
+    "ci_low": 0.013382,
+    "ratio": 0.013785
+   },
+   "valid": true
+  },
+  {
+   "a": "inquiry",
+   "a_only": 1,
+   "a_rate": 0.5,
+   "b": "dense",
+   "b_only": 0,
+   "b_rate": 0.0,
+   "decided": false,
+   "dollars_ratio": {
+    "ci_high": 1.01005,
+    "ci_low": 0.869065,
+    "ratio": 0.934211
+   },
+   "infra_failure_share": {
+    "dense": 0.0,
+    "inquiry": 0.0
+   },
+   "n": 2,
+   "p": 1.0,
+   "p_holm": 1.0,
+   "seconds_ratio": {
+    "ci_high": 0.548645,
+    "ci_low": 0.375666,
+    "ratio": 0.456495
+   },
+   "significant": false,
+   "tokens_ratio": {
+    "ci_high": 0.937755,
+    "ci_low": 0.783241,
+    "ratio": 0.854795
+   },
+   "valid": true
+  },
+  {
+   "a": "inquiry",
+   "a_only": 1,
+   "a_rate": 0.5,
+   "b": "hybrid",
+   "b_only": 0,
+   "b_rate": 0.0,
+   "decided": false,
+   "dollars_ratio": {
+    "ci_high": 0.981685,
+    "ci_low": 0.875997,
+    "ratio": 0.925791
+   },
+   "infra_failure_share": {
+    "hybrid": 0.0,
+    "inquiry": 0.0
+   },
+   "n": 2,
+   "p": 1.0,
+   "p_holm": 1.0,
+   "seconds_ratio": {
+    "ci_high": 852.818182,
+    "ci_low": 218.49697,
+    "ratio": 324.217172
+   },
+   "significant": false,
+   "tokens_ratio": {
+    "ci_high": 1.011927,
+    "ci_low": 0.817706,
+    "ratio": 0.906054
+   },
+   "valid": true
+  },
+  {
+   "a": "inquiry",
+   "a_only": 1,
+   "a_rate": 0.5,
+   "b": "mem0-raw",
+   "b_only": 0,
+   "b_rate": 0.0,
+   "decided": false,
+   "dollars_ratio": {
+    "ci_high": 1.187008,
+    "ci_low": 0.891513,
+    "ratio": 1.018136
+   },
+   "infra_failure_share": {
+    "inquiry": 0.0,
+    "mem0-raw": 0.0
+   },
+   "n": 2,
+   "p": 1.0,
+   "p_holm": 1.0,
+   "seconds_ratio": {
+    "ci_high": 0.231236,
+    "ci_low": 0.218593,
+    "ratio": 0.225518
+   },
+   "significant": false,
+   "tokens_ratio": {
+    "ci_high": 1.073951,
+    "ci_low": 0.819853,
+    "ratio": 0.931865
+   },
+   "valid": true
+  },
+  {
+   "a": "inquiry",
+   "a_only": 1,
+   "a_rate": 0.5,
+   "b": "cognee-chunks",
+   "b_only": 0,
+   "b_rate": 0.0,
+   "decided": false,
+   "dollars_ratio": {
+    "ci_high": 1.030717,
+    "ci_low": 0.91537,
+    "ratio": 0.969673
+   },
+   "infra_failure_share": {
+    "cognee-chunks": 0.0,
+    "inquiry": 0.0
+   },
+   "n": 2,
+   "p": 1.0,
+   "p_holm": 1.0,
+   "seconds_ratio": {
+    "ci_high": 0.27972,
+    "ci_low": 0.224551,
+    "ratio": 0.252521
+   },
+   "significant": false,
+   "tokens_ratio": {
+    "ci_high": 1.010025,
+    "ci_low": 0.918776,
+    "ratio": 0.962974
+   },
+   "valid": true
+  }
+ ],
+ "provenance": {
+  "answer_prompt_sha256": "b2d2ea78e71f44d1d2fbb29cfd3dfb25029eda1042e4b5e8d11667c584d04cb7",
+  "answerer": "claude-haiku-4-5-20251001",
+  "arms": {
+   "cognee-chunks": {
+    "build_key": "fd1dc4f5a865",
+    "embeddings": "ollama bge-m3",
+    "llm": "claude-haiku-4-5-20251001 via evals/claude_shim.py",
+    "package": "cognee==1.6.1"
+   },
+   "dense": {
+    "impl": "ollama bge-m3",
+    "max_tokens": 512,
+    "model": "BAAI/bge-m3",
+    "similarity": "cosine"
+   },
+   "hybrid": {
+    "bm25": {
+     "display": "text",
+     "impl": "bm25s==0.3.11",
+     "method": "lucene",
+     "stemmer": "snowball-english",
+     "stopwords": "en"
+    },
+    "dense": {
+     "impl": "ollama bge-m3",
+     "max_tokens": 512,
+     "model": "BAAI/bge-m3",
+     "similarity": "cosine"
+    },
+    "depth": 100,
+    "fusion": "rrf",
+    "k": 60
+   },
+   "inquiry": {
+    "code_hash": "a45c43efd352e8db",
+    "config": "config/default.yaml",
+    "entry": "IndexingPipeline.index_directory + SearchService.hybrid_search",
+    "index_hash": "fc1a63b0dc0422e4"
+   },
+   "mem0-raw": {
+    "build_key": "ea12ef33ffdf",
+    "embeddings": "ollama bge-m3",
+    "llm": "claude-haiku-4-5-20251001 via evals/claude_shim.py",
+    "package": "mem0ai==2.2.1"
+   }
+  },
+  "cli_overhead": {
+   "claude-haiku-4-5-20251001": {
+    "api_ms": 1897,
+    "input_tokens": 2989
+   },
+   "claude-haiku-4-5-20251001+schema": {
+    "api_ms": 2533,
+    "input_tokens": 6256
+   }
+  },
+  "dirty": false,
+  "environment": {
+   "claude_cli": "2.1.245 (Claude Code)",
+   "ollama": {
+    "bge-m3": "7907646426070047a77226ac3e684fbbe8410524f7b4a74d02837e43f2146bab",
+    "qwen2.5:14b-instruct": "7cdf5a0187d5c58cc5d369b255592f7841d1c4696d45a8c8a9489440385b22f6"
+   },
+   "venv_freeze_sha256": {
+    "cognee": "d19fcc72529e968e1886c238db17582f6eff84d28244be580b2b2ffd9e7cf226",
+    "cognee-chunks": "d19fcc72529e968e1886c238db17582f6eff84d28244be580b2b2ffd9e7cf226",
+    "graphify": "d5cd16a1cbaa16d2b1d93a856f24d962e5b041d707e367a95ed7068a6d3f109a",
+    "mem0": "bc23c05a7f6ae2356d8f9c705a26d3b4c96df039a204ea3dd5fee67797aa36d6",
+    "mem0-raw": "bc23c05a7f6ae2356d8f9c705a26d3b4c96df039a204ea3dd5fee67797aa36d6"
+   }
+  },
+  "full_history_max_tokens": 116646,
+  "items": [
+   "gpt4_5501fe77",
+   "gpt4_8c8961ae"
+  ],
+  "judge": "claude-sonnet-5",
+  "judge_agreement": {
+   "kappa": 0.2258,
+   "n": 12
+  },
+  "prices_per_mtok": {
+   "claude-haiku-4-5-20251001": [
+    1.0,
+    5.0
+   ],
+   "claude-sonnet-5": [
+    2.0,
+    10.0
+   ]
+  },
+  "second_judge": "qwen2.5:14b-instruct",
+  "seed": 20260926,
+  "sha": "9262b9e8e3d916d6cd216d8ca2210f2a967c232a",
+  "started_utc": "2026-09-28T05:10:09+00:00"
+ },
+ "rows": [
+  {
+   "answer": "Based on the context provided, **Twitter** is the social media platform you gained the most followers on over the past month.\n\nAccording to the conversation from May 29, 2023, your Twitter follower count jumped from 420 to 540 over the past month, which is a gain of **120 followers**.\n\nWhile you also mentioned gaining around 200 followers on TikTok over the past three weeks, that's a shorter timeframe than a full month. Your Facebook follower count remained steady at around 800 with no growth mentioned.",
+   "answer_api_seconds": 0.0,
+   "answer_input_tokens": 1811,
+   "api_seconds": 0.0,
+   "arm": "inquiry",
+   "correct": false,
+   "dollars": 0.002416,
+   "gold": "TikTok",
+   "item": "gpt4_5501fe77",
+   "items_stored": null,
+   "query_llm": null,
+   "query_seconds": 4.373,
+   "raw_tokens": 1561,
+   "second_judge": false,
+   "seconds": 28.143,
+   "setup_llm": null,
+   "setup_seconds": 23.77,
+   "tokens": 1561,
+   "type": "multi-session"
+  },
+  {
+   "answer": "Based on the context provided, the solo trip to Thailand was taken first.\n\nThe user mentioned in conversation s019 that they \"went to Thailand last year\" (from the current date of 2023/05/28, this would be 2022). In conversation s005, they stated they \"just last month, went on a two-week trip to Europe with my parents and younger brother\" (which would be April 2023).\n\nTherefore, the Thailand trip occurred approximately one year before the Europe trip with family.",
+   "answer_api_seconds": 0.024,
+   "answer_input_tokens": 1852,
+   "api_seconds": 0.024,
+   "arm": "inquiry",
+   "correct": true,
+   "dollars": 0.002412,
+   "gold": "The solo trip to Thailand",
+   "item": "gpt4_8c8961ae",
+   "items_stored": null,
+   "query_llm": null,
+   "query_seconds": 3.878,
+   "raw_tokens": 1612,
+   "second_judge": true,
+   "seconds": 36.052,
+   "setup_llm": null,
+   "setup_seconds": 32.15,
+   "tokens": 1612,
+   "type": "temporal-reasoning"
+  },
+  {
+   "answer": "Based on the context provided, you gained the most followers on **TikTok** over the past month, with approximately 200 followers gained over a three-week period (as mentioned in conversation s039#t1).",
+   "answer_api_seconds": 0.699,
+   "answer_input_tokens": 126681,
+   "api_seconds": 0.699,
+   "arm": "full",
+   "correct": false,
+   "dollars": 0.126931,
+   "gold": "TikTok",
+   "item": "gpt4_5501fe77",
+   "items_stored": null,
+   "query_llm": null,
+   "query_seconds": 0.0,
+   "raw_tokens": 116646,
+   "second_judge": true,
+   "seconds": 0.699,
+   "setup_llm": null,
+   "setup_seconds": 0.0,
+   "tokens": 116646,
+   "type": "multi-session"
+  },
+  {
+   "answer": "Based on the context provided, you took the trip to Thailand first. You mentioned in conversation [s019#t1] that you went on a two-week trip to Europe with your parents and younger brother, and that it was \"a really different experience from traveling solo.\" You also stated in [s019#t5] that you had \"experience traveling solo\" when discussing your Thailand trip. Additionally, in [s019#t1], you explicitly said \"I went on a two-week trip to Europe with my parents and younger brother last month,\" which would place that trip in April 2023, while your Thailand solo trip is referenced as having happened before that experience.",
+   "answer_api_seconds": 2.332,
+   "answer_input_tokens": 120055,
+   "api_seconds": 2.332,
+   "arm": "full",
+   "correct": false,
+   "dollars": 0.120765,
+   "gold": "The solo trip to Thailand",
+   "item": "gpt4_8c8961ae",
+   "items_stored": null,
+   "query_llm": null,
+   "query_seconds": 0.0,
+   "raw_tokens": 113534,
+   "second_judge": true,
+   "seconds": 2.332,
+   "setup_llm": null,
+   "setup_seconds": 0.0,
+   "tokens": 113534,
+   "type": "temporal-reasoning"
+  },
+  {
+   "answer": "Based on the context provided, **Twitter** is the social media platform where you gained the most followers over the past month. You mentioned that your Twitter follower count jumped from 420 to 540 over the past month, which is a gain of 120 followers.\n\nFor comparison, your TikTok gained around 200 followers over the past three weeks, and your Facebook follower count remained steady at around 800 with no significant growth mentioned.",
+   "answer_api_seconds": 1.05,
+   "answer_input_tokens": 2280,
+   "api_seconds": 1.05,
+   "arm": "dense",
+   "correct": false,
+   "dollars": 0.00278,
+   "gold": "TikTok",
+   "item": "gpt4_5501fe77",
+   "items_stored": null,
+   "query_llm": null,
+   "query_seconds": 0.001,
+   "raw_tokens": 1993,
+   "second_judge": false,
+   "seconds": 74.915,
+   "setup_llm": null,
+   "setup_seconds": 73.864,
+   "tokens": 1993,
+   "type": "multi-session"
+  },
+  {
+   "answer": "Based on the context provided, the user took the trip to Europe with family first.\n\nThe user mentions that the Europe trip with parents and younger brother was \"just last month\" (from the May 28, 2023 conversation date, that would be around late April 2023), while the solo trip to Thailand is described as having happened \"last year\" (2022).",
+   "answer_api_seconds": 0.0,
+   "answer_input_tokens": 1978,
+   "api_seconds": 0.0,
+   "arm": "dense",
+   "correct": false,
+   "dollars": 0.002388,
+   "gold": "The solo trip to Thailand",
+   "item": "gpt4_8c8961ae",
+   "items_stored": null,
+   "query_llm": null,
+   "query_seconds": 0.001,
+   "raw_tokens": 1719,
+   "second_judge": false,
+   "seconds": 65.711,
+   "setup_llm": null,
+   "setup_seconds": 65.71,
+   "tokens": 1719,
+   "type": "temporal-reasoning"
+  },
+  {
+   "answer": "Based on the context provided, **Twitter** is the social media platform where you gained the most followers over the past month. According to the conversation from May 29, 2023, your Twitter follower count jumped from 420 to 540 over the past month, which represents a gain of 120 followers.\n\nWhile you also mentioned gaining around 200 followers on TikTok over the past three weeks, the Twitter growth over a full month (120 followers) appears to be the most significant growth mentioned in the context.",
+   "answer_api_seconds": 0.0,
+   "answer_input_tokens": 2178,
+   "api_seconds": 0.0,
+   "arm": "hybrid",
+   "correct": false,
+   "dollars": 0.002758,
+   "gold": "TikTok",
+   "item": "gpt4_5501fe77",
+   "items_stored": null,
+   "query_llm": null,
+   "query_seconds": 0.001,
+   "raw_tokens": 1908,
+   "second_judge": false,
+   "seconds": 0.033,
+   "setup_llm": null,
+   "setup_seconds": 0.032,
+   "tokens": 1909,
+   "type": "multi-session"
+  },
+  {
+   "answer": "Based on the context provided, the solo trip to Thailand was taken first.\n\nThe user mentions in conversation s005 (dated 2023/05/28) that they \"went on a two-week trip to Europe with my parents and younger brother\" **last month**, which would place that trip around late April 2023.\n\nIn conversation s019 (also dated 2023/05/28), the user references traveling solo to Thailand **last year**, which would place that trip around 2022.\n\nTherefore, the Thailand solo trip occurred before the Europe family trip.",
+   "answer_api_seconds": 0.109,
+   "answer_input_tokens": 1837,
+   "api_seconds": 0.109,
+   "arm": "hybrid",
+   "correct": false,
+   "dollars": 0.002457,
+   "gold": "The solo trip to Thailand",
+   "item": "gpt4_8c8961ae",
+   "items_stored": null,
+   "query_llm": null,
+   "query_seconds": 0.001,
+   "raw_tokens": 1593,
+   "second_judge": true,
+   "seconds": 0.165,
+   "setup_llm": null,
+   "setup_seconds": 0.055,
+   "tokens": 1593,
+   "type": "temporal-reasoning"
+  },
+  {
+   "answer": "Based on the context provided, **Twitter** is the social media platform where you gained the most followers over the past month. \n\nYou mentioned that your Twitter follower count jumped from 420 to 540 over the past month, which is a gain of 120 followers. While you also mentioned gaining around 200 followers on TikTok over the past three weeks, the Twitter growth over a full month (120 followers) appears to be the most substantial single-platform gain explicitly stated for a consistent time period.",
+   "answer_api_seconds": 0.0,
+   "answer_input_tokens": 2145,
+   "api_seconds": 0.0,
+   "arm": "mem0-raw",
+   "correct": false,
+   "dollars": 0.00271,
+   "gold": "TikTok",
+   "item": "gpt4_5501fe77",
+   "items_stored": 516,
+   "query_llm": null,
+   "query_seconds": 0.186,
+   "raw_tokens": 38005,
+   "second_judge": false,
+   "seconds": 128.746,
+   "setup_llm": null,
+   "setup_seconds": 128.56,
+   "tokens": 1904,
+   "type": "multi-session"
+  },
+  {
+   "answer": "Based on the context, the solo trip to Thailand was taken first. The user mentioned that the trip to Europe with family was \"just last month\" (which would be around April 2023), while the solo trip to Thailand was described as happening \"last year\" (2022).",
+   "answer_api_seconds": 0.0,
+   "answer_input_tokens": 1727,
+   "api_seconds": 0.0,
+   "arm": "mem0-raw",
+   "correct": false,
+   "dollars": 0.002032,
+   "gold": "The solo trip to Thailand",
+   "item": "gpt4_8c8961ae",
+   "items_stored": 485,
+   "query_llm": null,
+   "query_seconds": 0.44,
+   "raw_tokens": 40458,
+   "second_judge": true,
+   "seconds": 155.91,
+   "setup_llm": null,
+   "setup_seconds": 155.47,
+   "tokens": 1501,
+   "type": "temporal-reasoning"
+  },
+  {
+   "answer": "Based on the context provided, you gained the most followers on **Twitter** over the past month. According to the conversation from May 29, 2023, your Twitter follower count jumped from 420 to 540 over the past month, which represents a gain of 120 followers. This was the only specific follower growth metric mentioned in the context for that timeframe.",
+   "answer_api_seconds": 0.0,
+   "answer_input_tokens": 1929,
+   "api_seconds": 0.0,
+   "arm": "cognee-chunks",
+   "correct": false,
+   "dollars": 0.002344,
+   "gold": "TikTok",
+   "item": "gpt4_5501fe77",
+   "items_stored": 258,
+   "query_llm": null,
+   "query_seconds": 4.07,
+   "raw_tokens": 12115,
+   "second_judge": false,
+   "seconds": 125.33,
+   "setup_llm": null,
+   "setup_seconds": 121.26,
+   "tokens": 1699,
+   "type": "multi-session"
+  },
+  {
+   "answer": "Based on the context provided, the trip to Europe with family was taken first.\n\nAccording to the information in Session s005, Turn 1 (2023/05/28), the user states: \"just last month, I went on a two-week trip to Europe with my parents and younger brother.\" This means the Europe trip occurred approximately one month before May 28, 2023 (around late April 2023).\n\nIn Session s019, Turn 3 (2023/05/28), the user mentions \"traveling solo in Thailand last year,\" which would be around May 2022.\n\nTherefore, the solo trip to Thailand (May 2022) occurred **before** the trip to Europe with family (late April 2023).",
+   "answer_api_seconds": 0.308,
+   "answer_input_tokens": 1825,
+   "api_seconds": 0.308,
+   "arm": "cognee-chunks",
+   "correct": false,
+   "dollars": 0.002635,
+   "gold": "The solo trip to Thailand",
+   "item": "gpt4_8c8961ae",
+   "items_stored": 244,
+   "query_llm": null,
+   "query_seconds": 4.178,
+   "raw_tokens": 11289,
+   "second_judge": false,
+   "seconds": 128.886,
+   "setup_llm": null,
+   "setup_seconds": 124.4,
+   "tokens": 1596,
+   "type": "temporal-reasoning"
+  }
+ ],
+ "schema": "InquiryClaims/v1",
+ "split": "dev",
+ "summary": {
+  "cognee-chunks": {
+   "accuracy": 0.0,
+   "correct": 0,
+   "dollars": 0.005,
+   "dollars_per_correct": null,
+   "failures": 0,
+   "items": 2,
+   "median_tokens": 1699,
+   "seconds": 254.2,
+   "seconds_per_correct": null,
+   "setup": {
+    "dollars": 0.0,
+    "seconds": 0.0
+   }
+  },
+  "dense": {
+   "accuracy": 0.0,
+   "correct": 0,
+   "dollars": 0.0052,
+   "dollars_per_correct": null,
+   "failures": 0,
+   "items": 2,
+   "median_tokens": 1993,
+   "seconds": 140.6,
+   "seconds_per_correct": null,
+   "setup": {
+    "dollars": 0.0,
+    "seconds": 0.0
+   }
+  },
+  "full": {
+   "accuracy": 0.0,
+   "correct": 0,
+   "dollars": 0.2477,
+   "dollars_per_correct": null,
+   "failures": 0,
+   "items": 2,
+   "median_tokens": 116646,
+   "seconds": 3.0,
+   "seconds_per_correct": null,
+   "setup": {
+    "dollars": 0.0,
+    "seconds": 0.0
+   }
+  },
+  "hybrid": {
+   "accuracy": 0.0,
+   "correct": 0,
+   "dollars": 0.0052,
+   "dollars_per_correct": null,
+   "failures": 0,
+   "items": 2,
+   "median_tokens": 1909,
+   "seconds": 0.2,
+   "seconds_per_correct": null,
+   "setup": {
+    "dollars": 0.0,
+    "seconds": 0.0
+   }
+  },
+  "inquiry": {
+   "accuracy": 0.5,
+   "correct": 1,
+   "dollars": 0.0048,
+   "dollars_per_correct": 0.0048,
+   "failures": 0,
+   "items": 2,
+   "median_tokens": 1612,
+   "seconds": 64.2,
+   "seconds_per_correct": 64.2,
+   "setup": {
+    "dollars": 0.0,
+    "seconds": 0.0
+   }
+  },
+  "mem0-raw": {
+   "accuracy": 0.0,
+   "correct": 0,
+   "dollars": 0.0047,
+   "dollars_per_correct": null,
+   "failures": 0,
+   "items": 2,
+   "median_tokens": 1904,
+   "seconds": 284.7,
+   "seconds_per_correct": null,
+   "setup": {
+    "dollars": 0.0,
+    "seconds": 0.0
+   }
+  }
+ }
+}

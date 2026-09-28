@@ -136,18 +136,23 @@ def stratified(cases: list[Case], n: int, key: str) -> list[Case]:
 NO_THINKING = {"MAX_THINKING_TOKENS": "0"}
 
 
-def _cache_path(model: str, prompt: str) -> Path:
-    key = hashlib.sha256(f"{model}\nno-thinking\n{prompt}".encode()).hexdigest()
+def _cache_path(model: str, prompt: str, thinking: bool = False) -> Path:
+    mode = "thinking" if thinking else "no-thinking"
+    key = hashlib.sha256(f"{model}\n{mode}\n{prompt}".encode()).hexdigest()
     return CACHE / "llm" / key[:2] / f"{key}.json"
 
 
-def complete(model: str, prompt: str) -> dict[str, Any]:
-    """One completion, cached by (model, prompt). Returns text and usage."""
-    path = _cache_path(model, prompt)
+def complete(model: str, prompt: str, thinking: bool = False) -> dict[str, Any]:
+    """One completion, cached by (model, thinking mode, prompt). Returns text and usage.
+
+    ``thinking`` keeps the Claude CLI's default thinking; it is for graders, not
+    for calls that stand in for a tool's own API call (RFC-0004).
+    """
+    path = _cache_path(model, prompt, thinking)
     if path.exists():
-        return json.loads(path.read_text())
+        return dict(json.loads(path.read_text()))
     if model.startswith("claude-"):
-        result = _claude(model, prompt)
+        result = _claude(model, prompt, thinking=thinking)
     elif model == KIMI:
         result = _moonshot(model, prompt)
     else:
@@ -177,7 +182,10 @@ def _transient_failure(proc: subprocess.CompletedProcess[str]) -> bool:
 
 
 def _claude(
-    model: str, prompt: str, schema: dict[str, Any] | None = None
+    model: str,
+    prompt: str,
+    schema: dict[str, Any] | None = None,
+    thinking: bool = False,
 ) -> dict[str, Any]:
     """One ``claude -p`` call with no tools; ``schema`` constrains the reply to JSON.
 
@@ -210,7 +218,7 @@ def _claude(
                 text=True,
                 cwd=cwd,
                 timeout=600,
-                env=dict(os.environ, **NO_THINKING),
+                env=dict(os.environ) if thinking else dict(os.environ, **NO_THINKING),
             )
             if not _transient_failure(proc):
                 break

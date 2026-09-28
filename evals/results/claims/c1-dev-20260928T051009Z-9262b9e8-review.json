@@ -1,0 +1,110 @@
+[
+ {
+  "arm": "cognee-chunks",
+  "item": "gpt4_8c8961ae",
+  "type": "temporal-reasoning",
+  "gold": "The solo trip to Thailand",
+  "answer": "Based on the context provided, the trip to Europe with family was taken first.\n\nAccording to the information in Session s005, Turn 1 (2023/05/28), the user states: \"just last month, I went on a two-week trip to Europe with my parents and younger brother.\" This means the Europe trip occurred approximately one month before May 28, 2023 (around late April 2023).\n\nIn Session s019, Turn 3 (2023/05/28), the user mentions \"traveling solo in Thailand last year,\" which would be around May 2022.\n\nTherefore, the solo trip to Thailand (May 2022) occurred **before** the trip to Europe with family (late April 2023).",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "hybrid",
+  "item": "gpt4_8c8961ae",
+  "type": "temporal-reasoning",
+  "gold": "The solo trip to Thailand",
+  "answer": "Based on the context provided, the solo trip to Thailand was taken first.\n\nThe user mentions in conversation s005 (dated 2023/05/28) that they \"went on a two-week trip to Europe with my parents and younger brother\" **last month**, which would place that trip around late April 2023.\n\nIn conversation s019 (also dated 2023/05/28), the user references traveling solo to Thailand **last year**, which would place that trip around 2022.\n\nTherefore, the Thailand solo trip occurred before the Europe family trip.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "full",
+  "item": "gpt4_5501fe77",
+  "type": "multi-session",
+  "gold": "TikTok",
+  "answer": "Based on the context provided, you gained the most followers on **TikTok** over the past month, with approximately 200 followers gained over a three-week period (as mentioned in conversation s039#t1).",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "gpt4_5501fe77",
+  "type": "multi-session",
+  "gold": "TikTok",
+  "answer": "Based on the context provided, **Twitter** is the social media platform where you gained the most followers over the past month. \n\nYou mentioned that your Twitter follower count jumped from 420 to 540 over the past month, which is a gain of 120 followers. While you also mentioned gaining around 200 followers on TikTok over the past three weeks, the Twitter growth over a full month (120 followers) appears to be the most substantial single-platform gain explicitly stated for a consistent time period.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "cognee-chunks",
+  "item": "gpt4_5501fe77",
+  "type": "multi-session",
+  "gold": "TikTok",
+  "answer": "Based on the context provided, you gained the most followers on **Twitter** over the past month. According to the conversation from May 29, 2023, your Twitter follower count jumped from 420 to 540 over the past month, which represents a gain of 120 followers. This was the only specific follower growth metric mentioned in the context for that timeframe.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "full",
+  "item": "gpt4_8c8961ae",
+  "type": "temporal-reasoning",
+  "gold": "The solo trip to Thailand",
+  "answer": "Based on the context provided, you took the trip to Thailand first. You mentioned in conversation [s019#t1] that you went on a two-week trip to Europe with your parents and younger brother, and that it was \"a really different experience from traveling solo.\" You also stated in [s019#t5] that you had \"experience traveling solo\" when discussing your Thailand trip. Additionally, in [s019#t1], you explicitly said \"I went on a two-week trip to Europe with my parents and younger brother last month,\" which would place that trip in April 2023, while your Thailand solo trip is referenced as having happened before that experience.",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "hybrid",
+  "item": "gpt4_5501fe77",
+  "type": "multi-session",
+  "gold": "TikTok",
+  "answer": "Based on the context provided, **Twitter** is the social media platform where you gained the most followers over the past month. According to the conversation from May 29, 2023, your Twitter follower count jumped from 420 to 540 over the past month, which represents a gain of 120 followers.\n\nWhile you also mentioned gaining around 200 followers on TikTok over the past three weeks, the Twitter growth over a full month (120 followers) appears to be the most significant growth mentioned in the context.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "inquiry",
+  "item": "gpt4_8c8961ae",
+  "type": "temporal-reasoning",
+  "gold": "The solo trip to Thailand",
+  "answer": "Based on the context provided, the solo trip to Thailand was taken first.\n\nThe user mentioned in conversation s019 that they \"went to Thailand last year\" (from the current date of 2023/05/28, this would be 2022). In conversation s005, they stated they \"just last month, went on a two-week trip to Europe with my parents and younger brother\" (which would be April 2023).\n\nTherefore, the Thailand trip occurred approximately one year before the Europe trip with family.",
+  "correct": true,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "gpt4_5501fe77",
+  "type": "multi-session",
+  "gold": "TikTok",
+  "answer": "Based on the context provided, **Twitter** is the social media platform where you gained the most followers over the past month. You mentioned that your Twitter follower count jumped from 420 to 540 over the past month, which is a gain of 120 followers.\n\nFor comparison, your TikTok gained around 200 followers over the past three weeks, and your Facebook follower count remained steady at around 800 with no significant growth mentioned.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "inquiry",
+  "item": "gpt4_5501fe77",
+  "type": "multi-session",
+  "gold": "TikTok",
+  "answer": "Based on the context provided, **Twitter** is the social media platform you gained the most followers on over the past month.\n\nAccording to the conversation from May 29, 2023, your Twitter follower count jumped from 420 to 540 over the past month, which is a gain of **120 followers**.\n\nWhile you also mentioned gaining around 200 followers on TikTok over the past three weeks, that's a shorter timeframe than a full month. Your Facebook follower count remained steady at around 800 with no growth mentioned.",
+  "correct": false,
+  "second_judge": false
+ },
+ {
+  "arm": "mem0-raw",
+  "item": "gpt4_8c8961ae",
+  "type": "temporal-reasoning",
+  "gold": "The solo trip to Thailand",
+  "answer": "Based on the context, the solo trip to Thailand was taken first. The user mentioned that the trip to Europe with family was \"just last month\" (which would be around April 2023), while the solo trip to Thailand was described as happening \"last year\" (2022).",
+  "correct": false,
+  "second_judge": true
+ },
+ {
+  "arm": "dense",
+  "item": "gpt4_8c8961ae",
+  "type": "temporal-reasoning",
+  "gold": "The solo trip to Thailand",
+  "answer": "Based on the context provided, the user took the trip to Europe with family first.\n\nThe user mentions that the Europe trip with parents and younger brother was \"just last month\" (from the May 28, 2023 conversation date, that would be around late April 2023), while the solo trip to Thailand is described as having happened \"last year\" (2022).",
+  "correct": false,
+  "second_judge": false
+ }
+]

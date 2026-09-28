@@ -61,7 +61,7 @@ Working without a tool is tested where it is meaningful: C1 (full history in the
 
 - One model for all ingestion and answering: `claude-haiku-4-5-20251001`. One judge for every arm: `claude-sonnet-5`, checked against a second judge from another model family and against a person's review of 100 sampled verdicts.
 - One agent model for C3, `claude-sonnet-5`, with the same prompt, turn limit and tools apart from the one under test.
-- Calls that stand in for a direct API call (ingestion, answering, judging) run without extended thinking, as the API does by default. The Claude Code CLI turns thinking on unless told otherwise, so these calls switch it off. C3's agent runs are Claude Code sessions and keep its defaults.
+- Calls that stand in for a direct API call (ingestion and answering) run without extended thinking, as the API does by default. The Claude Code CLI turns thinking on unless told otherwise, so these calls switch it off. The judge is the harness's grader, not a stand-in, and keeps the CLI's default thinking: in the C1 dev smoke run, Sonnet without thinking gave "No", "No", "Yes" on three identical calls for a correct answer, and with thinking gave the same verdict three times of three. C3's agent runs are Claude Code sessions and keep the CLI's defaults.
 - One embedding model (BGE-m3) for every tool we configure. `inquiry` runs as shipped (frozen), with its default `BAAI/bge-small-en-v1.5`; the memory tools get BGE-m3, the larger model.
 - One context budget for every retrieval arm in C1 and C2: 2,000 tokens, counted by one tokenizer. The no-tool arm has no budget by definition; its cost is what it pays for that.
 - One answer prompt for every arm, neutral about whether the context is excerpts, facts or notes.
@@ -101,7 +101,7 @@ An implementation review found these before any claim ran:
 - **Build health.** A memory-tool build is retried up to three times for infrastructure failures (timeouts, rate limits), then refused on any failed LLM call, any reply from a different model, or unparseable JSON replies above 1% of its calls.
 - **Infrastructure failures.** Failures caused by timeouts or rate limits are recorded as such. A comparison is invalid when either arm has more than 5% of them, and an invalid comparison supports no claim.
 - **Time.**
-  - C1: an item's time is its haystack's build and query wall-clock plus the answer call's API time. Query time is measured after the tool's client is open, as for `inquiry`. LLM API time is reported separately.
+  - C1: an item's time is its haystack's build and query wall-clock plus the answer call's API time. `hybrid` reuses `dense`'s cached embeddings of the same units, so it is charged `dense`'s embedding time. Query time is measured after the tool's client is open, as for `inquiry`. LLM API time is reported separately.
   - C2: an item's time is one cold command-line query per tool (`ai search`, `graphify query`).
   - C3: a run's wall-clock.
   - Builds run once. Each tool keeps its own persistent caches (`inquiry`'s content-hash embedding cache is a product feature), and the shim reports cache hits per build.
