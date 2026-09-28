@@ -192,7 +192,7 @@ def test_ledger_runs_flags_aborted_and_changed_results(
     status = {r["run"]: r["status"] for r in claims.ledger_runs()}
     assert status == {
         "a": "verified",
-        "b": "aborted",
+        "b": "not finished (still running, or aborted)",
         "c": "results changed since the run",
     }
 

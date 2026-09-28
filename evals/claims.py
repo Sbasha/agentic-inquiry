@@ -1329,7 +1329,7 @@ def ledger_runs() -> list[dict[str, Any]]:
             run["status"] = "start entry was never committed"
             continue
         if not end:
-            run["status"] = "aborted"
+            run["status"] = "not finished (still running, or aborted)"
             continue
         path = REPO_ROOT / end["results"]
         if not path.exists():
