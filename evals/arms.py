@@ -769,6 +769,8 @@ class Inquiry:
 COMPETITORS = {
     "mem0": ("mem0ai==2.2.1", "mem0ai"),
     "cognee": ("cognee==1.6.1", "cognee"),
+    "mem0-raw": ("mem0ai==2.2.1", "mem0ai"),
+    "cognee-chunks": ("cognee==1.6.1", "cognee"),
 }
 _WORKER = REPO_ROOT / "evals" / "competitor_worker.py"
 BUILD_ATTEMPTS = 3

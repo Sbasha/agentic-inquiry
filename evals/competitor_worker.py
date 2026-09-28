@@ -160,6 +160,21 @@ def mem0_index(root: Path, store: Path, prefix: str) -> int:
     return len(rows)
 
 
+def mem0_raw_index(root: Path, store: Path, prefix: str) -> int:
+    """mem0 with ``infer=False``: raw messages stored with embeddings, no LLM extraction."""
+    memory = _mem0(store, prefix)
+    for path in sessions(root):
+        session = turns(path)
+        date = session[0]["date"] if session else ""
+        for messages in mem0_messages(session):
+            memory.add(
+                messages, user_id=USER, metadata={"session_date": date}, infer=False
+            )
+    stored = memory.get_all(filters={"user_id": USER}, top_k=100_000)
+    rows = stored.get("results", stored) if isinstance(stored, dict) else stored
+    return len(rows)
+
+
 def mem0_open(store: Path, prefix: str) -> Any:
     return _mem0(store, prefix)
 
@@ -167,10 +182,15 @@ def mem0_open(store: Path, prefix: str) -> Any:
 def mem0_search(memory: Any, query: str) -> str:
     found = memory.search(query, top_k=MEM0_TOP_K, filters={"user_id": USER})
     rows = found.get("results", found) if isinstance(found, dict) else found
-    return "\n".join(
-        f"[{(row.get('metadata') or {}).get('session_date', '')}] {row.get('memory', '')}"
-        for row in rows
-    )
+    lines = []
+    for row in rows:
+        date, memory = (
+            (row.get("metadata") or {}).get("session_date", ""),
+            str(row.get("memory", "")),
+        )
+        # Raw memories already begin with the date written into the message.
+        lines.append(memory if memory.startswith(f"[{date}]") else f"[{date}] {memory}")
+    return "\n".join(lines)
 
 
 # --------------------------------------------------------------------------
@@ -232,12 +252,61 @@ def cognee_index(root: Path, store: Path, prefix: str) -> int:
     return int(summary["turn_count"])
 
 
+def _write_sessions(root: Path, store: Path) -> list[Path]:
+    folder = store / "sessions"
+    folder.mkdir(parents=True, exist_ok=True)
+    files = []
+    for number, path in enumerate(sessions(root), start=1):
+        target = folder / f"session_{number:04d}_{path.stem}.json"
+        target.write_text(json.dumps(cognee_turn_pairs(path.stem, turns(path))))
+        files.append(target)
+    return files
+
+
+def cognee_chunks_index(root: Path, store: Path, prefix: str) -> int:
+    """Cognee's eval-framework ``JustChunks`` pipeline: chunks embedded, no graph, no LLM."""
+    cognee = _cognee(store, prefix)
+    from cognee.eval_framework.corpus_builder.task_getters.get_default_tasks_by_indices import (  # type: ignore[import-not-found]
+        get_just_chunks_tasks,
+    )
+    from cognee.modules.chunking.JsonListChunker import JsonListChunker  # type: ignore[import-not-found]
+    from cognee.modules.pipelines import run_pipeline  # type: ignore[import-not-found]
+
+    files = _write_sessions(root, store)
+
+    async def build() -> None:
+        await cognee.add([str(f) for f in files], dataset_name=USER)
+        tasks = await get_just_chunks_tasks(chunker=JsonListChunker)
+        # No connection test: this mode makes no LLM calls at all.
+        async for _ in run_pipeline(
+            tasks=tasks, datasets=[USER], skip_connection_test=True
+        ):
+            pass
+
+    asyncio.run(build())
+    return sum(len(json.loads(f.read_text())) for f in files)
+
+
+def cognee_chunks_search(client: Any, query: str) -> str:
+    cognee, search_type = client
+
+    async def one() -> str:
+        results = await cognee.search(
+            query, query_type=search_type.CHUNKS, datasets=[USER], top_k=COGNEE_TOP_K
+        )
+        return "\n".join(_context(r) for r in results)
+
+    return asyncio.run(one())
+
+
 def _context(result: Any) -> str:
     payload = getattr(result, "search_result", result)
     if isinstance(payload, dict) and "search_result" in payload:
         payload = payload["search_result"]
     if isinstance(payload, list):
         return "\n".join(_context(item) for item in payload)
+    if isinstance(payload, dict) and isinstance(payload.get("text"), str):
+        return payload["text"]
     return payload if isinstance(payload, str) else json.dumps(payload, default=str)
 
 
@@ -270,6 +339,9 @@ def cognee_search(client: Any, query: str) -> str:
 TOOLS = {
     "mem0": (mem0_index, mem0_open, mem0_search),
     "cognee": (cognee_index, cognee_open, cognee_search),
+    # No-LLM modes (RFC-0004 C1a): each tool's raw retrieval over the same history.
+    "mem0-raw": (mem0_raw_index, mem0_open, mem0_search),
+    "cognee-chunks": (cognee_chunks_index, cognee_open, cognee_chunks_search),
 }
 MAX_UNPARSEABLE_SHARE = 0.01
 

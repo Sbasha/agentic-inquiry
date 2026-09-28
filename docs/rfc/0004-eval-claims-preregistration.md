@@ -77,7 +77,7 @@ Working without a tool is tested where it is meaningful: C1 (full history in the
 - **C1 `mem0`**, as in `mem0ai/memory-benchmarks` @ `4b61c5d` for LongMemEval:
   - sessions in date order, one `add` per user and assistant pair, `top_k` 200;
   - the open-source SDK rejects the benchmark's `timestamp` argument, so the session date is written into each message and returned with each memory.
-- **C1 `cognee`**, as in its BEAM evaluation (`cognee.eval_framework.beam`):
+- **C1 `cognee`** (C1b), as in its BEAM evaluation (`cognee.eval_framework.beam`). Its venv adds `transformers`, which Cognee needs to load the BGE-m3 tokenizer it is configured with; without it Cognee falls back to approximate token counts for chunk sizing:
   - every session is one JSON-list document of turn pairs with their date;
   - ingestion runs `local_ingest` with its defaults: session distillation and the global context index;
   - retrieval is `hybrid_completion` with 20 chunks and 20 entities, context only.
@@ -125,7 +125,7 @@ An implementation review found these before any claim ran:
 ## Statistics and sample sizes
 
 - Every comparison is paired by question or task: `inquiry` against each other arm in the claim.
-- The test is the exact two-sided sign test on discordant pairs (McNemar). Holm corrects across the comparisons within C2 and C3; C1 uses the sequential design below.
+- The test is the exact two-sided sign test on discordant pairs (McNemar). Holm corrects across the comparisons within a claim.
 - A claim holds against an arm when its corrected p-value is below 0.05 and `inquiry` is ahead.
 - Time and cost are reported as paired ratios with 95% bootstrap intervals.
 - With about 30% of paired outcomes disagreeing:
@@ -133,22 +133,35 @@ An implementation review found these before any claim ran:
   - C2's 104 tasks and C3's 100 tasks detect about 17 points after Holm across two.
 - A smaller true gap reads as no significant difference.
 
-## C1 sequential design (amended 2026-09-28, before any C1 test run)
+## C1 split into accuracy and ingestion cost (amended 2026-09-28, before any C1 test run)
 
-C1's memory tools cost about $2.75 (mem0) and $7.31 (Cognee) per question at list prices, against $0.0024 for `inquiry` (dev smoke run), almost all of it ingestion. To spend no more than the evidence needs, C1 runs in two looks with early stopping:
+The dev smoke run measured ingestion of one 114k-token history:
+- `inquiry`: no LLM calls.
+- `mem0`: 244 calls, about $1.70 to $2.75 at list prices.
+- `cognee` (BEAM method): about 2,100 calls, about $4.70 to $7.30.
 
-- **Look 1** uses the first 50 questions: `c1_sample(test, 50)`, a subset of the registered 100.
-- **Look 2** adds the other 50, for comparisons not yet decided.
-- **Per comparison:**
-  - α is 0.05/3 (Bonferroni across C1's three comparisons, replacing Holm for C1).
-  - It is spent with the Lan-DeMets O'Brien-Fleming function at information fractions 0.5 and 1.0.
-  - The exact two-sided McNemar p must be below 0.000191 at look 1, or below 0.01661 at look 2. The boundaries were computed for the bivariate normal of the two looks.
-- **At look 1:**
-  - A comparison that crosses its boundary is decided: in favour of whichever arm won more discordant pairs.
-  - That competitor is not ingested for look 2.
-  - There is no stopping for futility.
-- The no-tool arm is always run for all 100 questions.
-- Builds proceed cheapest first: `inquiry`, then `mem0`, then `cognee`.
+LongMemEval gives every question its own history, so a memory tool's accuracy comparison costs a full ingestion per question. For 100 questions that is hundreds of thousands of LLM calls, which is more than the Claude subscription allows in a reasonable time. Ingestion cost is also what decides whether these tools suit high-volume use. C1 therefore becomes two claims, replacing the C1 arms above and the sequential design drafted earlier the same day:
+
+- **C1a. Accuracy against no tool and against retrieval without an LLM at ingestion.**
+  - Arms, each answering from its own context:
+    - `inquiry` (2,000-token context);
+    - the no-tool arm (full history);
+    - `dense`, BGE-m3 over one unit per turn (the Level A dense arm);
+    - `hybrid`, BM25 and BGE-m3 fused by RRF (the Level A hybrid arm);
+    - `mem0-raw`, mem0's documented `infer=False` mode (raw messages with embeddings, `top_k` 200);
+    - `cognee-chunks`, Cognee's `JustChunks` pipeline from its eval framework (JSON-list chunks embedded, no graph, `CHUNKS` search with `top_k` 20).
+  - Each retrieval arm's output is cut at 2,000 tokens.
+  - `mem0-raw` and `cognee-chunks` are those tools' raw-retrieval modes, not their LLM memory, and are reported as such.
+  - Sample: the 100 registered questions.
+  - Method: the answer, judge and scoring rules above, with an exact two-sided McNemar test per comparison and Holm across the five.
+- **C1b. Ingestion cost and time.**
+  - Arms: `inquiry`, `mem0` and `cognee`, built exactly as the C1 methods above say.
+  - Sample: 7 histories, the questions of the registered 100 with the lowest `sha256("20260926:" + question_id)`.
+  - Primary measure: dollars per million conversation tokens (cl100k) at list prices, with the CLI's per-call overhead removed.
+  - Secondary measures: LLM API seconds, wall-clock seconds, LLM calls and items stored, each per million conversation tokens.
+  - A build's measurements come from its own build record, including builds made before the run started.
+  - Test: for each tool, an exact two-sided sign test on the 7 paired histories (is `inquiry` cheaper?), with Holm across the two tools. Seven of seven gives p = 0.016.
+  - Reported with it: paired cost ratios with 95% bootstrap intervals.
 
 ## Integrity
 
@@ -165,7 +178,7 @@ C1's memory tools cost about $2.75 (mem0) and $7.31 (Cognee) per question at lis
 
 ## Consequences
 
-- The expensive part is C1 ingestion. `mem0` and `cognee` call the LLM for every stored turn, and 100 LongMemEval histories are about 5,000 sessions per tool.
+- C1b ingests 7 histories per memory tool (about 15,000 Cognee and 1,700 mem0 calls); C1a needs only answer and judge calls.
 - C2 needs no LLM.
 - C3 is 300 agent runs.
 - Graphify's LOCOMO and LongMemEval numbers are cited only as its own reported results.

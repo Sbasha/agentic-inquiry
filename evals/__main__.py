@@ -67,7 +67,7 @@ def main() -> None:
         help="every RFC-0004 claim test run, verified against the ledger",
     )
     claim = sub.add_parser("claim", help="run one RFC-0004 claim once")
-    claim.add_argument("name", choices=["c1", "c2", "c3"])
+    claim.add_argument("name", choices=["c1", "c1b", "c2", "c3"])
     claim.add_argument("--split", default="dev", choices=["dev", "test"])
     claim.add_argument("--jobs", type=int, default=2)
     claim.add_argument(

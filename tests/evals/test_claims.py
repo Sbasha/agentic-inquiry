@@ -276,25 +276,12 @@ PINNED_JUDGE_DIGESTS = {
 }
 
 
-def test_sequential_boundary_decides_either_direction() -> None:
-    rows = [_row("inquiry", str(i), True) for i in range(14)] + [
-        _row("mem0", str(i), False) for i in range(14)
-    ]
-    (won,) = claims.compare(
-        rows, ["inquiry", "mem0"], boundary=(1, claims.C1_LOOKS[0][1])
-    )
-    assert won["decided"] and won["significant"] and won["look"] == 1
-    rows = [_row("inquiry", str(i), False) for i in range(14)] + [
-        _row("mem0", str(i), True) for i in range(14)
-    ]
-    (lost,) = claims.compare(
-        rows, ["inquiry", "mem0"], boundary=(1, claims.C1_LOOKS[0][1])
-    )
-    assert lost["decided"] and not lost["significant"]
-    rows = [_row("inquiry", str(i), True) for i in range(13)] + [
-        _row("mem0", str(i), False) for i in range(13)
-    ]
-    (open_,) = claims.compare(
-        rows, ["inquiry", "mem0"], boundary=(1, claims.C1_LOOKS[0][1])
-    )
-    assert not open_["decided"]
+def test_c1b_sample_takes_the_lowest_hashes_of_the_registered_questions() -> None:
+    import hashlib
+
+    cases = [_case(f"q{i}") for i in range(30)]
+    pick = claims.c1b_sample(cases, 7)
+    lowest = sorted(
+        cases, key=lambda c: hashlib.sha256(f"20260926:{c.id}".encode()).hexdigest()
+    )[:7]
+    assert [c.id for c in pick] == [c.id for c in lowest]

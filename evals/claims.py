@@ -14,6 +14,7 @@ import json
 import os
 import re
 import sys
+import time
 from collections.abc import Callable, Sequence
 from datetime import datetime, timezone
 from pathlib import Path
@@ -101,16 +102,9 @@ MAX_INFRA_FAILURE_SHARE = 0.05
 
 
 def compare(
-    rows: list[dict[str, Any]],
-    arms: Sequence[str],
-    reference: str = "inquiry",
-    boundary: tuple[int, float] | None = None,
+    rows: list[dict[str, Any]], arms: Sequence[str], reference: str = "inquiry"
 ) -> list[dict[str, Any]]:
-    """``reference`` against every other arm on the items both have.
-
-    With ``boundary`` (look, nominal p) a comparison is decided by the sequential
-    design instead of Holm: significant when its exact p is below the boundary.
-    """
+    """``reference`` against every other arm on the items both have."""
     by_arm: dict[str, dict[str, dict[str, Any]]] = {arm: {} for arm in arms}
     for row in rows:
         by_arm[row["arm"]][row["item"]] = row
@@ -146,12 +140,7 @@ def compare(
         test["infra_failure_share"] = {k: round(v, 4) for k, v in infra.items()}
         test["valid"] = all(v <= MAX_INFRA_FAILURE_SHARE for v in infra.values())
         test["p_holm"] = adjusted[other]
-        if boundary is None:
-            crossed = adjusted[other] < 0.05
-        else:
-            test["look"], test["boundary"] = boundary
-            crossed = test["p"] < boundary[1]
-        test["decided"] = test["valid"] and crossed
+        test["decided"] = test["valid"] and adjusted[other] < 0.05
         test["significant"] = test["decided"] and test["a_only"] > test["b_only"]
         out.append(test)
     return out
@@ -252,17 +241,16 @@ def environment() -> dict[str, Any]:
     }
 
 
-def write_results(
+def save(
     claim: str,
     split: str,
     started: datetime,
     arms: Sequence[str],
-    rows: list[dict[str, Any]],
-    setup: dict[str, dict[str, Any]],
+    body: dict[str, Any],
     provenance: dict[str, Any],
     run_id: str = "",
-    comparisons: list[dict[str, Any]] | None = None,
 ) -> Path:
+    """Write a claim's results with full provenance and, for a test run, its ledger end entry."""
     report = {
         "schema": "InquiryClaims/v1",
         "claim": claim,
@@ -281,9 +269,7 @@ def write_results(
             "prices_per_mtok": PRICES,
             **provenance,
         },
-        "summary": summarize(rows, arms, setup),
-        "comparisons": comparisons if comparisons is not None else compare(rows, arms),
-        "rows": rows,
+        **body,
     }
     stamp = started.strftime("%Y%m%dT%H%M%SZ")
     target = (
@@ -296,9 +282,28 @@ def write_results(
         from evals.run import record_test_run
 
         record_test_run(run_id, f"claim-{claim}", list(arms), report, target)
-    print_report(report)
     print(f"results: {target.relative_to(RESULTS.parent.parent)}", file=sys.stderr)
     return target
+
+
+def write_results(
+    claim: str,
+    split: str,
+    started: datetime,
+    arms: Sequence[str],
+    rows: list[dict[str, Any]],
+    setup: dict[str, dict[str, Any]],
+    provenance: dict[str, Any],
+    run_id: str = "",
+    comparisons: list[dict[str, Any]] | None = None,
+) -> Path:
+    body = {
+        "summary": summarize(rows, arms, setup),
+        "comparisons": comparisons if comparisons is not None else compare(rows, arms),
+        "rows": rows,
+    }
+    print_report({"claim": claim, "split": split, **body})
+    return save(claim, split, started, arms, body, provenance, run_id)
 
 
 def _fmt(value: float | None) -> str:
@@ -466,9 +471,9 @@ def sample_digest(ids: Sequence[str]) -> str:
 # --------------------------------------------------------------------------
 
 C1_ITEMS = 100
-# (questions, nominal two-sided p) per look: O'Brien-Fleming spending of 0.05/3 (RFC-0004).
-C1_LOOKS = ((50, 1.91e-4), (100, 0.01661))
-C1_ARMS = ("inquiry", "full", "mem0", "cognee")
+C1_ARMS = ("inquiry", "full", "dense", "hybrid", "mem0-raw", "cognee-chunks")
+C1B_HISTORIES = 7
+C1B_ARMS = ("inquiry", "mem0", "cognee")
 ANSWERER = "claude-haiku-4-5-20251001"
 JUDGE = "claude-sonnet-5"
 SECOND_JUDGE = "qwen2.5:14b-instruct"
@@ -556,33 +561,34 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
     from concurrent.futures import ThreadPoolExecutor
 
     from evals.answer import cohen_kappa, complete
-    from evals.arms import Competitor, Inquiry
+    from evals.arms import Competitor, Inquiry, make_arm
     from evals.data import LOADERS
     from evals.metrics import count_tokens
 
     suite = LOADERS["longmemeval"]()
     pool = [c for c in suite.cases if c.split == split]
-    if split == "test":
-        # RFC-0004 C1 sequential design: look 1 on the first 50, look 2 on all 100.
-        first = c1_sample(pool, C1_LOOKS[0][0])
-        seen = {c.id for c in first}
-        stages = [first, [c for c in c1_sample(pool, C1_ITEMS) if c.id not in seen]]
-    else:
-        stages = [c1_sample(pool, limit or 6)]
-    cases = [c for stage in stages for c in stage]
+    cases = c1_sample(pool, C1_ITEMS if split == "test" else limit or 6)
     inquiry = Inquiry()
-    tools = {name: Competitor(name) for name in ("mem0", "cognee")}
+    retrievers: dict[str, Any] = {
+        "inquiry": inquiry,
+        "dense": make_arm("dense"),
+        "hybrid": make_arm("hybrid"),
+    }
+    tools = {name: Competitor(name) for name in ("mem0-raw", "cognee-chunks")}
     run_id = begin(
         "c1",
         split,
-        {"inquiry": inquiry.config(), **{n: t.config() for n, t in tools.items()}},
+        {
+            **{n: a.config() for n, a in retrievers.items()},
+            **{n: t.config() for n, t in tools.items()},
+        },
         {"items": len(cases), "jobs": jobs},
     )
     started = datetime.now(timezone.utc)
     contexts: dict[tuple[str, str], dict[str, Any]] = {}
 
-    def build(case: Case, wanted: Sequence[str]) -> None:
-        """The wanted arms' contexts for one question: its haystack, index and query."""
+    def build(case: Case) -> None:
+        """Every arm's context for one question, each from its own index of the history."""
         root = suite.materialize(case.corpus)
         history = full_history(root)
         contexts[("full", case.id)] = {
@@ -593,23 +599,25 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
             "setup": {},
             "query": {},
         }
-        try:
-            handle = inquiry.index(case.corpus, root, suite)
-            ((hits, latency_ms),) = inquiry.search(handle, [case.query], 50)
-            rendered = render(hits, BUDGET)
-            contexts[("inquiry", case.id)] = {
-                "context": rendered.text,
-                "raw_tokens": rendered.tokens,
-                "query_s": latency_ms / 1000,
-                "setup_s": inquiry.build_seconds(handle) or 0.0,
-                "setup": {},
-                "query": {},
-            }
-        except Exception as exc:  # noqa: BLE001 - a failure scores as wrong
-            contexts[("inquiry", case.id)] = {"error": str(exc)}
+        for name, arm in retrievers.items():
+            try:
+                t0 = time.perf_counter()
+                handle = arm.index(case.corpus, root, suite)
+                built = getattr(arm, "build_seconds", lambda h: None)(handle)
+                setup_s = built if built is not None else time.perf_counter() - t0
+                ((hits, latency_ms),) = arm.search(handle, [case.query], 50)
+                rendered = render(hits, BUDGET)
+                contexts[(name, case.id)] = {
+                    "context": rendered.text,
+                    "raw_tokens": rendered.tokens,
+                    "query_s": latency_ms / 1000,
+                    "setup_s": setup_s,
+                    "setup": {},
+                    "query": {},
+                }
+            except Exception as exc:  # noqa: BLE001 - a failure scores as wrong
+                contexts[(name, case.id)] = {"error": str(exc)}
         for name, tool in tools.items():
-            if name not in wanted:
-                continue
             try:
                 handle = tool.index(case.corpus, root, suite)
                 info = tool.build_info(handle)
@@ -697,28 +705,12 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
             "dollars": round(llm_dollars, 6),
         }
 
-    rows: list[dict[str, Any]] = []
-    active = list(C1_ARMS)
-    decided: list[dict[str, Any]] = []
-    for look, stage in enumerate(stages, start=1):
-        with ThreadPoolExecutor(max_workers=jobs) as executor:
-            list(executor.map(lambda case: build(case, active), stage))
-        with ThreadPoolExecutor(max_workers=4) as executor:
-            rows += list(
-                executor.map(answer, [(arm, case) for arm in active for case in stage])
-            )
-        if split == "test" and look == 1:
-            for test in compare(rows, active, boundary=(1, C1_LOOKS[0][1])):
-                if test["decided"]:
-                    decided.append(test)
-                    # A decided memory tool is not ingested again; the no-tool arm always runs.
-                    if test["b"] in tools:
-                        active.remove(test["b"])
-    comparisons = None
-    if split == "test":
-        done = {t["b"] for t in decided}
-        final = compare(rows, C1_ARMS, boundary=(2, C1_LOOKS[1][1]))
-        comparisons = decided + [t for t in final if t["b"] not in done]
+    with ThreadPoolExecutor(max_workers=jobs) as executor:
+        list(executor.map(build, cases))
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        rows = list(
+            executor.map(answer, [(arm, case) for arm in C1_ARMS for case in cases])
+        )
     judged = [r for r in rows if "error" not in r]
     labelled = [r for r in judged if r["second_judge"] is not None]
     if split == "test" and len(labelled) < 0.95 * len(judged):
@@ -742,7 +734,7 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
         setup_totals,
         {
             "arms": {
-                "inquiry": inquiry.config(),
+                **{n: a.config() for n, a in retrievers.items()},
                 **{n: t.config() for n, t in tools.items()},
             },
             "answerer": ANSWERER,
@@ -770,7 +762,6 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
             "items": [c.id for c in cases],
         },
         run_id,
-        comparisons,
     )
     # A person reviews these verdicts before any claim is published (RFC-0004).
     sample = target.with_name(target.stem + "-review.json")
@@ -796,6 +787,192 @@ def run_c1(split: str, jobs: int, limit: int | None = None) -> Path:
         + "\n"
     )
     return target
+
+
+# --------------------------------------------------------------------------
+# C1b: memory tools' ingestion cost and time
+# --------------------------------------------------------------------------
+
+
+def c1b_sample(cases: Sequence[Case], n: int) -> list[Case]:
+    """The ``n`` questions with the lowest ``sha256(SEED:question_id)``."""
+    return sorted(
+        cases, key=lambda c: hashlib.sha256(f"{SEED}:{c.id}".encode()).hexdigest()
+    )[:n]
+
+
+def run_c1b(split: str, jobs: int, limit: int | None = None) -> Path:
+    from concurrent.futures import ThreadPoolExecutor
+
+    from evals.arms import Competitor, Inquiry
+    from evals.data import LOADERS
+    from evals.metrics import count_tokens
+
+    suite = LOADERS["longmemeval"]()
+    pool = [c for c in suite.cases if c.split == split]
+    if split == "test":
+        cases = c1b_sample(c1_sample(pool, C1_ITEMS), C1B_HISTORIES)
+    else:
+        cases = c1b_sample(pool, limit or 2)
+    inquiry = Inquiry()
+    tools = {name: Competitor(name) for name in ("mem0", "cognee")}
+    run_id = begin(
+        "c1b",
+        split,
+        {"inquiry": inquiry.config(), **{n: t.config() for n, t in tools.items()}},
+        {"items": len(cases), "jobs": jobs},
+    )
+    started = datetime.now(timezone.utc)
+
+    def measure(case: Case) -> list[dict[str, Any]]:
+        """Each arm's ingestion of one history, normalized per million conversation tokens."""
+        root = suite.materialize(case.corpus)
+        tokens = count_tokens(full_history(root))
+        per_m = 1_000_000 / tokens
+        rows: list[dict[str, Any]] = []
+        try:
+            store, _ = inquiry.index(case.corpus, root, suite)
+            rows.append(
+                {
+                    "arm": "inquiry",
+                    "item": case.id,
+                    "conversation_tokens": tokens,
+                    "llm_calls": 0,
+                    "dollars": 0.0,
+                    "api_seconds": 0.0,
+                    "seconds": inquiry.build_seconds((store, root)) or 0.0,
+                }
+            )
+        except Exception as exc:  # noqa: BLE001 - recorded, never dropped
+            rows.append(_fail("inquiry", case.id, str(exc)))
+        for name, tool in tools.items():
+            try:
+                info = tool.build_info(tool.index(case.corpus, root, suite))
+                cost = usage_cost(ANSWERER, info.get("llm", {}))
+                rows.append(
+                    {
+                        "arm": name,
+                        "item": case.id,
+                        "conversation_tokens": tokens,
+                        "llm_calls": cost["calls"],
+                        "input_tokens": cost["input_tokens"],
+                        "output_tokens": cost["output_tokens"],
+                        "cache_hits": info.get("llm", {}).get("cache_hits", 0),
+                        "items_stored": info.get("items"),
+                        "dollars": cost["dollars"],
+                        "api_seconds": cost["api_s"],
+                        "seconds": info["seconds"],
+                    }
+                )
+            except Exception as exc:  # noqa: BLE001 - recorded, never dropped
+                rows.append(_fail(name, case.id, str(exc)))
+        for row in rows:
+            for key in ("dollars", "api_seconds", "seconds", "llm_calls"):
+                if key in row and "error" not in row:
+                    row[f"{key}_per_mtok"] = round(row[key] * per_m, 6)
+        return rows
+
+    rows: list[dict[str, Any]] = []
+    with ThreadPoolExecutor(max_workers=jobs) as executor:
+        for part in executor.map(measure, cases):
+            rows += part
+    arms = ("inquiry", *tools)
+    by_arm = {arm: {r["item"]: r for r in rows if r["arm"] == arm} for arm in arms}
+    summary = {
+        arm: {
+            "histories": len(items),
+            "failures": sum(1 for r in items.values() if "error" in r),
+            **{
+                f"mean_{key}_per_mtok": round(
+                    sum(r.get(f"{key}_per_mtok", 0) for r in items.values())
+                    / max(1, len(items)),
+                    4,
+                )
+                for key in ("dollars", "api_seconds", "seconds", "llm_calls")
+            },
+        }
+        for arm, items in by_arm.items()
+    }
+    tests: dict[str, dict[str, Any]] = {}
+    for name in tools:
+        shared = sorted(
+            i
+            for i in set(by_arm["inquiry"]) & set(by_arm[name])
+            if "error" not in by_arm["inquiry"][i] and "error" not in by_arm[name][i]
+        )
+        a = [by_arm["inquiry"][i] for i in shared]
+        b = [by_arm[name][i] for i in shared]
+        # A failed build is not cheaper: the tool loses that history.
+        failed = sum(1 for i in by_arm[name] if "error" in by_arm[name][i])
+        sign = mcnemar(
+            [x["dollars_per_mtok"] < y["dollars_per_mtok"] for x, y in zip(a, b)]
+            + [True] * failed,
+            [y["dollars_per_mtok"] < x["dollars_per_mtok"] for x, y in zip(a, b)]
+            + [False] * failed,
+        )
+        tests[name] = {
+            "a": "inquiry",
+            "b": name,
+            "histories": len(shared) + failed,
+            "inquiry_cheaper": sign["a_only"],
+            "tool_cheaper": sign["b_only"],
+            "p": sign["p"],
+            "dollars_ratio": ratio_interval(
+                [x["dollars_per_mtok"] for x in a],
+                [y["dollars_per_mtok"] for y in b],
+                seed=SEED,
+            ),
+            "api_seconds_ratio": ratio_interval(
+                [x["api_seconds_per_mtok"] for x in a],
+                [y["api_seconds_per_mtok"] for y in b],
+                seed=SEED,
+            ),
+            "seconds_ratio": ratio_interval(
+                [x["seconds_per_mtok"] for x in a],
+                [y["seconds_per_mtok"] for y in b],
+                seed=SEED,
+            ),
+        }
+    adjusted = holm({name: t["p"] for name, t in tests.items()})
+    comparisons = []
+    for name, test in tests.items():
+        test["p_holm"] = adjusted[name]
+        test["significant"] = (
+            adjusted[name] < 0.05 and test["inquiry_cheaper"] > test["tool_cheaper"]
+        )
+        comparisons.append(test)
+    print(f"\nc1b / {split}", file=sys.stderr)
+    for arm, s in summary.items():
+        print(
+            f"{arm:8} histories {s['histories']}  ${s['mean_dollars_per_mtok']:.2f}/Mtok  "
+            f"LLM {s['mean_api_seconds_per_mtok']:.0f}s/Mtok  wall {s['mean_seconds_per_mtok']:.0f}s/Mtok",
+            file=sys.stderr,
+        )
+    for c in comparisons:
+        print(
+            f"  inquiry vs {c['b']}: cheaper on {c['inquiry_cheaper']} of {c['histories']}, "
+            f"p={c['p']:.4f} holm={c['p_holm']:.4f} significant={c['significant']}",
+            file=sys.stderr,
+        )
+    return save(
+        "c1b",
+        split,
+        started,
+        arms,
+        {"summary": summary, "comparisons": comparisons, "rows": rows},
+        {
+            "arms": {
+                "inquiry": inquiry.config(),
+                **{n: t.config() for n, t in tools.items()},
+            },
+            "ingestion_model": ANSWERER,
+            "cli_overhead": {
+                f"{m}{'+schema' if sc else ''}": v for (m, sc), v in _OVERHEAD.items()
+            },
+            "items": [c.id for c in cases],
+        },
+        run_id,
+    )
 
 
 # --------------------------------------------------------------------------
@@ -1172,4 +1349,9 @@ def claims_report() -> int:
     return 1 if problems else 0
 
 
-CLAIMS: dict[str, Callable[..., Path]] = {"c1": run_c1, "c2": run_c2, "c3": run_c3}
+CLAIMS: dict[str, Callable[..., Path]] = {
+    "c1": run_c1,
+    "c1b": run_c1b,
+    "c2": run_c2,
+    "c3": run_c3,
+}
