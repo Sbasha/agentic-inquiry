@@ -213,6 +213,9 @@ def _cognee(store: Path, prefix: str) -> Any:
             "SYSTEM_ROOT_DIRECTORY": str(store / "system"),
             "DATA_ROOT_DIRECTORY": str(store / "data"),
             "TELEMETRY_DISABLED": "1",
+            # Cognee's startup ping of the LLM and embedding endpoints times out when
+            # the local embedder is busy; it checks reachability only.
+            "COGNEE_SKIP_CONNECTION_TEST": "true",
         }
     )
     # cognee.eval_framework.beam.local_ingest sets these when imported; the
