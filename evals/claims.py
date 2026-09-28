@@ -258,10 +258,13 @@ def save(
         "budget_tokens": BUDGET,
         "provenance": {
             "sha": _git("rev-parse", "HEAD"),
-            # The ledger's own start entry is the only change a clean run carries.
+            # Tracked changes made while the run was going, other than the ledger's
+            # own start entry; the start refused any change at all.
             "dirty": any(
                 not line.endswith("test-ledger.jsonl")
-                for line in _git("status", "--porcelain").splitlines()
+                for line in _git(
+                    "status", "--porcelain", "--untracked-files=no"
+                ).splitlines()
             ),
             "environment": environment(),
             "started_utc": started.isoformat(timespec="seconds"),
