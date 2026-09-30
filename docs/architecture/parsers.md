@@ -458,11 +458,12 @@ Even more...
 
 ### Text Chunking
 
-**Strategy:** Whole-file for small prose, then paragraph/sentence splits
-- Files at or under `parsers.fallback_text.whole_file_max_chars` (default 8192 characters) stay one chunk. Conversation sessions and short abstracts are one retrieval unit.
-- Larger files split on paragraphs and sentences using `max_chunk_size` and `chunk_overlap`.
-- When a file must split and its first two lines look like `Session:` / `Date:` (or `Session:` / `S0xx Date:`), every remaining slice is prefixed with those lines.
-- Markdown, PDF, and code parsers are unchanged: documents keep their section/line strategy, and code keeps tree-sitter symbol units.
+**Strategy:** line-aligned packing
+- Lines are packed into chunks of at most `parsers.fallback_text.max_chunk_size` (default 1,000) characters, closing after the last blank line where possible. A single longer line stands alone.
+- A chunk's content is exactly its `line_start`..`line_end` lines; chunks never overlap.
+- Markdown chunks record the heading path where they start as their scope and the nearest heading as a `section` element.
+- Binary files (a NUL byte or over 5% control characters in the first megabyte) are refused.
+- Code chunks follow definition boundaries instead; see `parsers/code_chunks.py` and [search.md](search.md).
 
 ## Entity Extraction
 

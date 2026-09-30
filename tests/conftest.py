@@ -47,6 +47,13 @@ if ROOT_DIR not in sys.path:
 
 pytest_plugins = ["tests.helpers.thread_watchdog"]
 
+# Runtime state (ledgers, the persistent embedding cache) lives under
+# INQUIRY_HOME; tests must never write into the developer's real home.
+if "INQUIRY_HOME" not in os.environ:
+    import tempfile
+
+    os.environ["INQUIRY_HOME"] = tempfile.mkdtemp(prefix="inquiry-home-tests-")
+
 
 def pytest_configure(config):
     """Configure pytest with custom settings."""
@@ -294,7 +301,6 @@ def integration_config(tmp_path):
         hybrid_search=HybridSearchConfig(
             vector_weight=0.7,
             fts_weight=0.3,
-            rerank_by_graph=True,
             reranker_type="rrf",
             reranker_params={},
         ),

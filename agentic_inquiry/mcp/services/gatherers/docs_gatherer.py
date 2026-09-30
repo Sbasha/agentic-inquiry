@@ -94,7 +94,7 @@ class DocsGatherer(ContextGathererProtocol):
                 query_fts=context.query,
                 limit=search_limit,
                 project_id=context.project_id,
-                boost_overview=context.include_overview,
+                content_preference="PROSE" if context.include_overview else None,
             )
 
             logger.info("Search returned %s results", len(results))

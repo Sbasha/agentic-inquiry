@@ -542,14 +542,18 @@ class LanceDBVectorProvider:
             distance = record.get("_distance")
             score = record.get("_score", record.get("score", 0.0))
 
-            # Calculate score from distance if needed
             if distance is not None and score == 0.0:
-                # Convert distance to similarity score (assumes cosine distance)
-                # Clamp to [0.0, 1.0] to handle floating point precision issues
-                score = max(0.0, min(1.0, 1.0 - distance))
-
-            # Ensure score is clamped to valid range
-            final_score = max(0.0, min(1.0, score if score is not None else 0.0))
+                # Cosine distance is 1 - similarity; clamp keeps the display
+                # score in range. Rank order comes from the backend, not this.
+                final_score = max(0.0, min(1.0, 1.0 - distance))
+            elif source == "fts":
+                # BM25 is unbounded. s / (1 + s) keeps its order without
+                # collapsing every strong match to 1.0; the raw value is kept.
+                raw = float(score or 0.0)
+                record["_raw_fts_score"] = raw
+                final_score = raw / (1.0 + raw) if raw > 0 else 0.0
+            else:
+                final_score = max(0.0, min(1.0, score if score is not None else 0.0))
 
             result = SearchResult(
                 id=record.get("id", f"unknown_{i}"),

@@ -303,3 +303,35 @@ def _cache_keys(cached: CachingEmbedder) -> set[str]:
         for s in ("a", "b", "c", "d", "header", "x", "y", "shared_text", "same")
     }
     return {reverse[d] for d in digests if d in reverse}
+
+
+class TestPersistentStore:
+    def test_second_process_reads_vectors_from_disk(self, tmp_path):
+        """A fresh embedder on the same store embeds nothing it has seen before."""
+        from agentic_inquiry.embeddings.caching import CachingEmbedder
+
+        class Counting:
+            def __init__(self):
+                self.calls = []
+
+            def generate(self, texts):
+                self.calls.append(list(texts))
+                return [[float(len(t)), 1.0] for t in texts]
+
+            def ndims(self):
+                return 2
+
+            def ensure_model_loaded(self):
+                pass
+
+        store = tmp_path / "cache.sqlite"
+        first = Counting()
+        assert CachingEmbedder(first, persist_path=store).generate(["a", "bb"]) == [
+            [1.0, 1.0],
+            [2.0, 1.0],
+        ]
+        second = Counting()
+        again = CachingEmbedder(second, persist_path=store)
+        assert again.generate(["bb", "ccc"]) == [[2.0, 1.0], [3.0, 1.0]]
+        assert second.calls == [["ccc"]]
+        assert again.hits == 1 and again.misses == 1

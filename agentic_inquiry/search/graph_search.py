@@ -636,7 +636,6 @@ class GraphSearchService:
                             query_vector=search_query_vector,
                             query_fts=search_query_fts,
                             limit=limit,
-                            rerank_by_graph=False,
                             vector_column_name=vector_column_name,
                             project_id=project_id,
                             project_ids=project_ids,
@@ -854,7 +853,6 @@ class GraphSearchService:
                 query_fts=search_query_fts,
                 limit=limit,
                 filters=chunk_filters,
-                rerank_by_graph=False,
                 vector_column_name=vector_column_name,
                 project_ids=project_ids,
             )

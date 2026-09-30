@@ -22,54 +22,47 @@ logger = logging.getLogger(__name__)
 def format_result(result: dict, index: int, verbose: bool = False) -> str:
     """Format a search result for display.
 
+    The header is ``path:start-end`` when the chunk has line numbers (``path``
+    alone otherwise) followed by the fused score; the next line names the
+    enclosing symbol when there is one.
+
     Args:
-        result: Search result dict
+        result: Search result dict (a stored chunk row plus ``score``)
         index: Result index (1-based)
-        verbose: Include full content
+        verbose: Show up to ten content lines instead of one
 
     Returns:
         Formatted string
     """
     lines = []
+    score = result.get("score", 0.0)
+    file_path = result.get("file_path", "unknown")
+    start, end = _line(result.get("line_start")), _line(result.get("line_end"))
+    location = f"{file_path}:{start}-{max(start, end)}" if start else file_path
+    lines.append(f"{index}. {location}  [{score:.3f}]")
 
-    # Header with score
-    score = result.get("score", result.get("similarity", 0))
-    file_path = result.get("file_path", result.get("source", "unknown"))
-    entity_type = result.get("entity_type", result.get("type", "chunk"))
-
-    raw_vec = result.get("_raw_vector_score")
-    confidence = ""
-    if raw_vec is not None:
-        confidence = f" | vec:{raw_vec:.2f}"
-    lines.append(f"{index}. [{score:.3f}{confidence}] {file_path}")
-
-    # Entity name if available
-    name = result.get("name", result.get("entity_name"))
+    name = result.get("element_name")
     if name:
-        lines.append(f"   {entity_type}: {name}")
+        lines.append(f"   {result.get('element_type') or 'symbol'}: {name}")
 
-    # Line number if available
-    line_num = result.get("line_number", result.get("start_line"))
-    if line_num:
-        lines.append(f"   Line: {line_num}")
-
-    # Content preview
-    content = result.get("content", result.get("text", ""))
+    content = result.get("content") or ""
     if content:
-        if verbose:
-            lines.append("   ---")
-            for line in content.split("\n")[:10]:
-                lines.append(f"   {line}")
-            if content.count("\n") > 10:
-                lines.append(f"   ... ({content.count(chr(10)) - 10} more lines)")
-        else:
-            # First line only
-            first_line = content.split("\n")[0][:80]
-            if len(first_line) == 80:
-                first_line += "..."
-            lines.append(f"   {first_line}")
+        shown = [line for line in content.split("\n") if line.strip()]
+        for line in shown[: 10 if verbose else 1]:
+            lines.append(f"   {line[:160]}")
+        if verbose and len(shown) > 10:
+            lines.append(f"   ... ({len(shown) - 10} more lines)")
 
     return "\n".join(lines)
+
+
+def _line(value: object) -> int:
+    """Stored line numbers use -1 for unknown; treat anything non-positive as absent."""
+    try:
+        number = int(value)  # type: ignore[call-overload]
+    except (TypeError, ValueError):
+        return 0
+    return number if number > 0 else 0
 
 
 async def search_command(args: argparse.Namespace) -> int:
@@ -99,6 +92,7 @@ async def search_command(args: argparse.Namespace) -> int:
         print("Error: Query is required", file=sys.stderr)
         return 1
 
+    storage = None
     try:
         # Configure embedder based on storage backend capabilities
         from agentic_inquiry.embeddings.factory import (
@@ -117,7 +111,7 @@ async def search_command(args: argparse.Namespace) -> int:
         if args.type == "code":
             content_preference = "code"
         elif args.type == "doc":
-            content_preference = "documentation"
+            content_preference = "PROSE"
 
         if caps.uses_server_side_embedding:
             # Server-side embedding: pass raw query text
@@ -174,6 +168,11 @@ async def search_command(args: argparse.Namespace) -> int:
         logger.exception("Search failed")
         print(f"Error: {e}", file=sys.stderr)
         return 1
+    finally:
+        # An open store keeps a non-daemon connection thread alive, and the
+        # process would never exit after printing its results.
+        if storage is not None:
+            await storage.close()
 
 
 async def similar_command(args: argparse.Namespace) -> int:
@@ -198,6 +197,7 @@ async def similar_command(args: argparse.Namespace) -> int:
         )
         return 1
 
+    storage = None
     try:
         # Configure embedder based on storage backend capabilities
         from agentic_inquiry.embeddings.factory import configure_embedder_for_backend
@@ -260,6 +260,9 @@ async def similar_command(args: argparse.Namespace) -> int:
         logger.exception("Similar search failed")
         print(f"Error: {e}", file=sys.stderr)
         return 1
+    finally:
+        if storage is not None:
+            await storage.close()
 
 
 def create_search_parser() -> argparse.ArgumentParser:

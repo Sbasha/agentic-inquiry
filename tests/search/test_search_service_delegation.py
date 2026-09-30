@@ -15,7 +15,6 @@ def mock_config():
     config.storage.default_project_id = "test_project"
     config.search.default_limit = 10
     config.search.max_limit = 1000
-    config.search.hybrid_search.rerank_by_graph = False
     config.search.hybrid_search.reranker.enabled = False
     config.search.hybrid_search.reranker_type = "rrf"
     config.search.hybrid_search.reranker_params = {}
@@ -160,24 +159,6 @@ class TestSearchServiceDelegation:
         # Verify delegation
         search_service._hybrid_search.hybrid_search.assert_called_once()
         assert result == []
-
-    @pytest.mark.unit
-    async def test_rerank_by_graph_delegates_to_graph_search(self, search_service):
-        """Test that _rerank_by_graph delegates to GraphSearchService."""
-        # Setup mock
-        search_results = [{"doc_id": "doc_1"}]
-        search_service._graph_search.rerank_by_graph = AsyncMock(
-            return_value=search_results
-        )
-
-        # Execute
-        result = await search_service._rerank_by_graph(search_results)
-
-        # Verify delegation
-        search_service._graph_search.rerank_by_graph.assert_called_once_with(
-            search_results
-        )
-        assert result == search_results
 
 
 class TestSearchServiceContracts:

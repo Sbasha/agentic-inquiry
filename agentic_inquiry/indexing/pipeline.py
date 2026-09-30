@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import os
 import time
 from dataclasses import fields as dataclass_fields
 from pathlib import Path
@@ -437,6 +438,17 @@ class IndexingPipeline:
         """
         self.stop_watching()
         return False
+
+    def _relative_path(self, file_path: str) -> str:
+        """Project-relative POSIX path, or the path itself when outside the project."""
+        try:
+            return (
+                Path(os.path.realpath(file_path))
+                .relative_to(os.path.realpath(self.project_root))
+                .as_posix()
+            )
+        except ValueError:
+            return Path(file_path).as_posix()
 
     def _generate_operation_id(self) -> str:
         """Generate unique operation ID for tracking indexing operations.
@@ -2288,6 +2300,7 @@ class IndexingPipeline:
                 # left GPUs idle between 1-item calls; batching recovers a
                 # 2-3x speedup on CPU and is the main unlock for GPU /
                 # MPS paths that need ≥32-item batches to saturate.
+                relative_path = self._relative_path(parsed_document.file_path)
                 chunks_to_process: List[ParserChunk] = []
                 vectors_to_process: List[List[float]] = []
                 texts_to_embed: List[str] = []
@@ -2311,11 +2324,11 @@ class IndexingPipeline:
                         vectors_to_process.append([0.0] * chunk_dims)
                         continue
 
-                    embedding_text, used_fallback = (
-                        self.document_processor._resolve_embedding_text(
-                            chunk, chunk_embedder
-                        )
-                    )
+                    texts = self.document_processor.index_texts(chunk, relative_path)
+                    embedding_text = texts[0] if texts else None
+                    used_fallback = bool(texts) and not chunk.content
+                    if texts:
+                        chunk.fts_text = texts[1]
                     if embedding_text is None:
                         stats["skipped_chunks"] += 1
                         # Emit event for skipped chunk

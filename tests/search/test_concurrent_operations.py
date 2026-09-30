@@ -47,7 +47,6 @@ def mock_config():
     config.search.max_limit = 100
     config.search.hybrid_search.vector_weight = 0.7
     config.search.hybrid_search.fts_weight = 0.3
-    config.search.hybrid_search.rerank_by_graph = False
     config.search.hybrid_search.reranker_type = "rrf"
     config.search.hybrid_search.reranker_params = {}
     config.search.deduplication.enabled = False
@@ -380,39 +379,6 @@ class TestDeadlockPrevention:
 
         except asyncio.TimeoutError:
             pytest.fail("Operations timed out - possible deadlock detected")
-
-    @pytest.mark.asyncio
-    async def test_no_deadlock_with_graph_reranking(
-        self, search_service, mock_storage_facade
-    ):
-        """Test that concurrent searches with graph reranking don't deadlock."""
-
-        # Mock graph reranking with some delay
-        async def mock_rerank(results):
-            await asyncio.sleep(0.01)
-            return results
-
-        search_service._graph_search.rerank_by_graph = mock_rerank
-
-        # Execute: Concurrent hybrid searches with graph reranking
-        tasks = [
-            search_service.hybrid_search(
-                query_vector=[0.1] * 384,
-                query_fts=f"query_{i}",
-                limit=5,
-                rerank_by_graph=True,
-            )
-            for i in range(20)
-        ]
-
-        # Should complete without deadlock
-        try:
-            results = await asyncio.wait_for(
-                asyncio.gather(*tasks, return_exceptions=True), timeout=5.0
-            )
-            assert len(results) == 20
-        except asyncio.TimeoutError:
-            pytest.fail("Graph reranking caused deadlock")
 
     @pytest.mark.asyncio
     async def test_no_circular_wait_in_mixed_operations(

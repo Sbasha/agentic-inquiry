@@ -103,7 +103,6 @@ class CodeGatherer(ContextGathererProtocol):
                 query_fts=context.query,
                 limit=search_limit,
                 project_id=context.project_id,
-                boost_overview=context.include_overview,
             )
 
             logger.info("Search returned %s results", len(results))

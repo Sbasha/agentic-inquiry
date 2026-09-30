@@ -72,9 +72,7 @@ def mock_config():
     """Create a mock configuration."""
     config = MagicMock()
     config.search.default_limit = 10
-    config.search.hybrid_search.rerank_by_graph = False
     config.search.hybrid_search.reranker.enabled = False
-    config.search.hybrid_search.overview_boost_factor = 1.5
     config.search.hybrid_search.reranker_type = "rrf"
     config.search.hybrid_search.reranker_params = {}
     config.search.hybrid_search.vector_weight = 0.7
@@ -203,70 +201,6 @@ class TestHybridSearchService:
         assert result[0]["doc_id"] == "doc_1"
 
     @pytest.mark.unit
-    def test_simple_merge(self, hybrid_search_service):
-        """Test simple merge of vector and FTS results."""
-        # Setup mock data
-        vector_results = [
-            {"id": "1", "doc_id": "doc_1", "content": "vector result"},
-        ]
-        fts_results = [
-            {"id": "2", "doc_id": "doc_2", "content": "fts result"},
-        ]
-
-        # Execute
-        result = hybrid_search_service._simple_merge(
-            vector_results, fts_results, limit=10
-        )
-
-        # Verify
-        assert len(result) == 2
-        assert result[0]["id"] == "1"
-        assert result[1]["id"] == "2"
-
-    @pytest.mark.unit
-    def test_simple_merge_with_duplicates(self, hybrid_search_service):
-        """Test simple merge removes duplicates."""
-        # Setup mock data with duplicate doc_id
-        vector_results = [
-            {"id": "1", "doc_id": "doc_1", "content": "vector result"},
-        ]
-        fts_results = [
-            {"id": "1", "doc_id": "doc_1", "content": "same result"},
-        ]
-
-        # Execute
-        result = hybrid_search_service._simple_merge(
-            vector_results, fts_results, limit=10
-        )
-
-        # Verify - should only have one result
-        assert len(result) == 1
-
-    @pytest.mark.unit
-    def test_apply_overview_boosting(self, hybrid_search_service):
-        """Test overview boosting."""
-        # Setup mock data as SearchResult objects (what _apply_overview_boosting expects)
-        results_dicts = [
-            {"file_path": "README.md", "_distance": 0.5},
-            {"file_path": "src/code.py", "_distance": 0.3},
-        ]
-        results = _make_search_results(results_dicts, source="vector")
-
-        # Execute
-        boosted = hybrid_search_service._apply_overview_boosting(
-            results, boost_overview=True
-        )
-
-        # Verify - boosted returns SearchResult objects
-        # README should be boosted, but code.py has better original score (lower distance)
-        # With boost_factor 1.5, README score ~0.67 * 1.5 = ~1.0 (clamped)
-        # code.py score ~0.77 (unmodified)
-        # After boosting, README score becomes higher
-        assert boosted[0].data["file_path"] == "README.md"  # Boosted to top
-        assert boosted[1].data["file_path"] == "src/code.py"
-        assert boosted[0].data.get("_overview_boosted") is True
-
-    @pytest.mark.unit
     def test_apply_deduplication_called_with_results(
         self, hybrid_search_service, mock_deduplicator
     ):
@@ -357,77 +291,6 @@ class TestRRFScoringFormula:
 
         # doc3 should rank last (only in FTS at rank 1)
         assert result_ids[2] == "doc3", "doc3 should rank last (only fts rank 1)"
-
-    @pytest.mark.unit
-    def test_rrf_respects_weight_configuration(self):
-        """Test that RRF respects different weight configurations."""
-        from agentic_inquiry.database.results import SearchResult
-
-        # Same results but appearing at rank 0 in each list
-        vector_results = [
-            SearchResult(
-                id="vec_doc", data={"content": "v"}, score=0.9, source="vector"
-            ),
-        ]
-        fts_results = [
-            SearchResult(id="fts_doc", data={"content": "f"}, score=0.9, source="fts"),
-        ]
-
-        reranker = RRFReranker(k=60)
-
-        # With vector-heavy weights (0.9, 0.1)
-        results_vector_heavy = reranker.rerank(
-            query="test",
-            vector_results=vector_results,
-            fts_results=fts_results,
-            config={"vector_weight": 0.9, "fts_weight": 0.1},
-        )
-        # vec_doc: 0.9/(60+1) ≈ 0.01475
-        # fts_doc: 0.1/(60+1) ≈ 0.00164
-        assert results_vector_heavy[0].id == "vec_doc", (
-            "Vector doc should rank first with vector-heavy weights"
-        )
-
-        # With FTS-heavy weights (0.1, 0.9)
-        results_fts_heavy = reranker.rerank(
-            query="test",
-            vector_results=vector_results,
-            fts_results=fts_results,
-            config={"vector_weight": 0.1, "fts_weight": 0.9},
-        )
-        # vec_doc: 0.1/(60+1) ≈ 0.00164
-        # fts_doc: 0.9/(60+1) ≈ 0.01475
-        assert results_fts_heavy[0].id == "fts_doc", (
-            "FTS doc should rank first with FTS-heavy weights"
-        )
-
-    @pytest.mark.unit
-    def test_rrf_scores_are_normalized(self):
-        """Test that final RRF scores are normalized to 0.0-1.0 range."""
-        from agentic_inquiry.database.results import SearchResult
-
-        vector_results = [
-            SearchResult(id="doc1", data={"content": "a"}, score=0.9, source="vector"),
-            SearchResult(id="doc2", data={"content": "b"}, score=0.8, source="vector"),
-        ]
-        fts_results = [
-            SearchResult(id="doc3", data={"content": "c"}, score=0.9, source="fts"),
-        ]
-
-        reranker = RRFReranker(k=60)
-        results = reranker.rerank(
-            query="test",
-            vector_results=vector_results,
-            fts_results=fts_results,
-            config={"vector_weight": 0.7, "fts_weight": 0.3},
-        )
-
-        # All scores should be normalized to 0.0-1.0
-        for result in results:
-            assert 0.0 <= result.score <= 1.0, f"Score {result.score} not in [0.0, 1.0]"
-
-        # The highest-ranked result should have score 1.0 (max normalization)
-        assert results[0].score == 1.0, "Top result should have normalized score of 1.0"
 
     @pytest.mark.unit
     def test_rrf_empty_inputs(self):

@@ -1,0 +1,3046 @@
+{
+ "budget_tokens": 2000,
+ "comparisons": [],
+ "provenance": {
+  "arms": {
+   "bm25": {
+    "display": "text",
+    "impl": "bm25s==0.3.11",
+    "method": "lucene",
+    "stemmer": "snowball-english",
+    "stopwords": "en"
+   }
+  },
+  "datasets": {
+   "scifact": "536e14446a0ba56ed1398ab1055f39fe852686ecad24a6306c80c490fa8e0165"
+  },
+  "dirty": true,
+  "dropped": {},
+  "platform": "macOS-27.0-arm64-arm-64bit",
+  "python": "3.12.13",
+  "rfc_sha256": "e29df63fface57896527361a8fff8ea48a502a73651a097cd0c095e8a1f3d7c1",
+  "seed": 20260926,
+  "sha": "e8b80e5af2453b71f2f17a8556dfb5915b987c19",
+  "started_utc": "2026-09-26T06:42:47+00:00",
+  "tokenizer": "tiktoken cl100k_base"
+ },
+ "rows": [
+  {
+   "arm": "bm25",
+   "case": "scifact-1",
+   "latency_ms": 0.87,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-3",
+   "latency_ms": 0.3,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-5",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-13",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-36",
+   "latency_ms": 0.23,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.21840743681816419,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-42",
+   "latency_ms": 0.23,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-48",
+   "latency_ms": 0.46,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-49",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-50",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-51",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-53",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-54",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-56",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-57",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-70",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-72",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-75",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-94",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-99",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-100",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-113",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-115",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-118",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-124",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-127",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-128",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-129",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-130",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-132",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-133",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.25,
+    "ndcg@10": 0.14606834984270645,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-137",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-141",
+   "latency_ms": 0.96,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 0.9197207891481876,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-142",
+   "latency_ms": 0.24,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-143",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-146",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-148",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-163",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-171",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-179",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 0.6984152163370878,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-180",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-183",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-185",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 0.25,
+    "ndcg@10": 0.43067655807339306,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-198",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-208",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-212",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.1111111111111111,
+    "ndcg@10": 0.3010299956639812,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-213",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.3562071871080222,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-216",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-217",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-218",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-219",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-230",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-232",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-233",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-236",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-237",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-238",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-239",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-248",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-249",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-261",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.2,
+    "ndcg@10": 0.430624116386567,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-268",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-269",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-274",
+   "latency_ms": 0.25,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-275",
+   "latency_ms": 0.23,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 0.46927872602275644,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-279",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-294",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-295",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-298",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-300",
+   "latency_ms": 0.24,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-303",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-312",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.3562071871080222,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-314",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-324",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-327",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-338",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-343",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5706417189553201,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-350",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-354",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-362",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-380",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-384",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-385",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6240505200038379,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-386",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-388",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-399",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-410",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-411",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-415",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.3562071871080222,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-421",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-431",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-436",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-437",
+   "latency_ms": 0.26,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-439",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-440",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-443",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-452",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.5
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-475",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-478",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-491",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-501",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-502",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-507",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-508",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-513",
+   "latency_ms": 0.23,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-514",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 0.14285714285714285,
+    "ndcg@10": 0.3333333333333333,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-516",
+   "latency_ms": 0.73,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-517",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-521",
+   "latency_ms": 0.23,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-525",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-527",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-528",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-532",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-533",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-535",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-536",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-539",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-540",
+   "latency_ms": 0.13,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.21840743681816419,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-544",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-549",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-551",
+   "latency_ms": 0.23,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-552",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-554",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.125,
+    "ndcg@10": 0.31546487678572877,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-560",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-569",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-575",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-577",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.2,
+    "ndcg@10": 0.38685280723454163,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-578",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-587",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 0.2,
+    "ndcg@10": 0.38685280723454163,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-589",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-593",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-597",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 0.9217868789962071,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-598",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.14285714285714285,
+    "ndcg@10": 0.3333333333333333,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-613",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-619",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 0.14285714285714285,
+    "ndcg@10": 0.20438239758848611,
+    "recall@100": 0.5
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-623",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.1,
+    "ndcg@10": 0.2890648263178879,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-628",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.3562071871080222,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-636",
+   "latency_ms": 0.13,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-637",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-641",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 0.6131471927654584,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-644",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-649",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-659",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-660",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-674",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-684",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-690",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-691",
+   "latency_ms": 0.24,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-692",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-693",
+   "latency_ms": 0.25,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-700",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-702",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-715",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-716",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-718",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-721",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-723",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-727",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-728",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6052602440527057,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-729",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-742",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-743",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-744",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-756",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.125,
+    "ndcg@10": 0.31546487678572877,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-759",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-768",
+   "latency_ms": 0.12,
+   "metrics": {
+    "mrr@10": 0.125,
+    "ndcg@10": 0.31546487678572877,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-770",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-775",
+   "latency_ms": 0.55,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-781",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-783",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.1,
+    "ndcg@10": 0.2890648263178879,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-784",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-785",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-793",
+   "latency_ms": 0.12,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-800",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-805",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-808",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-811",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-814",
+   "latency_ms": 0.24,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-820",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-821",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-823",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-830",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.14285714285714285,
+    "ndcg@10": 0.3333333333333333,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-831",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-832",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-834",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-837",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-839",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-845",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-847",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-852",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-859",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-870",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-873",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.1111111111111111,
+    "ndcg@10": 0.10209739512291163,
+    "recall@100": 0.8
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-879",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-880",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-882",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-887",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-903",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-904",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-907",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-911",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-913",
+   "latency_ms": 0.13,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-914",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-921",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-922",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-936",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-956",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-957",
+   "latency_ms": 0.13,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-960",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-967",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 0.9197207891481876,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-971",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.710675276578257,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-975",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-982",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-985",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-993",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1012",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1014",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1019",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1020",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1021",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1024",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1029",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 0.7653606369886217,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1041",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.25,
+    "ndcg@10": 0.44130740935663865,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1049",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1062",
+   "latency_ms": 0.13,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1086",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1088",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1089",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1099",
+   "latency_ms": 0.12,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1100",
+   "latency_ms": 0.12,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1104",
+   "latency_ms": 0.24,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1107",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1110",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1121",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1130",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1132",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.16666666666666666,
+    "ndcg@10": 0.21840743681816419,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1137",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1140",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1144",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1146",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1150",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1163",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1175",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1179",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.1111111111111111,
+    "ndcg@10": 0.3010299956639812,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1180",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 0.2,
+    "ndcg@10": 0.38685280723454163,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1185",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1187",
+   "latency_ms": 0.23,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1191",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1194",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1196",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.25,
+    "ndcg@10": 0.43067655807339306,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1197",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.25,
+    "ndcg@10": 0.43067655807339306,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1199",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1200",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1202",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1204",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1207",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1213",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1216",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1221",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1225",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1226",
+   "latency_ms": 0.59,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1232",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1241",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1245",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.1111111111111111,
+    "ndcg@10": 0.3010299956639812,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1259",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1262",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1266",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1270",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1271",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1272",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.125,
+    "ndcg@10": 0.31546487678572877,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1273",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1274",
+   "latency_ms": 0.21,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.7122630665145961,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1278",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.1,
+    "ndcg@10": 0.2890648263178879,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1279",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 0.125,
+    "ndcg@10": 0.31546487678572877,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1280",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1281",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1282",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1290",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1292",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1298",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1303",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1316",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1319",
+   "latency_ms": 0.19,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1320",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1332",
+   "latency_ms": 0.22,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 0.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1335",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1336",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1337",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1339",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1344",
+   "latency_ms": 0.2,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1352",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1359",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1362",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.3333333333333333,
+    "ndcg@10": 0.5,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1363",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1368",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1370",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.6309297535714575,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1379",
+   "latency_ms": 0.16,
+   "metrics": {
+    "mrr@10": 0.5,
+    "ndcg@10": 0.5101671483174705,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1382",
+   "latency_ms": 0.17,
+   "metrics": {
+    "mrr@10": 0.1111111111111111,
+    "ndcg@10": 0.3010299956639812,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1385",
+   "latency_ms": 0.14,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1389",
+   "latency_ms": 0.15,
+   "metrics": {
+    "mrr@10": 1.0,
+    "ndcg@10": 1.0,
+    "recall@100": 1.0
+   }
+  },
+  {
+   "arm": "bm25",
+   "case": "scifact-1395",
+   "latency_ms": 0.18,
+   "metrics": {
+    "mrr@10": 0.0,
+    "ndcg@10": 0.0,
+    "recall@100": 1.0
+   }
+  }
+ ],
+ "schema": "InquiryEval/v1",
+ "split": "all",
+ "suite": "scifact",
+ "summary": {
+  "bm25": {
+   "cases": 300,
+   "failure_share": 0.0,
+   "failures": 0,
+   "mean_index_s": 0.81,
+   "metrics": {
+    "mrr@10": 0.6492,
+    "ndcg@10": 0.6859,
+    "recall@100": 0.9127
+   },
+   "p50_latency_ms": 0.18
+  }
+ }
+}

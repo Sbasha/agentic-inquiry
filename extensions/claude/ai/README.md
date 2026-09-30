@@ -95,13 +95,17 @@ Agentic Inquiry provides semantic understanding of codebases through:
 | `command-helper` | List and describe available ai commands |
 | `env-manager` | Environment lifecycle (create, destroy, status) |
 
+## Search tool
+
+The plugin registers an MCP server named `inquiry` (`ai mcp --tools search`), so Claude can call `search` directly while it works. The server serves the project in Claude's working directory: the project bound by `ai integration`, otherwise the default project in your configuration. It needs the `ai` command on your `PATH`. To switch it off, disable the `inquiry` server with `/mcp` in Claude Code.
+
 ## Hooks
 
 The plugin includes lifecycle hooks that run as Python scripts:
 
 - **SessionStart**: Start ai daemon, inject behavioral contract for memory capture
 - **UserPromptSubmit**: Signal analysis and dynamic context injection
-- **PreToolUse[Grep]**: Suggest `/ai:search` for conceptual queries
+- **PreToolUse[Grep]**: Suggest the `search` tool for conceptual queries
 - **PostToolUse[Write|Edit]**: Record file changes, prompt for memory capture
 - **PostToolUse[Bash]**: Classify commands, capture test/build/deploy events
 - **PostToolUse[TaskUpdate]**: Prompt for memory capture on task transitions

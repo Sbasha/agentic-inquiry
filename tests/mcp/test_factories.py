@@ -579,16 +579,13 @@ class TestCreateMCPServices:
         assert isinstance(server_config, dict)
 
         # Verify it has the expected structure
-        assert len(server_config) == 4
-        assert all(
-            key in server_config
-            for key in [
-                "default_project_id",
-                "server_name",
-                "server_version",
-                "server_description",
-            ]
-        )
+        assert set(server_config) == {
+            "default_project_id",
+            "server_name",
+            "server_version",
+            "server_description",
+            "project_root",
+        }
 
     @patch("agentic_inquiry.mcp.factories.StorageFacade")
     @patch("agentic_inquiry.mcp.factories.SearchService")

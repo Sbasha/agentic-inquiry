@@ -2,8 +2,8 @@
   "version": "1.0",
   "summary": {
     "recall_at_10": 1.0,
-    "median_latency_ms": 22.82,
-    "p95_latency_ms": 46.23,
+    "median_latency_ms": 260.66,
+    "p95_latency_ms": 289.88,
     "query_count": 15
   },
   "config": {
@@ -26,117 +26,117 @@
     ]
   },
   "corpus": {
-    "files_processed": 349,
-    "files_failed": 5,
+    "files_processed": 314,
+    "files_failed": 0,
     "chunk_count": null
   },
-  "git_sha": "bfee1b1b7fdcf24e1eab663ac90c7dbb420164e6",
+  "git_sha": "5420b8c835629a9a082cf9bf234edf3860c9bc58",
   "git_dirty": false,
   "per_query": [
     {
       "id": "search-async-patterns",
       "query": "async database connection pattern",
       "recall": 1.0,
-      "latency_ms": 33.36,
-      "result_count": 8
+      "latency_ms": 292.72,
+      "result_count": 10
     },
     {
       "id": "search-embedding-generation",
       "query": "generate embeddings for text",
       "recall": 1.0,
-      "latency_ms": 41.87,
-      "result_count": 7
+      "latency_ms": 268.16,
+      "result_count": 10
     },
     {
       "id": "search-config-loading",
       "query": "load configuration from yaml file",
       "recall": 1.0,
-      "latency_ms": 39.9,
-      "result_count": 6
+      "latency_ms": 284.41,
+      "result_count": 10
     },
     {
       "id": "search-mcp-tools",
       "query": "MCP tool implementation",
       "recall": 1.0,
-      "latency_ms": 18.82,
-      "result_count": 6
+      "latency_ms": 257.93,
+      "result_count": 10
     },
     {
       "id": "search-error-handling",
       "query": "exception handling and error messages",
       "recall": 1.0,
-      "latency_ms": 34.48,
-      "result_count": 7
+      "latency_ms": 258.55,
+      "result_count": 10
     },
     {
       "id": "search-tree-sitter-parsing",
       "query": "tree sitter parse python code AST",
       "recall": 1.0,
-      "latency_ms": 56.41,
-      "result_count": 6
+      "latency_ms": 258.3,
+      "result_count": 10
     },
     {
       "id": "search-memory-system",
       "query": "working memory episodic semantic tier",
       "recall": 1.0,
-      "latency_ms": 21.69,
-      "result_count": 7
+      "latency_ms": 246.86,
+      "result_count": 10
     },
     {
       "id": "search-knowledge-graph",
       "query": "entity relationship graph traversal",
       "recall": 1.0,
-      "latency_ms": 23.9,
-      "result_count": 7
+      "latency_ms": 239.31,
+      "result_count": 10
     },
     {
       "id": "search-hybrid-search",
       "query": "hybrid search vector FTS reranking",
       "recall": 1.0,
-      "latency_ms": 22.82,
-      "result_count": 8
+      "latency_ms": 272.58,
+      "result_count": 10
     },
     {
       "id": "search-file-watching",
       "query": "file watcher monitor changes callback",
       "recall": 1.0,
-      "latency_ms": 20.41,
-      "result_count": 5
+      "latency_ms": 249.2,
+      "result_count": 10
     },
     {
       "id": "search-document-cache",
       "query": "LRU cache invalidation persistence",
       "recall": 1.0,
-      "latency_ms": 20.48,
-      "result_count": 8
+      "latency_ms": 278.5,
+      "result_count": 10
     },
     {
       "id": "search-event-system",
       "query": "event emit subscribe publish bus",
       "recall": 1.0,
-      "latency_ms": 19.59,
-      "result_count": 5
+      "latency_ms": 268.53,
+      "result_count": 10
     },
     {
       "id": "search-indexing-pipeline",
       "query": "indexing pipeline chunk document process",
       "recall": 1.0,
-      "latency_ms": 36.6,
-      "result_count": 5
+      "latency_ms": 260.66,
+      "result_count": 10
     },
     {
       "id": "search-storage-facade",
       "query": "storage facade provider backend adapter",
       "recall": 1.0,
-      "latency_ms": 19.21,
-      "result_count": 7
+      "latency_ms": 288.66,
+      "result_count": 10
     },
     {
       "id": "search-metrics-correlation",
       "query": "metrics latency tracking correlation ID",
       "recall": 1.0,
-      "latency_ms": 22.32,
-      "result_count": 6
+      "latency_ms": 249.04,
+      "result_count": 10
     }
   ]
 }

@@ -311,7 +311,6 @@ class TestSearchWorkflow:
             query_vector=query_vector,
             query_fts="calculator",
             limit=10,
-            rerank_by_graph=False,
         )
 
         # Verify results were returned

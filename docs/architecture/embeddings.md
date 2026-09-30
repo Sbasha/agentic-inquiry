@@ -76,7 +76,7 @@ embedder serves both), no streaming variant, no per-call config.
 
 | Class | Module | Purpose |
 |---|---|---|
-| `SentenceTransformerEmbedder` | `embeddings/sentence_transformer.py` | Default. CPU/CUDA/MPS autodetect; pads/truncates to `ndims`; defaults to `all-MiniLM-L6-v2` (384 dim). |
+| `SentenceTransformerEmbedder` | `embeddings/sentence_transformer.py` | Default. CPU/CUDA/MPS autodetect; pads/truncates to `ndims`; defaults to `BAAI/bge-small-en-v1.5` (384 dim). |
 | `FastEmbedEmbedder` | `embeddings/fastembed.py` | ONNX Runtime via the `fastembed` library; defaults to `BAAI/bge-small-en-v1.5`. |
 | `LocalModelEmbedder` | `embeddings/local_model.py` | ONNX models loaded from disk with a `metadata.json` sidecar describing dim, pooling, normalization. Workspace-relative paths. |
 | `HashingEmbedder` | `embeddings/hashing.py` | Deterministic char-n-gram hashing — used for `graph_relationships` where types are a finite string set. |
@@ -317,7 +317,7 @@ embeddings:
   default_provider: sentence_transformer
   default_dimensions: 384
   sentence_transformer:
-    model_name: all-MiniLM-L6-v2
+    model_name: BAAI/bge-small-en-v1.5
     ndims: 384
   fastembed:
     model_name: BAAI/bge-small-en-v1.5

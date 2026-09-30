@@ -518,11 +518,11 @@ class TestMultipleDocumentFormats:
         assert len(chunks_with_rels) > 0, "No chunks with relationships"
 
     @pytest.mark.asyncio
-    async def test_parser_can_handle_markdown(self, parser):
-        """Test that parser reports it can handle markdown."""
-        assert await parser.can_parse("test.md")
-        assert await parser.can_parse("test.markdown")
-        assert await parser.can_parse("TEST.MD")  # Case insensitive  # Case insensitive
+    async def test_markdown_and_rst_are_left_to_line_chunks(self, parser):
+        """Markdown and reStructuredText go to the line-chunking text parser, which keeps line numbers."""
+        assert not await parser.can_parse("test.md")
+        assert not await parser.can_parse("test.markdown")
+        assert not await parser.can_parse("TEST.RST")
 
     @pytest.mark.asyncio
     async def test_parser_can_handle_other_formats(self, parser):

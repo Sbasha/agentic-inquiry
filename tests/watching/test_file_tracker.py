@@ -427,3 +427,19 @@ class TestConcurrentOperations:
 
         # All should be unchanged
         assert all(not changed for changed in results)
+
+
+@pytest.mark.asyncio
+async def test_switching_embedding_model_marks_indexed_files_changed(
+    mock_config, sample_file, temp_db_path
+):
+    """Vectors from two models never share an index: a new model re-embeds every file."""
+    tracker = await FileTracker.from_config(config=mock_config, db_path=temp_db_path)
+    await tracker.update_hash(sample_file)
+    assert not await tracker.has_changed(sample_file)
+
+    mock_config.embeddings.sentence_transformer.model_name = (
+        "sentence-transformers/all-MiniLM-L6-v2"
+    )
+    switched = await FileTracker.from_config(config=mock_config, db_path=temp_db_path)
+    assert await switched.has_changed(sample_file)

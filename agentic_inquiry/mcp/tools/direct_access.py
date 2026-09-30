@@ -541,7 +541,7 @@ async def search_docs(
             query_fts=query,
             project_id=project_id,
             limit=limit * 3,  # Get extra to filter
-            boost_overview=True,  # Boost README and docs
+            content_preference="PROSE",
         )
 
         # Filter to documentation only

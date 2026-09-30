@@ -78,9 +78,6 @@ def create_search_service_with_weights(
     config = Config.load()
     config.search.hybrid_search.vector_weight = vector_weight
     config.search.hybrid_search.fts_weight = fts_weight
-    config.search.hybrid_search.rerank_by_graph = (
-        False  # Disable graph reranking for tests
-    )
     # Create a mock event system if not provided
     if mock_event_system is None:
         mock_event_system = MagicMock()

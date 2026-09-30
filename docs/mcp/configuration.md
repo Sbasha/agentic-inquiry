@@ -908,7 +908,7 @@ results = await search_knowledge(
 search:
   deduplication:
     enabled: true
-    max_results_per_file: 1
+    max_results_per_file: 3
     min_diversity_ratio: 0.7
 ```
 
@@ -917,7 +917,7 @@ Search deduplication ensures diverse results across files.
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `enabled` | true | Enable deduplication |
-| `max_results_per_file` | 1 | Max results per file |
+| `max_results_per_file` | 3 | Max results per file |
 | `min_diversity_ratio` | 0.7 | Target diversity ratio (unique files / total results) |
 
 **Environment Variables:**
@@ -1151,7 +1151,7 @@ search:
     preserve_wildcards: false
   deduplication:
     enabled: true
-    max_results_per_file: 1
+    max_results_per_file: 3
     min_diversity_ratio: 0.7
 ```
 

@@ -14,10 +14,17 @@ from agentic_inquiry.database.filters import (
     translate_dict_filters,
 )
 from agentic_inquiry.search.query_sanitizer import QuerySanitizer
+from agentic_inquiry.database.lexical import LexicalIndex
+from agentic_inquiry.storage.similarity import lancedb_metric
 
 _fts_sanitizer = QuerySanitizer()
 
 logger = logging.getLogger(__name__)
+
+# Tables at or below this many rows are searched exhaustively (see _vector_query).
+EXACT_SEARCH_MAX_ROWS = 1_000_000
+# BM25 candidates ranked per requested row, before filters apply (see _lexical_query).
+LEXICAL_OVERFETCH = 4
 
 
 def _is_stale_table_error(error: Exception) -> bool:
@@ -61,6 +68,8 @@ class LanceDBQueryBuilder:
         run_sync_fn: Callable[[Callable], Any],
         project_id: Optional[str] = None,
         invalidate_cache_fn: Optional[Callable[[str], Any]] = None,
+        similarity_metric: str = "cosine",
+        lexical_root: Optional[str] = None,
     ):
         """Initialize query builder.
 
@@ -69,11 +78,20 @@ class LanceDBQueryBuilder:
             run_sync_fn: Function to run sync operations in async context
             project_id: Optional project ID for filtering
             invalidate_cache_fn: Optional async function to invalidate table cache
+            similarity_metric: Metric the vector index was built with; exact
+                searches use the same one so scores and order agree with it.
+            lexical_root: Local database directory. When set, full-text
+                search ranks with the Tantivy BM25 projection in
+                ``agentic_inquiry.database.lexical``; otherwise it falls back
+                to LanceDB's native FTS index.
         """
         self._get_table = get_table_fn
         self._run_sync = run_sync_fn
         self._project_id = project_id
         self._invalidate_cache = invalidate_cache_fn
+        self._distance_type = lancedb_metric(similarity_metric)
+        self._lexical_root = lexical_root
+        self._lexical: Dict[str, LexicalIndex] = {}
 
     async def _search_with_stale_retry(
         self,
@@ -102,6 +120,31 @@ class LanceDBQueryBuilder:
             if fresh_table is None:
                 return []
             return await self._run_sync(lambda: run(fresh_table))
+
+    def _vector_query(
+        self,
+        table: Any,
+        query_vector: List[float],
+        vector_column_name: str,
+        filter_expression: Optional[str],
+        limit: int,
+    ) -> List[Dict[str, Any]]:
+        """Nearest neighbours in the configured metric.
+
+        Below ``EXACT_SEARCH_MAX_ROWS`` rows the search is exhaustive: an
+        approximate IVF probe of a few partitions loses recall that a brute
+        force scan of that many rows returns in well under a second.
+        """
+        query = table.search(
+            query_vector, vector_column_name=vector_column_name
+        ).distance_type(self._distance_type)
+        if table.count_rows() <= EXACT_SEARCH_MAX_ROWS:
+            query = query.bypass_vector_index()
+        else:
+            query = query.refine_factor(10)
+        if filter_expression:
+            query = query.where(filter_expression)
+        return query.limit(limit).to_list()
 
     async def vector_search(
         self,
@@ -135,15 +178,48 @@ class LanceDBQueryBuilder:
         filter_expression = self._filters_to_expression(filters)
 
         def _run_search(table: Any) -> List[Dict[str, Any]]:
-            query = table.search(query_vector, vector_column_name=vector_column_name)
-            if filter_expression:
-                query = query.where(filter_expression)
-            # Use refine_factor for accurate distance calculations if available
-            if hasattr(query, "refine_factor"):
-                query = query.refine_factor(10)
-            return query.limit(limit).to_list()
+            return self._vector_query(
+                table, query_vector, vector_column_name, filter_expression, limit
+            )
 
         return await self._search_with_stale_retry(table_name, table, _run_search)
+
+    def _lexical_query(
+        self,
+        table: Any,
+        table_name: str,
+        query: str,
+        filter_expression: Optional[str],
+        limit: int,
+    ) -> List[Dict[str, Any]]:
+        """Rank with the Tantivy projection, then read the rows (and filters) from LanceDB.
+
+        BM25 ranks more candidates than ``limit`` because the filter (project,
+        content type) is applied when the rows are read back.
+        """
+        lexical = self._lexical.setdefault(
+            table_name, LexicalIndex(self._lexical_root or "", table_name)
+        )
+        ranked = lexical.search(table, query, max(limit * LEXICAL_OVERFETCH, limit))
+        if not ranked:
+            return []
+        quoted = ", ".join(
+            "'" + row_id.replace("'", "''") + "'" for row_id, _ in ranked
+        )
+        where = f"id IN ({quoted})"
+        if filter_expression:
+            where = f"({where}) AND ({filter_expression})"
+        rows = {
+            row["id"]: row
+            for row in table.search().where(where).limit(len(ranked)).to_list()
+        }
+        ordered = []
+        for row_id, score in ranked:
+            row = rows.get(row_id)
+            if row is not None:
+                row["_score"] = score
+                ordered.append(row)
+        return ordered[:limit]
 
     async def fts_search(
         self,
@@ -176,6 +252,12 @@ class LanceDBQueryBuilder:
         safe_query = _fts_sanitizer.sanitize(query)
 
         def _run_search(table: Any) -> List[Dict[str, Any]]:
+            # The Tantivy projection reads fts_text, which only chunk tables
+            # carry; other tables (memory tiers) use their native FTS index.
+            if self._lexical_root is not None and "fts_text" in table.schema.names:
+                return self._lexical_query(
+                    table, table_name, query, filter_expression, limit
+                )
             query_builder = table.search(safe_query, query_type="fts")
             if filter_expression:
                 query_builder = query_builder.where(filter_expression)

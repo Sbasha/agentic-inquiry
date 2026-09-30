@@ -205,7 +205,7 @@ async def build_context(
                         query_fts=query,
                         limit=10,
                         project_id=session.project_id,
-                        boost_overview=include_overview,
+                        content_preference="PROSE" if include_overview else None,
                     )
 
                     # Convert search results to context format

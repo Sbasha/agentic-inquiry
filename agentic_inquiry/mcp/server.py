@@ -4,7 +4,7 @@ import logging
 import inspect
 import functools
 import sys
-from typing import Dict, Any, Optional, Callable, TypeVar
+from typing import Any, Callable, Dict, List, Optional, TypeVar
 
 from fastmcp import FastMCP
 
@@ -99,6 +99,7 @@ class MCPServer:
         config: Config,
         project_id: Optional[str] = None,
         project_root: Optional[str] = None,
+        tools: Optional[List[str]] = None,
     ):
         """Initialize MCP server.
 
@@ -106,10 +107,12 @@ class MCPServer:
             config: Configuration object
             project_id: Optional default project ID for service initialization
             project_root: Project whose integration ledger the maintenance tick drains
+            tools: Tool names to expose; None exposes every enabled tool
         """
         self.config = config
         self.project_id = project_id
         self.project_root = project_root
+        self.tool_allowlist = set(tools) if tools else None
         self.app: Optional[FastMCP] = None
         self.services: Dict[str, Any] = {}
         self._initialized = False
@@ -347,6 +350,12 @@ class MCPServer:
             ),
             # Search tools
             (
+                search.search,
+                "search",
+                "Find where something is implemented or described: best-matching code and text as "
+                "path:start-end blocks within a character budget. Use before grepping or reading files.",
+            ),
+            (
                 search.search_knowledge,
                 "search_knowledge",
                 "Search across all indexed content in the project",
@@ -415,6 +424,8 @@ class MCPServer:
 
         # Register each tool with services injected using safe wrapper pattern
         for tool_func, name, description in tools:
+            if self.tool_allowlist is not None and name not in self.tool_allowlist:
+                continue
             # Create service-bound wrapper without exec()
             bound_func = create_service_bound_wrapper(tool_func, self.services)
 
@@ -458,6 +469,8 @@ class MCPServer:
 
         # Register each tool with services injected using safe wrapper pattern
         for tool_func, name, description in tools:
+            if self.tool_allowlist is not None and name not in self.tool_allowlist:
+                continue
             # Create service-bound wrapper without exec()
             bound_func = create_service_bound_wrapper(tool_func, self.services)
 

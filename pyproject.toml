@@ -90,6 +90,10 @@ dev = [
     "types-pyyaml>=6.0.12.20250915",
     "types-requests>=2.32.4.20260107",
 ]
+eval = [
+    "bm25s>=0.2",
+    "pystemmer>=2.2",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -145,6 +149,8 @@ module = [
     "optimum.*",
     "boto3",
     "botocore.*",
+    "Stemmer",
+    "bm25s",
 ]
 ignore_missing_imports = true
 

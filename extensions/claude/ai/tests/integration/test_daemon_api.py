@@ -4,7 +4,6 @@ Covers TS-5.x (daemon lifecycle, API contracts) and TS-6.x (hook execution).
 Tests the daemon in-process without actually starting a server.
 """
 
-import asyncio
 import json
 import os
 import subprocess

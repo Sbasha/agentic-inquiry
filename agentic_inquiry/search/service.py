@@ -7,7 +7,6 @@ unified access to vector and graph storage through the provider framework.
 from __future__ import annotations
 
 import logging
-import re
 from typing import Any, Dict, List, Optional, cast, Union
 
 from agentic_inquiry.config import Config
@@ -368,11 +367,9 @@ class SearchService:
         query_fts: str,
         limit: Optional[int] = None,
         filters: Optional[Dict[str, Any]] = None,
-        rerank_by_graph: Optional[bool] = None,
         vector_column_name: str = "vector",
         project_id: Optional[str] = CURRENT_PROJECT_ID,
         project_ids: Optional[List[str]] = None,
-        boost_overview: Optional[bool] = None,
         content_preference: Optional[str] = None,
         content_preference_weight: float = 0.7,
         return_ambiguity: bool = False,
@@ -383,9 +380,6 @@ class SearchService:
         Delegates to HybridSearchService for the actual search logic.
 
         Args:
-            boost_overview: Whether to boost documentation/overview content.
-                If None (default), auto-detects based on query content.
-                Set explicitly to True/False to override auto-detection.
             content_preference: Preferred content type (e.g., "code", "documentation").
                 Unlike hard filtering, this boosts matching content types while
                 still including all results, enabling cross-content discovery.
@@ -400,14 +394,6 @@ class SearchService:
         # Sanitize FTS query
         sanitized_fts_query = self._sanitize_fts_query(query_fts)
 
-        # Auto-detect overview queries if not explicitly specified
-        if boost_overview is None:
-            boost_overview = self._is_overview_query(query_fts)
-            if boost_overview:
-                logger.debug(
-                    "Auto-detected overview query, enabling doc boosting: %s", query_fts
-                )
-
         # Delegate to HybridSearchService (still returns List[Dict] or Dict)
         search_result = await self._hybrid_search.hybrid_search(
             query_vector=query_vector,
@@ -417,12 +403,9 @@ class SearchService:
             fts_search_fn=self.fts_search,
             limit=limit,
             filters=filters,
-            rerank_by_graph=rerank_by_graph,
-            graph_rerank_fn=self._rerank_by_graph if rerank_by_graph else None,
             vector_column_name=vector_column_name,
             project_id=project_id,
             project_ids=project_ids,
-            boost_overview=boost_overview,
             content_preference=content_preference,
             content_preference_weight=content_preference_weight,
             return_ambiguity=return_ambiguity,
@@ -474,44 +457,6 @@ class SearchService:
         )
 
         return deduplicated
-
-    # Compiled regex patterns for overview query detection (cached for performance)
-    _OVERVIEW_PATTERNS = [
-        re.compile(
-            r"\b(readme|overview|architecture|getting[.\-_\s]?started)\b", re.IGNORECASE
-        ),
-        re.compile(
-            r"\b(what\s+(does|is)|how\s+(does|to|do)|purpose|intro(duction)?)\b",
-            re.IGNORECASE,
-        ),
-        re.compile(r"\b(documentation|docs|guide|tutorial|manual)\b", re.IGNORECASE),
-        re.compile(
-            r"\b(project\s+structure|codebase|explain|describe)\b", re.IGNORECASE
-        ),
-    ]
-
-    def _is_overview_query(self, query: str) -> bool:
-        """Detect if query is asking for overview/documentation content.
-
-        Automatically detects queries that would benefit from documentation
-        boosting, such as questions about project purpose, architecture,
-        or getting started guides.
-
-        Args:
-            query: The search query text
-
-        Returns:
-            True if the query appears to be asking for overview/documentation
-
-        Examples:
-            >>> service._is_overview_query("what does this project do")
-            True
-            >>> service._is_overview_query("class Config implementation")
-            False
-        """
-        if not query:
-            return False
-        return any(pattern.search(query) for pattern in self._OVERVIEW_PATTERNS)
 
     async def vector_search(
         self,
@@ -896,7 +841,6 @@ class SearchService:
                 query_vector=search_query_vector,
                 query_fts=search_query_fts,
                 limit=limit,
-                rerank_by_graph=False,
                 vector_column_name=vector_column_name,
                 project_id=project_id,
                 project_ids=project_ids,
@@ -916,15 +860,6 @@ class SearchService:
                 project_id=project_id,
             )
         return []
-
-    async def _rerank_by_graph(
-        self, search_results: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        """Rerank search results by graph pagerank scores.
-
-        Delegates to GraphSearchService for the actual reranking logic.
-        """
-        return await self._graph_search.rerank_by_graph(search_results)
 
     async def enrich_with_graph_context(
         self,

@@ -94,7 +94,7 @@ This comprehensive document covers:
 ### Performance & Optimization
 - **Async Patterns** → [Async Architecture](async-architecture.md)
 - **Concurrency Control** → [Architecture Overview](overview.md#concurrency-model)
-- **Search Optimization** → [Search](search.md#performance-optimization)
+- **Search ranking and measurement** → [Search](search.md#how-a-query-is-ranked)
 - **Indexing Performance** → [Indexing](indexing.md) and [Architecture Overview](overview.md#performance-characteristics)
 
 ---

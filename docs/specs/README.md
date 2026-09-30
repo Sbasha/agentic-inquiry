@@ -34,6 +34,8 @@ files inside any feature dir are gitignored; see
 
 [`salesforce-intelligence`](salesforce-intelligence/spec.md) - Salesforce recognizer and metadata allowlist.
 
+[`eval-harness`](eval-harness/spec.md) - Level A/B/C evaluation harness (`evals/`) scoring Agentic Inquiry against baselines and Graphify on externally labelled datasets.
+
 [`ruff-format-baseline`](ruff-format-baseline/spec.md) - Repo-wide `ruff format` baseline and pre-commit ruff hooks pinned to `uv.lock`.
 
 [`main-suite-green`](main-suite-green/spec.md) - The full test suite passes deterministically, with each failure fixed at its root cause.

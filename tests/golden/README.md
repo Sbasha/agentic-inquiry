@@ -4,6 +4,12 @@ Pre-flight safety net for the audit's deletion clusters
 (see [#156](https://github.com/sbasha/agentic-inquiry/issues/156)
 and [docs/rfc/0001-golden-bench.md](../../docs/rfc/0001-golden-bench.md)).
 
+> **Smoke test, not a quality measure.** The 15 queries mostly expect words
+> that already appear in the query, the corpus is this repo's own source, and
+> the baseline is saturated at recall 1.0, so this bench can catch a broken
+> index but cannot show that a search change helps. Search quality is measured
+> by [`evals/`](../../evals/README.md) (RFC-0003).
+
 `make bench` indexes a fixed slice of this repo into a temp LanceDB
 project, runs the 15 queries in `queries.json`, and fails the build if
 **recall@10** drops or **p95 search latency** exceeds the pinned

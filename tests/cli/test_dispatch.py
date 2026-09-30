@@ -39,8 +39,21 @@ def test_mcp_dispatches_with_the_storage_namespace(
     assert argv[argv.index("--project-id") + 1] == "X"
     assert "storage-ns" not in argv
 
+    # Without a binding, the configured default project serves, as for ai search.
     monkeypatch.setattr(
         "agentic_inquiry.cli.__main__._storage_project_id", lambda _root: None
+    )
+    monkeypatch.setattr(
+        "agentic_inquiry.cli.__main__._configured_project_id", lambda: "configured"
+    )
+    monkeypatch.setattr(sys, "argv", ["ai", "mcp"])
+    main()
+    argv = seen["argv"]
+    assert argv[argv.index("--project-id") + 1] == "configured"
+    assert argv[argv.index("--project-root") + 1] == str(project)
+
+    monkeypatch.setattr(
+        "agentic_inquiry.cli.__main__._configured_project_id", lambda: None
     )
     monkeypatch.setattr(sys, "argv", ["ai", "mcp"])
     main()

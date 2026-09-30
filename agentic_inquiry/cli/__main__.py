@@ -425,7 +425,9 @@ def _dispatch_mcp(argv: list[str]) -> None:
     root = Path.cwd().resolve()
     extra: list[str] = []
     if "--project-id" not in argv:
-        project_id = _storage_project_id(root)
+        # The integration binding wins; otherwise the configured default project,
+        # the same fallback ``ai search`` uses, so a plugin needs no per-project setup.
+        project_id = _storage_project_id(root) or _configured_project_id()
         if project_id is not None:
             extra.extend(["--project-id", project_id])
             if "--project-root" not in argv:
@@ -438,6 +440,15 @@ def _dispatch_mcp(argv: list[str]) -> None:
     from agentic_inquiry.mcp.cli import main as mcp_main
 
     mcp_main()
+
+
+def _configured_project_id() -> str | None:
+    from agentic_inquiry.cli.env_resolver import load_config_for_environment
+
+    try:
+        return load_config_for_environment().storage.default_project_id or None
+    except Exception:  # noqa: BLE001 - no usable configuration means no default
+        return None
 
 
 def _storage_project_id(root: Path) -> str | None:

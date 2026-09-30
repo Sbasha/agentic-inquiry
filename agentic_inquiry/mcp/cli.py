@@ -98,6 +98,13 @@ Examples:
         action="store_true",
         help="Enable direct access tools (default: disabled)",
     )
+    parser.add_argument(
+        "--tools",
+        type=lambda value: [name.strip() for name in value.split(",") if name.strip()],
+        default=None,
+        help="Comma-separated tool names to expose (default: every enabled tool). "
+        "A small set keeps an agent's context lean, e.g. --tools search",
+    )
 
     # Server configuration
     parser.add_argument(
@@ -272,6 +279,7 @@ async def run_server(
     host: Optional[str],
     port: Optional[int],
     project_root: Optional[str] = None,
+    tools: Optional[list] = None,
 ):
     """Run the MCP server.
 
@@ -288,7 +296,7 @@ async def run_server(
         # Create server
         logger.info("Creating MCP server")
         server = MCPServer(
-            config=config, project_id=project_id, project_root=project_root
+            config=config, project_id=project_id, project_root=project_root, tools=tools
         )
 
         # Initialize server
@@ -363,6 +371,7 @@ async def async_main():
             args.host,
             args.port,
             args.project_root,
+            args.tools,
         )
 
         # If stdio transport, we need to handle it specially

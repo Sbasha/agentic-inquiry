@@ -390,7 +390,7 @@
               "type": "integer",
               "description": "Maximum number of results to keep per file (1 = keep only highest-scoring chunk)",
               "minimum": 1,
-              "default": 1
+              "default": 3
             },
             "min_diversity_ratio": {
               "type": "number",
@@ -422,7 +422,7 @@
             },
             "rerank_by_graph": {
               "type": "boolean",
-              "description": "Enable graph-based reranking of results",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "default": true
             },
             "reranker_type": {
@@ -444,26 +444,51 @@
             },
             "fallback_to_vector": {
               "type": "boolean",
-              "description": "Fallback to vector-only search when hybrid search fails or returns no results",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "default": true
             },
             "log_diagnostics": {
               "type": "boolean",
-              "description": "Enable diagnostic logging for hybrid search (useful for debugging)",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "default": false
             },
             "overview_boost_factor": {
               "type": "number",
-              "description": "Boost factor for overview/documentation files in search results",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 1.0,
               "default": 1.5
+            },
+            "rerank_model": {
+              "type": "string",
+              "description": "Cross-encoder that rescores the fused top rerank_top_n results; empty disables the second stage.",
+              "default": "cross-encoder/ms-marco-MiniLM-L-6-v2"
+            },
+            "rerank_top_n": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200,
+              "description": "How many fused results the second stage rescores."
+            },
+            "graph_seeds": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 20,
+              "description": "Fused results whose definitions seed the one-hop graph channel; 0 disables it."
+            },
+            "rerank_mode": {
+              "type": "string",
+              "enum": [
+                "fuse",
+                "replace"
+              ],
+              "description": "How the cross-encoder order combines with the fused order."
             }
           },
           "additionalProperties": false
         },
         "overview_boost": {
           "type": "object",
-          "description": "Overview/documentation boosting configuration",
+          "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
           "properties": {
             "enabled": {
               "type": "boolean",
@@ -735,7 +760,7 @@
             "model_name": {
               "type": "string",
               "description": "HuggingFace model name",
-              "default": "all-MiniLM-L6-v2"
+              "default": "BAAI/bge-small-en-v1.5"
             },
             "ndims": {
               "type": "integer",
@@ -806,6 +831,10 @@
               "description": "Cache capacity in unique entries. Vectors are stored as numpy float32 (~1.5 KB per 384-dim entry); 10k entries ≈ 15 MB. Raise for giant monorepos with high duplication; lower on memory-constrained hosts. Set to 0 to disable (same as enabled=false).",
               "minimum": 0,
               "default": 10000
+            },
+            "persist": {
+              "type": "boolean",
+              "description": "Keep embedding vectors on disk under INQUIRY_HOME/cache/embeddings so re-indexing reuses unchanged chunks."
             }
           },
           "additionalProperties": false
@@ -1017,15 +1046,20 @@
             },
             "chunk_size": {
               "type": "integer",
-              "description": "Target chunk size in characters",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 1,
               "default": 1000
             },
             "chunk_overlap": {
               "type": "integer",
-              "description": "Overlap between chunks in characters",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 0,
               "default": 200
+            },
+            "max_chunk_chars": {
+              "type": "integer",
+              "minimum": 200,
+              "description": "Maximum characters per code chunk; chunks follow definition boundaries."
             }
           },
           "additionalProperties": false
@@ -1081,13 +1115,13 @@
             },
             "chunk_overlap": {
               "type": "integer",
-              "description": "Overlap between chunks in characters",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 0,
               "default": 100
             },
             "whole_file_max_chars": {
               "type": "integer",
-              "description": "Files at or under this size stay one chunk. Zero disables whole-file mode.",
+              "description": "Ignored since the retrieval-core change; accepted so older configs still load.",
               "minimum": 0,
               "default": 8192
             }

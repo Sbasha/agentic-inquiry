@@ -67,7 +67,7 @@ Choose one or both embedding strategies:
 - Provider stores pre-computed embedding vectors
 - `upsert_chunks()` receives chunks with `embedding: List[float]`
 - `vector_search()` receives `query_vector: List[float]`
-- Default model: `all-MiniLM-L6-v2` (384 dimensions)
+- Default model: `BAAI/bge-small-en-v1.5` (384 dimensions)
 
 **Server-Side Embedding** (database-native):
 - Database generates embeddings via extension/function

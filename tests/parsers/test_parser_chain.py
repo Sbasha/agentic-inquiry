@@ -396,10 +396,8 @@ async def test_parser_chain_honors_fallback_text_config(tmp_path):
 
     config = Config()
     config.parsers.fallback_text.max_chunk_size = 80
-    config.parsers.fallback_text.chunk_overlap = 0
-    config.parsers.fallback_text.whole_file_max_chars = 80
     text_file = tmp_path / "forced-split.txt"
-    text_file.write_text("Paragraph one is long enough. " * 12, encoding="utf-8")
+    text_file.write_text("Paragraph one is long enough.\n" * 12, encoding="utf-8")
 
     chain = ParserChain(
         parser_names=["fallback_text"],
@@ -412,4 +410,37 @@ async def test_parser_chain_honors_fallback_text_config(tmp_path):
     registered = get_parser_instance("fallback_text")
     assert isinstance(registered, FallbackTextParser)
     assert registered.max_chunk_size == 1000
-    assert registered.whole_file_max_chars == 8192
+
+
+def test_minified_files_are_skipped(tmp_path):
+    """A machine-packed bundle is refused before any parser runs."""
+    from agentic_inquiry.parsers.chain import is_minified
+
+    bundle = tmp_path / "app.min.js"
+    bundle.write_text(
+        "!function(e,t){e.fn.x=function(n){return this.each(function(){t(n)})}}(a,b);"
+        * 200
+    )
+    source = tmp_path / "app.js"
+    source.write_text("\n".join(f"var a{i} = {i};" for i in range(500)))
+    assert is_minified(str(bundle))
+    assert not is_minified(str(source))
+
+
+def test_long_line_prose_is_not_minified(tmp_path):
+    """A paragraph written on one line (soft-wrapped Markdown, an abstract) is indexed."""
+    from agentic_inquiry.parsers.chain import is_minified
+
+    paragraph = tmp_path / "notes.md"
+    paragraph.write_text(
+        "# Notes\n\n"
+        + "The patients received a daily dose of the compound. " * 120
+        + "\n"
+    )
+    literal = tmp_path / "table.py"
+    literal.write_text("TABLE = [" + ", ".join(str(i) for i in range(2000)) + "]\n")
+    pasted = tmp_path / "chat.txt"
+    pasted.write_text("user: here is the bundle " + "a.b(c,d);" * 1000 + "\n")
+    assert not is_minified(str(paragraph))
+    assert not is_minified(str(literal))
+    assert not is_minified(str(pasted))

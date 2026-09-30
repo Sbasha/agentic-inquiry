@@ -146,6 +146,33 @@ def resolve_embedding_model(
     return capability_default
 
 
+def embedder_identity(config: "Config") -> str:
+    """Name the model that embeds indexed text, as ``configure_embedder_for_backend`` selects it.
+
+    Stored indexes carry this so that switching models re-embeds every file
+    instead of mixing vectors from two models in one table.
+    """
+    caps = get_capabilities_for_backend(resolve_backend_type(config))
+    if (
+        resolve_embedding_strategy(config, caps.embedding_strategy)
+        == EmbeddingStrategy.SERVER_SIDE
+    ):
+        model = resolve_embedding_model(config, caps.embedding_model) or "server-side"
+        return f"server:{model}:{resolve_embedding_dimensions(config, caps.embedding_dimensions)}"
+    embeddings = config.embeddings
+    provider = embeddings.default_provider
+    if provider == "fastembed":
+        model = embeddings.fastembed.model_name
+    elif provider in ("local", "local_model"):
+        model = embeddings.local_model.model_path
+    else:
+        provider, model = (
+            "sentence_transformer",
+            embeddings.sentence_transformer.model_name,
+        )
+    return f"{provider}:{model}:{embeddings.default_dimensions}"
+
+
 def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> None:
     """Configure the global embedder based on storage backend capabilities.
 
@@ -258,7 +285,20 @@ def configure_embedder_for_backend(config: "Config", quiet: bool = False) -> Non
         if cache_active:
             from agentic_inquiry.embeddings.caching import CachingEmbedder
 
-            embedder = CachingEmbedder(embedder, max_entries=cache_cfg.max_entries)
+            persist_path = None
+            if cache_cfg.persist:
+                from agentic_inquiry.integration.state import inquiry_home
+
+                safe_name = model_display_name.replace("/", "__")
+                persist_path = (
+                    inquiry_home()
+                    / "cache"
+                    / "embeddings"
+                    / f"{safe_name}-{ndims}.sqlite"
+                )
+            embedder = CachingEmbedder(
+                embedder, max_entries=cache_cfg.max_entries, persist_path=persist_path
+            )
 
         embedding_registry.configure_default_embedder(embedder, ndims=ndims)
         if not quiet:

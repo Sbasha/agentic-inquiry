@@ -334,6 +334,20 @@ class CacheConfig:
     document_cache: DocumentCacheConfig = field(default_factory=DocumentCacheConfig)
 
 
+# Keys the retrieval-core change removed; still accepted so old configs load.
+_REMOVED_HYBRID_KEYS = (
+    "rerank_by_graph",
+    "rrf_k",
+    "fallback_to_vector",
+    "log_diagnostics",
+    "overview_boost_factor",
+)
+_REMOVED_PARSER_KEYS = {
+    "unified_code": ("chunk_size", "chunk_overlap"),
+    "fallback_text": ("chunk_overlap", "whole_file_max_chars"),
+}
+
+
 @dataclass
 class HybridSearchConfig:
     """Hybrid search configuration.
@@ -345,26 +359,26 @@ class HybridSearchConfig:
     - colbert: ColBERT-based reranking
     """
 
+    # Weights for the linear_combination reranker only; RRF fuses by rank.
     vector_weight: float = 0.7
     fts_weight: float = 0.3
-    rerank_by_graph: bool = True
 
-    # Reranking strategy configuration
+    # Reranking strategy: "rrf" fuses the vector and full-text lists by rank.
+    # reranker_params["k"] overrides the RRF constant (60 when unset).
     reranker_type: str = "rrf"
     reranker_params: Dict[str, Any] = field(default_factory=dict)
 
-    # RRF (Reciprocal Rank Fusion) configuration
-    # The RRF formula is: score = Σ 1/(k + rank) where k controls rank smoothing.
-    # Higher k values give more weight to lower-ranked results.
-    # Default k=60 is research-backed (Cormack et al., SIGIR 2009).
-    rrf_k: int = 60
+    # Optional second stage: a cross-encoder rescores the fused top
+    # rerank_top_n results and reorders only those. Empty disables it.
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    rerank_top_n: int = 30
+    # "fuse" combines the cross-encoder order with the fused order by RRF, so
+    # it adds an opinion; "replace" lets the cross-encoder order stand alone.
+    rerank_mode: str = "fuse"
 
-    # Fallback and diagnostic options
-    fallback_to_vector: bool = True
-    log_diagnostics: bool = False
-
-    # Overview boosting
-    overview_boost_factor: float = 1.5
+    # Optional graph channel: callers and callees of definitions in the fused
+    # top graph_seeds results join fusion as a third list. 0 disables it.
+    graph_seeds: int = 0
 
 
 @dataclass
@@ -423,7 +437,7 @@ class DeduplicationConfig:
     """Search result deduplication configuration."""
 
     enabled: bool = True
-    max_results_per_file: int = 1
+    max_results_per_file: int = 3
     min_diversity_ratio: float = 0.7
 
 
@@ -472,7 +486,7 @@ class SearchConfig:
 class SentenceTransformerConfig:
     """Sentence transformer embedding configuration."""
 
-    model_name: str = "all-MiniLM-L6-v2"
+    model_name: str = "BAAI/bge-small-en-v1.5"
     ndims: int = 384
 
 
@@ -531,6 +545,11 @@ class EmbeddingsCacheConfig:
     # memory-constrained hosts can lower; giant monorepos with high
     # duplication can raise.
     max_entries: int = 10_000
+
+    # Keep vectors on disk under INQUIRY_HOME/cache/embeddings, per model and
+    # dimensions, so re-indexing another commit, branch or worktree embeds
+    # only the chunks whose text changed.
+    persist: bool = True
 
     def __post_init__(self) -> None:
         """Validate at construction so misconfigured YAML fails loudly
@@ -679,8 +698,9 @@ class UnifiedCodeParserConfig(ParserConfig):
     enabled: bool = True
     priority: int = 100
     max_file_size: int = 10485760  # 10MB
-    chunk_size: int = 1000
-    chunk_overlap: int = 200
+    # Code chunks follow definition boundaries and hold at most this many
+    # characters, unless one line is longer.
+    max_chunk_chars: int = 1500
 
 
 @dataclass
@@ -689,10 +709,8 @@ class FallbackTextParserConfig(ParserConfig):
 
     enabled: bool = True
     priority: int = 0
+    # Text chunks follow line boundaries and hold at most this many characters.
     max_chunk_size: int = 1000
-    chunk_overlap: int = 100
-    # Files at or under this size stay one chunk. Zero disables whole-file mode.
-    whole_file_max_chars: int = 8192
 
 
 @dataclass
@@ -1180,6 +1198,24 @@ class OverlayConfig:
     enabled: bool = True
     max_lines_per_file: int = 100
     max_lines_total: int = 500
+
+
+# Environment variables with the INQUIRY_ prefix that are read where they are
+# used rather than mapped onto the config tree.
+_DIRECT_ENV_VARS = frozenset(
+    {
+        "INQUIRY_CONFIG",
+        "INQUIRY_EMBEDDING_DEVICE",
+        "INQUIRY_ENV",
+        "INQUIRY_HOME",
+        "INQUIRY_HOOK_DEADLINE_SECONDS",
+        "INQUIRY_NO_AUTO_START",
+        "INQUIRY_PROJECT_ID",
+        "INQUIRY_SERVER_ENV",
+        "INQUIRY_SERVER_HOST",
+        "INQUIRY_TEST_MODE",
+    }
+)
 
 
 @dataclass
@@ -1911,8 +1947,8 @@ class Config:
                     ignored_count += 1
                 continue
 
-            # Read directly by the embedder, not part of the config tree.
-            if env_key == "INQUIRY_EMBEDDING_DEVICE":
+            # Read directly by the code that uses them, not part of the config tree.
+            if env_key in _DIRECT_ENV_VARS:
                 continue
 
             # Convention-based lookup: INQUIRY_SECTION_SUBSECTION_KEY → ["section", "subsection", "key"]
@@ -2166,6 +2202,26 @@ class Config:
                     "include_indirect", True
                 )
 
+        # Ranking heuristics removed by docs/specs/retrieval-core: older configs
+        # that still set them load, with a warning that the keys do nothing.
+        search = data.get("search") or {}
+        hybrid = search.get("hybrid_search") or {}
+        ignored = [
+            f"search.hybrid_search.{key}"
+            for key in _REMOVED_HYBRID_KEYS
+            if key in hybrid
+        ]
+        if "overview_boost" in search:
+            ignored.append("search.overview_boost")
+        parsers = data.get("parsers") or {}
+        for section, keys in _REMOVED_PARSER_KEYS.items():
+            ignored += [
+                f"parsers.{section}.{key}"
+                for key in keys
+                if key in (parsers.get(section) or {})
+            ]
+        if ignored:
+            logger.warning("Ignoring removed settings: %s", ", ".join(ignored))
         return data
 
     @classmethod
@@ -2246,7 +2302,6 @@ class Config:
                 "hybrid_search": {
                     "vector_weight": self.search.hybrid_search.vector_weight,
                     "fts_weight": self.search.hybrid_search.fts_weight,
-                    "rerank_by_graph": self.search.hybrid_search.rerank_by_graph,
                 },
                 "graph_search": {
                     "max_depth": self.search.graph_search.max_depth,
@@ -2286,8 +2341,6 @@ class Config:
                     "enabled": self.parsers.fallback_text.enabled,
                     "priority": self.parsers.fallback_text.priority,
                     "max_chunk_size": self.parsers.fallback_text.max_chunk_size,
-                    "chunk_overlap": self.parsers.fallback_text.chunk_overlap,
-                    "whole_file_max_chars": self.parsers.fallback_text.whole_file_max_chars,
                 },
             },
             "memory": {

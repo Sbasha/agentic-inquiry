@@ -20,15 +20,13 @@ from agentic_inquiry.parsers.models import ParsedDocument
 @pytest.fixture
 def parser():
     """Create a FallbackTextParser instance."""
-    return FallbackTextParser(max_chunk_size=1000, chunk_overlap=100)
+    return FallbackTextParser(max_chunk_size=1000)
 
 
 @pytest.fixture
 def small_parser():
     """Create a FallbackTextParser with small chunks for testing."""
-    return FallbackTextParser(
-        max_chunk_size=200, chunk_overlap=50, whole_file_max_chars=0
-    )
+    return FallbackTextParser(max_chunk_size=200)
 
 
 @pytest.mark.asyncio
@@ -89,64 +87,7 @@ Third paragraph with even more content to test chunking."""
     for idx, chunk in enumerate(result.chunks):
         assert chunk.metadata["chunk_index"] == idx
         assert chunk.metadata["total_chunks"] == len(result.chunks)
-        assert chunk.metadata["chunk_type"] in [
-            "paragraph",
-            "sentence",
-            "empty",
-            "file",
-        ]
-
-
-@pytest.mark.asyncio
-async def test_long_paragraph_sentence_splitting(small_parser, tmp_path):
-    """Test that long paragraphs are split by sentences."""
-    # Create a file with a very long paragraph
-    text_file = tmp_path / "long_paragraph.txt"
-    content = (
-        "This is the first sentence of a very long paragraph. "
-        "This is the second sentence that continues the paragraph. "
-        "This is the third sentence with more content. "
-        "This is the fourth sentence to ensure we exceed the chunk size. "
-        "This is the fifth sentence with additional information. "
-        "This is the sixth sentence to make it even longer."
-    )
-    text_file.write_text(content, encoding="utf-8")
-
-    # Parse the file
-    result = await small_parser.parse(str(text_file))
-
-    # Should have multiple chunks due to sentence splitting
-    assert len(result.chunks) >= 2
-
-    # Check that chunks have sentence type
-    sentence_chunks = [
-        c for c in result.chunks if c.metadata.get("chunk_type") == "sentence"
-    ]
-    assert len(sentence_chunks) > 0
-
-
-@pytest.mark.asyncio
-async def test_chunk_overlap(small_parser, tmp_path):
-    """Test that chunks have overlap for context preservation."""
-    # Create a file with content that will be split
-    text_file = tmp_path / "overlap.txt"
-    content = """First paragraph with enough content to trigger chunking behavior.
-
-Second paragraph with more content that should be in a separate chunk.
-
-Third paragraph to ensure we have multiple chunks with overlap."""
-    text_file.write_text(content, encoding="utf-8")
-
-    # Parse the file
-    result = await small_parser.parse(str(text_file))
-
-    # If we have multiple chunks, check for overlap
-    if len(result.chunks) > 1:
-        # The overlap should preserve some context between chunks
-        # We can't easily verify the exact overlap without inspecting internals,
-        # but we can verify chunks exist and have content
-        for chunk in result.chunks:
-            assert len(chunk.content) > 0
+        assert chunk.metadata["chunk_type"] in ["lines", "empty"]
 
 
 @pytest.mark.asyncio
@@ -284,59 +225,51 @@ async def test_metadata_structure(parser, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_small_prose_file_stays_one_chunk(parser, tmp_path):
-    """Files under the whole-file cap are one chunk even when max_chunk_size is smaller."""
-    text_file = tmp_path / "session.txt"
-    body = "Gina: Hello.\n\nJon: Hi there.\n\n" + ("More talk. " * 200)
-    content = "Session: session_1\nDate: 4:04 pm on 20 January, 2023\n" + body
-    assert 1000 < len(content) <= 8192
-    text_file.write_text(content, encoding="utf-8")
+async def test_chunks_hold_exactly_their_lines(small_parser, tmp_path):
+    """Every chunk's content is its line_start..line_end lines, with no overlap."""
+    lines = [f"Line {i} of a transcript with some words." for i in range(1, 41)]
+    lines[10] = ""
+    text_file = tmp_path / "lines.txt"
+    text_file.write_text("\n".join(lines) + "\n")
 
-    result = await parser.parse(str(text_file))
+    result = await small_parser.parse(str(text_file))
 
-    assert len(result.chunks) == 1
-    assert result.chunks[0].content == content
-    assert result.chunks[0].metadata["chunk_type"] == "file"
-    assert result.metadata["total_chunks"] == 1
+    seen = []
+    for chunk in result.chunks:
+        assert chunk.content == "\n".join(lines[chunk.line_start - 1 : chunk.line_end])
+        assert len(chunk.content) <= 200
+        seen.extend(range(chunk.line_start, chunk.line_end + 1))
+    assert seen == sorted(set(seen))
+    assert set(range(1, 41)) - {11} <= set(seen)
 
 
 @pytest.mark.asyncio
-async def test_session_date_header_copied_on_forced_split(tmp_path):
-    """When a session file must split, every slice keeps the Session/Date header."""
-    parser = FallbackTextParser(
-        max_chunk_size=120, chunk_overlap=0, whole_file_max_chars=0
-    )
-    text_file = tmp_path / "long_session.txt"
-    turns = "\n\n".join(
-        f"[D1:{i}] Speaker: This is a long conversation turn number {i} with extra words."
-        for i in range(1, 12)
-    )
-    content = "Session: session_1\nDate: 4:04 pm on 20 January, 2023\n" + turns
-    text_file.write_text(content, encoding="utf-8")
-
-    result = await parser.parse(str(text_file))
-
-    assert len(result.chunks) >= 2
-    header = "Session: session_1\nDate: 4:04 pm on 20 January, 2023"
-    for chunk in result.chunks:
-        assert chunk.content.startswith(header)
+async def test_binary_files_are_refused(parser, tmp_path):
+    """A NUL byte in the first block marks the file as binary."""
+    image = tmp_path / "logo.png"
+    image.write_bytes(b"\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR" + b"\x00" * 64)
+    assert not await parser.can_parse(str(image))
+    with pytest.raises(ParsingError):
+        await parser.parse(str(image))
 
 
 @pytest.mark.asyncio
-async def test_lme_session_header_copied_on_forced_split(tmp_path):
-    """LongMemEval Session: S000 / Date: headers are copied onto splits."""
-    parser = FallbackTextParser(
-        max_chunk_size=80, chunk_overlap=0, whole_file_max_chars=0
+async def test_markdown_chunks_carry_heading_scope(tmp_path):
+    """Markdown chunks record the heading path where they start."""
+    doc = tmp_path / "guide.md"
+    doc.write_text(
+        "# Guide\n\nIntro text.\n\n## Install\n\n```\n# not a heading\n```\n\nRun pip.\n\n"
+        "## Usage\n\n" + "Call the client. " * 12 + "\n"
     )
-    text_file = tmp_path / "lme.txt"
-    content = "Session: S000\nDate: 2023/05/30 (Tue) 23:27\n" + "\n\n".join(
-        f"Turn {i}: " + ("word " * 20) for i in range(8)
+    result = await FallbackTextParser(max_chunk_size=120).parse(str(doc))
+    scopes = [c.metadata.get("scope") for c in result.chunks]
+    assert all("not a heading" not in (s or "") for s in scopes)
+    usage = [
+        c for c in result.chunks if (c.metadata.get("scope") or "").endswith("Usage")
+    ]
+    assert (
+        usage
+        and usage[0].element_type == "section"
+        and usage[0].element_name == "Usage"
     )
-    text_file.write_text(content, encoding="utf-8")
-
-    result = await parser.parse(str(text_file))
-
-    assert len(result.chunks) >= 2
-    header = "Session: S000\nDate: 2023/05/30 (Tue) 23:27"
-    for chunk in result.chunks:
-        assert chunk.content.startswith(header)
+    assert all(c.content_type == "PROSE" for c in result.chunks)

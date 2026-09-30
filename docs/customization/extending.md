@@ -414,7 +414,6 @@ search:
   hybrid_search:
     vector_weight: 0.7      # Weight for vector similarity
     fts_weight: 0.3         # Weight for full-text search
-    rerank_by_graph: true   # Use graph metadata for ranking
   
   graph_search:
     max_depth: 3            # Maximum graph traversal depth
@@ -442,26 +441,6 @@ Adjust the balance between semantic and keyword matching:
 - **Balanced (0.5/0.5)**: Good general-purpose default
   - Works well for mixed queries
   - Provides both semantic and exact matching
-
-### Graph-Aware Ranking
-
-Graph reranking uses PageRank-style metrics to boost important entities:
-
-```yaml
-search:
-  hybrid_search:
-    rerank_by_graph: true  # Enable graph reranking
-```
-
-**When to use:**
-- Code search: Boost frequently-called functions
-- Documentation: Boost central concepts
-- API search: Boost core interfaces
-
-**When to disable:**
-- Simple keyword search
-- When graph data is sparse
-- When recency matters more than importance
 
 ### Filtering and Scoping
 
@@ -506,39 +485,9 @@ search:
 - **Medium limits (20-50)**: Balanced coverage for general search
 - **Large limits (100+)**: Comprehensive results for batch processing
 
-### Common Tuning Scenarios
+### Tuning ranking
 
-**Code Search** - Optimize for finding code by function/class names:
-```yaml
-search:
-  hybrid_search:
-    vector_weight: 0.3
-    fts_weight: 0.7
-    rerank_by_graph: true
-```
-
-**Documentation Search** - Optimize for conceptual/semantic search:
-```yaml
-search:
-  hybrid_search:
-    vector_weight: 0.8
-    fts_weight: 0.2
-    rerank_by_graph: false
-```
-
-**API Discovery** - Find related APIs and their usage:
-```yaml
-search:
-  hybrid_search:
-    vector_weight: 0.6
-    fts_weight: 0.4
-    rerank_by_graph: true
-  graph_search:
-    max_depth: 2
-    relationship_types:
-      - calls
-      - imports
-```
+Hybrid search fuses the vector and full-text lists by rank (RRF), so `vector_weight` and `fts_weight` apply only to the `linear_combination` reranker. Change ranking or chunking settings only with a paired dev-split result from [`evals/`](../../evals/README.md); `EVALS_INQUIRY_CONFIG=<file>` runs the `inquiry` arm on a candidate config.
 
 ### Search Best Practices
 

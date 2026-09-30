@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "inquiry": {
+      "command": "ai",
+      "args": ["mcp", "--tools", "search"]
+    }
+  }
+}

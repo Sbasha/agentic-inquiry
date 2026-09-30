@@ -69,11 +69,13 @@ def _select_device(preferred: Optional[str] = None) -> str:
 class SentenceTransformerEmbedder(Embedder):
     """Embedder using sentence-transformers library for semantic embeddings."""
 
-    def __init__(self, model_name: str = "all-MiniLM-L6-v2", ndims: int = 384):
+    def __init__(self, model_name: str = "BAAI/bge-small-en-v1.5", ndims: int = 384):
         self.model_name = model_name
         self._ndims = ndims
         self._metrics = get_metrics_tracker()
         self._model = None
+        self._device = "cpu"
+        self._encode_lock = threading.Lock()
 
     def ensure_model_loaded(self) -> None:
         """Ensure the underlying model is ready for inference."""
@@ -129,6 +131,7 @@ class SentenceTransformerEmbedder(Embedder):
             # accelerator claims availability but fails at placement.
             try:
                 self._model = SentenceTransformer(self.model_name, device=device)
+                self._device = device
                 logger.debug(
                     "SentenceTransformerEmbedder loaded model=%s device=%s",
                     self.model_name,
@@ -151,6 +154,7 @@ class SentenceTransformerEmbedder(Embedder):
                     _DEVICE_ENV_VAR,
                 )
                 self._model = SentenceTransformer(self.model_name, device="cpu")
+                self._device = "cpu"
 
     def generate(self, texts: List[str]) -> List[List[float]]:
         with self._metrics.track_latency("embeddings.generate"):
@@ -162,13 +166,19 @@ class SentenceTransformerEmbedder(Embedder):
                 if text is None:
                     raise ValueError("text must be a string")
 
-            # Generate embeddings using the real model
-            embeddings = self._model.encode(
-                texts,
-                convert_to_numpy=True,
-                normalize_embeddings=False,  # We'll normalize after dimension adjustment
-                show_progress_bar=False,
-            )
+            # One encode at a time: indexing calls from a thread pool, and
+            # concurrent encodes on the Metal backend abort the process.
+            with self._encode_lock:
+                embeddings = self._model.encode(
+                    texts,
+                    convert_to_numpy=True,
+                    normalize_embeddings=False,  # We'll normalize after dimension adjustment
+                    show_progress_bar=False,
+                )
+                if self._device == "mps":
+                    import torch
+
+                    torch.mps.empty_cache()
 
             # Truncate or pad to requested dimensions if needed
             if embeddings.shape[1] != self._ndims:
