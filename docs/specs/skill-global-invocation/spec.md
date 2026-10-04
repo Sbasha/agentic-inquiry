@@ -1,6 +1,6 @@
 # Spec: Global `ai` invocation for plugin skills
 
-- **Status:** Implementing
+- **Status:** Shipped
 - **Contract:** none
 
 Mode: full (build-system change trigger - end-to-end verification revealed the

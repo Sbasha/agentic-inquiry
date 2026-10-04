@@ -1,6 +1,6 @@
 # Agentic Inquiry
 
-**Semantic code search and codebase intelligence for Teams and Agents.**
+**Semantic code search and codebase intelligence for local coding agents.**
 
 Agentic Inquiry gives people and AI coding assistants deep understanding of your codebase. It parses source code and documentation, builds a searchable knowledge graph of entities and relationships, and exposes everything through slash commands in agentic tools. Instead of relying on grep and file reads, your AI assistant can semantically search across hundreds of thousands of code chunks, trace data lineage, assess change impact, and recall project context across sessions.
 
@@ -120,7 +120,7 @@ This creates a local LanceDB environment; it works out of the box with zero conf
 /ai:index /path/to/your/project
 ```
 
-This parses all source files (10+ languages via [tree-sitter](https://tree-sitter.github.io/tree-sitter/) AST parsing) and documents (DOCX, PDF, DOC), extracts entities and relationships, generates embeddings, and stores everything in your chosen backend. Indexing speed depends on backend — LanceDB runs locally, AlloyDB can index 16K files in ~17 minutes with server-side embedding.
+This parses source files (tree-sitter) and documents (DOCX, PDF, DOC), extracts entities and relationships, generates embeddings on this machine, and stores them in local LanceDB. A second run still re-parses unchanged files until change detection is wired into `ai index`.
 
 ### 5. Start Searching
 
@@ -193,7 +193,7 @@ Save and recall project insights across Claude Code sessions:
 /ai:memory recall "authentication"
 ```
 
-Memory has three tiers: working (current session), episodic (weeks), and semantic (permanent). Important insights are automatically promoted to longer-lived tiers through a consolidation engine that runs in the background.
+Memory has three tiers chosen by an importance score: working (this process only), episodic, and semantic. A save is explicit (`/ai:memory` or the lifecycle hook, when the client sends observations). Nothing from a session is written into Git. A consolidation loop runs only inside a long-lived server process.
 
 ### Onboarding
 
@@ -424,24 +424,24 @@ Query → [Vector Search] + [Full-Text Search]
         Pre-filter           Two-tier AND+OR
         (score > 0.15)       (CamelCase split)
               ↓                    ↓
-         Score-aware RRF (k=30, dual_source_bonus=1.3x)
+         Default blend: linear combination (vector 0.7, full-text 0.3)
               ↓
-         IDF-weighted content boost
+         Query-term content boost
               ↓
          Proportional normalization
               ↓
-         Deduplication (max 2/file)
+         Deduplication (max 1 per file by default)
               ↓
          Top-K results
 ```
 
-Naive vector search scores ~6-7/10 on large codebases due to embedding drift, result dilution, and keyword blindness. Agentic Inquiry scores **10.0/10** across keyword, conceptual, and structural queries on a 572K-chunk enterprise corpus.
+Reciprocal rank fusion, a cross-encoder, and ColBERT are optional rerankers. They are not the default. The 10.0/10 relevance figure below is from a managed PostgreSQL benchmark this distribution no longer ships.
 
-Key innovations:
-- **IDF-weighted content boost**: Rare query terms get up to 20x weight. Rescues results that vector search misses entirely.
-- **Score-aware RRF**: Incorporates raw similarity scores into rank fusion, preventing dilution at scale.
-- **Two-tier FTS**: AND query for precision, OR fallback for recall, with CamelCase/snake_case splitting.
-- **Proportional normalization**: Preserves absolute quality signal (divide by max, not min-max).
+What the default path actually does:
+- **Linear blend**: vector score weight 0.7, full-text score weight 0.3.
+- **Content boost**: a query-term boost on top of that blend. The 20x IDF figure is not what the default code applies.
+- **Score-aware reciprocal rank fusion**: available when `reranker_type` is `rrf`, not on the default path.
+- **Proportional normalization**: divides by the max score, not min-max.
 
 ---
 

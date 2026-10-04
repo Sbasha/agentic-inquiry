@@ -9,6 +9,8 @@ last_updated: 2025-11-30
 
 # Architecture Overview
 
+> The running system is local only: LanceDB, SQLite, and an in-memory provider behind `StorageFacade`. The default hybrid reranker is a 0.7/0.3 linear combination. Reciprocal rank fusion, cross-encoder, and ColBERT are optional. The event bus is still in the package. Where this page disagrees with [the charter](../CHARTER.md) or the code, trust those.
+
 This document provides a comprehensive overview of the Agentic Inquiry system architecture, explaining how components interact to provide intelligent document and code parsing, indexing, and search capabilities.
 
 ## Quick Navigation

@@ -9,7 +9,7 @@ last_updated: 2025-11-30
 
 # Search Architecture
 
-> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../storage-backends.md).
+> The default reranker is `linear_combination` (vector weight 0.7, full-text weight 0.3) in `agentic_inquiry/config.py`. Sections that call reciprocal rank fusion the default describe an optional reranker (`reranker_type: rrf`). Storage in this distribution is local LanceDB.
 
 The search system provides multiple search strategies with intelligent ranking. This document explains how search works, the different strategies available, and how results are ranked.
 
@@ -256,7 +256,7 @@ results = await search.hybrid_search(
 ```yaml
 search:
   hybrid_search:
-    reranker_type: "rrf"  # RRF (default), linear_combination, cross_encoder, colbert, cohere
+    reranker_type: "linear_combination"  # default; rrf, cross_encoder, colbert, cohere are optional
     reranker_params:
       k: 30  # RRF rank constant (lower = favor top results more aggressively)
       dual_source_bonus: 1.3  # Multiplicative bonus for results in both vector and FTS

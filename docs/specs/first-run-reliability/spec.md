@@ -1,8 +1,6 @@
 # Spec: First-run reliability
 
-> Historical reference. This page describes PostgreSQL-family providers, cloud connectors or remote embedders that are not part of this local-only distribution. It is retained as design input for the external provider contract in [storage-backends.md](../../storage-backends.md).
-
-- **Status:** Implementing
+- **Status:** Shipped
 - **Owner:** sbasha
 - **Plan:** [`plan.md`](plan.md)
 - **Constrained by:** none

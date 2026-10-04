@@ -1,10 +1,10 @@
 # RFC-0003: Knowledge architecture: governed libraries, project stores and memory
 
-- **Status:** Draft
+- **Status:** Accepted
 - **Author:** sammybasha
 - **Approver:** sammybasha
 - **Date opened:** 2026-09-27
-- **Date closed:**
+- **Date closed:** 2026-09-30
 - **Decision weight:** heavy
 - **Related:** RFC-0001, RFC-0002, ADR-0004, ADR-0005, `docs/storage-backends.md`, `docs/architecture/search.md`, `docs/architecture/knowledge-graph.md`, AFP `packs/agentic-inquiry`, the brain schema at `~/agentic-workspace/brain/wiki/AGENTS.md`, the toolkit read protocol at `~/projects/assets/agentic-enterprise-toolkit/SOURCES.md`
 
@@ -20,7 +20,7 @@
 
 ## The ask
 
-- **Recommendation (BLUF):** approve five tiers of knowledge with one authority and one write path each, a `library` environment kind that lets a project session read pinned global knowledge with provenance and licence flags on every result, and a memory promotion path that ends in curated Markdown rather than in a vector row.
+- **Recommendation (BLUF):** approve five tiers, a user-level library over `brain/wiki/` and `thought-leadership/`, and a memory ledger that never enters Git. The lifecycle hook is the delivery surface. Accepted 2026-09-30 with the amendment below.
 - **Why now (SCQA):** Agent Vault, the workspace `llm-wiki` skill, core `project-knowledge` and Agentic Inquiry memory all answer "remember this" today, and only invocation flags keep them apart. The Agent Vault clone is being archived and Agentic Inquiry is the one runtime going forward. Meanwhile the brain in `~/agentic-workspace/brain/` is read by the toolkit through a path and a pin table, never through this runtime, so the one governed knowledge base is the one thing search cannot see. Each new engagement adds a confidential project store that must stay sealed. The question is what a session may read, where each kind of knowledge is maintained, and how knowledge moves between tiers.
 - **Decisions requested:**
 
@@ -62,19 +62,19 @@ One person today runs many engagements, each in its own repository with its own 
 | --- | --- | --- | --- | --- | --- |
 | Global governed brain | `~/agentic-workspace/brain/wiki/` in Git | Markdown pages, claims with `licensed`, `verified`, `status_label` | the brain curator only | years | internal; licensed pages never render |
 | Team shared knowledge (future) | a Git repository per team, same OKF schema | Markdown | named curators, review-bound | years | team |
-| Project knowledge base | the engagement repository: `docs/knowledge/`, the engagement record, indexed client documents and code | Markdown and the record | core `project-knowledge` and the record's propose and accept path | the engagement | client; never leaves the repository |
-| Project memory | `INQUIRY_HOME/projects/<id>/` ledger and LanceDB memory rows | the ledger | the lifecycle hook (episodic) and `save_memory` (semantic) | the engagement | per user, per project |
+| Project files | the engagement repository: code and client documents already in that repo | those files | the people who commit them | the engagement | client; never leaves the repository |
+| Project memory | `INQUIRY_HOME/projects/<id>/` ledger. LanceDB rows are a projection of the ledger | the ledger | the lifecycle hook (captures) and an explicit save | 45 days for captures, until deleted for an explicit save | per user, per project; never committed |
 | Session working memory | the harness context | none | the session | the session | none |
 
-**Libraries (D3).** A library is an environment kind beside `project-local`. It declares a Git path, a commit, an OKF root and a licence policy. `ai library add brain --path ~/agentic-workspace/brain --pin <commit>` indexes the wiki once for that pin into a store under `INQUIRY_HOME/libraries/<name>/<commit>/`; `ai library refresh` re-pins and re-indexes; nothing in a library store is ever written by a session. A project attaches a library in `.agentic-inquiry/project.toml` (`libraries = ["brain"]`), committed, so every collaborator on the project reads the same library at the same pin. The pin is the same value the toolkit's `SOURCES.md` pin table records, so one number answers "which brain did this session read".
+**Libraries (D3).** One library, named `workspace`, is attached for every project from a user default under `INQUIRY_HOME`. A project may opt out. The attachment is not a pin committed into the project. The index covers `~/agentic-workspace/brain/wiki/` and `~/agentic-workspace/thought-leadership/` only. `brain/raw/` is never indexed. The wiki is the authority. Thought leadership is the publishable layer and is labelled as such on each hit. The index lives at `INQUIRY_HOME/libraries/workspace/<commit>/`. Keep the current commit and the previous one. Delete older commits after a refresh succeeds. Nothing in a library store is written by a session. Each hit carries the commit it was built from.
 
-**Federated search (D4).** `search_docs`, `search_knowledge` and `build_context` fan out to the bound project store and the attached libraries, run the existing hybrid pipeline per store, fuse with reciprocal rank fusion, and return each hit with `origin` (`project` or the library name), `pin`, `licensed`, `claim_id` and `verified` where the source page carries them. `query_across_projects` stays restricted to libraries; two project stores never appear in one result set. The hook path (SessionStart, UserPromptSubmit) reads only the project store, as ADR-0005's budget requires; library reads happen on MCP and CLI paths.
+**Federated search (D4).** Search fans out to the bound project store and the workspace library, and returns each hit with `origin` (`project`, `brain`, or `thought-leadership`), `pin`, `licensed`, `claim_id` and `verified` where the source page carries them. Two project stores never appear in one result set. The lifecycle hook is the delivery surface: on session start and on each prompt it returns a keyword slice from the last good library index, inside the existing context budget, without loading an embedding model. When that slice is not enough, MCP `search_knowledge` and `build_context` run the deeper pass over the same index. If the workspace commit has moved, the hook still serves the last good index and records a refresh. Session end drains that refresh, expires ledger rows past 45 days, and compacts. No background daemon.
 
 **Licence and citation as filters (D5).** Every search call carries `audience`: `builder` returns licensed hits flagged; `render` filters them out before ranking so a licensed chunk cannot displace a renderable one. The filter AST gains `licensed`, `claim_id`, `verified_after` and `origin` fields; each provider translates them and rejects unknown fields as today. A hit from a brain page returns the claim ids the page cites, so a consumer can print "source name, verification date, URL" without ever printing the id, which is the toolkit's rule 3.
 
 **Graph mapping.** The brain is already a graph: claims are nodes with `about` edges to pages, summaries `evidenced_by` claims, entities carry `contradicts` relations. The library indexer maps OKF frontmatter and claim records onto `graph_entities` and relationships so `graph_traverse` and `analyze_impact` work over the brain the way they work over code: "what cites this claim", "what contradicts this entity", "which pages go stale if this source is superseded". This is the hand-curated equivalent of community summaries: the concept page is the summary and a person wrote it.
 
-**Memory promotion (D6).** Working memory stays in the session. Episodic memory is what the lifecycle hook captures into the ledger, queued then reconciled (RFC-0002). Semantic memory is an explicit `save_memory` with a reason. Promotion upward is explicit: `ai memory distill` proposes a Markdown observation into `docs/knowledge/` through core `project-knowledge`, which stays the only writer of that directory; the record's propose and accept path handles engagement facts; a fact that belongs to the brain becomes a curator request, never a write. Memory rows are rebuildable from the ledger, closing the open item in `docs/backlog.md`.
+**Memory promotion (D6).** Working memory stays in the session and dies with it. Captures go to the ledger under `INQUIRY_HOME` and expire after 45 days unless the row is an explicit save. Explicit saves stay until deleted. The ledger is never committed. Promotion into the brain is a curator request a person accepts. A session does not write Markdown into the engagement repository or into `brain/wiki/`. Memory rows are rebuildable from the ledger.
 
 **Team readiness (D7).** The external provider contract gains a `library` role: tenancy maps `project_id` and library name to principals, events are append-only within a retention window, the pin is verified against the Git commit before a library is served, and embeddings may be produced server-side. Team shared knowledge is a second library with named curators. No hosting decision is taken here.
 
@@ -105,11 +105,11 @@ Option C now, D behind the contract later. B is the failure mode the toolkit's r
 - **Repo precedent.** RFC-0001 golden bench; RFC-0002 and ADR-0005 hook budget and stdlib-only hot path; ADR-0004 three-tier memory on the Agent Vault base; `docs/storage-backends.md` external provider contract and the restriction on `query_across_projects`; `docs/design/result-contract.md` and `filter-ast.md` for the fields this RFC extends; `docs/backlog.md` open item on rebuilding memory rows from the ledger.
 - **External prior art, read locally this session.** The brain schema (`brain/wiki/AGENTS.md`): claims, `licensed`, `verified`, source codes. The toolkit's `SOURCES.md`: read protocol, pin table, rules 3 to 5. codebase-agent (`~/projects/assets/codebase-agent`): reviewed knowledge bound to a human review and merged bytes, receipts with path and revision. design-builder (`~/projects/assets/design-builder`): one canonical spec, immutable revisions, proposals accepted per item. OpenKB (`~/projects/assets/OpenKB`): compile raw documents to an OKF wiki, retrieval over the compiled pages by document structure rather than by vectors alone. Web sources on graph-augmented retrieval and hierarchical retrieval were not fetched in this session and are not cited.
 
-## Open questions
+## Decisions closed 2026-09-30
 
-1. Should `audience` default to `render` (safe, may hide evidence from builders) or to `builder` (complete, may leak)? Recommended default: `render`, with the AFP pack and the toolkit passing `builder` explicitly. Owner: sammybasha. Decide by: acceptance of this RFC.
-2. Does the library index include `brain/raw/` (source documents, some licensed and gitignored) or only `brain/wiki/`? Recommended: wiki only; raw analyst material never enters an index. Owner: sammybasha. Decide by: first spike.
-3. Is the ledger under `INQUIRY_HOME` the right home for project memory when a team shares an engagement, or does memory move into the engagement repository? Recommended: stay in `INQUIRY_HOME` per user until D7 lands; the team provider decides. Owner: sammybasha. Decide by: 2026-11-30.
+1. `audience` defaults to `render` for a client project. A personal project may be set to `builder`. `render` drops licensed hits before they enter context.
+2. The library index includes `brain/wiki/` and `thought-leadership/`. It does not include `brain/raw/`.
+3. Project memory stays under `INQUIRY_HOME`, per user, and does not move into the engagement repository. A team share waits on D7.
 
 ## Follow-on artifacts
 
@@ -117,5 +117,5 @@ Option C now, D behind the contract later. B is the failure mode the toolkit's r
 - ADR: canonical knowledge is Markdown in Git; indexes are derived.
 - Spec: `docs/specs/library-environments/` (environment kind, indexer, `ai library` verbs, project attachment).
 - Spec: `docs/specs/federated-search-provenance/` (result contract fields, `audience`, filter AST fields, bench cases).
-- Spec: `docs/specs/memory-promotion/` (`ai memory distill`, ledger rebuild).
+- Spec: `docs/specs/memory-promotion/` (curator request into the brain, ledger expiry, ledger rebuild).
 - Convention change: `docs/CHARTER.md` names libraries as a delivery surface; `docs/storage-backends.md` gains the library role.
